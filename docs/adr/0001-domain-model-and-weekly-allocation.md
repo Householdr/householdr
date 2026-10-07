@@ -155,6 +155,31 @@ Deterministic greedy allocation, run when the week's draft plan is generated, an
    task went to whom. A plan people don't trust won't be followed, so being explainable matters more
    than being optimal.
 
+> **Clarification (2026-10-07):**
+>
+> - **Eligible** means: not `excluded`; old enough, in whole years on the first day of the plan week,
+>   unless a head allowed it or bound the member; available during any part of the window
+>   ([ADR-0005](0005-membership-and-availability.md) §2); and a share above 0. A member with a
+>   share of 0 gets no occurrences, bound ones included.
+> - **Same-person links** pair each occurrence of a task with the linked task's next occurrence on or
+>   after its date. Occurrences paired directly or through others form one unit. When that next
+>   occurrence falls in the next plan week, that plan gives it to the same member, with the reason
+>   "linked". A head's pre-assignment of one part places the whole unit; parts a head assigned to
+>   someone else stay with them.
+> - A **bound** unit goes to its bound member, or to the one with the lowest relative load when
+>   several are bound to it. If no bound member is eligible, for example because they are away for
+>   the whole window, the unit stays **unassigned** in the draft and heads are told. The same goes
+>   for a linked occurrence whose member from the week before is not eligible.
+> - An occurrence that **nobody is eligible** for stays **unassigned** in the draft, and heads are
+>   told. If it is still unassigned when the plan is published, it follows its on-miss policy, and
+>   nobody's ledger is charged for it.
+> - The sort in step 4 uses the unit's **duration**: its minutes, summed over its parts.
+> - The **rotation penalty** is 10% of the cost of each part whose task the member had in last
+>   week's plan, added to the numerator. It only affects the choice; the load is charged the plain
+>   cost.
+> - The reason is **"catching up"** when someone else would have been picked without the catch-up
+>   terms, and "lowest relative load" otherwise.
+
 ## Alternatives considered
 
 - **Round-robin / fixed rotation.** Simple and predictable, but ignores weights and personal burden;
