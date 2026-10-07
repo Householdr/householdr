@@ -14,7 +14,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc && pnpm --recursive typecheck",
-    "test": "vitest run"
+    "test": "vitest run",
+    "flags:check": "node scripts/check-flag-expiry.ts"
   },
   "devDependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "catalog:",
