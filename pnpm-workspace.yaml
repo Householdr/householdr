@@ -1,0 +1,10 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Supply chain (ADR-0017 §8): only accept package versions that have been public for three days,
+# and run no install scripts unless they are allowed here.
+minimumReleaseAge: 4320
+allowBuilds: {}
+
+engineStrict: true
