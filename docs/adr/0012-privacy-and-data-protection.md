@@ -1,6 +1,6 @@
 # ADR-0012: Privacy and data protection
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Date:** 2026-10-04
 - **Deciders:** Jens
 - **Related:** [ADR-0001](0001-domain-model-and-weekly-allocation.md) §4 (no reasons for shares),

@@ -11,15 +11,15 @@
 | [0007](0007-onboarding.md) | Onboarding a new household | Draft |
 | [0008](0008-tech-stack.md) | Tech stack and engineering principles | Accepted |
 | [0009](0009-development-workflow-and-releases.md) | Development workflow, CI/CD and releases | Accepted, superseded in part by 0024 |
-| [0010](0010-identity-invitations-and-childrens-accounts.md) | Identity, invitations and children's accounts | Draft |
+| [0010](0010-identity-invitations-and-childrens-accounts.md) | Identity, invitations and children's accounts | Accepted |
 | [0011](0011-accessibility-and-responsive-baseline.md) | Accessibility and responsive-first baseline | Draft |
-| [0012](0012-privacy-and-data-protection.md) | Privacy and data protection | Draft |
+| [0012](0012-privacy-and-data-protection.md) | Privacy and data protection | Accepted |
 | [0013](0013-monetisation.md) | Monetisation (public copy; billing operations private) | Draft |
 | [0014](0014-notifications-and-reminders.md) | Notifications and reminders | Draft |
 | [0015](0015-feature-flags-and-experiments.md) | Feature flags, segments and experiments (public copy; how our Flipt runs is private) | Accepted |
 | [0016](0016-localisation.md) | Localisation | Draft |
-| [0017](0017-security-baseline.md) | Security baseline | Draft |
-| [0018](0018-household-safety.md) | Safety inside the household | Draft |
+| [0017](0017-security-baseline.md) | Security baseline | Accepted |
+| [0018](0018-household-safety.md) | Safety inside the household | Accepted |
 | [0019](0019-live-updates-and-concurrent-edits.md) | Live updates and concurrent edits | Draft |
 | 0020 | Hosting and operations | Private |
 | [0021](0021-self-hosted-edition.md) | A source-available, self-hostable core | Accepted, superseded in part by 0024 |

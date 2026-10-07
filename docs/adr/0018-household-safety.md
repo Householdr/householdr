@@ -1,6 +1,6 @@
 # ADR-0018: Safety inside the household
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Date:** 2026-10-04
 - **Deciders:** Jens
 - **Related:** [ADR-0001](0001-domain-model-and-weekly-allocation.md) §2 (roles),
