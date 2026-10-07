@@ -1,22 +1,24 @@
-# What runs on a pull request (ADR-0009 §3): the title check always; the pipeline only for a pull
-# request that is ready for review and changes more than documentation.
+# What runs on a pull request's code (ADR-0009 §3): the pipeline only for a pull request that is
+# ready for review and changes more than documentation. `🚦 Pipeline: Result` reports the outcome as
+# one check that always runs, so it can be required whether the pipeline ran or was skipped
+# (ADR-0024 §2). The title has a workflow of its own, so editing it never replaces that result.
 name: '🔀 Pull request'
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review, edited]
+    types: [opened, synchronize, reopened, ready_for_review]
 
 permissions:
   contents: read
 
-# A new push cancels the previous run; editing the title doesn't cancel a running pipeline.
+# A new push cancels the run for the previous one.
 concurrency:
-  group: pr-${{ github.event.pull_request.number }}-${{ github.event.action == 'edited' && 'title' || 'code' }}
+  group: pr-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
-  title:
-    name: '🧹 Lint: PR title'
+  changes:
+    name: '📂 Source: Changed files'
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     permissions:
@@ -36,29 +38,34 @@ jobs:
           if [[ -n "$code" ]]; then changed=true; else changed=false; fi
           echo "code-changed=${changed}" >> "$GITHUB_OUTPUT"
 
-      # PROC-8 and ADR-0009 §2 for the title; PROC-10 for feat pull requests.
-      - name: '🧹 Lint: PR title'
-        env:
-          TITLE: ${{ github.event.pull_request.title }}
-          BODY: ${{ github.event.pull_request.body }}
-        run: |
-          header='^(feat|fix|perf|refactor|docs|test|build|ci|chore|revert)(\([a-z0-9-]+\))?!?: [a-z0-9]'
-          if [[ ! "$TITLE" =~ $header ]]; then
-            echo "::error title=PR title::Use a Conventional Commit header, 'type(scope): description' with a lower-case description (PROC-8)."
-            exit 1
-          fi
-          if [[ "$TITLE" =~ ^feat ]] && [[ ! "$BODY" =~ ADR-[0-9]{4} ]]; then
-            echo "::error title=PR description::A feat pull request names the ADR it implements, as 'Implements ADR-NNNN' (PROC-10)."
-            exit 1
-          fi
-
   pipeline:
     name: '🚦 Pipeline'
-    needs: title
+    needs: changes
     if: >-
-      !cancelled()
-      && !github.event.pull_request.draft
-      && github.event.action != 'edited'
-      && needs.title.outputs.code-changed == 'true'
+      !github.event.pull_request.draft
+      && needs.changes.outputs.code-changed == 'true'
       && !startsWith(github.head_ref, 'release-please--')
     uses: ./.github/workflows/pipeline.yml
+
+  # Runs even when the pipeline failed or was cancelled, so a missing result can never count as a pass.
+  result:
+    name: '🚦 Pipeline: Result'
+    needs: [changes, pipeline]
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 1
+    steps:
+      - name: '🚦 Pipeline: Result'
+        env:
+          CHANGES: ${{ needs.changes.result }}
+          PIPELINE: ${{ needs.pipeline.result }}
+        run: |
+          echo "Change detection: ${CHANGES}. Pipeline: ${PIPELINE}."
+          if [[ "$CHANGES" != success ]]; then
+            echo "::error title=Pipeline::Change detection ended as '${CHANGES}'."
+            exit 1
+          fi
+          if [[ "$PIPELINE" != success && "$PIPELINE" != skipped ]]; then
+            echo "::error title=Pipeline::The pipeline ended as '${PIPELINE}'."
+            exit 1
+          fi

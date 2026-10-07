@@ -36,9 +36,10 @@ and nothing in the core is meant to stay hidden.
 - **Private vulnerability reporting** on the core
   ([ADR-0021](0021-self-hosted-edition.md) §6, [ADR-0017](0017-security-baseline.md) §11).
 - **Branch protection for `main`** as in [ADR-0009](0009-development-workflow-and-releases.md) §2,
-  with the required checks under the names the reusable pipeline gives them: `🧹 Lint: PR title`,
-  `🚦 Pipeline / 🛠️ Bundle`, `🚦 Pipeline / 🔎 Verify`, and `🚦 Pipeline / 🧪 Test: E2E` once that job
-  exists.
+  with two required checks: `🧹 Lint: PR title` and `🚦 Pipeline: Result`. The latter passes when the
+  pipeline passed or was skipped (a draft, or a change to documentation only) and fails otherwise. The
+  pipeline's own jobs can't be required: a skipped reusable workflow reports one skipped check under
+  its caller's name, never its jobs' names, so a documentation-only pull request could never merge.
 
 ### 3. Outside contributions wait for the CLA
 

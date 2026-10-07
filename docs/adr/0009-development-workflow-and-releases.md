@@ -122,6 +122,11 @@ How this is wired:
   so required checks on a docs-only PR are satisfied; a workflow skipped by a path filter never
   reports, and the PR could not be merged.
 
+> **Clarification (2026-10-07):** change detection runs in its own small job next to the pipeline, and
+> a final `🚦 Pipeline: Result` job reports the pipeline's outcome as one check that always runs, so a
+> skipped pipeline still satisfies branch protection ([ADR-0024](0024-public-core-from-stage-0.md)
+> §2). The title check has a workflow of its own, so editing a title never replaces that result.
+
 ### 4. Keeping minutes low
 
 Rules every workflow follows:
