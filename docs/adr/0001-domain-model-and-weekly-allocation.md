@@ -90,6 +90,11 @@ end date.
 > no occurrences. A temporary share that starts or ends mid-week applies **per day**: the week's share
 > is the average of each day's share.
 
+> **Clarification (2026-10-07):** a member can have **several** temporary shares planned ahead, but
+> they **never overlap**, so each day has at most one. A temporary share covers its start and end
+> dates. A 29 February birthday counts from 1 March in other years, like a month end in a rule
+> ([ADR-0004](0004-recurrence-schedules.md) §3, clarification).
+
 The reason for a reduced share (sickness, disability, pregnancy) is **not stored**. A free-text reason
 field would invite health data, a special category under GDPR article 9, and nothing in the algorithm
 needs it.
