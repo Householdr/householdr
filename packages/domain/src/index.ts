@@ -24,6 +24,12 @@ export {
   type Availability,
   type AvailabilityPattern,
 } from './availability/availability';
+export {
+  estimateBurdens,
+  type BurdenEstimate,
+  type BurdenTask,
+  type Evidence,
+} from './burdens/estimate';
 export { expand } from './schedules/expand';
 export { frequencyRule, type Frequency } from './schedules/frequency';
 export {
