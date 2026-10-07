@@ -1,3 +1,4 @@
+import type { HouseholdCalendar, Role } from '@householdr/domain';
 import { sql, type AnyColumn } from 'drizzle-orm';
 import {
   check,
@@ -23,24 +24,30 @@ function householdOnly(column: AnyColumn) {
   return pgPolicy('household_only', { for: 'all', using: own, withCheck: own });
 }
 
-/** A household and its settings (ADR-0006 §1, ADR-0007 §2). */
+type Weekday = HouseholdCalendar['weekStartDay'];
+
+/** A household and its settings (ADR-0006 §1, ADR-0018 §5). */
 export const households = pgTable(
   'households',
   {
-    id: uuid().primaryKey().defaultRandom(),
+    /**
+     * A random UUID chosen by the use case that creates the household (CODE-17): row-level security
+     * only accepts the new row once the transaction is set to that id.
+     */
+    id: uuid().primaryKey(),
     name: text().notNull(),
     /** ISO 3166-1 alpha-2, such as `BE`: sets the consent age (ADR-0010 §9). */
     country: text().notNull(),
-    /** An offered language, such as `nl` (ADR-0016 §1). */
+    /** An offered language, such as `nl`: the culture an invited person starts with (ADR-0016 §2). */
     language: text().notNull(),
     /** An IANA time zone, such as `Europe/Brussels`. */
     timeZone: text().notNull(),
     /** 1 is Monday, 7 is Sunday. */
-    weekStartDay: smallint().notNull(),
+    weekStartDay: smallint().$type<Weekday>().notNull(),
     /** The latest change of start day: weeks before this date start on `weekStartPreviousDay`. */
     weekStartChangeFrom: date(),
-    weekStartPreviousDay: smallint(),
-    /** For versioned updates (ADR-0019 §5). */
+    weekStartPreviousDay: smallint().$type<Weekday>(),
+    /** For versioned updates (CODE-14, ADR-0023 §1). */
     version: integer().notNull().default(1),
   },
   (t) => [
@@ -64,8 +71,9 @@ export const households = pgTable(
 );
 
 /**
- * A member of a household: a profile, linked to an account later (ADR-0005 §1, ADR-0007 §1). Only
- * children have a birth date (ADR-0012 §2).
+ * A member of a household: a profile, which can be linked to an account later (ADR-0005 §1,
+ * ADR-0010 §1, §5). Only children have a birth date (ADR-0012 §2), so the switch to adult at 18
+ * clears it (ADR-0010 §7).
  */
 export const members = pgTable(
   'members',
@@ -75,9 +83,9 @@ export const members = pgTable(
       .notNull()
       .references(() => households.id, { onDelete: 'cascade' }),
     name: text().notNull(),
-    role: text({ enum: ['head', 'adult', 'child'] }).notNull(),
+    role: text().$type<Role>().notNull(),
     birthDate: date(),
-    /** For versioned updates (ADR-0019 §5). */
+    /** For versioned updates (CODE-14, ADR-0023 §1). */
     version: integer().notNull().default(1),
   },
   (t) => [

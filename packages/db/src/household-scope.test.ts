@@ -1,8 +1,9 @@
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { inHousehold, type Database } from './connection';
+import pg from 'pg';
+import { connect, inHousehold, refuseBypass, type Database } from './connection';
 import { households, members } from './schema';
-import { refusal, refusedByRowSecurity, testDatabase } from './testing';
+import { refusal, refusedByRowSecurity, testDatabase, testServerUrl } from './testing';
 
 // Row-level security keeps every household to its own rows (ADR-0008 §9, CODE-17), as a role
 // without superuser rights, the way the app connects.
@@ -17,7 +18,7 @@ const household = (id: string, name: string) => ({
   country: 'BE',
   language: 'nl',
   timeZone: 'Europe/Brussels',
-  weekStartDay: 1,
+  weekStartDay: 1 as const,
 });
 
 beforeAll(async () => {
@@ -92,10 +93,39 @@ describe('inHousehold (ADR-0008 §9)', () => {
     expect(names).toEqual([{ name: 'Robin' }]);
   });
 
-  it('refuses an id that is not a household id', () => {
-    expect(() => inHousehold(db, "x' or 1=1 --", (tx) => tx.select().from(members))).toThrow(
-      RangeError,
-    );
+  it('refuses an id that is not a household id', async () => {
+    await expect(
+      inHousehold(db, "x' or 1=1 --", (tx) => tx.select().from(members)),
+    ).rejects.toThrow(RangeError);
+  });
+});
+
+describe('connect (ADR-0008 §9)', () => {
+  it('refuses a superuser, whom row-level security does not bind', async () => {
+    await expect(connect(testServerUrl())).rejects.toThrow('bypasses row-level security');
+  });
+
+  it('refuses a role with BYPASSRLS', async () => {
+    const admin = new pg.Client({ connectionString: testServerUrl() });
+    await admin.connect();
+    try {
+      await admin.query(`
+        do $$ begin
+          create role householdr_test_bypass nologin bypassrls;
+        exception when duplicate_object or unique_violation then null;
+        end $$`);
+    } finally {
+      await admin.end();
+    }
+    const pool = new pg.Pool({
+      connectionString: testServerUrl(),
+      options: '-c role=householdr_test_bypass',
+    });
+    try {
+      await expect(refuseBypass(pool)).rejects.toThrow('householdr_test_bypass bypasses');
+    } finally {
+      await pool.end();
+    }
   });
 });
 

@@ -1,3 +1,4 @@
+import type { HouseholdCalendar } from '@householdr/domain';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { inHousehold, type Database } from './connection';
 import { households, members } from './schema';
@@ -16,9 +17,11 @@ const household = (id: string, fields: NewHousehold = {}) => ({
   country: 'BE',
   language: 'nl',
   timeZone: 'Europe/Brussels',
-  weekStartDay: 1,
+  weekStartDay: 1 as const,
   ...fields,
 });
+// A day the domain's type rules out, to check the database refuses it too.
+const outOfRange = (day: number) => day as HouseholdCalendar['weekStartDay'];
 const addHousehold = (fields: NewHousehold = {}) => {
   const id = newId();
   return inHousehold(db, id, (tx) => tx.insert(households).values(household(id, fields)));
@@ -60,13 +63,21 @@ describe('households', () => {
 
   it('starts weeks on a day from 1 (Monday) to 7 (Sunday)', async () => {
     expect(await refusal(addHousehold({ weekStartDay: 7 }))).toBeUndefined();
-    expect(await refusal(addHousehold({ weekStartDay: 0 }))).toBe('households_week_start_day');
-    expect(await refusal(addHousehold({ weekStartDay: 8 }))).toBe('households_week_start_day');
+    expect(await refusal(addHousehold({ weekStartDay: outOfRange(0) }))).toBe(
+      'households_week_start_day',
+    );
+    expect(await refusal(addHousehold({ weekStartDay: outOfRange(8) }))).toBe(
+      'households_week_start_day',
+    );
   });
 
   it('records a change of start day from a date on the previous start day (ADR-0006 §1)', async () => {
     // Monday 12 October 2026, from Monday weeks to Thursday weeks.
-    const change = { weekStartDay: 4, weekStartChangeFrom: '2026-10-12', weekStartPreviousDay: 1 };
+    const change = {
+      weekStartDay: 4,
+      weekStartChangeFrom: '2026-10-12',
+      weekStartPreviousDay: 1,
+    } as const;
     const broken = 'households_week_start_change';
     expect(await refusal(addHousehold(change))).toBeUndefined();
     expect(await refusal(addHousehold({ ...change, weekStartPreviousDay: null }))).toBe(broken);

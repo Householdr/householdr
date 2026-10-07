@@ -1,23 +1,28 @@
 import { randomUUID } from 'node:crypto';
 import pg from 'pg';
-import { database } from './connection';
+import { database, refuseBypass } from './connection';
 import { migrate } from './migrate';
 
 /** The role tests run as: no superuser or BYPASSRLS, so row-level security applies to it. */
 const testRole = 'householdr_test';
 
-/**
- * A fresh database for one test file, migrated and owned by a role without superuser rights, so
- * row-level security applies as it does in production (TEST-11). `TEST_DATABASE_URL` points to a
- * PostgreSQL server with an account that may create roles and databases.
- */
-export async function testDatabase() {
+/** `TEST_DATABASE_URL`: a superuser on a PostgreSQL server that tests may create databases on. */
+export function testServerUrl() {
   const url = process.env.TEST_DATABASE_URL;
   if (!url) {
     throw new Error(
       'Set TEST_DATABASE_URL to a PostgreSQL server for the database tests (README).',
     );
   }
+  return url;
+}
+
+/**
+ * A fresh database for one test file, migrated and owned by a role without superuser rights, so
+ * row-level security applies as it does in production (TEST-11).
+ */
+export async function testDatabase() {
+  const url = testServerUrl();
   const name = `householdr_test_${randomUUID().replaceAll('-', '')}`;
   const admin = new pg.Client({ connectionString: url });
   await admin.connect();
@@ -35,6 +40,7 @@ export async function testDatabase() {
   const target = new URL(url);
   target.pathname = `/${name}`;
   const pool = new pg.Pool({ connectionString: target.href, options: `-c role=${testRole}` });
+  await refuseBypass(pool);
   const db = database(pool);
   await migrate(db);
   return {

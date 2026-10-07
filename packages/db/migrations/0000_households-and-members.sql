@@ -1,5 +1,5 @@
 CREATE TABLE "households" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" uuid PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"country" text NOT NULL,
 	"language" text NOT NULL,
@@ -37,7 +37,7 @@ ALTER TABLE "members" ADD CONSTRAINT "members_household_id_households_id_fk" FOR
 CREATE INDEX "members_household" ON "members" USING btree ("household_id");--> statement-breakpoint
 CREATE POLICY "household_only" ON "households" AS PERMISSIVE FOR ALL TO public USING ("households"."id" = nullif(current_setting('householdr.household_id', true), '')::uuid) WITH CHECK ("households"."id" = nullif(current_setting('householdr.household_id', true), '')::uuid);--> statement-breakpoint
 CREATE POLICY "household_only" ON "members" AS PERMISSIVE FOR ALL TO public USING ("members"."household_id" = nullif(current_setting('householdr.household_id', true), '')::uuid) WITH CHECK ("members"."household_id" = nullif(current_setting('householdr.household_id', true), '')::uuid);--> statement-breakpoint
--- Row-level security also binds the tables' owner, which a single-role deployment connects as
+-- Row-level security also binds the tables' owner, which the app and its migrations connect as
 -- (ADR-0008 §9, CODE-17). Every household-owned table's migration does the same.
 ALTER TABLE "households" FORCE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE "members" FORCE ROW LEVEL SECURITY;
