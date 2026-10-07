@@ -10,4 +10,13 @@ export {
   type WindowEdge,
 } from './schedules/occurrence';
 export type { Rule, Schedule, Season } from './schedules/schedule';
+export {
+  dueDate,
+  dueness,
+  sinceLastDoneOccurrence,
+  type AwayPeriod,
+  type Dueness,
+  type Interval,
+  type SinceLastDone,
+} from './schedules/since-last-done';
 export { planWeekStart, type HouseholdCalendar } from './schedules/week';
