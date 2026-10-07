@@ -8,8 +8,10 @@ on:
 permissions:
   contents: read
 
+# A newer event cancels the run for the previous one. Draft and ready runs are kept apart, so marking
+# a draft ready doesn't cancel the draft's run on the same commit.
 concurrency:
-  group: pr-title-${{ github.event.pull_request.number }}
+  group: pr-title-${{ github.event.pull_request.number }}-${{ github.event.pull_request.draft }}
   cancel-in-progress: true
 
 jobs:
