@@ -40,11 +40,13 @@ const household = fc.record({
       {
         id: 'dishes',
         duration: dishes,
+        onMiss: 'lapse',
         recurrence: { kind: 'schedule', schedule: schedule('FREQ=DAILY'), timing: evening },
       },
       ...weekly.map((day, i): PlanTask => ({
         id: `weekly-${String(i)}`,
         duration: 30,
+        onMiss: 'roll over',
         recurrence: {
           kind: 'schedule',
           schedule: schedule(`FREQ=WEEKLY;BYDAY=${day}`),
@@ -54,6 +56,7 @@ const household = fc.record({
       ...floating.map((f, i): PlanTask => ({
         id: `floating-${String(i)}`,
         duration: f.duration,
+        onMiss: 'roll over',
         recurrence: {
           kind: 'schedule',
           schedule: schedule(`FREQ=MONTHLY;BYMONTHDAY=${String(f.day)}`),
@@ -92,7 +95,7 @@ describe('plan generation invariants (ADR-0001 §7, ADR-0004 §4, ADR-0005 §5)'
             week: start,
             calendar,
             tasks,
-            rolledOver: [],
+            open: [],
             placedEarlier: new Set(placedIn.keys()),
             away,
           });
@@ -156,7 +159,7 @@ describe('plan generation invariants (ADR-0001 §7, ADR-0004 §4, ADR-0005 §5)'
           const input = {
             week: first.add({ weeks: w }),
             calendar,
-            rolledOver: [],
+            open: [],
             placedEarlier: new Set<string>(),
             away,
           };

@@ -26,9 +26,16 @@ const binOut: Timing = {
   from: { dayOffset: -1, time: time('18:00') },
   to: { dayOffset: 0, time: time('07:00') },
 };
-const task = (id: string, duration: number, rrule: string, timing: Timing): PlanTask => ({
+const task = (
+  id: string,
+  duration: number,
+  rrule: string,
+  timing: Timing,
+  onMiss: PlanTask['onMiss'] = 'roll over',
+): PlanTask => ({
   id,
   duration,
+  onMiss,
   recurrence: {
     kind: 'schedule',
     schedule: { rules: [{ rrule, start: date('2026-01-01') }], extraDates: [], exceptionDates: [] },
@@ -37,13 +44,19 @@ const task = (id: string, duration: number, rrule: string, timing: Timing): Plan
 });
 const dishes = task('dishes', 30, 'FREQ=DAILY', evening);
 const vacuum = task('vacuum', 45, 'FREQ=WEEKLY;BYDAY=WE', flexible);
-const bins = task('bins', 5, 'FREQ=WEEKLY;BYDAY=TU', binOut);
+const bins = task('bins', 5, 'FREQ=WEEKLY;BYDAY=TU', binOut, 'lapse');
 const bathroom = task('bathroom', 40, 'FREQ=WEEKLY;INTERVAL=2;BYDAY=FR', flexible);
 const fridge = task('fridge', 60, 'FREQ=MONTHLY;BYMONTHDAY=1', floating);
 const filter = task('filter', 60, 'FREQ=MONTHLY;BYMONTHDAY=15', floating);
-const oneOff = (id: string, day: string, deadline?: string): PlanTask => ({
+const oneOff = (
+  id: string,
+  day: string,
+  deadline?: string,
+  onMiss: PlanTask['onMiss'] = 'roll over',
+): PlanTask => ({
   id,
   duration: 60,
+  onMiss,
   recurrence: {
     kind: 'oneOff',
     date: date(day),
@@ -53,6 +66,7 @@ const oneOff = (id: string, day: string, deadline?: string): PlanTask => ({
 const oven = (lastDone?: string): PlanTask => ({
   id: 'oven',
   duration: 50,
+  onMiss: 'roll over',
   recurrence: {
     kind: 'sinceLastDone',
     every: { count: 6, unit: 'weeks' },
@@ -74,7 +88,7 @@ const plan = (input: Partial<WeekInput>) =>
     week: date('2026-10-14'),
     calendar: brussels,
     tasks: [],
-    rolledOver: [],
+    open: [],
     placedEarlier: new Set(),
     away: [],
     ...input,
@@ -120,21 +134,78 @@ describe('weekOccurrences, rolled over (ADR-0002 §2, clarification)', () => {
   it('keeps a rolled-over occurrence open across the whole week', () => {
     const result = plan({
       tasks: [bathroom],
-      rolledOver: [rolled('bathroom@2026-10-09', 'bathroom', '2026-10-09')],
+      open: [rolled('bathroom@2026-10-09', 'bathroom', '2026-10-09')],
     });
     expect(result.occurrences.map((o) => [o.id, ...(shown(o) ?? [])])).toEqual([
       ['bathroom@2026-10-09', ...week],
     ]);
-    expect(result.replaced).toEqual([]);
+    expect(result.missed).toEqual([]);
   });
 
   it('closes it as missed when the task has a new occurrence this week', () => {
     const result = plan({
       tasks: [vacuum],
-      rolledOver: [rolled('vacuum@2026-10-07', 'vacuum', '2026-10-07')],
+      open: [rolled('vacuum@2026-10-07', 'vacuum', '2026-10-07')],
     });
     expect(result.occurrences.map((o) => o.id)).toEqual(['vacuum@2026-10-14']);
-    expect(result.replaced).toEqual(['vacuum@2026-10-07']);
+    expect(result.missed).toEqual(['vacuum@2026-10-07']);
+  });
+});
+
+describe('weekOccurrences, lapsing (ADR-0002 §2, clarifications)', () => {
+  it('closes a lapsing occurrence as missed once its window has ended', () => {
+    const lastWeeksBin = {
+      id: 'bins@2026-10-06',
+      task: 'bins',
+      date: date('2026-10-06'),
+      window: { start: at('2026-10-05T18:00'), end: at('2026-10-06T07:00') },
+    };
+    const result = plan({ tasks: [bins], open: [lastWeeksBin] });
+    expect(result.missed).toEqual(['bins@2026-10-06']);
+    expect(result.occurrences.map((o) => o.id)).toEqual(['bins@2026-10-13']);
+  });
+
+  it('lets each one-off task roll over or lapse, as whoever added it chose', () => {
+    const shelf = oneOff('shelf', '2026-10-08');
+    const parcel = oneOff('parcel', '2026-10-08', undefined, 'lapse');
+    const lastWeek = { start: at('2026-10-05T00:00'), end: at('2026-10-12T00:00') };
+    const result = plan({
+      tasks: [shelf, parcel],
+      open: [
+        { id: 'shelf@2026-10-08', task: 'shelf', date: date('2026-10-08'), window: lastWeek },
+        { id: 'parcel@2026-10-08', task: 'parcel', date: date('2026-10-08'), window: lastWeek },
+      ],
+    });
+    expect(result.occurrences.map((o) => [o.id, ...(shown(o) ?? [])])).toEqual([
+      ['shelf@2026-10-08', ...week],
+    ]);
+    expect(result.missed).toEqual(['parcel@2026-10-08']);
+  });
+
+  it('keeps a lapsing one-off in the pool until its deadline', () => {
+    // Placed in the week of 5 October, to be done by Wednesday 21 October.
+    const paint = oneOff('paint', '2026-10-05', '2026-10-21', 'lapse');
+    const open = [
+      {
+        id: 'paint@2026-10-05',
+        task: 'paint',
+        date: date('2026-10-05'),
+        window: { start: at('2026-10-05T00:00'), end: at('2026-10-22T00:00') },
+      },
+    ];
+    const input = { tasks: [paint], open, placedEarlier: new Set(['paint@2026-10-05']) };
+    expect(shown(plan(input).occurrences[0])).toEqual(week);
+    expect(shown(plan({ ...input, week: date('2026-10-19') }).occurrences[0])).toEqual([
+      '2026-10-19T00:00:00',
+      '2026-10-22T00:00:00',
+    ]);
+    expect(plan({ ...input, week: date('2026-10-26') }).missed).toEqual(['paint@2026-10-05']);
+  });
+
+  it('rejects an open occurrence of an unknown task', () => {
+    expect(() => plan({ open: [rolled('gone@2026-10-09', 'gone', '2026-10-09')] })).toThrow(
+      RangeError,
+    );
   });
 });
 
@@ -143,7 +214,7 @@ describe('weekOccurrences, household away (ADR-0005 §5, clarification)', () => 
     expect(plan({ tasks: [dishes, vacuum], away: [away('2026-10-10', '2026-10-20')] })).toEqual({
       planned: false,
       occurrences: [],
-      replaced: [],
+      missed: [],
       skipped: [],
     });
   });
@@ -226,10 +297,10 @@ describe('weekOccurrences, floating (ADR-0004 §4, clarification)', () => {
     const result = plan({
       week: date('2026-10-21'),
       tasks: [fridge],
-      rolledOver: [rolled('fridge@2026-09-01', 'fridge', '2026-09-01')],
+      open: [rolled('fridge@2026-09-01', 'fridge', '2026-09-01')],
     });
     expect(result.occurrences.map((o) => o.id)).toEqual(['fridge@2026-10-01']);
-    expect(result.replaced).toEqual(['fridge@2026-09-01']);
+    expect(result.missed).toEqual(['fridge@2026-09-01']);
   });
 
   it('waits for its last week when there is no schedule to set an average', () => {

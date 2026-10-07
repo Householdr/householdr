@@ -27,6 +27,11 @@ export interface PlanTask {
   /** In minutes. */
   duration: number;
   recurrence: Recurrence;
+  /**
+   * What happens to an occurrence that isn't done (ADR-0001 §1, ADR-0002 §2); "since last done"
+   * tasks always roll over (ADR-0004 §8).
+   */
+  onMiss: 'roll over' | 'lapse';
 }
 
 export interface WeekInput {
@@ -35,10 +40,11 @@ export interface WeekInput {
   calendar: HouseholdCalendar;
   tasks: readonly PlanTask[];
   /**
-   * Occurrences from earlier plans that are still open and roll over (ADR-0002 §2). "Since last
-   * done" tasks are left out: they keep their one open occurrence here (ADR-0004 §8).
+   * Occurrences from earlier plans that are still open, each with its own window (as `occurrences`
+   * gives it, not the week it was planned in). "Since last done" tasks are left out: they keep
+   * their one open occurrence here (ADR-0004 §8).
    */
-  rolledOver: readonly PlannedOccurrence[];
+  open: readonly PlannedOccurrence[];
   /** Floating occurrences an earlier plan already placed, by id. */
   placedEarlier: ReadonlySet<string>;
   away: readonly AwayPeriod[];
@@ -49,15 +55,18 @@ export interface WeekOccurrences {
   planned: boolean;
   /** What the allocator gets, in time order. */
   occurrences: PlannedOccurrence[];
-  /** Rolled-over occurrences a new one of the same task replaces: closed as missed. */
-  replaced: string[];
+  /**
+   * Open occurrences that close as missed: lapsing ones whose window has ended, and rolled-over
+   * ones a new occurrence of the same task replaces (ADR-0002 §2, clarifications).
+   */
+  missed: string[];
   /** Occurrences whose whole window falls while the household is away: closed as away. */
   skipped: string[];
 }
 
 /**
  * The occurrences of one plan week (ADR-0001 §7 step 1 with ADR-0002 §2, ADR-0004 §4 and §8, and
- * ADR-0005 §5, clarifications): those due this week, those rolled over from earlier weeks, and the
+ * ADR-0005 §5, clarifications): those due this week, those still open from earlier weeks, and the
  * floating ones placed this week.
  */
 export function weekOccurrences(input: WeekInput): WeekOccurrences {
@@ -75,8 +84,7 @@ export function weekOccurrences(input: WeekInput): WeekOccurrences {
     }
     return true;
   };
-  if (awayThrough(start, end))
-    return { planned: false, occurrences: [], replaced: [], skipped: [] };
+  if (awayThrough(start, end)) return { planned: false, occurrences: [], missed: [], skipped: [] };
 
   const week = window(start, end, calendar);
   const minutes = new Map(input.tasks.map((t) => [t.id, t.duration]));
@@ -136,13 +144,23 @@ export function weekOccurrences(input: WeekInput): WeekOccurrences {
     }
   }
 
-  // Rolled-over occurrences take the whole week, unless a new one of the same task replaces them.
-  const replaced: string[] = [];
+  // Open occurrences: a lapsing one stays for what is left of its window, then closes as missed; a
+  // rolling one takes the whole week, unless a new one of the same task replaces it.
+  const missed: string[] = [];
   let kept: PlannedOccurrence[] = [];
   const dueTasks = new Set(due.map((o) => o.task));
-  for (const o of input.rolledOver) {
-    if (dueTasks.has(o.task)) replaced.push(o.id);
-    else kept.push({ ...o, window: week });
+  const policy = new Map(input.tasks.map((t) => [t.id, t.onMiss]));
+  for (const o of input.open) {
+    const onMiss = policy.get(o.task);
+    if (!onMiss) throw new RangeError(`Unknown task ${o.task}`);
+    if (onMiss === 'lapse') {
+      if (compare(o.window.end, week.start) <= 0) missed.push(o.id);
+      else kept.push({ ...o, window: clip(o.window, week) });
+    } else if (dueTasks.has(o.task)) {
+      missed.push(o.id);
+    } else {
+      kept.push({ ...o, window: week });
+    }
   }
 
   // Floating occurrences go into a quiet week, or into the last week of their window that has a
@@ -168,7 +186,7 @@ export function weekOccurrences(input: WeekInput): WeekOccurrences {
     placed.push({ ...o, window: clip(o.window, week) });
     total += cost(o);
     for (const backlog of kept.filter((b) => b.task === o.task)) {
-      replaced.push(backlog.id);
+      missed.push(backlog.id);
       total -= cost(backlog);
     }
     kept = kept.filter((b) => b.task !== o.task);
@@ -179,7 +197,7 @@ export function weekOccurrences(input: WeekInput): WeekOccurrences {
       Temporal.ZonedDateTime.compare(a.window.start, b.window.start) ||
       (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
   );
-  return { planned: true, occurrences: all, replaced: replaced.sort(), skipped: skipped.sort() };
+  return { planned: true, occurrences: all, missed: missed.sort(), skipped: skipped.sort() };
 }
 
 /**
