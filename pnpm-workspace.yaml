@@ -1,0 +1,25 @@
+packages:
+  - apps/*
+  - packages/*
+
+# One version of each external dependency for the whole workspace (PRIN-3). Packages refer to it
+# as `catalog:`; `pnpm add` records new dependencies here, and unused entries are removed.
+catalog:
+  '@eslint-community/eslint-plugin-eslint-comments': ^4.8.1
+  '@eslint/js': ^10.0.1
+  '@types/node': ^26.6.4
+  eslint: ^10.12.0
+  eslint-config-prettier: ^10.1.8
+  prettier: ^3.9.9
+  typescript: ~6.0.3
+  typescript-eslint: ^8.71.0
+  vitest: ^5.0.3
+catalogMode: strict
+catalogPrune: true
+
+# Supply chain (ADR-0017 §8): only accept package versions that have been public for three days,
+# and run no install scripts unless they are allowed here.
+minimumReleaseAge: 4320
+allowBuilds: {}
+
+engineStrict: true

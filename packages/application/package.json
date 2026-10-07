@@ -1,0 +1,15 @@
+{
+  "name": "@householdr/application",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@householdr/domain": "workspace:*",
+    "@householdr/db": "workspace:*"
+  }
+}

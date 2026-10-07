@@ -1,0 +1,3 @@
+# Documentation is formatted by hand; Prettier would realign every Markdown table.
+*.md
+pnpm-lock.yaml

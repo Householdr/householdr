@@ -56,6 +56,9 @@ The name "Householdr" and its logo are not covered by the licence.
 
 ## Contributing
 
+You need Node.js 26 and pnpm (`corepack enable` picks up the version the repository pins). Then
+`pnpm install`, and `pnpm verify` runs the same lint, format, type and unit checks as CI.
+
 Every feature starts with an accepted ADR (PROC-1); bug fixes, refactors, tests and copy fixes don't
 need one. Pull requests follow the [template](.github/pull_request_template.md) and the
 [process standard](docs/standards/process.md).
