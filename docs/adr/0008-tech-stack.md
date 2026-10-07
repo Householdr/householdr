@@ -143,6 +143,11 @@ conventions.
   changeable in the profile. It is a preference, not part of the URL: the app sits almost entirely
   behind a login, so per-language URLs would add routing for no benefit (YAGNI). Public pages can get
   language URLs later if search ever needs them.
+
+  > **Clarification (2026-10-07):** an account created by accepting an invitation starts with its
+  > household's language and country instead of the browser's
+  > ([ADR-0016](0016-localisation.md) §2).
+
 - **Text: Paraglide JS** (inlang), SvelteKit's official i18n integration. Messages are compiled into
   typed functions (`m.plan_published({ week })`), so a missing or misspelt key is a type error, and each
   page only ships the messages it uses. Catalogues are per **language** (which ones ship:
