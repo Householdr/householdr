@@ -98,6 +98,13 @@ Each task turns a schedule date into an occurrence window:
 - **One-off tasks** ("fix the shelf") have a single date and are flexible within its week, or float up
   to a deadline if one is given.
 
+> **Clarification (2026-10-07):** a floating occurrence's window is made of **whole plan weeks**. It
+> starts with the plan week of its date and ends at the start of the earliest of: the plan week of the
+> next occurrence; the plan week of its date plus its rule's spacing (`INTERVAL` times `FREQ`, so a
+> seasonal rule doesn't float through its off-season); or, for an extra date or a rule that has
+> ended, four plan weeks. It always covers at least its own week. A one-off task's deadline is a
+> date: its window ends with that day.
+
 Simple-frequency tasks default to flexible (floating for monthly and rarer); tasks on an advanced
 schedule default to fixed.
 

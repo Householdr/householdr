@@ -1,5 +1,11 @@
-import { RRuleTemporal } from 'rrule-temporal';
+import { atMidnight, recurrence } from './rule';
 import type { Rule, Schedule, Season } from './schedule';
+
+/** A date of a schedule, with the first rule that produced it, if a rule did. */
+export interface ScheduleDate {
+  date: Temporal.PlainDate;
+  rule?: Rule;
+}
 
 /**
  * The dates a schedule produces from `from` to `to`, both included, in order (ADR-0004 §2):
@@ -10,34 +16,36 @@ export function expand(
   from: Temporal.PlainDate,
   to: Temporal.PlainDate,
 ): Temporal.PlainDate[] {
-  const dates = new Map<string, Temporal.PlainDate>();
+  return expandWithRules(schedule, from, to).map(({ date }) => date);
+}
+
+/** As {@link expand}, with the rule that produced each date. */
+export function expandWithRules(
+  schedule: Schedule,
+  from: Temporal.PlainDate,
+  to: Temporal.PlainDate,
+): ScheduleDate[] {
+  const dates = new Map<string, ScheduleDate>();
   for (const rule of schedule.rules) {
     for (const date of ruleDates(rule, from, to)) {
-      if (!rule.season || inSeason(date, rule.season)) dates.set(date.toString(), date);
+      const key = date.toString();
+      if (!dates.has(key) && (!rule.season || inSeason(date, rule.season))) {
+        dates.set(key, { date, rule });
+      }
     }
   }
   for (const date of schedule.extraDates) {
-    if (within(date, from, to)) dates.set(date.toString(), date);
+    const key = date.toString();
+    if (!dates.has(key) && within(date, from, to)) dates.set(key, { date });
   }
   for (const date of schedule.exceptionDates) dates.delete(date.toString());
-  return [...dates.values()].sort((a, b) => Temporal.PlainDate.compare(a, b));
+  return [...dates.values()].sort((a, b) => Temporal.PlainDate.compare(a.date, b.date));
 }
 
-// A date a rule asks for that doesn't exist moves to the first day of the next month
-// (RFC 7529 SKIP=FORWARD; ADR-0004 §3, clarification).
 function ruleDates(rule: Rule, from: Temporal.PlainDate, to: Temporal.PlainDate) {
-  const start = rule.start.toString().replaceAll('-', '');
-  const recurrence = new RRuleTemporal({
-    temporal: Temporal,
-    rruleString: `DTSTART;VALUE=DATE:${start}\nRRULE:RSCALE=GREGORIAN;SKIP=FORWARD;${rule.rrule}`,
-  });
-  return recurrence.between(atMidnight(from), atMidnight(to), true).map((d) => d.toPlainDate());
-}
-
-// Date-only rules are evaluated in UTC; time zones apply when dates become occurrence windows
-// (ADR-0004 §4, §6).
-function atMidnight(date: Temporal.PlainDate) {
-  return date.toZonedDateTime({ timeZone: 'UTC' });
+  return recurrence(rule)
+    .between(atMidnight(from), atMidnight(to), true)
+    .map((d) => d.toPlainDate());
 }
 
 function within(date: Temporal.PlainDate, from: Temporal.PlainDate, to: Temporal.PlainDate) {
