@@ -61,6 +61,11 @@ Each task has an **on-miss policy**:
 In both cases the ledger handles fairness. Rolled-over work is counted once, in the week it is
 completed.
 
+> **Clarification (2026-10-07):** a rolled-over occurrence is flexible across the whole of the next
+> plan week, whatever its original window. If the task has a new occurrence in that week, the new one
+> replaces it, and the rolled-over one closes as missed. Otherwise it keeps rolling over until
+> someone does it.
+
 ### 3. Catching up: the rebalance rate
 
 The allocator ([ADR-0001](0001-domain-model-and-weekly-allocation.md) §7) does not try to zero a
