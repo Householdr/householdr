@@ -30,7 +30,9 @@ lengthened to reach the new start day, and its fair portions are computed over i
 > never changes (§3) and a draft for it is generated again; changing the day again before it is
 > published replaces the pending change. Within it, shares and availability count over its actual
 > days, and floating occurrences fill it up to the schedules' average weekly minutes × its days ÷ 7
-> (ADR-0004 §4). The catch-up step stays one per plan (ADR-0002 §3).
+> (ADR-0004 §4). The catch-up step stays one per plan (ADR-0002 §3). The four weeks a floating
+> occurrence of an extra date or an ended rule gets (ADR-0004 §4) are four plan weeks, so the
+> transition week counts as one of them.
 
 ### 2. Draft and publish
 
