@@ -30,6 +30,15 @@ export {
   type BurdenTask,
   type Evidence,
 } from './burdens/estimate';
+export {
+  completionCredits,
+  rebalanceRates,
+  settleWeek,
+  type CostedTask,
+  type Points,
+  type RebalancePreset,
+  type WeekSettlement,
+} from './ledger/settlement';
 export { expand } from './schedules/expand';
 export { frequencyRule, type Frequency } from './schedules/frequency';
 export {
