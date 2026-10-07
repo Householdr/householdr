@@ -24,6 +24,14 @@ Each household's **week start day** is chosen by a head (any day of the week). T
 Changing the start day takes effect after the current week. The one transition week is shortened or
 lengthened to reach the new start day, and its fair portions are computed over its actual length.
 
+> **Clarification (2026-10-07):** the transition week is whichever of the two is nearer to seven
+> days, so it lasts 4 to 10 days: from Monday weeks to Tuesday weeks it runs 8 days, to Thursday
+> weeks 10, to Friday weeks 4. It is the first week without a published plan, so a published week
+> never changes (§3) and a draft for it is generated again; changing the day again before it is
+> published replaces the pending change. Within it, shares and availability count over its actual
+> days, and floating occurrences fill it up to the schedules' average weekly minutes × its days ÷ 7
+> (ADR-0004 §4). The catch-up step stays one per plan (ADR-0002 §3).
+
 ### 2. Draft and publish
 
 | Step | When (default, configurable per household) | What happens |
