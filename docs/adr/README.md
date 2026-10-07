@@ -2,15 +2,15 @@
 
 | ADR | Title | Status |
 |---|---|---|
-| [0001](0001-domain-model-and-weekly-allocation.md) | Domain model and weekly allocation | Draft |
-| [0002](0002-balance-ledger.md) | Balance ledger — deficits, credit and swaps | Draft |
-| [0003](0003-burden-estimation.md) | Burden estimation — global seed, implicit ratings and the comparison game | Draft |
-| [0004](0004-recurrence-schedules.md) | Recurrence schedules | Draft |
-| [0005](0005-membership-and-availability.md) | Membership and availability | Draft |
-| [0006](0006-plan-lifecycle-and-completion.md) | Plan lifecycle and completion | Draft |
+| [0001](0001-domain-model-and-weekly-allocation.md) | Domain model and weekly allocation | Accepted |
+| [0002](0002-balance-ledger.md) | Balance ledger — deficits, credit and swaps | Accepted |
+| [0003](0003-burden-estimation.md) | Burden estimation — global seed, implicit ratings and the comparison game | Accepted |
+| [0004](0004-recurrence-schedules.md) | Recurrence schedules | Accepted |
+| [0005](0005-membership-and-availability.md) | Membership and availability | Accepted |
+| [0006](0006-plan-lifecycle-and-completion.md) | Plan lifecycle and completion | Accepted |
 | [0007](0007-onboarding.md) | Onboarding a new household | Draft |
 | [0008](0008-tech-stack.md) | Tech stack and engineering principles | Accepted |
-| [0009](0009-development-workflow-and-releases.md) | Development workflow, CI/CD and releases | Accepted |
+| [0009](0009-development-workflow-and-releases.md) | Development workflow, CI/CD and releases | Accepted, superseded in part by 0024 |
 | [0010](0010-identity-invitations-and-childrens-accounts.md) | Identity, invitations and children's accounts | Draft |
 | [0011](0011-accessibility-and-responsive-baseline.md) | Accessibility and responsive-first baseline | Draft |
 | [0012](0012-privacy-and-data-protection.md) | Privacy and data protection | Draft |
@@ -22,9 +22,10 @@
 | [0018](0018-household-safety.md) | Safety inside the household | Draft |
 | [0019](0019-live-updates-and-concurrent-edits.md) | Live updates and concurrent edits | Draft |
 | 0020 | Hosting and operations | Private |
-| [0021](0021-self-hosted-edition.md) | A source-available, self-hostable core | Accepted |
+| [0021](0021-self-hosted-edition.md) | A source-available, self-hostable core | Accepted, superseded in part by 0024 |
 | [0022](0022-development-standards-and-adr-first.md) | Development standards and ADR-first development | Accepted |
 | [0023](0023-application-layer.md) | A framework-agnostic application layer | Accepted |
+| [0024](0024-public-core-from-stage-0.md) | The core is public from stage 0 | Accepted |
 
 ## Planned
 

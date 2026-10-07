@@ -1,6 +1,6 @@
 # ADR-0003: Burden estimation — global seed, implicit ratings and the comparison game
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Date:** 2026-10-03
 - **Deciders:** Jens
 - **Related:** [ADR-0001](0001-domain-model-and-weekly-allocation.md)

@@ -1,6 +1,7 @@
 # ADR-0021: A source-available, self-hostable core
 
-- **Status:** Accepted
+- **Status:** Accepted; the core's visibility (§1) and the timing of push protection (§4) are
+  superseded by [ADR-0024](0024-public-core-from-stage-0.md)
 - **Date:** 2026-10-04
 - **Deciders:** Jens
 - **Related:** [ADR-0008](0008-tech-stack.md) §3, §13 (repository, containers),

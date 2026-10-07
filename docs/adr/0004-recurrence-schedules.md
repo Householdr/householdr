@@ -1,6 +1,6 @@
 # ADR-0004: Recurrence schedules
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Date:** 2026-10-03
 - **Deciders:** Jens
 - **Related:** [ADR-0001](0001-domain-model-and-weekly-allocation.md)
