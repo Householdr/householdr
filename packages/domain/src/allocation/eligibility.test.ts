@@ -52,6 +52,22 @@ describe('isEligible (ADR-0001 §7)', () => {
     ).toBe(true);
   });
 
+  it('takes the first day of a transition week as its first day (ADR-0006 §1)', () => {
+    // Monday weeks to Thursday weeks from Monday 12 October: a ten-day week to Thursday 22.
+    const thursdays: HouseholdCalendar = { ...brussels, weekStartDay: 4 };
+    const toThursdays: HouseholdCalendar = {
+      ...thursdays,
+      change: { from: date('2026-10-12'), previous: 1 },
+    };
+    const tuesday = { start: at('2026-10-20T18:00'), end: at('2026-10-20T22:00') };
+    // Turns 12 on Wednesday 14 October: 11 when the transition week starts.
+    const turnsTwelve = child('2014-10-14');
+    const check = (calendar: HouseholdCalendar) =>
+      isEligible(turnsTwelve, task(12), tuesday, date('2026-10-20'), calendar);
+    expect(check(toThursdays)).toBe(false);
+    expect(check(thursdays)).toBe(true);
+  });
+
   it('lets a head allow a younger child, or bind them', () => {
     const young = child('2018-01-01');
     expect(eligible(young, task(12))).toBe(false);

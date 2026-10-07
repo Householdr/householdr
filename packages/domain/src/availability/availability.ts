@@ -1,6 +1,6 @@
 import { occurrences, type Window, type WindowEdge } from '../schedules/occurrence';
 import type { Schedule } from '../schedules/schedule';
-import { planWeekStart, type HouseholdCalendar } from '../schedules/week';
+import { planWeek, type HouseholdCalendar } from '../schedules/week';
 
 /**
  * When a member is normally here, in the same model as task schedules (ADR-0005 §2, ADR-0004 §5):
@@ -44,14 +44,17 @@ export function availableWindows(
   return subtract(intersect(base, range), away);
 }
 
-/** The fraction of the plan week of `date` the member is available (ADR-0001 §6, ADR-0005 §2). */
+/**
+ * The fraction of the plan week of `date` the member is available, over its actual length
+ * (ADR-0001 §6, ADR-0005 §2, ADR-0006 §1).
+ */
 export function availabilityInWeek(
   availability: Availability,
   date: Temporal.PlainDate,
   calendar: HouseholdCalendar,
 ): number {
-  const start = planWeekStart(date, calendar.weekStartDay);
-  const week = days(start, start.add({ weeks: 1 }), calendar);
+  const { start, end } = planWeek(date, calendar);
+  const week = days(start, end, calendar);
   return length(availableWindows(availability, week, calendar)) / length([week]);
 }
 

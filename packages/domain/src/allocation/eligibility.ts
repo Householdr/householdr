@@ -1,6 +1,6 @@
 import { isAvailableDuring, type Availability } from '../availability/availability';
 import type { Window } from '../schedules/occurrence';
-import { planWeekStart, type HouseholdCalendar } from '../schedules/week';
+import { planWeek, type HouseholdCalendar } from '../schedules/week';
 
 /**
  * A head's setting for one task and member (ADR-0001 §1, §3): always theirs, never theirs, or allowed
@@ -39,7 +39,7 @@ export function isEligible(
 ): boolean {
   const constraint = task.constraints.get(member.id);
   if (constraint === 'excluded' || member.fairFraction <= 0) return false;
-  if (!constraint && !oldEnough(member, task, planWeekStart(date, calendar.weekStartDay))) {
+  if (!constraint && !oldEnough(member, task, planWeek(date, calendar).start)) {
     return false;
   }
   return isAvailableDuring(member.availability, window, calendar);

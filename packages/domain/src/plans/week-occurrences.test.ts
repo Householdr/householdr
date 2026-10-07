@@ -320,6 +320,59 @@ describe('weekOccurrences, floating (ADR-0004 §4, clarification)', () => {
   });
 });
 
+describe('weekOccurrences, transition week (ADR-0006 §1, clarification)', () => {
+  // Monday weeks until 12 October, then Thursday weeks (a ten-day transition week) or Friday weeks
+  // (a four-day one).
+  const change = { from: date('2026-10-12'), previous: 1 } as const;
+  const toThursdays: HouseholdCalendar = { ...brussels, weekStartDay: 4, change };
+  const toFridays: HouseholdCalendar = { ...brussels, weekStartDay: 5, change };
+
+  it('plans every day of the transition week, then weeks from the new start day', () => {
+    const transition = plan({ tasks: [dishes, vacuum], calendar: toThursdays });
+    expect(transition.occurrences.filter((o) => o.task === 'dishes')).toHaveLength(10);
+    expect(
+      transition.occurrences
+        .filter((o) => o.task === 'vacuum')
+        .map((o) => [o.id, ...(shown(o) ?? [])]),
+    ).toEqual([
+      ['vacuum@2026-10-14', '2026-10-12T00:00:00', '2026-10-22T00:00:00'],
+      ['vacuum@2026-10-21', '2026-10-12T00:00:00', '2026-10-22T00:00:00'],
+    ]);
+    const after = plan({
+      tasks: [dishes, vacuum],
+      calendar: toThursdays,
+      week: date('2026-10-22'),
+    });
+    expect(after.occurrences.map((o) => o.date.toString())).toContain('2026-10-28');
+    expect(after.occurrences.filter((o) => o.task === 'dishes')).toHaveLength(7);
+  });
+
+  it('fills the transition week with floating work up to the average times its days ÷ 7', () => {
+    // Ten days: 300 minutes of dishes against (30 × 365 + 60 × 12) / 52 × 10 / 7 ≈ 321.
+    expect(ids({ tasks: [dishes, fridge], calendar: toThursdays })).toContain('fridge@2026-10-01');
+    // Four days: 120 minutes of dishes against about 128, but 165 with the vacuuming against about
+    // (30 × 365 + 45 × 52 + 60 × 12) / 52 × 4 / 7 ≈ 154.
+    expect(ids({ tasks: [dishes, fridge], calendar: toFridays })).toContain('fridge@2026-10-01');
+    expect(ids({ tasks: [dishes, vacuum, fridge], calendar: toFridays })).not.toContain(
+      'fridge@2026-10-01',
+    );
+  });
+
+  it('looks ahead in plan weeks, so a transition week counts once', () => {
+    // The week of 5 October is busy. The fridge's window ends with the Thursday week of 22
+    // October; the transition week and that week are both away, so it is placed now.
+    const busy = {
+      tasks: [dishes, fridge, oneOff('paint', '2026-10-06')],
+      calendar: toThursdays,
+      week: date('2026-10-07'),
+    };
+    expect(ids(busy)).not.toContain('fridge@2026-10-01');
+    expect(ids({ ...busy, away: [away('2026-10-12', '2026-10-28')] })).toContain(
+      'fridge@2026-10-01',
+    );
+  });
+});
+
 describe('averageWeeklyMinutes (ADR-0004 §4, clarification)', () => {
   it('is the minutes the schedules produce in a typical week', () => {
     expect(

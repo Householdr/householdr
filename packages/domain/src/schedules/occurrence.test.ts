@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { frequencyRule } from './frequency';
 import { occurrences, oneOffOccurrence, type Occurrence, type Timing } from './occurrence';
 import type { Schedule } from './schedule';
-import { planWeekStart, type HouseholdCalendar } from './week';
+import type { HouseholdCalendar } from './week';
 
 const date = (iso: string) => Temporal.PlainDate.from(iso);
 const time = (iso: string) => Temporal.PlainTime.from(iso);
@@ -16,14 +16,18 @@ const schedule = (parts: Partial<Schedule>): Schedule => ({
 const windows = (list: Occurrence[]) =>
   list.map(({ date, window }) => [date.toString(), window.start.toString(), window.end.toString()]);
 const at = (local: string, offset: string) => `${local}${offset}[Europe/Brussels]`;
-
-describe('planWeekStart (ADR-0006 §1)', () => {
-  it('finds the week start day on or before the date', () => {
-    expect(planWeekStart(date('2026-10-07'), 1).toString()).toBe('2026-10-05');
-    expect(planWeekStart(date('2026-10-07'), 3).toString()).toBe('2026-10-07');
-    expect(planWeekStart(date('2026-10-07'), 7).toString()).toBe('2026-10-04');
-  });
-});
+// Monday weeks until 12 October 2026, then a ten-day transition week to Thursday weeks.
+const toThursdays: HouseholdCalendar = {
+  ...brussels,
+  weekStartDay: 4,
+  change: { from: date('2026-10-12'), previous: 1 },
+};
+const days = (list: Occurrence[]) =>
+  list.map(({ date, window }) => [
+    date.toString(),
+    window.start.toPlainDate().toString(),
+    window.end.toPlainDate().toString(),
+  ]);
 
 describe('fixed windows (ADR-0004 §4)', () => {
   const putOut: Timing = {
@@ -120,6 +124,25 @@ describe('flexible windows (ADR-0004 §4)', () => {
     expect(occurrence?.window.start.toString()).toBe(at('2026-10-04T00:00:00', '+02:00'));
   });
 
+  it('is the whole transition week when the start day changes (ADR-0006 §1)', () => {
+    expect(
+      days(
+        occurrences(
+          wednesdays,
+          { kind: 'flexible' },
+          date('2026-10-07'),
+          date('2026-10-28'),
+          toThursdays,
+        ),
+      ),
+    ).toEqual([
+      ['2026-10-07', '2026-10-05', '2026-10-12'],
+      ['2026-10-14', '2026-10-12', '2026-10-22'],
+      ['2026-10-21', '2026-10-12', '2026-10-22'],
+      ['2026-10-28', '2026-10-22', '2026-10-29'],
+    ]);
+  });
+
   it('lasts seven days and an hour in the week the clocks go back', () => {
     const [occurrence] = occurrences(
       wednesdays,
@@ -190,6 +213,21 @@ describe('floating windows (ADR-0004 §4, clarification)', () => {
     const sameWeek = schedule({ extraDates: [date('2026-10-07'), date('2026-10-09')] });
     expect(window(sameWeek, '2026-10-07')).toEqual(['2026-10-05', '2026-10-12']);
   });
+
+  it('counts a transition week as one of its weeks (ADR-0006 §1)', () => {
+    const floatIn = (s: Schedule, d: string) =>
+      days(occurrences(s, floating, date(d), date(d), toThursdays));
+    const monthly = schedule({ rules: [frequencyRule('monthly', date('2026-10-07'))] });
+    expect(floatIn(monthly, '2026-10-07')).toEqual([['2026-10-07', '2026-10-05', '2026-11-05']]);
+    expect(floatIn(schedule({ extraDates: [date('2026-10-07')] }), '2026-10-07')).toEqual([
+      ['2026-10-07', '2026-10-05', '2026-11-05'],
+    ]);
+    expect(floatIn(schedule({ extraDates: [date('2026-10-14')] }), '2026-10-14')).toEqual([
+      ['2026-10-14', '2026-10-12', '2026-11-12'],
+    ]);
+    const sameWeek = schedule({ extraDates: [date('2026-10-14'), date('2026-10-20')] });
+    expect(floatIn(sameWeek, '2026-10-14')).toEqual([['2026-10-14', '2026-10-12', '2026-10-22']]);
+  });
 });
 
 describe('one-off tasks (ADR-0004 §4)', () => {
@@ -206,6 +244,15 @@ describe('one-off tasks (ADR-0004 §4)', () => {
     expect([window.start.toString(), window.end.toString()]).toEqual([
       at('2026-10-05T00:00:00', '+02:00'),
       at('2026-10-21T00:00:00', '+02:00'),
+    ]);
+  });
+
+  it('takes the transition week as its week (ADR-0006 §1)', () => {
+    const plain = oneOffOccurrence(date('2026-10-14'), undefined, toThursdays);
+    const due = oneOffOccurrence(date('2026-10-14'), date('2026-10-25'), toThursdays);
+    expect(days([plain, due])).toEqual([
+      ['2026-10-14', '2026-10-12', '2026-10-22'],
+      ['2026-10-14', '2026-10-12', '2026-10-26'],
     ]);
   });
 

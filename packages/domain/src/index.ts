@@ -80,7 +80,7 @@ export {
   type Interval,
   type SinceLastDone,
 } from './schedules/since-last-done';
-export { planWeekStart, type HouseholdCalendar } from './schedules/week';
+export { changeStartDay, planWeek, type HouseholdCalendar, type PlanWeek } from './schedules/week';
 export { intervalTimesPerYear, timesPerYear } from './schedules/yearly';
 export { fairFractions, type PortionBasis } from './shares/fair-portion';
 export {
