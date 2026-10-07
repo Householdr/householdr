@@ -1,4 +1,12 @@
 // Business rules as pure functions over plain data: no I/O, no clock, no randomness (ADR-0008 §3, CODE-5).
+export {
+  availabilityInWeek,
+  availableWindows,
+  isAvailableDuring,
+  type Absence,
+  type Availability,
+  type AvailabilityPattern,
+} from './availability/availability';
 export { expand } from './schedules/expand';
 export { frequencyRule, type Frequency } from './schedules/frequency';
 export {
