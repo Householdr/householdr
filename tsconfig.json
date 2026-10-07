@@ -3,7 +3,9 @@
   "compilerOptions": {
     "types": ["node"],
     "allowJs": true,
-    "checkJs": true
+    "checkJs": true,
+    "lib": ["es2024", "esnext.temporal"],
+    "allowImportingTsExtensions": true
   },
-  "include": ["*.ts", "*.js"]
+  "include": ["*.ts", "*.js", "scripts"]
 }

@@ -81,6 +81,10 @@ jobs:
         if: ${{ !cancelled() }}
         run: pnpm test --reporter=default --reporter=github-actions
 
+      - name: '🧹 Lint: Flag expiry'
+        if: ${{ !cancelled() }}
+        run: pnpm flags:check
+
       # The same scan as the pre-commit hook, over the pull request's commits (ADR-0021 §4).
       # Keep the version in step with .pre-commit-config.yaml.
       - name: '🧹 Lint: Secrets'
