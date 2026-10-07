@@ -1,0 +1,9 @@
+# Local secret scan before a commit leaves your machine (ADR-0021 §4).
+# CI runs the same scan in 🔎 Verify. Set up once with:
+#   pipx install pre-commit   # or: brew install pre-commit
+#   pre-commit install
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: 83d9cd684c87d95d656c1458ef04895a7f1cbd8e # frozen: v8.30.1
+    hooks:
+      - id: gitleaks

@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+.svelte-kit/
+.output/
+*.tsbuildinfo
+
+# Tests
+coverage/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Environment: never commit real configuration (ADR-0009 §11, ADR-0021 §4).
+# Only .env.example, with placeholder values, is committed.
+.env
+.env.*
+!.env.example
+
+# Secrets and local data
+*.pem
+*.key
+*.p12
+*.dump
+*.sql.gz
+pgdata/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Editors and OS
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
