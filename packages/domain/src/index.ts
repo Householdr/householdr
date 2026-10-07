@@ -1,5 +1,15 @@
 // Business rules as pure functions over plain data: no I/O, no clock, no randomness (ADR-0008 §3, CODE-5).
 export {
+  allocate,
+  type Allocation,
+  type AllocationInput,
+  type AllocationMember,
+  type AllocationTask,
+  type Assignment,
+  type Reason,
+  type UnassignedCause,
+} from './allocation/allocate';
+export {
   isEligible,
   type Candidate,
   type Constraint,
