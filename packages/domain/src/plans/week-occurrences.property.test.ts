@@ -2,16 +2,37 @@ import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { occurrences, type Timing } from '../schedules/occurrence';
 import type { AwayPeriod } from '../schedules/since-last-done';
-import type { HouseholdCalendar } from '../schedules/week';
+import { planWeek, type HouseholdCalendar } from '../schedules/week';
 import { weekOccurrences, type PlanTask } from './week-occurrences';
 
-// Invariants of plan generation over generated households, run week after week (TEST-1). A run
-// expands schedules over a year for every week, so the runs are fewer and the timeouts longer.
+// Invariants of plan generation over generated households, run week after week (TEST-1), some
+// changing their week start day on the way (ADR-0006 §1). A run expands schedules over a year for
+// every week, so the runs are fewer and the timeouts longer.
 
-const calendar: HouseholdCalendar = { timeZone: 'Europe/Brussels', weekStartDay: 1 };
+const mondays: HouseholdCalendar = { timeZone: 'Europe/Brussels', weekStartDay: 1 };
 const first = Temporal.PlainDate.from('2026-10-05');
 const weeks = 12;
 const last = first.add({ weeks });
+const before = (a: Temporal.PlainDate, b: Temporal.PlainDate) =>
+  Temporal.PlainDate.compare(a, b) < 0;
+// Monday weeks, or a change to another start day from one of the simulated Mondays.
+const calendar: fc.Arbitrary<HouseholdCalendar> = fc
+  .option(
+    fc.tuple(
+      fc.constantFrom<HouseholdCalendar['weekStartDay']>(2, 3, 4, 5, 6, 7),
+      fc.integer({ min: 0, max: weeks - 2 }),
+    ),
+    { nil: undefined },
+  )
+  .map((change) =>
+    change
+      ? {
+          ...mondays,
+          weekStartDay: change[0],
+          change: { from: first.add({ weeks: change[1] }), previous: 1 as const },
+        }
+      : mondays,
+  );
 const evening: Timing = {
   kind: 'fixed',
   from: { dayOffset: 0, time: Temporal.PlainTime.from('18:00') },
@@ -24,6 +45,7 @@ const schedule = (rrule: string) => ({
 });
 
 const household = fc.record({
+  calendar,
   tasks: fc
     .tuple(
       fc.integer({ min: 10, max: 40 }),
@@ -86,11 +108,12 @@ const days = (from: Temporal.PlainDate, count: number) =>
 describe('plan generation invariants (ADR-0001 §7, ADR-0004 §4, ADR-0005 §5)', () => {
   it('plans every week at home, never inside an away period, and places each floating occurrence once', () => {
     fc.assert(
-      fc.property(household, ({ tasks, away }) => {
+      fc.property(household, ({ calendar, tasks, away }) => {
         const placedIn = new Map<string, Temporal.PlainDate>();
         const plannedWeeks: Temporal.PlainDate[] = [];
-        for (let w = 0; w < weeks; w++) {
-          const start = first.add({ weeks: w });
+        let start = first;
+        for (; before(start, last); start = planWeek(start, calendar).end) {
+          const length = start.until(planWeek(start, calendar).end).days;
           const result = weekOccurrences({
             week: start,
             calendar,
@@ -99,7 +122,7 @@ describe('plan generation invariants (ADR-0001 §7, ADR-0004 §4, ADR-0005 §5)'
             placedEarlier: new Set(placedIn.keys()),
             away,
           });
-          const wholeWeekAway = days(start, 7).every((d) => isAway(away, d));
+          const wholeWeekAway = days(start, length).every((d) => isAway(away, d));
           expect(result.planned).toBe(!wholeWeekAway);
           if (result.planned) plannedWeeks.push(start);
           const ids = result.occurrences.map((o) => o.id);
@@ -119,7 +142,7 @@ describe('plan generation invariants (ADR-0001 §7, ADR-0004 §4, ADR-0005 §5)'
           }
         }
         // Every floating occurrence whose window lies in the simulated weeks, and has a planned
-        // week, is placed exactly once, in a week of its window.
+        // week, is placed exactly once, in a week of its window. The simulation ran up to `start`.
         for (const task of tasks) {
           const r = task.recurrence;
           if (r.kind !== 'schedule' || r.timing.kind !== 'floating') continue;
@@ -139,7 +162,7 @@ describe('plan generation invariants (ADR-0001 §7, ADR-0004 §4, ADR-0005 §5)'
             if (placed) expect(inWindow(placed)).toBe(true);
             const simulated =
               Temporal.PlainDate.compare(first, from) <= 0 &&
-              Temporal.PlainDate.compare(until, last) <= 0;
+              Temporal.PlainDate.compare(until, start) <= 0;
             if (simulated && plannedWeeks.some(inWindow)) expect(placed).toBeDefined();
           }
         }
@@ -155,7 +178,7 @@ describe('plan generation invariants (ADR-0001 §7, ADR-0004 §4, ADR-0005 §5)'
           fc.tuple(fc.constant(h), fc.shuffledSubarray(h.tasks, { minLength: h.tasks.length })),
         ),
         fc.integer({ min: 0, max: weeks - 1 }),
-        ([{ tasks, away }, shuffled], w) => {
+        ([{ calendar, tasks, away }, shuffled], w) => {
           const input = {
             week: first.add({ weeks: w }),
             calendar,

@@ -1,4 +1,4 @@
-import { planWeekStart, type HouseholdCalendar } from '../schedules/week';
+import { planWeek, type HouseholdCalendar } from '../schedules/week';
 
 /**
  * What a member's default share depends on (ADR-0001 §4). Only children have a birth date
@@ -25,20 +25,21 @@ export interface ShareSettings {
 
 /**
  * A member's share for the plan week of `date`: the override or the default on the week's first
- * day, replaced by a temporary share on the days it covers, averaged over the seven days
- * (ADR-0001 §4, clarification).
+ * day, replaced by a temporary share on the days it covers, averaged over the week's days: seven,
+ * or the transition week's actual length (ADR-0001 §4, ADR-0006 §1, clarifications).
  */
 export function weekShare(
   settings: ShareSettings,
   date: Temporal.PlainDate,
   calendar: HouseholdCalendar,
 ): number {
-  const start = planWeekStart(date, calendar.weekStartDay);
+  const { start, end } = planWeek(date, calendar);
+  const length = start.until(end).days;
   const base = settings.override ?? defaultShare(settings.basis, start);
   let share = base;
-  for (let day = 0; day < 7; day++) {
+  for (let day = 0; day < length; day++) {
     const temporary = settings.temporary.find((t) => covers(t, start.add({ days: day })));
-    if (temporary) share += (temporary.share - base) / 7;
+    if (temporary) share += (temporary.share - base) / length;
   }
   return share;
 }

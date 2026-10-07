@@ -383,6 +383,24 @@ describe('ties (ADR-0001 §7, step 6)', () => {
     );
     expect(winners).toEqual(new Set(['ann', 'bob']));
   });
+
+  it('break the same way whichever day of the plan week is given, a transition week too', () => {
+    // Monday weeks to Thursday weeks from 12 October: one plan week from 12 to 21 October.
+    const toThursdays: HouseholdCalendar = {
+      ...brussels,
+      weekStartDay: 4,
+      change: { from: date('2026-10-12'), previous: 1 },
+    };
+    const winners = (day: string) =>
+      Array.from({ length: 12 }, (_, i) => {
+        const id = `task-${String(i)}`;
+        const occurrences = [occurrence('o', id, '2026-10-13T10:00')];
+        return who(
+          week({ week: date(day), calendar: toThursdays, tasks: [task(id, 30)], occurrences }),
+        ).o;
+      });
+    expect(winners('2026-10-21')).toEqual(winners('2026-10-12'));
+  });
 });
 
 describe('input checks', () => {

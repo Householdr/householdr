@@ -8,7 +8,7 @@ import {
 } from '../schedules/occurrence';
 import type { Schedule } from '../schedules/schedule';
 import { dueDate, type AwayPeriod, type Interval } from '../schedules/since-last-done';
-import { planWeekStart, type HouseholdCalendar } from '../schedules/week';
+import { planWeek, type HouseholdCalendar } from '../schedules/week';
 import { intervalTimesPerYear, timesPerYear } from '../schedules/yearly';
 
 /** How a task produces occurrences (ADR-0004). */
@@ -65,14 +65,13 @@ export interface WeekOccurrences {
 }
 
 /**
- * The occurrences of one plan week (ADR-0001 §7 step 1 with ADR-0002 §2, ADR-0004 §4 and §8, and
- * ADR-0005 §5, clarifications): those due this week, those still open from earlier weeks, and the
- * floating ones placed this week.
+ * The occurrences of one plan week (ADR-0001 §7 step 1 with ADR-0002 §2, ADR-0004 §4 and §8,
+ * ADR-0005 §5 and ADR-0006 §1, clarifications): those due this week, those still open from earlier
+ * weeks, and the floating ones placed this week.
  */
 export function weekOccurrences(input: WeekInput): WeekOccurrences {
   const { calendar } = input;
-  const start = planWeekStart(input.week, calendar.weekStartDay);
-  const end = start.add({ weeks: 1 });
+  const { start, end } = planWeek(input.week, calendar);
   const isAway = (day: Temporal.PlainDate) =>
     input.away.some(
       (p) =>
@@ -164,13 +163,16 @@ export function weekOccurrences(input: WeekInput): WeekOccurrences {
   }
 
   // Floating occurrences go into a quiet week, or into the last week of their window that has a
-  // plan, soonest end first (ADR-0004 §4, clarification).
+  // plan, soonest end first (ADR-0004 §4, clarification). A transition week's target follows its
+  // length (ADR-0006 §1, clarification).
   let total = [...due, ...kept].reduce((sum, o) => sum + cost(o), 0);
-  const average = averageWeeklyMinutes(input.tasks, start);
+  const target = (averageWeeklyMinutes(input.tasks, start) * start.until(end).days) / 7;
   const laterPlan = (w: Window) => {
     const last = w.end.toPlainDate();
-    for (let s = end; Temporal.PlainDate.compare(s, last) < 0; s = s.add({ weeks: 1 })) {
-      if (!awayThrough(s, s.add({ weeks: 1 }))) return true;
+    for (let s = end; Temporal.PlainDate.compare(s, last) < 0;) {
+      const next = planWeek(s, calendar).end;
+      if (!awayThrough(s, next)) return true;
+      s = next;
     }
     return false;
   };
@@ -182,7 +184,7 @@ export function weekOccurrences(input: WeekInput): WeekOccurrences {
       (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
   );
   for (const o of floating) {
-    if (total >= average && laterPlan(o.window)) continue;
+    if (total >= target && laterPlan(o.window)) continue;
     placed.push({ ...o, window: clip(o.window, week) });
     total += cost(o);
     for (const backlog of kept.filter((b) => b.task === o.task)) {

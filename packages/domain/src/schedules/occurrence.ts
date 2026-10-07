@@ -1,7 +1,7 @@
 import { expandWithRules, type ScheduleDate } from './expand';
 import { continuesAfter, spacing } from './rule';
 import type { Schedule } from './schedule';
-import { planWeekStart, type HouseholdCalendar } from './week';
+import { planWeek, type HouseholdCalendar } from './week';
 
 /** A local time a number of days from the schedule date, as in "day −1 at 18:00". */
 export interface WindowEdge {
@@ -28,8 +28,6 @@ export interface Occurrence {
   window: Window;
 }
 
-const fourWeeks = { weeks: 4 };
-
 /** The occurrences of a task whose schedule dates fall from `from` to `to`, both included. */
 export function occurrences(
   schedule: Schedule,
@@ -53,11 +51,11 @@ export function oneOffOccurrence(
   deadline: Temporal.PlainDate | undefined,
   calendar: HouseholdCalendar,
 ): Occurrence {
-  if (!deadline) return { date, window: weekWindow(date, 1, calendar) };
+  if (!deadline) return { date, window: weekWindow(date, calendar) };
   if (Temporal.PlainDate.compare(deadline, date) < 0) {
     throw new RangeError(`Deadline ${deadline.toString()} is before ${date.toString()}`);
   }
-  const start = planWeekStart(date, calendar.weekStartDay);
+  const { start } = planWeek(date, calendar);
   return { date, window: between(start, deadline.add({ days: 1 }), calendar) };
 }
 
@@ -71,10 +69,10 @@ function window(
     case 'fixed':
       return fixedWindow(date, timing.from, timing.to, calendar);
     case 'flexible':
-      return weekWindow(date, 1, calendar);
+      return weekWindow(date, calendar);
     case 'floating':
       return between(
-        planWeekStart(date, calendar.weekStartDay),
+        planWeek(date, calendar).start,
         floatingEnd(date, rule, schedule, calendar),
         calendar,
       );
@@ -100,29 +98,31 @@ function fixedWindow(
   return window;
 }
 
-function weekWindow(date: Temporal.PlainDate, weeks: number, calendar: HouseholdCalendar) {
-  const start = planWeekStart(date, calendar.weekStartDay);
-  return between(start, start.add({ weeks }), calendar);
+function weekWindow(date: Temporal.PlainDate, calendar: HouseholdCalendar) {
+  const { start, end } = planWeek(date, calendar);
+  return between(start, end, calendar);
 }
 
 // The first day of the week where a floating occurrence stops floating (ADR-0004 §4, clarification):
 // the earliest of the next occurrence's week, its rule's spacing (or four weeks for an extra date or
-// an ended rule), and never less than its own week.
+// an ended rule), and never less than its own week. Limits are plan week starts, and the four weeks
+// are plan weeks, so a transition week (ADR-0006 §1) counts as one.
 function floatingEnd(
   date: Temporal.PlainDate,
   rule: ScheduleDate['rule'],
   schedule: Schedule,
   calendar: HouseholdCalendar,
 ) {
-  const weekOf = (d: Temporal.PlainDate) => planWeekStart(d, calendar.weekStartDay);
-  const ownWeek = weekOf(date);
-  const limits = [rule ? weekOf(date.add(spacing(rule))) : ownWeek.add(fourWeeks)];
-  if (rule && !continuesAfter(rule, date)) limits.push(ownWeek.add(fourWeeks));
+  const weekOf = (d: Temporal.PlainDate) => planWeek(d, calendar).start;
+  const ownWeek = planWeek(date, calendar);
+  let fourWeeksOn = ownWeek.end;
+  for (let week = 1; week < 4; week++) fourWeeksOn = planWeek(fourWeeksOn, calendar).end;
+  const limits = [rule ? weekOf(date.add(spacing(rule))) : fourWeeksOn];
+  if (rule && !continuesAfter(rule, date)) limits.push(fourWeeksOn);
   const horizon = limits.reduce((a, b) => (Temporal.PlainDate.compare(a, b) <= 0 ? a : b));
   const [next] = expandWithRules(schedule, date.add({ days: 1 }), horizon);
   const end = next ? weekOf(next.date) : horizon;
-  const atLeast = ownWeek.add({ weeks: 1 });
-  return Temporal.PlainDate.compare(end, atLeast) < 0 ? atLeast : end;
+  return Temporal.PlainDate.compare(end, ownWeek.end) < 0 ? ownWeek.end : end;
 }
 
 // From 00:00 on `start` to 00:00 on `end`, in the household's time zone.

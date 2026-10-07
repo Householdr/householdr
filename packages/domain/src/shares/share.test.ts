@@ -102,4 +102,18 @@ describe('weekShare (ADR-0001 §4)', () => {
     const head = { ...adult, override: 0.5, temporary: [temporary('2026-10-05', '2026-10-30', 1)] };
     expect(weekShare(head, week, mondays)).toBeCloseTo(1);
   });
+
+  it('averages over the actual days of a transition week (ADR-0006 §1)', () => {
+    // Monday weeks to Friday weeks from 12 October: a four-day week, Monday to Thursday.
+    const toFridays: HouseholdCalendar = {
+      ...mondays,
+      weekStartDay: 5,
+      change: { from: week, previous: 1 },
+    };
+    const exams = { ...adult, temporary: [temporary('2026-10-14', '2026-10-18', 0.5)] };
+    expect(weekShare(exams, week, toFridays)).toBeCloseTo((2 + 2 * 0.5) / 4);
+    expect(weekShare(child('2010-10-14'), week, toFridays)).toBeCloseTo(
+      ageShare(date('2010-10-14'), week),
+    );
+  });
 });

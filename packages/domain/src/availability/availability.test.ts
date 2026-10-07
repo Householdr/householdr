@@ -58,6 +58,20 @@ describe('availabilityInWeek (ADR-0005 §2)', () => {
     expect(availabilityInWeek(trip, week, brussels)).toBe(5 / 7);
   });
 
+  it('counts over the actual length of a transition week (ADR-0006 §1)', () => {
+    // Monday weeks to Thursday weeks from 12 October: ten days, 240 hours.
+    const toThursdays: HouseholdCalendar = {
+      ...brussels,
+      weekStartDay: 4,
+      change: { from: week, previous: 1 },
+    };
+    const trip = {
+      ...nobodyAway,
+      absences: [{ from: date('2026-10-14'), to: date('2026-10-18') }],
+    };
+    expect(availabilityInWeek(trip, date('2026-10-20'), toThursdays)).toBe(5 / 10);
+  });
+
   it('takes out sudden unavailability', () => {
     const ill = { ...nobodyAway, unavailable: [window('2026-10-13T10:00', '2026-10-14T00:00')] };
     expect(availabilityInWeek(ill, week, brussels)).toBe((168 - 14) / 168);

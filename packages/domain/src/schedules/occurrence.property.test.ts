@@ -3,10 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { frequencyRule, type Frequency } from './frequency';
 import { occurrences, type Timing } from './occurrence';
 import type { Schedule } from './schedule';
-import { planWeekStart, type HouseholdCalendar } from './week';
+import { planWeek, type HouseholdCalendar } from './week';
 
 // Invariants of occurrence windows over generated schedules, timings and households (TEST-1),
-// including zones with daylight saving at midnight and in the southern hemisphere (TEST-2).
+// including zones with daylight saving at midnight and in the southern hemisphere (TEST-2), and
+// households that change their week start day (ADR-0006 §1).
 
 const origin = Temporal.PlainDate.from('2026-01-01');
 const day = fc.integer({ min: 0, max: 2 * 366 }).map((n) => origin.add({ days: n }));
@@ -27,17 +28,27 @@ const schedule: fc.Arbitrary<Schedule> = fc.record({
   extraDates: fc.array(day, { maxLength: 3 }),
   exceptionDates: fc.array(day, { maxLength: 2 }),
 });
-const calendar: fc.Arbitrary<HouseholdCalendar> = fc.record({
-  timeZone: fc.constantFrom(
-    'Europe/Brussels',
-    'America/New_York',
-    'America/Santiago',
-    'Australia/Sydney',
-    'Asia/Kolkata',
-    'UTC',
-  ),
-  weekStartDay: fc.constantFrom(1, 2, 3, 4, 5, 6, 7),
-});
+type Weekday = HouseholdCalendar['weekStartDay'];
+const weekday = fc.constantFrom<Weekday>(1, 2, 3, 4, 5, 6, 7);
+const calendar: fc.Arbitrary<HouseholdCalendar> = fc
+  .tuple(
+    fc.constantFrom(
+      'Europe/Brussels',
+      'America/New_York',
+      'America/Santiago',
+      'Australia/Sydney',
+      'Asia/Kolkata',
+      'UTC',
+    ),
+    weekday,
+    fc.option(fc.tuple(weekday, day), { nil: undefined }),
+  )
+  .map(([timeZone, weekStartDay, change]) => {
+    if (!change || change[0] === weekStartDay) return { timeZone, weekStartDay };
+    const [previous, near] = change;
+    const from = near.subtract({ days: (near.dayOfWeek - previous + 7) % 7 });
+    return { timeZone, weekStartDay, change: { from, previous } };
+  });
 const plainTime = fc
   .record({ hour: fc.integer({ min: 0, max: 23 }), minute: fc.constantFrom(0, 15, 30, 45) })
   .map((t) => Temporal.PlainTime.from(t));
@@ -84,11 +95,11 @@ describe('occurrence window invariants (ADR-0004 §4, §6)', () => {
           for (const { date, window } of occurrences(s, t, from, to, c)) {
             const start = window.start.toPlainDate();
             const end = window.end.toPlainDate();
-            expect(start.equals(planWeekStart(date, c.weekStartDay))).toBe(true);
-            expect(end.dayOfWeek).toBe(c.weekStartDay);
-            const weeks = start.until(end).days / 7;
-            if (t.kind === 'flexible') expect(weeks).toBe(1);
-            else expect(weeks).toBeGreaterThanOrEqual(1);
+            const own = planWeek(date, c);
+            expect(start.equals(own.start)).toBe(true);
+            expect(planWeek(end, c).start.equals(end)).toBe(true);
+            if (t.kind === 'flexible') expect(end.equals(own.end)).toBe(true);
+            else expect(Temporal.PlainDate.compare(end, own.end)).toBeGreaterThanOrEqual(0);
           }
         },
       ),
@@ -102,8 +113,8 @@ describe('occurrence window invariants (ADR-0004 §4, §6)', () => {
         list.forEach(({ date, window }, i) => {
           const next = list[i + 1];
           if (!next) return;
-          const nextWeek = planWeekStart(next.date, c.weekStartDay);
-          const sameWeek = nextWeek.equals(planWeekStart(date, c.weekStartDay));
+          const nextWeek = planWeek(next.date, c).start;
+          const sameWeek = nextWeek.equals(planWeek(date, c).start);
           if (!sameWeek)
             expect(
               Temporal.PlainDate.compare(window.end.toPlainDate(), nextWeek),

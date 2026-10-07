@@ -1,18 +1,26 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { planWeekStart, type HouseholdCalendar } from '../schedules/week';
+import { planWeek, type HouseholdCalendar } from '../schedules/week';
 import { ageShare, weekShare, type ShareSettings, type TemporaryShare } from './share';
 
-// Invariants of shares over generated members, birth dates and weeks (TEST-1).
+// Invariants of shares over generated members, birth dates and weeks, with and without a change of
+// week start day (TEST-1, ADR-0006 §1).
 
 const origin = Temporal.PlainDate.from('2026-01-01');
 const day = (max: number) => fc.integer({ min: 0, max }).map((n) => origin.add({ days: n }));
 const birthDate = fc.integer({ min: 0, max: 25 * 366 }).map((n) => origin.subtract({ days: n }));
 const share = fc.integer({ min: 0, max: 200 }).map((n) => n / 100);
-const calendar: fc.Arbitrary<HouseholdCalendar> = fc.record({
-  timeZone: fc.constant('Europe/Brussels'),
-  weekStartDay: fc.constantFrom(1, 2, 3, 4, 5, 6, 7),
-});
+type Weekday = HouseholdCalendar['weekStartDay'];
+const weekday = fc.constantFrom<Weekday>(1, 2, 3, 4, 5, 6, 7);
+const calendar: fc.Arbitrary<HouseholdCalendar> = fc
+  .tuple(weekday, fc.option(fc.tuple(weekday, day(60)), { nil: undefined }))
+  .map(([weekStartDay, change]) => {
+    const timeZone = 'Europe/Brussels';
+    if (!change || change[0] === weekStartDay) return { timeZone, weekStartDay };
+    const [previous, near] = change;
+    const from = near.subtract({ days: (near.dayOfWeek - previous + 7) % 7 });
+    return { timeZone, weekStartDay, change: { from, previous } };
+  });
 // Temporary shares that never overlap: each starts after the previous one ends.
 const temporaries: fc.Arbitrary<TemporaryShare[]> = fc
   .array(fc.tuple(fc.integer({ min: 0, max: 5 }), fc.integer({ min: 0, max: 9 }), share), {
@@ -38,15 +46,38 @@ const settings: fc.Arbitrary<ShareSettings> = fc.record(
   { requiredKeys: ['basis', 'temporary'] },
 );
 const base = (s: ShareSettings, d: Temporal.PlainDate, c: HouseholdCalendar) =>
-  s.override ??
-  (s.basis.role === 'child' ? ageShare(s.basis.birthDate, planWeekStart(d, c.weekStartDay)) : 1);
+  s.override ?? (s.basis.role === 'child' ? ageShare(s.basis.birthDate, planWeek(d, c).start) : 1);
 
 describe('share invariants (ADR-0001 §4)', () => {
   it('is the same for every day of a plan week', () => {
     fc.assert(
-      fc.property(settings, calendar, day(60), fc.integer({ min: 0, max: 6 }), (s, c, d, n) => {
-        const start = planWeekStart(d, c.weekStartDay);
-        expect(weekShare(s, start.add({ days: n }), c)).toBe(weekShare(s, start, c));
+      fc.property(settings, calendar, day(60), fc.integer({ min: 0, max: 9 }), (s, c, d, n) => {
+        const { start, end } = planWeek(d, c);
+        const other = start.add({ days: n % start.until(end).days });
+        expect(weekShare(s, other, c)).toBe(weekShare(s, start, c));
+      }),
+    );
+  });
+
+  it("is the mean of its days' shares, over the week's actual length", () => {
+    fc.assert(
+      fc.property(settings, calendar, day(60), (s, c, d) => {
+        const { start, end } = planWeek(d, c);
+        const daily: number[] = [];
+        for (
+          let day = start;
+          Temporal.PlainDate.compare(day, end) < 0;
+          day = day.add({ days: 1 })
+        ) {
+          const covering = s.temporary.find(
+            (t) =>
+              Temporal.PlainDate.compare(t.from, day) <= 0 &&
+              Temporal.PlainDate.compare(day, t.to) <= 0,
+          );
+          daily.push(covering ? covering.share : base(s, d, c));
+        }
+        const mean = daily.reduce((sum, share) => sum + share, 0) / daily.length;
+        expect(weekShare(s, d, c)).toBeCloseTo(mean, 12);
       }),
     );
   });

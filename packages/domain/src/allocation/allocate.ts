@@ -1,4 +1,4 @@
-import { planWeekStart, type HouseholdCalendar } from '../schedules/week';
+import { planWeek, type HouseholdCalendar } from '../schedules/week';
 import { isEligible, type Candidate, type TaskRules } from './eligibility';
 import { allocationUnits, type PlannedOccurrence } from './units';
 
@@ -150,7 +150,7 @@ export function allocate(input: AllocationInput): Allocation {
           (order.get(a.unit[0]?.id ?? '') ?? 0) - (order.get(b.unit[0]?.id ?? '') ?? 0),
       );
 
-  const seed = planWeekStart(input.week, input.calendar.weekStartDay).toString();
+  const seed = planWeek(input.week, input.calendar).start.toString();
   const score = (unit: readonly PlannedOccurrence[], m: AllocationMember, catchUp: boolean) => {
     let numerator = load.get(m.id) ?? 0;
     for (const part of unit) {

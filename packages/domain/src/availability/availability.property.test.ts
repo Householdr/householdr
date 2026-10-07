@@ -8,14 +8,25 @@ import {
   type Availability,
 } from './availability';
 
-// Invariants of availability over generated patterns, absences, zones and week starts (TEST-1).
+// Invariants of availability over generated patterns, absences, zones and week starts, with and
+// without a change of start day (TEST-1, ADR-0006 §1).
 
 const origin = Temporal.PlainDate.from('2026-01-01');
 const day = fc.integer({ min: 0, max: 365 }).map((n) => origin.add({ days: n }));
-const calendar: fc.Arbitrary<HouseholdCalendar> = fc.record({
-  timeZone: fc.constantFrom('Europe/Brussels', 'America/Santiago', 'Australia/Sydney', 'UTC'),
-  weekStartDay: fc.constantFrom(1, 2, 3, 4, 5, 6, 7),
-});
+type Weekday = HouseholdCalendar['weekStartDay'];
+const weekday = fc.constantFrom<Weekday>(1, 2, 3, 4, 5, 6, 7);
+const calendar: fc.Arbitrary<HouseholdCalendar> = fc
+  .tuple(
+    fc.constantFrom('Europe/Brussels', 'America/Santiago', 'Australia/Sydney', 'UTC'),
+    weekday,
+    fc.option(fc.tuple(weekday, day), { nil: undefined }),
+  )
+  .map(([timeZone, weekStartDay, change]) => {
+    if (!change || change[0] === weekStartDay) return { timeZone, weekStartDay };
+    const [previous, near] = change;
+    const from = near.subtract({ days: (near.dayOfWeek - previous + 7) % 7 });
+    return { timeZone, weekStartDay, change: { from, previous } };
+  });
 const plainTime = fc
   .record({ hour: fc.integer({ min: 0, max: 23 }), minute: fc.constantFrom(0, 30) })
   .map((t) => Temporal.PlainTime.from(t));
