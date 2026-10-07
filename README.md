@@ -17,11 +17,24 @@ service, and everything you need to host it yourself
 
 ## Status
 
-**Design phase.** The business logic and the tech stack are drafted as
-[architecture decision records](docs/adr/README.md); no code yet. ADRs move from `Draft` to
-`Accepted` once reviewed, and only accepted ADRs are built
-([ADR-0022](docs/adr/0022-development-standards-and-adr-first.md)). Self-hosting documentation and the
+**Stage 0: foundations.** The product is designed in
+[architecture decision records](docs/adr/README.md); ADRs move from `Draft` to `Accepted` once
+reviewed, and only accepted ADRs are built
+([ADR-0022](docs/adr/0022-development-standards-and-adr-first.md)). The workspace, the toolchain and
+the app skeletons are in place; the CI pipeline and the domain package come next, then everything a
+household would see. There is nothing to run or self-host yet: self-hosting documentation and the
 `compose.yaml` arrive with the first releases.
+
+| Package | Holds |
+|---|---|
+| `packages/domain` | The business rules, as pure functions |
+| `packages/db` | Schema, migrations and queries |
+| `packages/application` | Use cases: authorise, validate, run the transaction, emit events |
+| `apps/web` | The SvelteKit app: pages, and routes that call use cases |
+| `apps/worker` | Background jobs that call use cases |
+
+How they may depend on each other is in [ADR-0023](docs/adr/0023-application-layer.md) §2, and ESLint
+enforces it.
 
 ## Documentation
 
