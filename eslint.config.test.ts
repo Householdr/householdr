@@ -27,6 +27,7 @@ describe('layer boundaries (CODE-4, CODE-5, CODE-26)', () => {
     ['packages/application/src/x.ts', "import { env } from '$env/dynamic/private';"],
     ['apps/worker/src/x.ts', "import '@householdr/db';"],
     ['apps/worker/src/x.ts', "import '@householdr/domain';"],
+    ['apps/web/src/routes/x.ts', "import '@householdr/db';"],
   ])('%s rejects %s', async (filePath, code) => {
     expect(await ruleIds(filePath, code)).toEqual(['no-restricted-imports']);
   });
@@ -36,6 +37,8 @@ describe('layer boundaries (CODE-4, CODE-5, CODE-26)', () => {
     ['packages/application/src/x.ts', "import '@householdr/domain';"],
     ['packages/application/src/x.ts', "import '@householdr/db';"],
     ['apps/worker/src/x.ts', "import '@householdr/application';"],
+    ['apps/web/src/routes/x.ts', "import '@householdr/application';"],
+    ['apps/web/src/routes/x.ts', "import '@householdr/domain';"],
   ])('%s allows %s', async (filePath, code) => {
     expect(await ruleIds(filePath, code)).toEqual([]);
   });

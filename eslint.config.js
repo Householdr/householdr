@@ -109,10 +109,27 @@ export const boundaries = defineConfig(
       ],
     },
   },
+  {
+    files: ['apps/web/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@householdr/*', '!@householdr/application', '!@householdr/domain'],
+              message:
+                'Routes call use cases from the application package; domain only for previews (CODE-4, CODE-10).',
+            },
+          ],
+        },
+      ],
+    },
+  },
 );
 
 export default defineConfig(
-  globalIgnores(['**/dist/', '**/build/', '**/coverage/']),
+  globalIgnores(['**/dist/', '**/build/', '**/coverage/', '**/.svelte-kit/']),
   js.configs.recommended,
   tseslint.configs.strictTypeChecked,
   {
