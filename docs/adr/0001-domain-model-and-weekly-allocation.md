@@ -85,6 +85,11 @@ end date.
   0.68 at 13), recomputed for every new plan from the birth date. The curve is a starting point to be
   tuned; a head can override it for any child.
 
+> **Clarification (2026-10-07):** the curve uses the child's age in **whole years** on the first day
+> of the plan week, so the share changes on birthdays; a child under 4 has a share of **0** and gets
+> no occurrences. A temporary share that starts or ends mid-week applies **per day**: the week's share
+> is the average of each day's share.
+
 The reason for a reduced share (sickness, disability, pregnancy) is **not stored**. A free-text reason
 field would invite health data, a special category under GDPR article 9, and nothing in the algorithm
 needs it.
