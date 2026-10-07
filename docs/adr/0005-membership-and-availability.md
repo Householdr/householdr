@@ -81,6 +81,14 @@ keep producing occurrences that pile up as overdue work for the return. A head c
   ([ADR-0006](0006-plan-lifecycle-and-completion.md) §1).
 - Occurrences dated inside the period are **skipped**: closed as "away", neither missed nor rolled
   over. The next occurrence after the period is planned as usual.
+
+  > **Clarification (2026-10-07):** "inside the period" is judged by the occurrence's **window**,
+  > not its date ([ADR-0004](0004-recurrence-schedules.md) §4). An occurrence is skipped only when
+  > its whole window falls while the household is away; otherwise it is planned in the part that is
+  > at home. A bin put out the evening before is still planned if the household leaves the next
+  > morning; on the day of return, it can be done in what is left of its window, or follows its
+  > on-miss policy.
+
 - "Since last done" clocks **pause** for the period
   ([ADR-0004](0004-recurrence-schedules.md) §8), so the oven isn't suddenly overdue on the way back.
 - **Balances don't move**: nothing is owed for skipped occurrences

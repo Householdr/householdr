@@ -144,6 +144,13 @@ time it was done, not on the first Monday of the month. These tasks use a second
   ([ADR-0005](0005-membership-and-availability.md) §5).
 - For burden normalisation (§7) such a task counts 365 / N times a year.
 
+> **Clarification (2026-10-07):** an interval in months counts calendar months, and a day that
+> doesn't exist moves to the first day of the next month, as for rules (§3): last done on 31 January,
+> monthly, is due 1 March. Days the household is away (both ends of the period included) don't
+> count, so the due date moves on by those days and never falls while the household is away. A task
+> that was never done and whose start date falls while the household is away is due on the first
+> day back.
+
 The task editor offers it next to the simple frequencies: *every N days/weeks/months, counted from
 when it was last done*. Template tasks without a natural date default to it.
 
