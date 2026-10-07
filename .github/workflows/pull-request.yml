@@ -11,9 +11,10 @@ on:
 permissions:
   contents: read
 
-# A new push cancels the run for the previous one.
+# A new push cancels the run for the previous one. Draft and ready runs are kept apart, so marking a
+# draft ready doesn't cancel the draft's run on the same commit, whose result would then fail.
 concurrency:
-  group: pr-${{ github.event.pull_request.number }}
+  group: pr-${{ github.event.pull_request.number }}-${{ github.event.pull_request.draft }}
   cancel-in-progress: true
 
 jobs:
