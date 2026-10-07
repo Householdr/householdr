@@ -1,4 +1,4 @@
-name: Restore build
+name: '🗃️ Artifact: Restore build'
 description: Downloads the build artifact and unpacks it into the workspace, so a job runs without installing or building again.
 
 inputs:

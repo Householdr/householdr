@@ -1,5 +1,5 @@
 # Install and build once, then check from that build (ADR-0009 §5). Called by other workflows only.
-name: Pipeline
+name: '🚦 Pipeline'
 
 on:
   workflow_call:

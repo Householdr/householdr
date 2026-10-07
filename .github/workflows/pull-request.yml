@@ -1,6 +1,6 @@
 # What runs on a pull request (ADR-0009 §3): the title check always; the pipeline only for a pull
 # request that is ready for review and changes more than documentation.
-name: Pull request
+name: '🔀 Pull request'
 
 on:
   pull_request:
@@ -53,7 +53,7 @@ jobs:
           fi
 
   pipeline:
-    name: Pipeline
+    name: '🚦 Pipeline'
     needs: title
     if: >-
       !cancelled()
