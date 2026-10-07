@@ -45,6 +45,13 @@ without an account, never for other adults ([ADR-0018](0018-household-safety.md)
 `availability(m, week)` in [ADR-0001](0001-domain-model-and-weekly-allocation.md) §6 is the fraction of
 the week left available after these layers.
 
+> **Clarification (2026-10-07):** the layers combine as the pattern's windows (the whole week without
+> a pattern), minus planned absences (whole days in the household's time zone, both ends included)
+> and sudden unavailability. `availability(m, week)` is the time left over the week's actual length,
+> so 169 hours in the week the clocks go back. A member is **eligible** for an occurrence when they
+> are available during **any part** of its window: home from 18:00 is enough to bring the bin in by
+> 22:00 ([ADR-0004](0004-recurrence-schedules.md) §4).
+
 ### 3. Sudden unavailability mid-week
 
 Reporting sudden unavailability (illness, an emergency) after the plan is published:
