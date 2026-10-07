@@ -74,6 +74,12 @@ An "advanced" editor exposes weekday-of-month, multiple rules, seasons and excep
 `RRULE` syntax; the editor reads it back in plain language ("2nd and 4th Tuesday, except July–August:
 every Tuesday").
 
+> **Clarification (2026-10-07):** a date a rule asks for that doesn't exist (the 31st in a shorter
+> month, 29 February outside leap years) moves to the **first day of the next month**: monthly from
+> 31 January gives 1 March for February, and yearly from 29 February gives 1 March. Every rule is
+> evaluated with RFC 7529's `RSCALE=GREGORIAN;SKIP=FORWARD`, so a monthly chore never silently skips
+> a month and the rule stays standard.
+
 ### 4. From date to occurrence: offset and window
 
 Each task turns a schedule date into an occurrence window:
