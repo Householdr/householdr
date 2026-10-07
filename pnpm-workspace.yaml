@@ -11,9 +11,13 @@ catalog:
   '@sveltejs/kit': ^3.0.0
   '@sveltejs/vite-plugin-svelte': ^7.3.1
   '@types/node': ^26.6.4
+  '@types/pg': ^8.23.1
+  drizzle-kit: ^0.31.11
+  drizzle-orm: ^0.45.3
   eslint: ^10.12.0
   eslint-config-prettier: ^10.1.8
   fast-check: ^4.10.2
+  pg: ^8.23.1
   prettier: ^3.9.9
   rrule-temporal: ^2.2.8
   svelte: ^5.57.1
@@ -27,6 +31,8 @@ catalogPrune: true
 # Supply chain (ADR-0017 §8): only accept package versions that have been public for three days,
 # and run no install scripts unless they are allowed here.
 minimumReleaseAge: 4320
-allowBuilds: {}
+allowBuilds:
+  # drizzle-kit's esbuild finds its platform binary without its install script.
+  esbuild: false
 
 engineStrict: true

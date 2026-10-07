@@ -3,12 +3,21 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./testing": "./src/testing.ts"
   },
   "scripts": {
+    "generate": "drizzle-kit generate",
     "typecheck": "tsc"
   },
   "dependencies": {
-    "@householdr/domain": "workspace:*"
+    "@householdr/domain": "workspace:*",
+    "drizzle-orm": "catalog:",
+    "pg": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/pg": "catalog:",
+    "drizzle-kit": "catalog:"
   }
 }
