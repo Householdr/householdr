@@ -98,6 +98,13 @@ The extension point of [ADR-0021](0021-self-hosted-edition.md) §1 registers **u
 `application` terms) and the **routes and screens** that call them (in `web` terms). A Plus feature is
 built the same way as a core one, in its own package in `householdr-cloud`.
 
+> **Clarification (2026-10-07):** Plus routes reach the web app **at build time**: the hosted build
+> in `householdr-cloud` copies its route folders into `apps/web/src/routes/(plus)/` before building,
+> so Plus pages are ordinary SvelteKit routes and the core contains nothing about them. The other
+> parts of the extension point (use cases, menu entries, jobs, entitlement rules) are added when the
+> core has the thing they extend: the first use cases, the app shell's navigation, the job runner and
+> entitlements ([PRIN-2](../standards/principles.md)).
+
 ### 6. A future API is an adapter, not a rewrite
 
 There is still no public API ([ADR-0008](0008-tech-stack.md) §4). If native apps or integrations ever

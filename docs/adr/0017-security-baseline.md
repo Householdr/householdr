@@ -129,7 +129,7 @@ parsed. The hosting ADR adds an egress firewall on the containers as a second li
 - pnpm with a committed lockfile, installed with `--frozen-lockfile` in CI.
 - New package versions are only accepted after a **minimum release age** (pnpm's `minimumReleaseAge`,
   a few days), which keeps freshly hijacked versions out.
-- **Install scripts are blocked** except for an explicit allow-list (pnpm's `onlyBuiltDependencies`).
+- **Install scripts are blocked** except for an explicit allow-list (pnpm's `allowBuilds`, formerly `onlyBuiltDependencies`).
 - `📦 Dependencies: Audit` in the Bundle job fails on known high or critical vulnerabilities in
   production dependencies; Dependabot alerts are on.
 - Actions and base images are pinned by hash ([ADR-0009](0009-development-workflow-and-releases.md)

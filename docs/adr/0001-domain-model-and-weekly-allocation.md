@@ -1,6 +1,6 @@
 # ADR-0001: Domain model and weekly allocation
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Date:** 2026-10-03
 - **Deciders:** Jens
 - **Related:** [ADR-0002](0002-balance-ledger.md) (ledger), [ADR-0003](0003-burden-estimation.md) (how

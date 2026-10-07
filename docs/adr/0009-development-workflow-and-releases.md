@@ -1,6 +1,7 @@
 # ADR-0009: Development workflow, CI/CD and releases
 
-- **Status:** Accepted
+- **Status:** Accepted; for the core, its private-repository assumptions (§2 branch protection,
+  §4 minutes, §11) are superseded by [ADR-0024](0024-public-core-from-stage-0.md)
 - **Date:** 2026-10-04
 - **Deciders:** Jens
 - **Related:** [ADR-0008](0008-tech-stack.md) (toolchain, containers)
@@ -120,6 +121,11 @@ How this is wired:
   files), never with workflow-level path filters. A job skipped by its condition reports as passed,
   so required checks on a docs-only PR are satisfied; a workflow skipped by a path filter never
   reports, and the PR could not be merged.
+
+> **Clarification (2026-10-07):** change detection runs in its own small job next to the pipeline, and
+> a final `🚦 Pipeline: Result` job reports the pipeline's outcome as one check that always runs, so a
+> skipped pipeline still satisfies branch protection ([ADR-0024](0024-public-core-from-stage-0.md)
+> §2). The title check has a workflow of its own, so editing a title never replaces that result.
 
 ### 4. Keeping minutes low
 
@@ -257,6 +263,11 @@ so a run reads at a glance:
 | 🧪 | Test | `🧪 Test: Unit`, `🧪 Test: API`, `🧪 Test: E2E`, `🧪 Test: Report` |
 | 🐳 | Container | `🐳 Container: Build web`, `🐳 Container: Build worker` |
 | 🚀 | Publish | `🚀 Publish: Images`, `🚀 Publish: Release` |
+
+> **Clarification (2026-10-07):** workflows and composite actions are labelled too. Workflows get an
+> icon of their own (`🔀 Pull request`, `🚦 Pipeline`, the latter also for the job that calls it);
+> composite actions use the category of what they do (`📦 Dependencies: Setup Node.js and pnpm`,
+> `🗃️ Artifact: Restore build`).
 
 ### 11. Repositories and secrets
 
