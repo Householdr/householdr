@@ -24,6 +24,15 @@ export {
   type Availability,
   type AvailabilityPattern,
 } from './availability/availability';
+export {
+  completionCredits,
+  rebalanceRates,
+  settleWeek,
+  type CostedTask,
+  type Points,
+  type RebalancePreset,
+  type WeekSettlement,
+} from './ledger/settlement';
 export { expand } from './schedules/expand';
 export { frequencyRule, type Frequency } from './schedules/frequency';
 export {
