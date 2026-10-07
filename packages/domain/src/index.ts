@@ -20,3 +20,4 @@ export {
   type SinceLastDone,
 } from './schedules/since-last-done';
 export { planWeekStart, type HouseholdCalendar } from './schedules/week';
+export { intervalTimesPerYear, timesPerYear } from './schedules/yearly';
