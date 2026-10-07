@@ -25,6 +25,12 @@ export {
   type AvailabilityPattern,
 } from './availability/availability';
 export {
+  estimateBurdens,
+  type BurdenEstimate,
+  type BurdenTask,
+  type Evidence,
+} from './burdens/estimate';
+export {
   completionCredits,
   rebalanceRates,
   settleWeek,
