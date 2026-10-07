@@ -67,6 +67,15 @@ the week by default, which makes balancing easier.
   adult becomes head ([ADR-0018](0018-household-safety.md) §2). A head can't remove or demote another
   head ([ADR-0018](0018-household-safety.md) §4).
 
+> **Clarification (2026-10-07):** the successor is the longest-standing adult **with an account**,
+> who can act as head once they sign in with two factors; profiles without an account are skipped,
+> and the last such adult is warned that leaving closes the household
+> ([ADR-0018](0018-household-safety.md) §2). Any head can propose a new head, who must accept
+> ([ADR-0010](0010-identity-invitations-and-childrens-accounts.md) §3). Besides their own things,
+> members pick up others' work and log completions on someone's behalf
+> ([ADR-0002](0002-balance-ledger.md) §4, [ADR-0006](0006-plan-lifecycle-and-completion.md) §4), and
+> any member with an account, children included, can add one-off tasks (ADR-0006 §3, clarification).
+
 ### 3. Children
 
 - Children are first-class members, with a share that scales with age (§4) and age-based eligibility.

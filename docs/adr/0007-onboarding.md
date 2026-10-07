@@ -31,7 +31,9 @@ consent work is the identity ADR's concern.)
 ### 2. The setup flow
 
 Only the first two steps are required. Every later step has a working default and can be skipped and
-revisited from settings.
+revisited from settings. The household's name, time zone, language and country can be changed later
+by any head, which the activity log shows ([ADR-0018](0018-household-safety.md) §5); a new country's
+consent age applies from then on ([ADR-0010](0010-identity-invitations-and-childrens-accounts.md) §9).
 
 | # | Step | Default if skipped |
 |---|---|---|
@@ -60,7 +62,8 @@ Week start may be days away. At step 7 the head chooses:
   ([ADR-0003](0003-burden-estimation.md) §2).
 - On first login, each member is offered a short **calibration round** of the comparison game (about ten
   pairs, under a minute), skippable. Children can play it too. A head can start a round for a child
-  without an account, on a shared device.
+  without an account, on a shared device, and hands it over: the answers are never shown afterwards,
+  only that the round was done ([ADR-0003](0003-burden-estimation.md) §5).
 - There are no special ledger rules for the first weeks. Balances start at 0 and the normal rebalance
   rate applies; a plan that turns out lopsided while estimates settle evens out through the ledger like
   any other week.

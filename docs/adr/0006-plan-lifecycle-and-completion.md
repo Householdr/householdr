@@ -35,6 +35,8 @@ lengthened to reach the new start day, and its fair portions are computed over i
 Publishing is automatic so the household never ends up without a plan because nobody opened the app.
 A head can publish early.
 
+> **Clarification (2026-10-07):** only heads see the draft until it is published.
+
 ### 3. After publishing
 
 The published plan is **frozen**: re-running the allocator never reshuffles assignments already made.
@@ -51,6 +53,10 @@ Changes after publishing are explicit events, each with its reason:
 Re-allocation after publishing runs the normal allocator on the affected occurrences only, with the
 current loads of the week as its starting point.
 
+> **Clarification (2026-10-07):** any member with an account, children included, can add a one-off
+> task, while a draft is open or after publishing. A member edits or removes only one-offs they
+> added, until one is done; heads can edit or remove any.
+
 ### 4. Completion
 
 - An occurrence is completed with **one tap** by the assignee, or by anyone on their behalf; the
@@ -61,6 +67,11 @@ current loads of the week as its starting point.
   then stay *pending* until a head approves them, and count in the ledger once approved.
 - A completion can be undone by whoever logged it, or by a head, within the plan week. After settlement,
   corrections go through a head as a ledger entry.
+
+> **Clarification (2026-10-07):** any head approves a child's completions, and approval covers
+> everything the child is credited for: their own tasks, pick-ups, extra work and "done together". A
+> completion can also be undone by any member credited with it; undoing someone else's completion is
+> logged ([ADR-0018](0018-household-safety.md) §5).
 
 ### 5. Notifications (business rules)
 

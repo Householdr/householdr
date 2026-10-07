@@ -1,6 +1,6 @@
 # ADR-0010: Identity, invitations and children's accounts
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Date:** 2026-10-04
 - **Deciders:** Jens
 - **Related:** [ADR-0001](0001-domain-model-and-weekly-allocation.md) (roles, children),
@@ -44,10 +44,9 @@ set no lower age. Below that age, a person with parental responsibility has to c
   ([ADR-0012](0012-privacy-and-data-protection.md) §2). Everything about
   chores (role, share, balance, burdens) belongs to a membership.
 - **There are only two ways in**, and both are age-checked:
-  - **Creating a household** requires confirming "I am 18 or older". Heads are adults
-    ([ADR-0001](0001-domain-model-and-weekly-allocation.md) §3), and no birth date is stored for
-    adults ([ADR-0012](0012-privacy-and-data-protection.md) §2), so a declaration is the
-    proportionate check.
+  - **Creating a household** requires confirming "I am 18 or older". Heads are adults (§7), and no
+    birth date is stored for adults ([ADR-0012](0012-privacy-and-data-protection.md) §2), so a
+    declaration is the proportionate check.
   - **Accepting an invitation** (§5): the head has already set the profile's role, and for a child
     the birth date. An invitation for a child is only possible from the consent age (§9); below it,
     the child gets a managed account (§7).
@@ -73,19 +72,22 @@ set no lower age. Below that age, a person with parental responsibility has to c
 - The member is e-mailed when a new device signs in, and when their password, e-mail address,
   passkeys or two-factor settings change.
 
-### 3. Heads must use two factors
+### 3. Heads and guardians must use two factors
 
-Heads manage children's data, remove members and approve devices for children, so a head account must
-never depend on a password alone:
+Heads manage children's data and remove members, and guardians approve children's devices (§7, §9),
+so a head's or a guardian's account must never depend on a password alone:
 
-- A head's account has **at least one passkey, or a password with TOTP**. A head with a password must
-  have TOTP on; a head without a password needs nothing more.
+- Their account has **at least one passkey, or a password with TOTP**. One with a password must have
+  TOTP on; one without a password needs nothing more.
 - **Creating a household** includes securing the account this way, as part of onboarding step 1
   ([ADR-0007](0007-onboarding.md) §2). With a passkey it is one tap.
-- **Promoting a member to head** takes effect only once that member's account meets the rule; until
-  then the promotion waits, and they are asked to set it up.
-- A head who removes their last passkey or turns off TOTP while they still have a password is
-  refused, with the reason.
+- **Promoting a member to head**: any head can propose another adult member with an account. It takes
+  effect once that adult accepts and their account meets the rule; until then the promotion waits,
+  and they are asked to set it up. A successor named by a leaving head can decline in the same way
+  ([ADR-0018](0018-household-safety.md) §2).
+- **Becoming a guardian** (§9) waits for the same rule.
+- A head or guardian who removes their last passkey or turns off TOTP while they still have a
+  password is refused, with the reason.
 
 ### 4. Device sign-in
 
@@ -133,10 +135,12 @@ Rules:
 - The link is not tied to an e-mail address, because heads often don't know or don't want to type one,
   and people sign up with the address they use. Whoever holds the link can accept it, so the head sees
   who accepted (name and e-mail) and can **unlink** an account from a profile if the wrong person did.
-  The profile and its history stay; only the link to the account goes.
+  The profile and its history stay; only the link to the account goes. Unlinking needs a fresh
+  sign-in (§6), is shown in the activity log ([ADR-0018](0018-household-safety.md) §5), and e-mails
+  the person at the account's address. A head can't unlink another head's account (ADR-0018 §4).
 - An account can be linked to at most one profile per household.
 - A profile with history keeps it when linked: the person takes over their own balance and burdens.
-- Invitations are for adults and for children taking over their own account (§8). A child below the
+- Invitations are for adults and for children taking over their own account (§7). A child below the
   consent age gets a managed account instead (§7).
 
 ### 6. Sessions
@@ -158,7 +162,7 @@ A child can take part in three ways, in increasing independence:
 
 | Level | Who it is for | How the child gets in |
 |---|---|---|
-| **Profile only** (default) | Young children | No sign-in. Completions are logged on their behalf; a head can open the comparison game for them on a shared device ([ADR-0007](0007-onboarding.md) §4) |
+| **Profile only** (default) | Young children | No sign-in. Completions are logged on their behalf; a head can open the comparison game for them on a shared device and hand it over ([ADR-0007](0007-onboarding.md) §4) |
 | **Managed account** | Children below the digital consent age who use their own (or a family) device | A guardian approves the child's device (§4). No e-mail, username or password |
 | **Own account** | From the digital consent age | The child adds and verifies their own e-mail address; from then on it is an ordinary account that the child controls |
 
@@ -177,9 +181,21 @@ A child can take part in three ways, in increasing independence:
   each other's view; completions still record who logged them.
 - Guardians see the child's devices and can sign any of them out. Two-factor is not offered: guardians
   are the recovery path.
+- Guardians set the account's notification preferences
+  ([ADR-0014](0014-notifications-and-reminders.md) §3). Once the child takes the account over, they
+  are the child's.
 - The child sees exactly what any member of their household sees ([ADR-0002](0002-balance-ledger.md)
   §6), and their comparison-game answers are as private from heads as anyone's
   ([ADR-0003](0003-burden-estimation.md) §5).
+
+**Taking part**
+
+- A child with an account acts like any member: they manage their own availability (heads can too),
+  propose and accept swaps, pick up work, log completions and add one-off tasks
+  ([ADR-0005](0005-membership-and-availability.md) §2, [ADR-0002](0002-balance-ledger.md) §4–§5,
+  [ADR-0006](0006-plan-lifecycle-and-completion.md) §3, clarifications).
+- For a profile without an account, a head acts on its behalf, and the activity log shows it
+  ([ADR-0018](0018-household-safety.md) §5).
 
 **Growing up**
 
@@ -201,15 +217,21 @@ A child can take part in three ways, in increasing independence:
 - **Managed accounts** are recovered by a guardian approving a device again.
 - **Lost everything** (no device, password, passkey, authenticator or recovery code): there is no back
   door. A head can make a new invitation for the member's profile, so the person can link a **new**
-  account and keep their household history. The old account is closed.
+  account and keep their household history. The old account is closed. This unlinks the old account
+  as in §5, with the same fresh sign-in, log entry and e-mail.
 - Every recovery ends all other sessions and e-mails the member.
 
 ### 9. Guardians and parental consent
 
 - A **guardian** is an adult account with parental responsibility for a child. Guardianship belongs
   to the child's **account**, not to a household, because a child of separated parents has one account
-  in two households ([ADR-0005](0005-membership-and-availability.md) §1). Guardians are heads, so
-  they always sign in with two factors (§3).
+  in two households ([ADR-0005](0005-membership-and-availability.md) §1). It is a role of its own: a
+  guardian needn't be a head anywhere, and stays a guardian after stepping down as head or leaving a
+  household. Guardians sign in with two factors, like heads (§3).
+- Guardian powers cover the child's **account**: approving devices, seeing and ending sessions,
+  consent, notification preferences, recovery and deletion. They are checked against the child's
+  account, not a household membership. In a household, a guardian sees only what their role there
+  allows ([ADR-0018](0018-household-safety.md) §6).
 - The head who creates a child's profile becomes its first guardian. No guardian can remove another;
   each can only step down ([ADR-0018](0018-household-safety.md) §6). A guardian can invite another
   adult as co-guardian (the other parent, possibly in another household) with the same kind of link
@@ -222,7 +244,8 @@ A child can take part in three ways, in increasing independence:
   Netherlands, 16 where no lower age applies). This adds a **country** to the household, set in
   onboarding step 1 and detected from the time zone
   ([ADR-0007](0007-onboarding.md) §2). For a child in two households in different countries, the
-  higher age applies.
+  higher age applies. Any head can change the country later; the new consent age applies from then
+  on, to new invitations, managed accounts and take-overs, and existing accounts stay as they are.
 - What is stored about children, the legal basis for processing, retention and deletion are the
   privacy ADR's subject.
 
@@ -230,6 +253,10 @@ A child can take part in three ways, in increasing independence:
 
 - **Leaving a household** ends a membership ([ADR-0005](0005-membership-and-availability.md) §4); the
   account stays.
+- **A child can't leave a household on their own.** Any head of the household can remove a child;
+  that touches neither the child's account, its guardians nor its other households, and the guardians
+  are told. From the consent age, a child can still download their data and delete their own account
+  ([ADR-0012](0012-privacy-and-data-protection.md) §6).
 - **Deleting an account** ends all its memberships; each household keeps the member's history under
   their name as a profile without an account. A guardian can delete a managed account. How long
   anything is kept afterwards belongs to the privacy ADR.

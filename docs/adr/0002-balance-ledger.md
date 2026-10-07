@@ -107,6 +107,13 @@ swap arithmetic.
 
 The UI shows the effect on both balances before the other member accepts.
 
+> **Clarification (2026-10-07):** children with an account propose, accept and pick up work like any
+> member. For a profile without an account, a head does it on their behalf, and the activity log
+> shows it ([ADR-0010](0010-identity-invitations-and-childrens-accounts.md) §7,
+> [ADR-0018](0018-household-safety.md) §5). When approval is on for a child, everything they are
+> credited for waits for it: their own tasks, pick-ups, extra work and "done together"
+> ([ADR-0006](0006-plan-lifecycle-and-completion.md) §4, clarification).
+
 ### 6. Balances are visible to the whole household
 
 Every member sees every member's balance and its history (detailed history as far back as the

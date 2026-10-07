@@ -1,6 +1,6 @@
 # ADR-0017: Security baseline
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Date:** 2026-10-04
 - **Deciders:** Jens
 - **Related:** [ADR-0008](0008-tech-stack.md) §9 (row-level security),

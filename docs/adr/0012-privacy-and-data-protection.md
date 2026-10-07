@@ -1,6 +1,6 @@
 # ADR-0012: Privacy and data protection
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Date:** 2026-10-04
 - **Deciders:** Jens
 - **Related:** [ADR-0001](0001-domain-model-and-weekly-allocation.md) §4 (no reasons for shares),
@@ -88,6 +88,13 @@ What is deliberately **not** stored:
 | Exact completion times | ✅ (own) | Day only | Day only | Day only | Only as below |
 | Own burden estimates and answers | ✅ | ❌ | ❌ (average only, §3 of ADR-0003) | ❌ | Only as below |
 | Sessions, devices, security records | ✅ | ❌ | ❌ | ✅ for managed accounts, without location | Only as below |
+| Household activity log ([ADR-0018](0018-household-safety.md) §5) | ✅ | ✅ | ✅ | As members | Only as below |
+
+Exact completion times are shown to others for fixed-window tasks, where the window is the point
+([ADR-0018](0018-household-safety.md) §3). Guardians see a child's availability and share only in
+households they belong to themselves (ADR-0018 §6); children with an account see what any member sees
+and edit their own availability, which heads can edit too
+([ADR-0010](0010-identity-invitations-and-childrens-accounts.md) §7).
 
 **The operator** (whoever runs the platform) has no admin screen that shows household content.
 Production data is opened only to fix a problem a member reported or to handle a security incident,
@@ -139,12 +146,15 @@ Self-service wherever possible, so exercising a right never needs an e-mail to u
   credentials, sessions, security records and burden evidence at once. The household's records of what
   the person did stay, because the other members' balances depend on them, but the person chooses
   whether they appear under their **name** or as **"Former member"**.
-- **Household deletion**: the last head can delete a household; everything in it is deleted after a
-  14-day grace period in which it can be restored.
+- **Household deletion**: any head can start deleting a household; it goes ahead once every other
+  head has confirmed. Everything in it is deleted after a 14-day grace period, in which any of those
+  heads can restore it.
 - **Objection and restriction**: by contacting us, answered within one month, as are all requests.
-- **Profiles without an account**: the head who created a profile can correct or delete it. When the
-  person links an account, they see everything that was recorded about them and take over these
-  rights themselves.
+- **Profiles**: any head can correct or delete a profile without an account. When the person links
+  an account, they see everything that was recorded about them and take over these rights
+  themselves: they correct their own name, while heads keep a child's birth date and role (the switch
+  to adult at 18 stays automatic, [ADR-0010](0010-identity-invitations-and-childrens-accounts.md)
+  §7). Nobody can turn an adult with an account into a child.
 
 ### 7. Children
 
