@@ -42,6 +42,10 @@ A member's availability in a week is built from three layers, the later ones ove
 Members manage their own pattern and absences. Heads manage them for children and for profiles
 without an account, never for other adults ([ADR-0018](0018-household-safety.md) §4).
 
+> **Clarification (2026-10-07):** a child with an account manages their own availability like any
+> member, and heads can manage it too
+> ([ADR-0010](0010-identity-invitations-and-childrens-accounts.md) §7).
+
 `availability(m, week)` in [ADR-0001](0001-domain-model-and-weekly-allocation.md) §6 is the fraction of
 the week left available after these layers.
 
@@ -76,6 +80,10 @@ account.
 - A member who **rejoins** later starts at 0 again; the old history stays visible.
 - The last head can always leave; they are asked to name a successor, and otherwise the
   longest-standing adult becomes head ([ADR-0018](0018-household-safety.md) §2).
+
+> **Clarification (2026-10-07):** that is the longest-standing adult **with an account**, who can act
+> as head once they sign in with two factors; the last such adult is warned that leaving closes the
+> household ([ADR-0018](0018-household-safety.md) §2).
 
 ### 5. The household is away
 

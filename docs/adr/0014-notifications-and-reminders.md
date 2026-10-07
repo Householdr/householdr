@@ -59,7 +59,8 @@ messages, re-engagement nudges ("we miss you"), and promotional **push** notific
 - Each member turns each category on or off, per channel, from one settings page. Mandatory messages
   (security and account) are shown as on and locked, with the reason.
 - **Children's managed accounts** have push **off by default**; a guardian can turn reminders on for
-  them. Children never get e-mail (they have no address,
+  them, and sets the account's other preferences (quiet hours, daily overview) until the child takes
+  the account over. Children never get e-mail (they have no address,
   [ADR-0010](0010-identity-invitations-and-childrens-accounts.md) §7).
 - Preferences belong to the account, so a member of two households sets them once; each notification
   names the household it comes from.
