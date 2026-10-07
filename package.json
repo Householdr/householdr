@@ -9,6 +9,7 @@
   },
   "scripts": {
     "verify": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test",
+    "build": "pnpm --recursive build",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
