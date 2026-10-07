@@ -137,7 +137,7 @@ Rules:
   who accepted (name and e-mail) and can **unlink** an account from a profile if the wrong person did.
   The profile and its history stay; only the link to the account goes. Unlinking needs a fresh
   sign-in (§6), is shown in the activity log ([ADR-0018](0018-household-safety.md) §5), and e-mails
-  the person at the account's address.
+  the person at the account's address. A head can't unlink another head's account (ADR-0018 §4).
 - An account can be linked to at most one profile per household.
 - A profile with history keeps it when linked: the person takes over their own balance and burdens.
 - Invitations are for adults and for children taking over their own account (§7). A child below the

@@ -80,13 +80,15 @@ Heads run the household; they don't run other adults.
   unavailable, since they can't always act for themselves. Burden answers and exact completion times
   stay private for children too (§3), and a child's sign-in methods, sessions and devices are for
   their guardians only (§6, [ADR-0010](0010-identity-invitations-and-childrens-accounts.md) §7).
-- **Heads cannot remove or demote another head.** A head can only step down or leave themselves. Two
-  heads who can't agree can each leave and start their own household; nobody can take the household,
-  or the children's accounts, from the other. Deleting the household needs every head to agree
-  ([ADR-0012](0012-privacy-and-data-protection.md) §6).
+- **Heads cannot remove or demote another head**, or unlink their account
+  ([ADR-0010](0010-identity-invitations-and-childrens-accounts.md) §5). A head can only step down or
+  leave themselves. Two heads who can't agree can each leave and start their own household; nobody
+  can take the household, or the children's accounts, from the other. Deleting the household needs
+  every head to agree ([ADR-0012](0012-privacy-and-data-protection.md) §6).
 - **Shares are visible to heads and to the member themselves only**. Other members see balances,
   which already take shares into account, but not the share values, which could reveal illness or
-  disability.
+  disability. Any head can change a share, their own included; the activity log shows that it
+  changed (§5).
 
 ### 5. Power is visible
 
