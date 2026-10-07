@@ -82,7 +82,8 @@ describe('households', () => {
     expect(await refusal(addHousehold(change))).toBeUndefined();
     expect(await refusal(addHousehold({ ...change, weekStartPreviousDay: null }))).toBe(broken);
     expect(await refusal(addHousehold({ ...change, weekStartChangeFrom: null }))).toBe(broken);
-    expect(await refusal(addHousehold({ ...change, weekStartPreviousDay: 4 }))).toBe(broken);
+    // Monday weeks "changing" to Monday weeks, from a Monday: no change at all.
+    expect(await refusal(addHousehold({ ...change, weekStartDay: 1 }))).toBe(broken);
     expect(await refusal(addHousehold({ ...change, weekStartChangeFrom: '2026-10-13' }))).toBe(
       broken,
     );

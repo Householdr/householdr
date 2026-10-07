@@ -105,26 +105,25 @@ describe('connect (ADR-0008 §9)', () => {
     await expect(connect(testServerUrl())).rejects.toThrow('bypasses row-level security');
   });
 
-  it('refuses a role with BYPASSRLS', async () => {
+  // The server's own superuser also has BYPASSRLS, so each attribute gets a role of its own.
+  it.each([
+    ['a superuser without BYPASSRLS', 'householdr_test_superuser', 'superuser nobypassrls'],
+    ['a role with BYPASSRLS', 'householdr_test_bypass', 'nosuperuser bypassrls'],
+  ])('refuses %s', async (_, role, attributes) => {
     const admin = new pg.Client({ connectionString: testServerUrl() });
     await admin.connect();
     try {
-      await admin.query(`
-        do $$ begin
-          create role householdr_test_bypass nologin bypassrls;
-        exception when duplicate_object or unique_violation then null;
-        end $$`);
+      await admin.query(`drop role if exists ${role}`);
+      await admin.query(`create role ${role} nologin ${attributes}`);
+      const pool = new pg.Pool({ connectionString: testServerUrl(), options: `-c role=${role}` });
+      try {
+        await expect(refuseBypass(pool)).rejects.toThrow(`${role} bypasses`);
+      } finally {
+        await pool.end();
+      }
     } finally {
+      await admin.query(`drop role if exists ${role}`);
       await admin.end();
-    }
-    const pool = new pg.Pool({
-      connectionString: testServerUrl(),
-      options: '-c role=householdr_test_bypass',
-    });
-    try {
-      await expect(refuseBypass(pool)).rejects.toThrow('householdr_test_bypass bypasses');
-    } finally {
-      await pool.end();
     }
   });
 });
