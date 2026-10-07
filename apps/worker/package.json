@@ -12,6 +12,6 @@
     "@householdr/application": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^26.6.4"
+    "@types/node": "catalog:"
   }
 }

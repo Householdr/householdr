@@ -162,36 +162,66 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    '@eslint-community/eslint-plugin-eslint-comments':
+      specifier: ^4.8.1
+      version: 4.8.1
+    '@eslint/js':
+      specifier: ^10.0.1
+      version: 10.0.1
+    '@types/node':
+      specifier: ^26.6.4
+      version: 26.6.4
+    eslint:
+      specifier: ^10.12.0
+      version: 10.12.0
+    eslint-config-prettier:
+      specifier: ^10.1.8
+      version: 10.1.8
+    prettier:
+      specifier: ^3.9.9
+      version: 3.9.9
+    typescript:
+      specifier: ~6.0.3
+      version: 6.0.3
+    typescript-eslint:
+      specifier: ^8.71.0
+      version: 8.71.0
+    vitest:
+      specifier: ^5.0.3
+      version: 5.0.3
+
 importers:
 
   .:
     devDependencies:
       '@eslint-community/eslint-plugin-eslint-comments':
-        specifier: ^4.8.1
+        specifier: 'catalog:'
         version: 4.8.1(eslint@10.12.0)
       '@eslint/js':
-        specifier: ^10.0.1
+        specifier: 'catalog:'
         version: 10.0.1(eslint@10.12.0)
       '@types/node':
-        specifier: ^26.6.4
+        specifier: 'catalog:'
         version: 26.6.4
       eslint:
-        specifier: ^10.12.0
+        specifier: 'catalog:'
         version: 10.12.0
       eslint-config-prettier:
-        specifier: ^10.1.8
+        specifier: 'catalog:'
         version: 10.1.8(eslint@10.12.0)
       prettier:
-        specifier: ^3.9.9
+        specifier: 'catalog:'
         version: 3.9.9
       typescript:
-        specifier: ~6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       typescript-eslint:
-        specifier: ^8.71.0
+        specifier: 'catalog:'
         version: 8.71.0(eslint@10.12.0)(typescript@6.0.3)
       vitest:
-        specifier: ^5.0.3
+        specifier: 'catalog:'
         version: 5.0.3(@types/node@26.6.4)(vite@8.3.2(@types/node@26.6.4))
 
   apps/worker:
@@ -201,7 +231,7 @@ importers:
         version: link:../../packages/application
     devDependencies:
       '@types/node':
-        specifier: ^26.6.4
+        specifier: 'catalog:'
         version: 26.6.4
 
   packages/application:
