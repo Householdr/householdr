@@ -105,6 +105,15 @@ Each task turns a schedule date into an occurrence window:
 > ended, four plan weeks. It always covers at least its own week. A one-off task's deadline is a
 > date: its window ends with that day.
 
+> **Clarification (2026-10-07):** a week's planned cost is the **minutes** of everything already in
+> its plan, and the household's average weekly cost is the minutes its schedules produce in a
+> typical week: each task's duration times how often it occurs in a year (§7), divided by 52.
+> Floating occurrences are placed soonest window end first (the longest first on a tie), each only
+> while the week is still below the average. Their last week is the last week of the window that
+> gets a plan, so a household-away period at the end can't push one past its period; if no week of
+> its window gets a plan, it is skipped as away
+> ([ADR-0005](0005-membership-and-availability.md) §5).
+
 Simple-frequency tasks default to flexible (floating for monthly and rarer); tasks on an advanced
 schedule default to fixed.
 
