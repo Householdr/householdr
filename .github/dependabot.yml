@@ -1,0 +1,29 @@
+# Grouped monthly updates, one pull request per ecosystem (ADR-0009 §4, §7). The cooldown matches
+# pnpm's minimumReleaseAge (ADR-0017 §8).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 3
+    groups:
+      npm:
+        patterns: ['*']
+    commit-message:
+      prefix: build
+      include: scope
+
+  - package-ecosystem: github-actions
+    directories: ['/', '/.github/actions/*']
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 3
+    groups:
+      actions:
+        patterns: ['*']
+    commit-message:
+      prefix: ci
+      include: scope

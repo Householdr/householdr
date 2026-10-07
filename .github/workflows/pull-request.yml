@@ -1,0 +1,64 @@
+# What runs on a pull request (ADR-0009 §3): the title check always; the pipeline only for a pull
+# request that is ready for review and changes more than documentation.
+name: Pull request
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, edited]
+
+permissions:
+  contents: read
+
+# A new push cancels the previous run; editing the title doesn't cancel a running pipeline.
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}-${{ github.event.action == 'edited' && 'title' || 'code' }}
+  cancel-in-progress: true
+
+jobs:
+  title:
+    name: '🧹 Lint: PR title'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions:
+      pull-requests: read
+    outputs:
+      code-changed: ${{ steps.changes.outputs.code-changed }}
+    steps:
+      - name: '📂 Source: Changed files'
+        id: changes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          files=$(gh api --paginate "repos/${REPOSITORY}/pulls/${NUMBER}/files" --jq '.[].filename')
+          code=$(grep -v -E '^docs/|\.md$' <<< "$files" || true)
+          if [[ -n "$code" ]]; then changed=true; else changed=false; fi
+          echo "code-changed=${changed}" >> "$GITHUB_OUTPUT"
+
+      # PROC-8 and ADR-0009 §2 for the title; PROC-10 for feat pull requests.
+      - name: '🧹 Lint: PR title'
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          header='^(feat|fix|perf|refactor|docs|test|build|ci|chore|revert)(\([a-z0-9-]+\))?!?: [a-z0-9]'
+          if [[ ! "$TITLE" =~ $header ]]; then
+            echo "::error title=PR title::Use a Conventional Commit header, 'type(scope): description' with a lower-case description (PROC-8)."
+            exit 1
+          fi
+          if [[ "$TITLE" =~ ^feat ]] && [[ ! "$BODY" =~ ADR-[0-9]{4} ]]; then
+            echo "::error title=PR description::A feat pull request names the ADR it implements, as 'Implements ADR-NNNN' (PROC-10)."
+            exit 1
+          fi
+
+  pipeline:
+    name: Pipeline
+    needs: title
+    if: >-
+      !cancelled()
+      && !github.event.pull_request.draft
+      && github.event.action != 'edited'
+      && needs.title.outputs.code-changed == 'true'
+      && !startsWith(github.head_ref, 'release-please--')
+    uses: ./.github/workflows/pipeline.yml

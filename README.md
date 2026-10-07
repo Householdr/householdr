@@ -20,9 +20,9 @@ service, and everything you need to host it yourself
 **Stage 0: foundations.** The product is designed in
 [architecture decision records](docs/adr/README.md); ADRs move from `Draft` to `Accepted` once
 reviewed, and only accepted ADRs are built
-([ADR-0022](docs/adr/0022-development-standards-and-adr-first.md)). The workspace, the toolchain and
-the app skeletons are in place; the CI pipeline and the domain package come next, then everything a
-household would see. There is nothing to run or self-host yet: self-hosting documentation and the
+([ADR-0022](docs/adr/0022-development-standards-and-adr-first.md)). The workspace, the toolchain, the app
+skeletons and the pull-request pipeline are in place; the domain package comes next, then everything
+a household would see. There is nothing to run or self-host yet: self-hosting documentation and the
 `compose.yaml` arrive with the first releases.
 
 | Package | Holds |
