@@ -52,6 +52,14 @@ export {
   type Permission,
   type Role,
 } from './permissions/household';
+export {
+  averageWeeklyMinutes,
+  weekOccurrences,
+  type PlanTask,
+  type Recurrence,
+  type WeekInput,
+  type WeekOccurrences,
+} from './plans/week-occurrences';
 export { expand } from './schedules/expand';
 export { frequencyRule, type Frequency } from './schedules/frequency';
 export {
