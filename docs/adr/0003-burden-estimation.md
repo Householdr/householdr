@@ -85,6 +85,19 @@ which pairs the game asks next and which completions get a feedback prompt.
 
 Burden changes take effect from the next plan generated; published plans are frozen.
 
+> **Clarification (2026-10-07):**
+>
+> - Seeds and the head's baseline are **burden factors** around 1.0: 2.0 is twice as draining as an
+>   average task, 0.5 half as draining. The prior mean of `θ` is the natural logarithm of that factor,
+>   and a custom task starts at 1.0.
+> - The prior is normal with a **standard deviation of 1** on that log scale: a handful of consistent
+>   answers clearly moves a task, one odd answer barely does.
+> - **Feedback** counts as a comparison with the task's own estimate `θ` at the moment it was given:
+>   "harder than usual" as the task winning, "easier than usual" as it losing, and "about right" as a
+>   draw (half of each), which holds the estimate in place.
+> - Tasks are weighted by how often they occur in the next 12 months
+>   ([ADR-0004](0004-recurrence-schedules.md) §7). When none occurs, burdens are not rescaled.
+
 ### 5. Who sees what
 
 | Viewer | Own learned burdens | Others' learned burdens | Household average per task |
