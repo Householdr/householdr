@@ -39,6 +39,19 @@ export {
   type RebalancePreset,
   type WeekSettlement,
 } from './ledger/settlement';
+export {
+  canForAccount,
+  type Account,
+  type AccountAction,
+  type SignedIn,
+} from './permissions/account';
+export {
+  can,
+  type Member,
+  type MemberAction,
+  type Permission,
+  type Role,
+} from './permissions/household';
 export { expand } from './schedules/expand';
 export { frequencyRule, type Frequency } from './schedules/frequency';
 export {
