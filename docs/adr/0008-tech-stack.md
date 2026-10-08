@@ -215,6 +215,13 @@ subject.
   scopes every query by household, and PostgreSQL **row-level security** enforces the same rule as a
   second line of defence, keyed on a per-transaction setting. A missing `WHERE` clause must not be able
   to leak another household's data.
+
+  > **Clarification (2026-10-08):** what belongs to an account rather than a household (the account,
+  > its sign-in methods, sessions and security records, and the guardians of a child's account)
+  > lives in a separate `auth` schema without row-level security: much of it is looked up before
+  > anyone is known, by e-mail address or token, and none of it is household data. The schema test
+  > checks that every table in `public` is household-owned (CODE-17) and pins the list of `auth`
+  > tables, so a new table can't land in `auth` without review.
 - Times are stored as `timestamptz` together with the household's zone where the local time matters
   ([ADR-0004](0004-recurrence-schedules.md) §6).
 

@@ -68,6 +68,16 @@ A use case does, in order and in one place:
 - **Client-side previews** (a swap's effect on both balances) still call the `domain` package
   directly in the browser, as before.
 
+> **Clarification (2026-10-08):** sign-in is handled by **`packages/auth`**, between `application`
+> and `apps/web`: it holds the authentication library's configuration, sessions and cookies
+> ([ADR-0010](0010-identity-invitations-and-childrens-accounts.md)), and depends on `db` and
+> `application`. `apps/web` imports it to read the session in the request hook; `application` never
+> imports it and stays free of cookies. Signing in, signing up and the security page's changes are
+> form actions (CODE-13) that each call one function of `auth`, which validates, returns an error
+> code like a use case, and calls a use case where household data changes (creating the household,
+> linking a profile). Only the passkey (WebAuthn) steps, which need JavaScript anyway, are
+> endpoints; the library's own HTTP routes are not mounted.
+
 ### 3. Ports only where there is a real alternative
 
 The application layer talks to the outside world through a few small interfaces, passed in with the
