@@ -48,10 +48,10 @@ const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /**
  * Runs `work` in one transaction that sees and changes only `householdId`'s rows: row-level security
  * keys on a setting that lasts for this transaction only (ADR-0008 §9, CODE-17). Outside it, the
- * household tables show and accept nothing.
+ * household tables show and accept nothing. Given a transaction, `work` joins it.
  */
 export async function inHousehold<T>(
-  db: Database,
+  db: Database | Transaction,
   householdId: string,
   work: (tx: Transaction) => Promise<T>,
 ): Promise<T> {

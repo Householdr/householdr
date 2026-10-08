@@ -40,6 +40,8 @@ const matrix: Record<AccountAction, Record<Who, string>> = {
   'guardian.invite': { guardian: '..Y.', pendingGuardian: '....', stranger: '....' },
   // Any guardian can always step down (ADR-0018 §6).
   'guardian.stepDown': { guardian: '..YY', pendingGuardian: '..YY', stranger: '....' },
+  // For oneself, and only with two factors (ADR-0010 §1, §3).
+  'household.create': { guardian: 'Y...', pendingGuardian: '....', stranger: 'Y...' },
 };
 
 describe('canForAccount (ADR-0017 §2, ADR-0010 §9)', () => {

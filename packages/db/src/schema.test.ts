@@ -1,4 +1,5 @@
 import type { HouseholdCalendar } from '@householdr/domain';
+import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { inHousehold, type Database } from './connection';
 import { accountEmails, accounts, sessions } from './auth-schema';
@@ -108,6 +109,36 @@ describe('members', () => {
     expect(await refusal(addMember({ name: 'Alex', role: 'owner' as 'adult' }))).toBe(
       'members_role',
     );
+  });
+
+  it('link an account to one profile per household, kept when the account goes (ADR-0010 §5, §10)', async () => {
+    const [account] = await db
+      .insert(accounts)
+      .values({ name: 'Robin', email: `robin-${String(++next)}@example.org` })
+      .returning();
+    if (!account) throw new Error('No account');
+    const id = newId();
+    const linked = (name: string) => ({
+      householdId: id,
+      name,
+      role: 'adult' as const,
+      accountId: account.id,
+    });
+    await inHousehold(db, id, async (tx) => {
+      await tx.insert(households).values(household(id));
+      await tx.insert(members).values(linked('Robin'));
+    });
+    expect(
+      await refusal(inHousehold(db, id, (tx) => tx.insert(members).values(linked('Twice')))),
+    ).toBe('members_account');
+    expect(
+      await refusal(addMember({ name: 'Elsewhere', role: 'adult', accountId: account.id })),
+    ).toBeUndefined();
+    await db.delete(accounts).where(eq(accounts.id, account.id));
+    const left = await inHousehold(db, id, (tx) =>
+      tx.select({ name: members.name, accountId: members.accountId }).from(members),
+    );
+    expect(left).toEqual([{ name: 'Robin', accountId: null }]);
   });
 
   it('go with their household when it is deleted', async () => {

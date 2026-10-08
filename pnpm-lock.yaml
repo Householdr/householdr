@@ -463,6 +463,12 @@ importers:
       '@householdr/db':
         specifier: workspace:*
         version: link:../db
+      '@householdr/domain':
+        specifier: workspace:*
+        version: link:../domain
+      valibot:
+        specifier: 'catalog:'
+        version: 1.5.0(typescript@6.0.3)
 
   packages/auth:
     dependencies:
