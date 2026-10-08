@@ -37,6 +37,15 @@ const daysAhead = (first: number, last: number) => {
   };
 };
 
+/**
+ * `text` as a pattern that takes any spaces where it has some: the page's Intl and the test's can
+ * space a range of days differently, such as with a thin space around the dash.
+ */
+const loosely = (text: string, { whole = false } = {}) => {
+  const pattern = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s*');
+  return new RegExp(whole ? `^${pattern}$` : pattern);
+};
+
 /** Sam's form for a temporary share, which every member has one of. */
 const samsTemporary = (page: Page) =>
   page.locator('details', { hasText: 'Add a temporary share for Sam' });
@@ -158,12 +167,12 @@ for (const javaScriptEnabled of [true, false]) {
       await addTemporary(page, nextWeek, '50');
       await expect(page.getByRole('status')).toHaveText('Sam’s temporary share is added.');
       const planned = page.getByRole('list', { name: 'Temporary shares for Sam' });
-      await expect(planned.getByRole('listitem')).toHaveText([
-        new RegExp(`^50% for ${nextWeek.said}`),
-      ]);
+      await expect(planned.getByRole('listitem')).toHaveText([loosely(`50% for ${nextWeek.said}`)]);
       if (javaScriptEnabled) await expectAccessible(page, 'temporary');
 
-      await page.getByRole('button', { name: `Remove Sam’s 50% for ${nextWeek.said}` }).click();
+      await page
+        .getByRole('button', { name: loosely(`Remove Sam’s 50% for ${nextWeek.said}`) })
+        .click();
       await expect(page.getByRole('status')).toHaveText('Sam’s temporary share is removed.');
       await expect(planned).toHaveCount(0);
     });
@@ -198,9 +207,11 @@ for (const javaScriptEnabled of [true, false]) {
       await addTemporary(page, daysAhead(13, 15), '20');
       await expect(summary).toBeFocused();
       await expect(summary).toContainText(
-        `Sam already has a temporary share of 50% for ${nextWeek.said}`,
+        loosely(`Sam already has a temporary share of 50% for ${nextWeek.said}`),
       );
-      await expect(summary.getByRole('link')).toHaveText([`Choose days outside ${nextWeek.said}.`]);
+      await expect(summary.getByRole('link')).toHaveText([
+        loosely(`Choose days outside ${nextWeek.said}.`, { whole: true }),
+      ]);
       await expect(form.getByLabel('Share on those days (%)')).toHaveValue('20');
     });
   });
