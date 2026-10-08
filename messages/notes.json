@@ -1,5 +1,41 @@
 {
   "app.name": {
     "note": "The product name, in the browser tab and in e-mails. Not translated."
+  },
+  "sign-in.title": {
+    "note": "The sign-in page's heading and browser tab title. Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "sign-in.email": {
+    "note": "Label of the e-mail address field on the sign-in page.",
+    "needsReview": ["nl"]
+  },
+  "sign-in.password": {
+    "note": "Label of the password field on the sign-in page.",
+    "needsReview": ["nl"]
+  },
+  "sign-in.submit": {
+    "note": "The sign-in page's button.",
+    "needsReview": ["nl"]
+  },
+  "sign-in.failed": {
+    "note": "Heading of the box at the top of the sign-in page that says why signing in didn't work.",
+    "needsReview": ["nl"]
+  },
+  "sign-in.incorrect": {
+    "note": "After a sign-in with a wrong e-mail address or password. It never says which, so it doesn't reveal whether an address has an account (ADR-0010 §2).",
+    "needsReview": ["nl"]
+  },
+  "sign-in.unverified": {
+    "note": "After a sign-in with the right password, to an account whose e-mail address hasn't been confirmed with the link we e-mailed.",
+    "needsReview": ["nl"]
+  },
+  "sign-in.wait-seconds": {
+    "note": "After repeated failed sign-ins, the next attempt has to wait (ADR-0010 §2). {count} is the number of seconds. Calm and factual: it never blames.",
+    "needsReview": ["nl"]
+  },
+  "sign-in.wait-minutes": {
+    "note": "As sign-in.wait-seconds, for waits of a minute or more. {count} is the number of minutes, rounded up.",
+    "needsReview": ["nl"]
   }
 }

@@ -8,10 +8,20 @@ const page = '<html lang="%paraglide.lang%"></html>';
 // The hooks run one by one: SvelteKit's `sequence` needs the store of a running server.
 
 /** Runs `hook` on a request for a page, rendering `page` the way SvelteKit would. */
-const respond = (hook: Handle, headers: Record<string, string> = {}, locals = {}) => {
+const respond = (
+  hook: Handle,
+  headers: Record<string, string> = {},
+  locals = {},
+  cookies: Record<string, string> = {},
+) => {
   const request = new Request('https://householdr.example.org/', { headers });
   return hook({
-    event: { request, url: new URL(request.url), locals } as RequestEvent,
+    event: {
+      request,
+      url: new URL(request.url),
+      locals,
+      cookies: { get: (name: string) => cookies[name] },
+    } as unknown as RequestEvent,
     resolve: async (_event, options?: ResolveOptions) => {
       const html = (await options?.transformPageChunk?.({ html: page, done: true })) ?? page;
       return new Response(html, { headers: { 'content-type': 'text/html' } });
@@ -55,5 +65,11 @@ describe('the flags of a request (ADR-0015 §3)', () => {
     const locals = {} as App.Locals;
     await respond(flag, {}, locals);
     expect(locals.flags).toEqual({ 'sign-in': false });
+  });
+
+  it('can be forced by a test, in the test build (ADR-0015 §10)', async () => {
+    const locals = {} as App.Locals;
+    await respond(flag, {}, locals, { 'test-flags': 'sign-in=on' });
+    expect(locals.flags).toEqual({ 'sign-in': true });
   });
 });

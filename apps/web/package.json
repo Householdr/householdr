@@ -17,6 +17,7 @@
   "dependencies": {
     "@householdr/adapters": "workspace:*",
     "@householdr/application": "workspace:*",
+    "@householdr/auth": "workspace:*",
     "@internationalized/date": "catalog:",
     "bits-ui": "catalog:",
     "cn": "catalog:",

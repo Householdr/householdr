@@ -337,6 +337,9 @@ importers:
       '@householdr/application':
         specifier: workspace:*
         version: link:../../packages/application
+      '@householdr/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
       '@internationalized/date':
         specifier: 'catalog:'
         version: 3.12.4

@@ -1,4 +1,31 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
-  "app.name": "Householdr"
+  "app.name": "Householdr",
+  "sign-in.title": "Inloggen bij Householdr",
+  "sign-in.email": "E-mailadres",
+  "sign-in.password": "Wachtwoord",
+  "sign-in.submit": "Inloggen",
+  "sign-in.failed": "Inloggen is niet gelukt",
+  "sign-in.incorrect": "Het e-mailadres of het wachtwoord klopt niet.",
+  "sign-in.unverified": "Je e-mailadres is nog niet bevestigd. Open de link in de e-mail die we je stuurden en log dan in.",
+  "sign-in.wait-seconds": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Na een paar pogingen pauzeert het inloggen even. Over {count} seconde kun je het opnieuw proberen.",
+        "countPlural=other": "Na een paar pogingen pauzeert het inloggen even. Over {count} seconden kun je het opnieuw proberen."
+      }
+    }
+  ],
+  "sign-in.wait-minutes": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Na een paar pogingen pauzeert het inloggen even. Over {count} minuut kun je het opnieuw proberen.",
+        "countPlural=other": "Na een paar pogingen pauzeert het inloggen even. Over {count} minuten kun je het opnieuw proberen."
+      }
+    }
+  ]
 }

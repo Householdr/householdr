@@ -1,4 +1,31 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
-  "app.name": "Householdr"
+  "app.name": "Householdr",
+  "sign-in.title": "Sign in to Householdr",
+  "sign-in.email": "E-mail address",
+  "sign-in.password": "Password",
+  "sign-in.submit": "Sign in",
+  "sign-in.failed": "Signing in didn’t work",
+  "sign-in.incorrect": "The e-mail address or the password is incorrect.",
+  "sign-in.unverified": "Your e-mail address isn’t confirmed yet. Open the link in the e-mail we sent you, then sign in.",
+  "sign-in.wait-seconds": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "After several tries, signing in pauses for a moment. You can try again in {count} second.",
+        "countPlural=other": "After several tries, signing in pauses for a moment. You can try again in {count} seconds."
+      }
+    }
+  ],
+  "sign-in.wait-minutes": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "After several tries, signing in pauses for a moment. You can try again in {count} minute.",
+        "countPlural=other": "After several tries, signing in pauses for a moment. You can try again in {count} minutes."
+      }
+    }
+  ]
 }

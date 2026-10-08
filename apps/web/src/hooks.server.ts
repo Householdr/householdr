@@ -2,6 +2,7 @@ import { flagValues, type Flags } from '@householdr/application';
 import { sequence, type Handle } from '@sveltejs/kit/hooks';
 import { paraglideMiddleware } from './lib/paraglide/server.js';
 import { flagSource } from './lib/server/flags';
+import { testFlagsCookie, withForcedFlags } from './lib/server/forced-flags';
 import { securityHeaders } from './security';
 
 /** Every response carries the browser hardening of ADR-0017 §4. */
@@ -21,10 +22,17 @@ export const localise: Handle = ({ event, resolve }) =>
 
 let flags: Flags | undefined;
 
-/** Every flag is evaluated once per request, on the server (ADR-0015 §3). */
+/**
+ * Every flag is evaluated once per request, on the server (ADR-0015 §3). In the test build, a test
+ * can force flags with a cookie (§10); a production build doesn't contain that code at all.
+ */
 export const flag: Handle = ({ event, resolve }) => {
   flags ??= flagSource();
-  event.locals.flags = flagValues(flags);
+  const values = flagValues(flags);
+  event.locals.flags =
+    import.meta.env.MODE === 'test'
+      ? withForcedFlags(values, event.cookies.get(testFlagsCookie))
+      : values;
   return resolve(event);
 };
 

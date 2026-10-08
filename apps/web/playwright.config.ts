@@ -18,17 +18,19 @@ export default defineConfig({
     ['junit', { outputFile: 'test-results/e2e.xml' }],
     ['html', { open: 'never', outputFolder: 'playwright-report' }],
   ],
-  use: { baseURL: origin, trace: 'retain-on-failure' },
+  use: {
+    baseURL: origin,
+    // The test server runs on plain HTTP, which a production instance only sees behind a proxy
+    // that says so; without it, SvelteKit takes the requests for HTTPS and refuses form posts.
+    extraHTTPHeaders: { 'x-forwarded-proto': 'http' },
+    trace: 'retain-on-failure',
+  },
   projects: [
     { name: 'phone, light', use: { ...devices['Pixel 7'], colorScheme: 'light' } },
     { name: 'phone, dark', use: { ...devices['Pixel 7'], colorScheme: 'dark' } },
     { name: 'desktop, light', use: { ...devices['Desktop Chrome'], colorScheme: 'light' } },
     { name: 'desktop, dark', use: { ...devices['Desktop Chrome'], colorScheme: 'dark' } },
   ],
-  webServer: {
-    command: 'node build-test',
-    url: `${origin}/health`,
-    env: { PORT: String(port), ORIGIN: origin },
-    reuseExistingServer: !ci,
-  },
+  // The test build, on a database of its own (`e2e/global-setup.ts`).
+  globalSetup: './e2e/global-setup.ts',
 });

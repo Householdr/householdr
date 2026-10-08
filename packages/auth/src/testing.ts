@@ -1,0 +1,56 @@
+import { randomBytes } from 'node:crypto';
+import { settableClock } from '@householdr/application/testing';
+import { testDatabase } from '@householdr/db/testing';
+import { createAuth, type Auth } from './auth';
+import { counterKeys } from './counter-keys';
+import type { SignInContext } from './sign-in';
+
+/** What signs in to an account in tests. */
+export interface TestAccount {
+  email: string;
+  password: string;
+}
+
+/** Adds an account with a password, its address confirmed unless said otherwise, and returns its ID. */
+export async function createTestAccount(
+  auth: Auth,
+  { email, password }: TestAccount,
+  emailVerified = true,
+) {
+  const internal = await auth.$context;
+  const user = await internal.internalAdapter.createUser(
+    { name: 'Robin', email, emailVerified },
+    { method: 'email-password' },
+  );
+  await internal.internalAdapter.linkAccount({
+    userId: user.id,
+    providerId: 'credential',
+    accountId: user.id,
+    password: await internal.password.hash(password),
+  });
+  return user.id;
+}
+
+/**
+ * A fresh database with `account` in it, for a test server of its own (TEST-11): where to connect,
+ * and how to drop it afterwards. Until sign-up exists, this is how an account comes to be.
+ */
+export async function databaseWithAccount(account: TestAccount) {
+  const { db, url, close } = await testDatabase();
+  const secret = randomBytes(32).toString('base64');
+  await createTestAccount(createAuth({ db, baseUrl: 'http://localhost', secret }), account);
+  return { url, close };
+}
+
+/** What signing in needs, over a fresh database and with a clock the test sets (TEST-11). */
+export async function testSignInContext() {
+  const { db, close } = await testDatabase();
+  const secret = randomBytes(32).toString('base64');
+  const context = {
+    auth: createAuth({ db, baseUrl: 'https://householdr.example.org', secret }),
+    db,
+    clock: settableClock(Temporal.Instant.from('2026-10-08T08:00:00Z')),
+    counterKey: counterKeys(secret),
+  } satisfies SignInContext;
+  return { context, close };
+}
