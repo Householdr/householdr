@@ -39,7 +39,8 @@ export async function testDatabase() {
   }
   const target = new URL(url);
   target.pathname = `/${name}`;
-  const pool = new pg.Pool({ connectionString: target.href, options: `-c role=${testRole}` });
+  target.searchParams.set('options', `-c role=${testRole}`);
+  const pool = new pg.Pool({ connectionString: target.href });
   // The pool's `end` only asks its connections to close; dropping the database while one still is
   // would break it off mid-way.
   const open = new Set<pg.PoolClient>();
@@ -52,6 +53,8 @@ export async function testDatabase() {
   await migrate(db);
   return {
     db,
+    /** Where to connect, as the test role, for a process of its own such as a test server. */
+    url: target.href,
     close: async () => {
       const closed = [...open].map((client) => new Promise((done) => client.once('end', done)));
       await pool.end();

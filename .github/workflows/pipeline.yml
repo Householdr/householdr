@@ -43,6 +43,14 @@ jobs:
             exit 1
           fi
 
+      # Only end-to-end tests may force flags (ADR-0015 §10).
+      - name: '🧹 Lint: Forced flags'
+        run: |
+          if grep -rqF 'test-flags' apps/web/build; then
+            echo "::error title=Forced flags::The production build lets requests force flags."
+            exit 1
+          fi
+
       # One archive keeps pnpm's symlinks and file modes intact.
       - name: '🗃️ Artifact: Pack'
         run: tar --zstd --exclude=.git -cf "$RUNNER_TEMP/build.tar.zst" .
@@ -146,6 +154,19 @@ jobs:
     needs: bundle
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    # The test server's database, as for the unit tests: throwaway, and reachable only from this job.
+    services:
+      postgres:
+        image: postgres:18@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336 # 18
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready --username postgres"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 15
     steps:
       - name: '📂 Source: Checkout'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -183,6 +204,8 @@ jobs:
           CACHED: ${{ steps.browser.outputs.cache-hit }}
 
       - name: '🧪 Test: E2E'
+        env:
+          TEST_DATABASE_URL: postgres://postgres@localhost:5432/postgres
         run: pnpm test:e2e
 
       # Traces and screenshots of the failures, for a few days (ADR-0009 §9).

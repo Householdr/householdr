@@ -7,6 +7,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createAuth } from './auth';
 import { counterKeys } from './counter-keys';
 import { signInWithPassword, type SignInContext } from './sign-in';
+import { createTestAccount } from './testing';
 
 // Password sign-in and its waits (ADR-0010 §2, clarification), on a real database (TEST-11).
 
@@ -34,19 +35,8 @@ beforeEach(async () => {
 
 /** A new account with `password`, its address confirmed unless said otherwise. */
 const newAccount = async (emailVerified = true) => {
-  const internal = await context.auth.$context;
   const email = `person-${String(++next)}@example.org`;
-  const user = await internal.internalAdapter.createUser(
-    { name: 'Robin', email, emailVerified },
-    { method: 'email-password' },
-  );
-  await internal.internalAdapter.linkAccount({
-    userId: user.id,
-    providerId: 'credential',
-    accountId: user.id,
-    password: await internal.password.hash(password),
-  });
-  return { id: user.id, email };
+  return { id: await createTestAccount(context.auth, { email, password }, emailVerified), email };
 };
 const signIn = (email: string, typed: string, address = '192.0.2.1') =>
   signInWithPassword(context, { email, password: typed }, address);
@@ -57,12 +47,19 @@ describe('signing in with a password (ADR-0010 §2)', () => {
     const account = await newAccount();
     const result = await signIn(account.email, password);
     if (!result.ok) throw new Error(`Not signed in: ${result.error}`);
-    const cookie = result.headers.get('set-cookie') ?? '';
-    expect(cookie).toMatch(/^__Host-householdr\.session_token=[^;]+; Max-Age=2592000; Path=\/;/);
-    expect(cookie).toContain('; HttpOnly');
-    expect(cookie).toContain('; Secure');
-    expect(cookie).toContain('; SameSite=Lax');
-    expect(cookie).not.toContain('Domain=');
+    expect(result.cookies).toEqual([
+      {
+        name: '__Host-householdr.session_token',
+        value: expect.stringMatching(/^[\w-]+\.[\w+/=-]+$/) as string,
+        options: {
+          path: '/',
+          maxAge: 2_592_000,
+          secure: true,
+          httpOnly: true,
+          sameSite: 'lax',
+        },
+      },
+    ]);
     const rows = await db.select().from(sessions).where(eq(sessions.userId, account.id));
     expect(rows).toHaveLength(1);
   });

@@ -3,6 +3,7 @@ import { countAttempt, forgetCount, withdrawAttempt, type Database } from '@hous
 import { isAPIError } from 'better-auth/api';
 import * as v from 'valibot';
 import type { Auth } from './auth';
+import { cookiesFrom, type Cookie } from './cookies';
 import { addressPrefix, type CounterKey } from './counter-keys';
 import { forgetFailuresAfter, signInWaits, waitAfter } from './waits';
 
@@ -21,8 +22,8 @@ export interface SignInContext {
 }
 
 export type SignInResult =
-  /** Signed in: the headers set the session cookie. */
-  | { ok: true; headers: Headers }
+  /** Signed in: the session's cookie, for the response to set. */
+  | { ok: true; cookies: Cookie[] }
   /** Shown as "e-mail or password is incorrect", whichever it was (ADR-0010 §2). */
   | { ok: false; error: 'incorrect' }
   /** The password was right, but the e-mail address isn't confirmed yet (ADR-0010 §1). */
@@ -65,7 +66,7 @@ export async function signInWithPassword(
     // Signing in clears the e-mail address's count, never the IP address's.
     await forgetCount(context.db, emailKey);
     await withdrawAttempt(context.db, attempt.counted, addressKey);
-    return { ok: true, headers };
+    return { ok: true, cookies: cookiesFrom(headers) };
   } catch (error) {
     if (!isAPIError(error)) throw error;
     if (error.body?.code === 'EMAIL_NOT_VERIFIED') {
