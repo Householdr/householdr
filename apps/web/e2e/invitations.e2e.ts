@@ -45,8 +45,9 @@ async function inviteKim(
   await accounts.addSecondFactor(account.email);
   const id = await accounts.addHousehold(account.email, 'Ash Lane');
   await signIn(page, account, `/households/${id}`);
-  await page.getByLabel('Name').fill('Kim');
-  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  const form = page.getByRole('region', { name: 'Add an adult' });
+  await form.getByLabel('Name').fill('Kim');
+  await form.getByRole('button', { name: 'Add', exact: true }).click();
   await expect(membersOf(page)).toHaveCount(2);
   await page.getByRole('button', { name: 'Invite Kim' }).click();
   const link = page.getByLabel('Invitation link for Kim', { exact: true });

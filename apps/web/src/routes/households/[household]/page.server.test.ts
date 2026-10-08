@@ -1,7 +1,9 @@
 import { addAdult as addProfile, createHousehold, membership } from '@householdr/application';
+import { keptConsents } from '@householdr/application/testing';
 import { createTestAccount, testSignInContext } from '@householdr/auth/testing';
 import { isActionFailure, isHttpError } from '@sveltejs/kit';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { m } from '#lib/paraglide/messages.js';
 import { actions, load } from './+page.server';
 
 // A household's page maps what its members see to the page, or to a status (TEST-4), against a
@@ -88,6 +90,23 @@ const aboutMember = async (name: 'invite' | 'revokeInvitation', locals: object, 
   }
 };
 
+/** Sends the form that adds a child, with `fields`; the consent box ticked if it is `on`. */
+const addChild = async (locals: object, fields: Record<string, string>) => {
+  const body = new FormData();
+  for (const [key, value] of Object.entries(fields)) body.set(key, value);
+  const request = new Request('https://householdr.example.org/', { method: 'POST', body });
+  try {
+    return await actions.addChild({ locals, request } as unknown as Parameters<
+      typeof actions.addChild
+    >[0]);
+  } catch (thrown) {
+    if (isHttpError(thrown)) return thrown.status;
+    throw thrown;
+  }
+};
+
+const kim = { name: 'Kim', birthDate: '2016-03-01', consent: 'on' };
+
 describe('a household’s page (ADR-0007 §1)', () => {
   it('shows the household’s name and members, and which one is you', async () => {
     const membership = await founded();
@@ -140,6 +159,60 @@ describe('a household’s page (ADR-0007 §1)', () => {
     const adult = { ...membership, member: { ...membership.member, role: 'adult' } };
     expect(await addAdult({ flags: { onboarding: true }, membership: adult }, 'Sam')).toBe(403);
     expect(await addAdult({ flags: { onboarding: false }, membership }, 'Sam')).toBe(404);
+  });
+
+  it('adds a child, keeping the consent in the words the page showed (ADR-0010 §9)', async () => {
+    const membership = withTwoFactor(await founded());
+    const locals = { flags: { onboarding: true }, membership };
+    expect(await addChild(locals, { ...kim, name: ' Kim ' })).toEqual({ addedChild: 'Kim' });
+    expect(await opened(locals)).toMatchObject({
+      members: [{ name: 'Robin' }, { name: 'Kim', role: 'child' }],
+    });
+    // In the language the page is in, at the time the test's clock tells.
+    expect(await keptConsents(test.context.db, membership.householdId)).toEqual([
+      {
+        givenAt: new Date('2026-10-08T08:00:00Z'),
+        text: m['household.child-consent'](),
+        language: 'en',
+      },
+    ]);
+    expect(m['household.child-consent']()).toBe(
+      'I have parental responsibility for this child, and I agree to them using Householdr.',
+    );
+  });
+
+  it('keeps what was entered for a child, and says what needs changing', async () => {
+    const membership = withTwoFactor(await founded());
+    const locals = { flags: { onboarding: true }, membership };
+    // 18 today in Brussels, by the test's clock; the box left empty.
+    const refused = await addChild(locals, { name: ' ', birthDate: '2008-10-08' });
+    expect(isActionFailure(refused) && refused).toMatchObject({
+      status: 400,
+      data: {
+        child: {
+          problems: ['name', 'adult', 'consent'],
+          name: ' ',
+          birthDate: '2008-10-08',
+          consent: false,
+        },
+      },
+    });
+    // Only a checkbox's own value counts as ticking it.
+    const other = await addChild(locals, { ...kim, consent: 'true' });
+    expect(isActionFailure(other) && other.data).toMatchObject({
+      child: { problems: ['consent'] },
+    });
+    expect(await keptConsents(test.context.db, membership.householdId)).toEqual([]);
+  });
+
+  it('lets only a head with two factors add a child', async () => {
+    const membership = await founded();
+    expect(await addChild({ flags: { onboarding: true }, membership }, kim)).toBe(403);
+    const head = withTwoFactor(membership);
+    const adult = { ...head, member: { ...head.member, role: 'adult' } };
+    expect(await addChild({ flags: { onboarding: true }, membership: adult }, kim)).toBe(403);
+    expect(await addChild({ flags: { onboarding: false }, membership: head }, kim)).toBe(404);
+    expect(await keptConsents(test.context.db, head.householdId)).toEqual([]);
   });
 
   it('is forbidden to a member who can’t view it', async () => {

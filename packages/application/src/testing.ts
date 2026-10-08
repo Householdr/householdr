@@ -1,3 +1,4 @@
+import { inHousehold, parentalConsents, type Database } from '@householdr/db';
 import { defaultFlags } from './flags/values';
 import type { FlagKey } from './flags/registry';
 import type { Clock, Flags, LogFields, Logger, Mail, Mailer } from './ports';
@@ -48,4 +49,20 @@ export function settableClock(start: Temporal.Instant): Clock & {
 /** Flags at their registry defaults, except those a test sets (TEST-9). */
 export function settableFlags(values: Partial<Record<FlagKey, boolean>> = {}): Flags {
   return { isOn: (flag) => values[flag] ?? defaultFlags.isOn(flag) };
+}
+
+/**
+ * The parental consents kept in household `householdId`, as stored (ADR-0010 §9): for tests of
+ * what a page has kept, which can't read the database themselves (CODE-4).
+ */
+export function keptConsents(db: Database, householdId: string) {
+  return inHousehold(db, householdId, (tx) =>
+    tx
+      .select({
+        givenAt: parentalConsents.givenAt,
+        text: parentalConsents.text,
+        language: parentalConsents.language,
+      })
+      .from(parentalConsents),
+  );
 }

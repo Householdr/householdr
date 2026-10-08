@@ -236,5 +236,14 @@
   "household.share-title": "Join {household} on Householdr",
   "household.share-text": "Here’s your invitation to join {household} on Householdr, where we share the chores fairly.",
   "household.qr-help": "Or let {name} scan this code with their phone’s camera.",
-  "household.qr": "QR code of the invitation link for {name}"
+  "household.qr": "QR code of the invitation link for {name}",
+  "household.add-child": "Add a child",
+  "household.add-child-intro": "Only someone with parental responsibility for a child can add them. If you don’t have it, as a step-parent may not, invite one of the child’s parents to add them instead.",
+  "household.birth-date": "Birth date",
+  "household.child-consent": "I have parental responsibility for this child, and I agree to them using Householdr.",
+  "household.child-added": "{name} is added. Let them know, in words they understand: once they have an account of their own, they can see everything recorded about them.",
+  "household.check": "Check these, then try again:",
+  "household.invalid-birth-date": "Enter their birth date, no later than today.",
+  "household.child-is-adult": "They’re 18 or older: add them as an adult instead.",
+  "household.invalid-consent": "To add a child, confirm that you have parental responsibility for them and agree to them using Householdr."
 }

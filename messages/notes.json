@@ -765,5 +765,41 @@
   "household.qr": {
     "note": "Accessible name of the QR code image. {name} is the profile's name.",
     "needsReview": ["nl"]
+  },
+  "household.add-child": {
+    "note": "Heading of the form on a household's page where a head adds a child's profile (a member under 18).",
+    "needsReview": ["nl"]
+  },
+  "household.add-child-intro": {
+    "note": "Explains who may add a child: only an adult with parental responsibility, who consents for the child (GDPR art. 8). Someone without it, such as a step-parent, asks a parent to add the child. 'Parental responsibility' is the legal term ('ouderlijk gezag').",
+    "needsReview": ["nl"]
+  },
+  "household.birth-date": {
+    "note": "Label of the child's birth date field, a date picker.",
+    "needsReview": ["nl"]
+  },
+  "household.child-consent": {
+    "note": "DRAFT, awaiting approval. Checkbox the head ticks to add a child: they confirm they hold parental responsibility and consent to the child's use of the app (ADR-0010 §9). The exact sentence the head sees is stored as the proof of their consent, so it must read as a plain statement in the first person, and changing it changes what later records keep.",
+    "needsReview": ["nl"]
+  },
+  "household.child-added": {
+    "note": "Shown once a child's profile is added. {name} is the child's name. The head is asked to tell the child, in a way a child understands, that they can see what is recorded about them once they have an account (GDPR transparency). 'Them' is one child, gender-neutral.",
+    "needsReview": ["nl"]
+  },
+  "household.check": {
+    "note": "Leads to the list of the child's fields that need changing, each a link to its field.",
+    "needsReview": ["nl"]
+  },
+  "household.invalid-birth-date": {
+    "note": "Next to the birth date, and in the summary, when it isn't a date, or is a date still to come. 'Their' is gender-neutral.",
+    "needsReview": ["nl"]
+  },
+  "household.child-is-adult": {
+    "note": "Next to the birth date, and in the summary, when the person is 18 or older: an adult, whom the form above adds. States the rule without blame.",
+    "needsReview": ["nl"]
+  },
+  "household.invalid-consent": {
+    "note": "Next to the consent checkbox, and in the summary, when it isn't ticked. States the rule without blame.",
+    "needsReview": ["nl"]
   }
 }

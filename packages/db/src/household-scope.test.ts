@@ -2,7 +2,8 @@ import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import pg from 'pg';
 import { connect, inHousehold, refuseBypass, type Database } from './connection';
-import { households, members } from './schema';
+import { accounts } from './auth-schema';
+import { households, members, parentalConsents, profileGuardians } from './schema';
 import { refusal, refusedByRowSecurity, testDatabase, testServerUrl } from './testing';
 
 // Row-level security keeps every household to its own rows (ADR-0008 §9, CODE-17), as a role
@@ -151,7 +152,13 @@ describe('every household-owned table (CODE-17)', () => {
       from pg_class c join pg_namespace n on n.oid = c.relnamespace
       where n.nspname = 'public' and c.relkind = 'r'
       order by c.relname`);
-    expect(rows.map((r) => r.table)).toEqual(['households', 'invitations', 'members']);
+    expect(rows.map((r) => r.table)).toEqual([
+      'households',
+      'invitations',
+      'members',
+      'parental_consents',
+      'profile_guardians',
+    ]);
     for (const row of rows) {
       // Not forced: it binds the app's role, not the owner (ADR-0008 §9, clarification).
       expect(row).toEqual({
@@ -204,5 +211,103 @@ describe('tables outside a household (ADR-0008 §9, clarification)', () => {
       'auth.sessions',
       'auth.verifications',
     ]);
+  });
+});
+
+describe('guardians and consents of children’s profiles (ADR-0010 §9, ADR-0008 §9)', () => {
+  // Two more households, each with a child whose guardian consented, so the rows above stay as
+  // they are.
+  const cedar = '00000000-0000-4000-8000-00000000000c';
+  const dogwood = '00000000-0000-4000-8000-00000000000d';
+  const children = new Map<string, { memberId: string; accountId: string }>();
+  const theirs = (id: string) => {
+    const child = children.get(id);
+    if (!child) throw new Error('No child');
+    return child;
+  };
+  const consent = (householdId: string, { memberId, accountId }: ReturnType<typeof theirs>) => ({
+    householdId,
+    memberId,
+    givenBy: accountId,
+    givenAt: new Date('2026-10-08T08:00:00Z'),
+    text: 'I have parental responsibility for this child, and I agree to them using Householdr.',
+    language: 'en',
+  });
+
+  beforeAll(async () => {
+    for (const [id, name] of [
+      [cedar, 'Cedar Row'],
+      [dogwood, 'Dogwood Way'],
+    ] as const) {
+      const [account] = await db
+        .insert(accounts)
+        .values({ name: 'Robin', email: `robin-${id}@example.org`, culture: 'en-BE' })
+        .returning({ id: accounts.id });
+      if (!account) throw new Error('No account');
+      const memberId = await inHousehold(db, id, async (tx) => {
+        await tx.insert(households).values(household(id, name));
+        const [child] = await tx
+          .insert(members)
+          .values({ householdId: id, name: 'Kim', role: 'child', birthDate: '2016-03-01' })
+          .returning({ id: members.id });
+        if (!child) throw new Error('No child');
+        return child.id;
+      });
+      children.set(id, { memberId, accountId: account.id });
+      await inHousehold(db, id, async (tx) => {
+        await tx
+          .insert(profileGuardians)
+          .values({ householdId: id, memberId, accountId: account.id });
+        await tx.insert(parentalConsents).values(consent(id, theirs(id)));
+      });
+    }
+  });
+
+  it('are seen only in their own household', async () => {
+    const seen = await inHousehold(db, cedar, async (tx) => ({
+      guardians: await tx.select({ memberId: profileGuardians.memberId }).from(profileGuardians),
+      consents: await tx.select({ memberId: parentalConsents.memberId }).from(parentalConsents),
+    }));
+    const { memberId } = theirs(cedar);
+    expect(seen).toEqual({ guardians: [{ memberId }], consents: [{ memberId }] });
+  });
+
+  it('cannot be added to another household', async () => {
+    const other = theirs(dogwood);
+    const guardian = { householdId: dogwood, ...other };
+    expect(
+      await refusal(inHousehold(db, cedar, (tx) => tx.insert(profileGuardians).values(guardian))),
+    ).toBe(refusedByRowSecurity);
+    expect(
+      await refusal(
+        inHousehold(db, cedar, (tx) => tx.insert(parentalConsents).values(consent(dogwood, other))),
+      ),
+    ).toBe(refusedByRowSecurity);
+  });
+
+  it('cannot be changed, moved or deleted from another household', async () => {
+    const { memberId } = theirs(dogwood);
+    const touched = await inHousehold(db, cedar, async (tx) => [
+      ...(await tx
+        .update(parentalConsents)
+        .set({ text: 'Changed.' })
+        .where(eq(parentalConsents.memberId, memberId))
+        .returning()),
+      ...(await tx
+        .delete(profileGuardians)
+        .where(eq(profileGuardians.memberId, memberId))
+        .returning()),
+    ]);
+    expect(touched).toEqual([]);
+    expect(
+      await refusal(
+        inHousehold(db, cedar, (tx) => tx.update(parentalConsents).set({ householdId: dogwood })),
+      ),
+    ).toBe(refusedByRowSecurity);
+  });
+
+  it('are nothing outside a household', async () => {
+    expect(await db.select().from(profileGuardians)).toEqual([]);
+    expect(await db.select().from(parentalConsents)).toEqual([]);
   });
 });

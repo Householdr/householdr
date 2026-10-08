@@ -1,6 +1,7 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import ErrorSummary from '#lib/components/ErrorSummary.svelte';
+  import FieldProblem from '#lib/components/FieldProblem.svelte';
   import QrCode from '#lib/components/QrCode.svelte';
   import { Button } from '#lib/components/ui/button/index.js';
   import { Input } from '#lib/components/ui/input/index.js';
@@ -8,7 +9,7 @@
   import { useCopy } from '#lib/hooks/use-copy.svelte.js';
   import { useShare } from '#lib/hooks/use-share.svelte.js';
   import { m } from '#lib/paraglide/messages.js';
-  import type { Role } from '@householdr/application';
+  import type { NewChildProblem, Role } from '@householdr/application';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
@@ -32,6 +33,27 @@
     adult: m['household.adult'],
     child: m['household.child'],
   };
+
+  /** Why the server refused the child's profile, in words, next to the field it is about. */
+  const childProblems: Record<NewChildProblem, { field: string; problem: () => string }> = {
+    name: { field: 'child-name', problem: m['household.invalid-name'] },
+    birthDate: { field: 'birth-date', problem: m['household.invalid-birth-date'] },
+    adult: { field: 'birth-date', problem: m['household.child-is-adult'] },
+    consent: { field: 'consent', problem: m['household.invalid-consent'] },
+  };
+  const refusedChild = $derived(
+    (form?.child?.problems ?? []).map((problem) => ({
+      id: childProblems[problem].field,
+      problem: childProblems[problem].problem(),
+    })),
+  );
+  const childProblemOf = (field: string) => refusedChild.find(({ id }) => id === field)?.problem;
+
+  /** A field's own attributes for its problem, if the server refused it (UI-10). */
+  const childProblemAttributes = (field: string) =>
+    childProblemOf(field) === undefined
+      ? {}
+      : { 'aria-invalid': true, 'aria-describedby': `${field}-problem` };
 </script>
 
 <svelte:head>
@@ -166,6 +188,73 @@
             aria-invalid={form?.invalid ? 'true' : undefined}
             value={form?.name ?? ''}
           />
+        </div>
+        <Button type="submit" class="w-full">{m['household.add']()}</Button>
+      </form>
+    </section>
+
+    <section aria-labelledby="add-child" class="flex flex-col gap-4">
+      <h2 id="add-child" class="text-lg font-semibold">{m['household.add-child']()}</h2>
+      <!-- Only someone with parental responsibility consents for a child (ADR-0007 §2, ADR-0010
+           §9). -->
+      <p>{m['household.add-child-intro']()}</p>
+
+      {#key form}
+        {#if form?.child}
+          <ErrorSummary
+            heading={m['household.add-failed']()}
+            message={m['household.check']()}
+            fields={refusedChild}
+          />
+        {/if}
+      {/key}
+
+      <p role="status" class="wrap-break-word empty:hidden">
+        {form?.addedChild ? m['household.child-added']({ name: form.addedChild }) : ''}
+      </p>
+
+      <form method="POST" action="?/addChild" use:enhance class="flex flex-col gap-4">
+        <div class="flex flex-col gap-2">
+          <Label for="child-name">{m['household.name']()}</Label>
+          <Input
+            id="child-name"
+            name="name"
+            autocomplete="off"
+            required
+            maxlength={100}
+            value={form?.child?.name ?? ''}
+            {...childProblemAttributes('child-name')}
+          />
+          <FieldProblem id="child-name-problem" problem={childProblemOf('child-name')} />
+        </div>
+        <div class="flex flex-col gap-2">
+          <Label for="birth-date">{m['household.birth-date']()}</Label>
+          <Input
+            id="birth-date"
+            name="birthDate"
+            type="date"
+            required
+            value={form?.child?.birthDate ?? ''}
+            {...childProblemAttributes('birth-date')}
+          />
+          <FieldProblem id="birth-date-problem" problem={childProblemOf('birth-date')} />
+        </div>
+        <div class="flex flex-col gap-1">
+          <!-- Never ticked before the head ticks it (PRIN-14); the label around the box makes the
+               whole sentence its target (UI-8). -->
+          <label class="flex min-h-11 items-start gap-3 py-2">
+            <input
+              id="consent"
+              name="consent"
+              type="checkbox"
+              class="mt-0.5 size-5 shrink-0 accent-primary"
+              required
+              checked={form?.child?.consent ?? false}
+              {...childProblemAttributes('consent')}
+            />
+            {m['household.child-consent']()}
+          </label>
+          <FieldProblem id="consent-problem" problem={childProblemOf('consent')} />
         </div>
         <Button type="submit" class="w-full">{m['household.add']()}</Button>
       </form>

@@ -3,6 +3,13 @@ import { expect, expectAccessible, forceFlags, signIn, test } from './fixtures';
 // Where a signed-in account starts: its household, or the list of them (ADR-0005 §1), and a
 // household's page, for its members only (ADR-0017 §2). Behind onboarding's flag (CODE-20).
 
+/**
+ * The date `years` years ago in Brussels, the test households' time zone: far enough from an 18th
+ * birthday that the day the tests run on doesn't matter (TEST-2); the boundaries are unit-tested.
+ */
+const yearsAgo = (years: number) =>
+  Temporal.Now.plainDateISO('Europe/Brussels').subtract({ years }).toString();
+
 test.beforeEach(async ({ context, baseURL }) => {
   await forceFlags(context, baseURL, { 'sign-in': true, onboarding: true });
 });
@@ -25,6 +32,7 @@ for (const javaScriptEnabled of [true, false]) {
       ]);
       // Adding members waits for a second factor (ADR-0010 §3).
       await expect(page.getByRole('heading', { name: 'Add an adult' })).toHaveCount(0);
+      await expect(page.getByRole('heading', { name: 'Add a child' })).toHaveCount(0);
       if (javaScriptEnabled) await expectAccessible(page);
       await page.getByRole('link', { name: 'Security' }).click();
       await expect(page).toHaveURL('/security');
@@ -39,16 +47,17 @@ for (const javaScriptEnabled of [true, false]) {
       const id = await accounts.addHousehold(account.email, 'Ash Lane');
       await signIn(page, account, `/households/${id}`);
       if (javaScriptEnabled) await expectAccessible(page);
-      await page.getByLabel('Name').fill('Sam');
-      await page.getByRole('button', { name: 'Add', exact: true }).click();
-      await expect(page.getByRole('status')).toHaveText(
+      const form = page.getByRole('region', { name: 'Add an adult' });
+      await form.getByLabel('Name').fill('Sam');
+      await form.getByRole('button', { name: 'Add', exact: true }).click();
+      await expect(form.getByRole('status')).toHaveText(
         'Sam is added. Let them know: once they join with an account of their own, they can see everything recorded about them.',
       );
       await expect(page.getByRole('list', { name: 'Members' }).getByRole('listitem')).toHaveText([
         /Robin \(you\)\s*Head/,
         /Sam\s*Adult/,
       ]);
-      await expect(page.getByLabel('Name')).toHaveValue('');
+      await expect(form.getByLabel('Name')).toHaveValue('');
       if (javaScriptEnabled) await expectAccessible(page, 'adult added');
     });
 
@@ -57,17 +66,91 @@ for (const javaScriptEnabled of [true, false]) {
       const id = await accounts.addHousehold(account.email, 'Ash Lane');
       await signIn(page, account, `/households/${id}`);
       // Spaces get past the browser's check, not the server's (CODE-12).
-      await page.getByLabel('Name').fill('   ');
-      await page.getByRole('button', { name: 'Add', exact: true }).click();
+      const form = page.getByRole('region', { name: 'Add an adult' });
+      await form.getByLabel('Name').fill('   ');
+      await form.getByRole('button', { name: 'Add', exact: true }).click();
       const summary = page.getByRole('region', { name: 'Adding didn’t work' });
       await expect(summary).toHaveText(/Enter their name, up to 100 characters\./);
       await expect(summary).toBeFocused();
-      await expect(page.getByLabel('Name')).toHaveAttribute('aria-invalid', 'true');
-      await expect(page.getByLabel('Name')).toHaveValue('   ');
+      await expect(form.getByLabel('Name')).toHaveAttribute('aria-invalid', 'true');
+      await expect(form.getByLabel('Name')).toHaveValue('   ');
       await expect(page.getByRole('list', { name: 'Members' }).getByRole('listitem')).toHaveCount(
         1,
       );
       if (javaScriptEnabled) await expectAccessible(page, 'name refused');
+    });
+
+    test('a head adds a child, giving their consent as a parent', async ({
+      page,
+      accounts,
+      account,
+    }) => {
+      await accounts.addSecondFactor(account.email);
+      const id = await accounts.addHousehold(account.email, 'Ash Lane');
+      await signIn(page, account, `/households/${id}`);
+      const form = page.getByRole('region', { name: 'Add a child' });
+      // Someone without parental responsibility is pointed to a parent (ADR-0007 §2).
+      await expect(form).toContainText(
+        'If you don’t have it, as a step-parent may not, invite one of the child’s parents to add them instead.',
+      );
+      const consent = form.getByRole('checkbox', {
+        name: 'I have parental responsibility for this child, and I agree to them using Householdr.',
+      });
+      // Never ticked for them (PRIN-14).
+      await expect(consent).not.toBeChecked();
+      await form.getByLabel('Name').fill('Kim');
+      await form.getByLabel('Birth date').fill(yearsAgo(8));
+      await consent.check();
+      await form.getByRole('button', { name: 'Add', exact: true }).click();
+      await expect(form.getByRole('status')).toHaveText(
+        'Kim is added. Let them know, in words they understand: once they have an account of their own, they can see everything recorded about them.',
+      );
+      await expect(page.getByRole('list', { name: 'Members' }).getByRole('listitem')).toHaveText([
+        /Robin \(you\)\s*Head/,
+        /Kim\s*Child/,
+      ]);
+      await expect(form.getByLabel('Name')).toHaveValue('');
+      await expect(form.getByLabel('Birth date')).toHaveValue('');
+      await expect(consent).not.toBeChecked();
+      if (javaScriptEnabled) await expectAccessible(page, 'child added');
+    });
+
+    test('says what a child’s profile needs, and keeps what was entered', async ({
+      page,
+      accounts,
+      account,
+    }) => {
+      await accounts.addSecondFactor(account.email);
+      const id = await accounts.addHousehold(account.email, 'Ash Lane');
+      await signIn(page, account, `/households/${id}`);
+      const form = page.getByRole('region', { name: 'Add a child' });
+      const consent = form.getByRole('checkbox');
+      // Spaces and an adult's birth date get past the browser's checks, not the server's
+      // (CODE-12, ADR-0010 §7).
+      const born = yearsAgo(30);
+      await form.getByLabel('Name').fill('   ');
+      await form.getByLabel('Birth date').fill(born);
+      await consent.check();
+      await form.getByRole('button', { name: 'Add', exact: true }).click();
+      const summary = page.getByRole('region', { name: 'Adding didn’t work' });
+      await expect(summary).toBeFocused();
+      await expect(summary.getByRole('link')).toHaveText([
+        'Enter their name, up to 100 characters.',
+        'They’re 18 or older: add them as an adult instead.',
+      ]);
+      const birthDate = form.getByLabel('Birth date');
+      await expect(form.getByLabel('Name')).toHaveAttribute('aria-invalid', 'true');
+      await expect(birthDate).toHaveAttribute('aria-invalid', 'true');
+      await expect(birthDate).toHaveAccessibleDescription(
+        'They’re 18 or older: add them as an adult instead.',
+      );
+      await expect(form.getByLabel('Name')).toHaveValue('   ');
+      await expect(birthDate).toHaveValue(born);
+      await expect(consent).toBeChecked();
+      await expect(page.getByRole('list', { name: 'Members' }).getByRole('listitem')).toHaveCount(
+        1,
+      );
+      if (javaScriptEnabled) await expectAccessible(page, 'child refused');
     });
   });
 }

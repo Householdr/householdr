@@ -1,5 +1,13 @@
-import { addAdult, invite, revokeInvitation, viewHousehold } from '@householdr/application';
+import {
+  addAdult,
+  addChild,
+  invite,
+  revokeInvitation,
+  viewHousehold,
+} from '@householdr/application';
 import { error, fail } from '@sveltejs/kit';
+import { m } from '#lib/paraglide/messages.js';
+import { getLocale } from '#lib/paraglide/runtime.js';
 import { authContext } from '#lib/server/auth.js';
 import { qrCode } from '#lib/server/qr-code.js';
 import type { Actions, PageServerLoad } from './$types';
@@ -72,5 +80,24 @@ export const actions = {
     const result = await revokeInvitation(context, { member });
     if (!result.ok) error(403);
     return { revoked: member };
+  },
+  // Adds a child's profile, with the head's parental consent (ADR-0007 §2, ADR-0010 §9).
+  addChild: async ({ locals, request }) => {
+    const context = await householdContext(locals);
+    const form = await request.formData();
+    const [name, birthDate] = [form.get('name'), form.get('birthDate')];
+    // A ticked checkbox sends `on`; one left empty sends nothing.
+    const consent = form.get('consent') === 'on';
+    // The sentence the page showed beside the box, in the same language, is what the consent is
+    // kept with; never words the browser sends.
+    const consentText = { text: m['household.child-consent'](), language: getLocale() };
+    const result = await addChild({ ...context, consentText }, { name, birthDate, consent });
+    if (result.ok) return { addedChild: result.name };
+    if (result.error === 'not-allowed') error(403);
+    // What was entered stays in the form (UI-10).
+    const text = (value: FormDataEntryValue | null) => (typeof value === 'string' ? value : '');
+    return fail(400, {
+      child: { problems: result.problems, name: text(name), birthDate: text(birthDate), consent },
+    });
   },
 } satisfies Actions;
