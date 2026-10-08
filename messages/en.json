@@ -441,5 +441,21 @@
   "task.remove-confirm": "Remove the task",
   "task.keep": "Keep it",
   "task.remove-failed": "Removing the task didn’t work",
-  "task.remove-conflict": "This task changed a moment ago, so it wasn’t removed. Check it as it is now, then remove it if you still want to."
+  "task.remove-conflict": "This task changed a moment ago, so it wasn’t removed. Check it as it is now, then remove it if you still want to.",
+  "availability.page-title": "Who’s away · Householdr",
+  "availability.title": "Who’s away",
+  "availability.intro": "Plan the days you’re away, so the chores are shared among those at home. Everyone in the household sees these dates, never a reason or a place.",
+  "availability.none": "No days away planned.",
+  "availability.first-day": "First day",
+  "availability.last-day": "Last day",
+  "availability.plan": "Plan days away",
+  "availability.add": "Add",
+  "availability.remove": "Remove",
+  "availability.added": "The days away are added.",
+  "availability.removed": "The days away are removed.",
+  "availability.already-removed": "Those days away were already removed.",
+  "availability.add-failed": "Adding the days away didn’t work",
+  "availability.check": "Check these and try again:",
+  "availability.invalid-first-day": "Choose a first day from today up to a year from now.",
+  "availability.invalid-last-day": "Choose a last day on or after the first day, up to a year from now."
 }

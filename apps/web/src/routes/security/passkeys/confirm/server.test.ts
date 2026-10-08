@@ -51,6 +51,7 @@ const on = {
   'two-factor': false,
   tasks: false,
   comparisons: false,
+  availability: false,
 };
 let next = 0;
 
