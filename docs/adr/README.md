@@ -26,6 +26,8 @@
 | [0022](0022-development-standards-and-adr-first.md) | Development standards and ADR-first development | Accepted |
 | [0023](0023-application-layer.md) | A framework-agnostic application layer | Accepted |
 | [0024](0024-public-core-from-stage-0.md) | The core is public from stage 0 | Accepted |
+| [0025](0025-public-api-and-connected-apps.md) | A public API, and apps that members connect | Draft |
+| [0026](0026-mcp-server.md) | An MCP server for AI assistants | Draft |
 
 ## Planned
 
