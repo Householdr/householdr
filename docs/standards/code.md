@@ -16,6 +16,9 @@
   imports "upwards"; `web` and `worker` don't import `db`; `application` doesn't import SvelteKit; the
   core never imports anything from `householdr-cloud`
   ([ADR-0021](../adr/0021-self-hosted-edition.md) §1, [ADR-0023](../adr/0023-application-layer.md) §2).
+- **CODE-27 — No import cycles.** No module imports, directly or through others, a module that
+  imports it, within a package or across packages, type-only imports included. A piece both sides
+  need moves to a module they can both import. A dependency check in CI fails on any cycle.
 - **CODE-5 — The domain package is pure.** No database, network, file system, environment variables,
   randomness or clock: time and seeds are passed in. Business rules live here and nowhere else
   ([PRIN-3](principles.md)).
