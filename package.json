@@ -8,9 +8,10 @@
     "node": "^26"
   },
   "scripts": {
-    "verify": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test",
+    "verify": "pnpm lint && pnpm deps:check && pnpm format:check && pnpm typecheck && pnpm test",
     "build": "pnpm --recursive build",
     "lint": "eslint .",
+    "deps:check": "depcruise apps packages scripts --config dependency-cruiser.config.js",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc && pnpm --recursive typecheck",
@@ -21,6 +22,7 @@
     "@eslint-community/eslint-plugin-eslint-comments": "catalog:",
     "@eslint/js": "catalog:",
     "@types/node": "catalog:",
+    "dependency-cruiser": "catalog:",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "prettier": "catalog:",
