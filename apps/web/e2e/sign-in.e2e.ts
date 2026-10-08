@@ -1,4 +1,3 @@
-import { account } from './account';
 import { expect, expectAccessible, forceFlags, test } from './fixtures';
 
 // Signing in with a password (ADR-0010 §2), while its release flag is off by default (CODE-20).
@@ -18,7 +17,7 @@ for (const javaScriptEnabled of [true, false]) {
       await forceFlags(context, baseURL, { 'sign-in': true });
     });
 
-    test('signs in, with a password manager’s help', async ({ page, context }) => {
+    test('signs in, with a password manager’s help', async ({ page, context, account }) => {
       await page.goto('/sign-in');
       await expect(page).toHaveTitle('Sign in to Householdr');
       await expect(page.getByRole('heading', { level: 1 })).toHaveText('Sign in to Householdr');
@@ -29,7 +28,7 @@ for (const javaScriptEnabled of [true, false]) {
       await page.getByLabel('E-mail address').fill(account.email);
       await page.getByLabel('Password').fill(account.password);
       await page.getByRole('button', { name: 'Sign in' }).click();
-      await expect(page).toHaveURL('/');
+      await expect(page).toHaveURL('/security');
       const session = (await context.cookies()).find(
         (cookie) => cookie.name === '__Host-householdr.session_token',
       );

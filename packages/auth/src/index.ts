@@ -5,6 +5,20 @@ export { counterKeys, type CounterKey } from './counter-keys';
 export {
   passwordSignIn,
   signInWithPassword,
+  type Client,
   type SignInContext,
   type SignInResult,
 } from './sign-in';
+export {
+  currentSession,
+  deviceToSignOut,
+  sessionCookie,
+  signedInDevices,
+  signOut,
+  signOutDevice,
+  signOutOtherDevices,
+  type Device,
+  type Session,
+  type SessionsContext,
+  type SignOutDeviceResult,
+} from './sessions';

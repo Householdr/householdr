@@ -1,7 +1,16 @@
-import type { RequestEvent } from '@sveltejs/kit';
+import { sessionCookie, signInWithPassword, type Cookie } from '@householdr/auth';
+import { createTestAccount, testSignInContext } from '@householdr/auth/testing';
+import { isRedirect, type RequestEvent } from '@sveltejs/kit';
 import type { Handle, ResolveOptions } from '@sveltejs/kit/hooks';
-import { describe, expect, it } from 'vitest';
-import { flag, harden, localise } from './hooks.server';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { authenticate, flag, guard, harden, localise } from './hooks.server';
+
+let test: Awaited<ReturnType<typeof testSignInContext>>;
+vi.mock('./lib/server/auth', () => ({ authContext: () => Promise.resolve(test.context) }));
+beforeAll(async () => {
+  test = await testSignInContext();
+});
+afterAll(() => test.close());
 
 const page = '<html lang="%paraglide.lang%"></html>';
 
@@ -13,14 +22,16 @@ const respond = (
   headers: Record<string, string> = {},
   locals = {},
   cookies: Record<string, string> = {},
+  route: string | null = '/',
 ) => {
   const request = new Request('https://householdr.example.org/', { headers });
   return hook({
     event: {
       request,
       url: new URL(request.url),
+      route: { id: route },
       locals,
-      cookies: { get: (name: string) => cookies[name] },
+      cookies: { get: (name: string) => cookies[name], set: vi.fn() },
     } as unknown as RequestEvent,
     resolve: async (_event, options?: ResolveOptions) => {
       const html = (await options?.transformPageChunk?.({ html: page, done: true })) ?? page;
@@ -71,5 +82,64 @@ describe('the flags of a request (ADR-0015 §3)', () => {
     const locals = {} as App.Locals;
     await respond(flag, {}, locals, { 'test-flags': 'sign-in=on' });
     expect(locals.flags).toEqual({ 'sign-in': true });
+  });
+});
+
+describe('who a request is signed in as (ADR-0010 §6)', () => {
+  /** A cookie as the browser sends it back. */
+  const sent = ({ name, value }: Cookie) => `${name}=${encodeURIComponent(value)}`;
+
+  it('is the account of a valid session cookie', async () => {
+    const email = 'robin@example.org';
+    const password = 'correct horse battery staple';
+    const accountId = await createTestAccount(test.context.auth, { email, password });
+    const result = await signInWithPassword(
+      test.context,
+      { email, password },
+      { address: '192.0.2.1', userAgent: null },
+    );
+    if (!result.ok) throw new Error(`Not signed in: ${result.error}`);
+    const [cookie] = result.cookies;
+    if (!cookie) throw new Error('No cookie');
+    const locals = {} as App.Locals;
+    await respond(authenticate, { cookie: sent(cookie) }, locals, {
+      [sessionCookie]: cookie.value,
+    });
+    expect(locals.session).toEqual({ id: expect.any(String) as string, accountId });
+  });
+
+  it('is no one without a cookie, or with one that isn’t a session', async () => {
+    const locals = {} as App.Locals;
+    await respond(authenticate, {}, locals);
+    expect(locals.session).toBeNull();
+    const forged = { name: sessionCookie, value: 'forged.forged', options: { path: '/' } };
+    await respond(authenticate, { cookie: sent(forged) }, locals, { [sessionCookie]: 'forged' });
+    expect(locals.session).toBeNull();
+  });
+});
+
+describe('the guard (ADR-0017 §2)', () => {
+  const signedOut = { session: null } as App.Locals;
+  const signedIn = { session: { id: 'session', accountId: 'account' } } as App.Locals;
+  const outcome = async (locals: App.Locals, route: string | null) => {
+    try {
+      return (await respond(guard, {}, locals, {}, route)).status;
+    } catch (thrown) {
+      return isRedirect(thrown) ? `→ ${thrown.location}` : thrown;
+    }
+  };
+
+  it('sends a request without a session to the sign-in page, on every route but the open ones', async () => {
+    expect(await outcome(signedOut, '/security')).toBe('→ /sign-in');
+    expect(await outcome(signedOut, '/sign-in')).toBe(200);
+    expect(await outcome(signedOut, '/health')).toBe(200);
+  });
+
+  it('lets a request with a session through', async () => {
+    expect(await outcome(signedIn, '/security')).toBe(200);
+  });
+
+  it('leaves an address without a route to the error page', async () => {
+    expect(await outcome(signedOut, null)).toBe(200);
   });
 });

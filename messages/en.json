@@ -27,5 +27,29 @@
         "countPlural=other": "After several tries, signing in pauses for a moment. You can try again in {count} minutes."
       }
     }
-  ]
+  ],
+  "security.title": "Security",
+  "security.page-title": "Security · Householdr",
+  "security.devices": "Signed-in devices",
+  "security.device": "{browser} on {system}",
+  "security.unknown-browser": "A browser",
+  "security.unknown-system": "an unknown system",
+  "security.unknown-device": "An unknown device",
+  "security.this-device": "This device",
+  "security.used-today": "Used in the last 24 hours",
+  "security.used-days": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Last used {count} day ago",
+        "countPlural=other": "Last used {count} days ago"
+      }
+    }
+  ],
+  "security.sign-out": "Sign out",
+  "security.sign-out-others": "Sign out all other devices",
+  "security.signed-out": "That device is signed out.",
+  "security.signed-out-others": "All other devices are signed out.",
+  "security.not-found": "That device was already signed out."
 }

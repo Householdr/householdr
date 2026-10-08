@@ -141,7 +141,7 @@ describe('accounts and sessions (ADR-0010)', () => {
     expect(await refusal(addAccount({ email: 'kim@example.org' }))).toBe('accounts_email_unique');
   });
 
-  it('stores no address on a session (ADR-0012 §2, clarification)', async () => {
+  it('stores no address or user agent on a session (ADR-0012 §2, clarification)', async () => {
     const [account] = await addAccount();
     if (!account) throw new Error('No account');
     const session = (fields: Partial<typeof sessions.$inferInsert>) =>
@@ -154,5 +154,10 @@ describe('accounts and sessions (ADR-0010)', () => {
     expect(await refusal(session({}))).toBeUndefined();
     expect(await refusal(session({ ipAddress: '' }))).toBe('sessions_no_ip_address');
     expect(await refusal(session({ ipAddress: '203.0.113.9' }))).toBe('sessions_no_ip_address');
+    expect(await refusal(session({ browser: 'Firefox', system: 'Linux' }))).toBeUndefined();
+    expect(await refusal(session({ userAgent: '' }))).toBe('sessions_no_user_agent');
+    expect(await refusal(session({ userAgent: 'Mozilla/5.0 (X11; Linux x86_64)' }))).toBe(
+      'sessions_no_user_agent',
+    );
   });
 });

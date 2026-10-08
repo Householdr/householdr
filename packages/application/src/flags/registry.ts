@@ -7,7 +7,8 @@ import type { Flag } from './flag';
 export const flags = {
   'sign-in': {
     kind: 'release',
-    description: 'Signing in with a password (ADR-0010 §2).',
+    description:
+      'Signing in with a password, and the signed-in devices on the security page (ADR-0010 §2, §6).',
     owner: 'Jens',
     expires: '2027-03-31',
   },

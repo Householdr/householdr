@@ -8,7 +8,7 @@ import { actions, load } from './+page.server';
 
 type Test = Awaited<ReturnType<typeof testSignInContext>>;
 let test: Test;
-vi.mock('#lib/server/sign-in.js', () => ({ signInContext: () => Promise.resolve(test.context) }));
+vi.mock('#lib/server/auth.js', () => ({ authContext: () => Promise.resolve(test.context) }));
 
 beforeAll(async () => {
   test = await testSignInContext();
@@ -51,10 +51,10 @@ describe('the sign-in page (ADR-0010 §2)', () => {
     expect(isHttpError(thrown, 404)).toBe(true);
   });
 
-  it('sets the session’s cookie and goes to the start page', async () => {
+  it('sets the session’s cookie and goes to the security page', async () => {
     const email = await newAccount();
     const { thrown, set } = await submit({ email, password });
-    expect(isRedirect(thrown) && thrown).toMatchObject({ status: 303, location: '/' });
+    expect(isRedirect(thrown) && thrown).toMatchObject({ status: 303, location: '/security' });
     expect(set).toHaveBeenCalledExactlyOnceWith(
       '__Host-householdr.session_token',
       expect.any(String),

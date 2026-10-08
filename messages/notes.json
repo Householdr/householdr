@@ -37,5 +37,65 @@
   "sign-in.wait-minutes": {
     "note": "As sign-in.wait-seconds, for waits of a minute or more. {count} is the number of minutes, rounded up.",
     "needsReview": ["nl"]
+  },
+  "security.title": {
+    "note": "Heading of the security page, where a member sees and signs out their devices (ADR-0010 §6).",
+    "needsReview": ["nl"]
+  },
+  "security.page-title": {
+    "note": "Browser tab title of the security page. Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "security.devices": {
+    "note": "Heading of the list of devices the account is signed in on.",
+    "needsReview": ["nl"]
+  },
+  "security.device": {
+    "note": "A signed-in device. {browser} and {system} are names such as Firefox and Android, not translated.",
+    "needsReview": ["nl"]
+  },
+  "security.unknown-browser": {
+    "note": "Stands in for {browser} in security.device when the browser isn't known; starts the sentence.",
+    "needsReview": ["nl"]
+  },
+  "security.unknown-system": {
+    "note": "Stands in for {system} in security.device when the operating system isn't known; mid-sentence.",
+    "needsReview": ["nl"]
+  },
+  "security.unknown-device": {
+    "note": "A signed-in device whose browser and system are both unknown.",
+    "needsReview": ["nl"]
+  },
+  "security.this-device": {
+    "note": "Marks the device the member is using right now in the list of signed-in devices.",
+    "needsReview": ["nl"]
+  },
+  "security.used-today": {
+    "note": "When a signed-in device was last used, within the last day. Exact to a day only.",
+    "needsReview": ["nl"]
+  },
+  "security.used-days": {
+    "note": "When a signed-in device was last used. {count} is whole days ago, at least 1.",
+    "needsReview": ["nl"]
+  },
+  "security.sign-out": {
+    "note": "Button next to each signed-in device that signs it out; next to this device, it signs the member out here.",
+    "needsReview": ["nl"]
+  },
+  "security.sign-out-others": {
+    "note": "Button that signs out every device but the one in use.",
+    "needsReview": ["nl"]
+  },
+  "security.signed-out": {
+    "note": "Status message after signing out another device.",
+    "needsReview": ["nl"]
+  },
+  "security.signed-out-others": {
+    "note": "Status message after signing out all other devices.",
+    "needsReview": ["nl"]
+  },
+  "security.not-found": {
+    "note": "Status message when the device to sign out was signed out already, for example from another tab.",
+    "needsReview": ["nl"]
   }
 }
