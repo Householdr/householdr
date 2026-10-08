@@ -13,3 +13,16 @@ export interface Mail {
 export interface Mailer {
   send: (mail: Mail) => Promise<void>;
 }
+
+/** What a log line may carry: plain values only, so no object is logged whole by accident. */
+export type LogFields = Record<string, string | number | boolean | null>;
+
+/**
+ * Writes operational log lines (ADR-0008 §13): to stdout in the app, recorded in tests. Lines
+ * name an event and identify accounts by ID, never by e-mail address (ADR-0017 §7, SEC-3).
+ */
+export interface Logger {
+  info: (event: string, fields?: LogFields) => void;
+  warn: (event: string, fields?: LogFields) => void;
+  error: (event: string, fields?: LogFields, error?: unknown) => void;
+}
