@@ -222,6 +222,15 @@ subject.
   > anyone is known, by e-mail address or token, and none of it is household data. The schema test
   > checks that every table in `public` is household-owned (CODE-17) and pins the list of `auth`
   > tables, so a new table can't land in `auth` without review.
+
+  > **Clarification (2026-10-08):** code that has to find households before one is set (the worker's
+  > per-household jobs, an account's list of households, data export, the consent age across a
+  > child's households, an invitation by its token) calls a few database functions, created by
+  > migrations and run with their owner's rights, that return **household ids and nothing else**. It
+  > then reads each household in its own transaction as usual, so every row it reads is still
+  > checked by row-level security. The schema test pins the list of these functions, so a new one
+  > can't be added without review.
+
 - Times are stored as `timestamptz` together with the household's zone where the local time matters
   ([ADR-0004](0004-recurrence-schedules.md) §6).
 

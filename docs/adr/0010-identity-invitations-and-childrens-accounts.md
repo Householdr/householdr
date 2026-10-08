@@ -199,6 +199,7 @@ A child can take part in three ways, in increasing independence:
   > mail (`.invalid`). It is not the child's, is never verified, mailed or shown, and a database
   > check keeps it unverified. Taking the account over (below) replaces it with the child's own
   > address.
+
 - A **family device** (a shared tablet) can hold the sessions of several children; switching between
   them is a tap. By approving a shared device, the guardian accepts that the children on it can open
   each other's view; completions still record who logged them.
@@ -269,6 +270,14 @@ A child can take part in three ways, in increasing independence:
   > account is set up from it (§7), or the child links their own account to it (§5), they move to
   > the account. Consent records of a child with only a profile are kept as long as the profile
   > exists, plus one year ([ADR-0012](0012-privacy-and-data-protection.md) §5, clarification).
+
+  > **Clarification (2026-10-08):** a child's account that already has guardians joins a profile in
+  > **another household** through a co-guardian. A guardian of the account invites the other parent
+  > as co-guardian (above); a guardian who is also a head of the other household then links the
+  > account to that household's profile. The profile's own guardianship ends there: whoever held it
+  > and doesn't guard the account can be invited as a co-guardian. The profile's consent record
+  > stays with it.
+
 - The **consent age** is that of the household's **country** (13 in Belgium, 15 in France, 16 in the
   Netherlands, 16 where no lower age applies). This adds a **country** to the household, set in
   onboarding step 1 and detected from the time zone
