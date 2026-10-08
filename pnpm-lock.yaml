@@ -298,6 +298,12 @@ importers:
         specifier: 'catalog:'
         version: 26.6.4
 
+  packages/adapters:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.4
+
   packages/application:
     dependencies:
       '@householdr/db':

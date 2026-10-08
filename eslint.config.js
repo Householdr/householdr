@@ -94,6 +94,23 @@ export const boundaries = defineConfig(
     },
   },
   {
+    files: ['packages/adapters/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@householdr/*', '!@householdr/domain', '!@householdr/application'],
+              message:
+                'Adapters implement the ports of the application package and depend on nothing else (CODE-4).',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['apps/worker/**'],
     rules: {
       'no-restricted-imports': [
@@ -101,8 +118,9 @@ export const boundaries = defineConfig(
         {
           patterns: [
             {
-              group: ['@householdr/*', '!@householdr/application'],
-              message: 'Jobs call use cases from the application package (CODE-4, CODE-10).',
+              group: ['@householdr/*', '!@householdr/application', '!@householdr/adapters'],
+              message:
+                'Jobs call use cases from the application package, with adapters for their ports (CODE-4, CODE-10).',
             },
           ],
         },
@@ -117,9 +135,14 @@ export const boundaries = defineConfig(
         {
           patterns: [
             {
-              group: ['@householdr/*', '!@householdr/application', '!@householdr/domain'],
+              group: [
+                '@householdr/*',
+                '!@householdr/application',
+                '!@householdr/adapters',
+                '!@householdr/domain',
+              ],
               message:
-                'Routes call use cases from the application package; domain only for previews (CODE-4, CODE-10).',
+                'Routes call use cases from the application package, with adapters for their ports; domain only for previews (CODE-4, CODE-10).',
             },
           ],
         },
