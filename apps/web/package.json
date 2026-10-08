@@ -2,18 +2,25 @@
   "name": "@householdr/web",
   "private": true,
   "type": "module",
+  "imports": {
+    "#lib/*": "./src/lib/*"
+  },
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
     "build:test": "vite build --mode test",
     "preview": "vite preview",
     "prepare": "paraglide-js compile --project ../../project.inlang --outdir ./src/lib/paraglide && svelte-kit sync",
-    "typecheck": "pnpm prepare && tsc",
+    "typecheck": "pnpm prepare && svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
     "test:e2e": "playwright test"
   },
   "dependencies": {
     "@householdr/adapters": "workspace:*",
-    "@householdr/application": "workspace:*"
+    "@householdr/application": "workspace:*",
+    "@internationalized/date": "catalog:",
+    "bits-ui": "catalog:",
+    "cn": "catalog:",
+    "tailwind-variants": "catalog:"
   },
   "devDependencies": {
     "@axe-core/playwright": "catalog:",
@@ -22,7 +29,10 @@
     "@sveltejs/adapter-node": "catalog:",
     "@sveltejs/kit": "catalog:",
     "@sveltejs/vite-plugin-svelte": "catalog:",
+    "@tailwindcss/vite": "catalog:",
     "svelte": "catalog:",
+    "svelte-check": "catalog:",
+    "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:"
   }

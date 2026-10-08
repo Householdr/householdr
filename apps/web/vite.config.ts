@@ -1,6 +1,7 @@
 import { paraglideVitePlugin } from '@inlang/paraglide-js';
 import adapter from '@sveltejs/adapter-node';
 import { sveltekit } from '@sveltejs/kit/vite';
+import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 import { writePseudoProject } from './pseudo-locale.ts';
 import { contentSecurityPolicy } from './src/security.ts';
@@ -11,6 +12,8 @@ export default defineConfig(({ mode }) => {
   const production = mode === 'production';
   return {
     plugins: [
+      // Styles from Tailwind, with the design tokens as CSS custom properties (ADR-0008 §5).
+      tailwindcss(),
       // Messages compile into typed functions (ADR-0008 §6). Everyone reads English for now: Dutch
       // is maintained but sits behind a release flag until it is offered (ADR-0016 §1), so the
       // locale follows the base language until flags and accounts can choose it.
