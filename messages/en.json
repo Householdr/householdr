@@ -51,5 +51,10 @@
   "security.sign-out-others": "Sign out all other devices",
   "security.signed-out": "That device is signed out.",
   "security.signed-out-others": "All other devices are signed out.",
-  "security.not-found": "That device was already signed out."
+  "security.not-found": "That device was already signed out.",
+  "email.password-reset.subject": "Choose a new password for Householdr",
+  "email.password-reset.request": "Someone asked to reset the password of your Householdr account.",
+  "email.password-reset.action": "Choose a new password",
+  "email.password-reset.expiry": "The link works once, within 30 minutes.",
+  "email.password-reset.not-you": "Wasn’t it you? Then ignore this e-mail: your password stays as it is."
 }

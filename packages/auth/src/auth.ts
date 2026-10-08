@@ -1,7 +1,9 @@
 import { accounts, credentials, sessions, verifications, type Database } from '@householdr/db';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { and, eq } from 'drizzle-orm';
 import { deviceOf } from './device';
+import { linkInTheMaking } from './links';
 
 export interface AuthSettings {
   db: Database;
@@ -38,6 +40,14 @@ export function createAuth({ db, baseUrl, secret }: AuthSettings) {
       minPasswordLength: 12,
       // Accounts are made from a confirmed address; one that isn't confirmed can't sign in.
       requireEmailVerification: true,
+      // A reset link lasts 30 minutes (ADR-0010 §8). The worker sends it, so the library only
+      // hands its token over (ADR-0014 §7, clarification).
+      resetPasswordTokenExpiresIn: 30 * 60,
+      sendResetPassword: ({ token }) => {
+        const link = linkInTheMaking.getStore();
+        if (link) link.token = token;
+        return Promise.resolve();
+      },
     },
     session: {
       // A session lasts 30 days and is extended while used (ADR-0010 §6).
@@ -60,6 +70,25 @@ export function createAuth({ db, baseUrl, secret }: AuthSettings) {
       defaultCookieAttributes: { secure: true, httpOnly: true, sameSite: 'lax', path: '/' },
     },
     databaseHooks: {
+      // A link made for an account e-mail replaces the older ones for the same purpose and account
+      // (ADR-0014 §7, clarification), and is marked with its purpose to be found the next time.
+      verification: {
+        create: {
+          before: async (verification) => {
+            const link = linkInTheMaking.getStore();
+            if (!link) return;
+            await db
+              .delete(verifications)
+              .where(
+                and(
+                  eq(verifications.purpose, link.purpose),
+                  eq(verifications.value, verification.value),
+                ),
+              );
+            return { data: { ...verification, purpose: link.purpose } };
+          },
+        },
+      },
       // Without tracking the library still writes an empty address; a session keeps none, and of
       // the user agent only the browser's and system's names. The database refuses the rest
       // (ADR-0012 §2, clarification).
@@ -78,7 +107,10 @@ export function createAuth({ db, baseUrl, secret }: AuthSettings) {
       },
     },
     // Tokens and codes are looked up by their hash, never stored as they are (SEC-7).
-    verification: { storeIdentifier: 'hashed' },
+    verification: {
+      storeIdentifier: 'hashed',
+      additionalFields: { purpose: { type: 'string', required: false, input: false } },
+    },
     // Nothing leaves the server, on our hosting or a self-hosted one (SEC-13).
     telemetry: { enabled: false },
     // At `info`, the library logs e-mail addresses (SEC-3).

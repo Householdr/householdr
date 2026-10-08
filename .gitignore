@@ -8,6 +8,7 @@ build/
 .svelte-kit/
 # Compiled from messages/ by Paraglide (ADR-0008 §6).
 apps/web/src/lib/paraglide/
+apps/worker/src/lib/paraglide/
 # The test build, and the inlang project with the pseudo-locale it and the dev server use.
 apps/web/build-test/
 apps/web/.pseudo/

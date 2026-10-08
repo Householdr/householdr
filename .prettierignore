@@ -7,6 +7,7 @@ packages/db/migrations/meta
 
 # Compiled from messages/ by Paraglide.
 apps/web/src/lib/paraglide
+apps/worker/src/lib/paraglide
 
 # Written by inlang when it compiles; only its settings are ours.
 project.inlang/*

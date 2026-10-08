@@ -51,5 +51,10 @@
   "security.sign-out-others": "Uitloggen op alle andere apparaten",
   "security.signed-out": "Dat apparaat is uitgelogd.",
   "security.signed-out-others": "Alle andere apparaten zijn uitgelogd.",
-  "security.not-found": "Dat apparaat was al uitgelogd."
+  "security.not-found": "Dat apparaat was al uitgelogd.",
+  "email.password-reset.subject": "Kies een nieuw wachtwoord voor Householdr",
+  "email.password-reset.request": "Iemand vroeg om het wachtwoord van je Householdr-account opnieuw in te stellen.",
+  "email.password-reset.action": "Kies een nieuw wachtwoord",
+  "email.password-reset.expiry": "De link werkt één keer, binnen 30 minuten.",
+  "email.password-reset.not-you": "Was jij het niet? Negeer deze e-mail dan: je wachtwoord blijft zoals het is."
 }

@@ -99,8 +99,37 @@ export const verifications = auth.table(
     expiresAt: timestamp({ withTimezone: true }).notNull(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
+    /**
+     * What an e-mailed link is for, so a newer link replaces the older one; the hashed identifier
+     * can't tell (ADR-0014 §7, clarification). Empty for the library's other checks.
+     */
+    purpose: text().$type<AccountEmailKind>(),
   },
-  (t) => [index('verifications_identifier').on(t.identifier)],
+  (t) => [
+    index('verifications_identifier').on(t.identifier),
+    index('verifications_purpose').on(t.purpose, t.value),
+    check('verifications_purpose', sql`${t.purpose} in ('password-reset')`),
+  ],
+);
+
+/** The account e-mails there are (ADR-0014 §2). */
+export type AccountEmailKind = 'password-reset';
+
+/**
+ * An account e-mail waiting to be sent: deleted once it is, and holding nothing the e-mail can't
+ * be made from again (ADR-0014 §7, clarification).
+ */
+export const accountEmails = auth.table(
+  'account_emails',
+  {
+    id: key(),
+    kind: text().$type<AccountEmailKind>().notNull(),
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    createdAt: createdAt(),
+  },
+  (t) => [check('account_emails_kind', sql`${t.kind} in ('password-reset')`)],
 );
 
 /**
