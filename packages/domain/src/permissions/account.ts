@@ -37,7 +37,9 @@ export type AccountAction =
   /** Invite another adult as co-guardian (ADR-0010 §9). */
   | 'guardian.invite'
   /** ADR-0010 §9, ADR-0018 §6. */
-  | 'guardian.stepDown';
+  | 'guardian.stepDown'
+  /** Create a household, as its first head (ADR-0010 §1, ADR-0007 §2). */
+  | 'household.create';
 
 /**
  * Whether the signed-in account may act on `account` (ADR-0017 §2, ADR-0010 §9). These powers
@@ -62,5 +64,9 @@ export function canForAccount(who: SignedIn, action: AccountAction, account: Acc
       return forManaged;
     case 'guardian.stepDown':
       return account.guardians.includes(who.account);
+    case 'household.create':
+      // A head's account has two factors from the start, and a child's managed account creates
+      // none (ADR-0010 §1, §3).
+      return self && !account.managed && who.twoFactor;
   }
 }
