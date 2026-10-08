@@ -63,6 +63,13 @@ export const flags = {
     owner: 'Jens',
     expires: '2027-03-31',
   },
+  plans: {
+    kind: 'release',
+    description:
+      'Drafting and publishing each week’s plan, by the scheduler and early by heads, and the plan’s page (ADR-0006 §1–§2, ADR-0001 §7).',
+    owner: 'Jens',
+    expires: '2027-03-31',
+  },
 } as const satisfies Record<string, Flag>;
 
 export type FlagKey = keyof typeof flags;

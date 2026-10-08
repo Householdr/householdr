@@ -1,13 +1,15 @@
 // Background jobs that build a system context and call one use case each (ADR-0008 §10, CODE-10).
-import { smtpMailer, stdoutLogger, systemClock } from '@householdr/adapters';
-import { connect, jobQueue, type Clock, type Jobs } from '@householdr/application';
+import { flagSource, smtpMailer, stdoutLogger, systemClock } from '@householdr/adapters';
+import { connect, jobQueue, type Jobs } from '@householdr/application';
 import { createAuth, deleteExpiredSignUpLinks } from '@householdr/auth';
 import { deliverAccountEmail, type DeliveryContext } from './account-emails';
+import { draftScheduledPlan, publishScheduledPlan, tickPlans, type PlansContext } from './plans';
 
-/** What the worker's jobs need: sending account e-mails, and the time for the deletion jobs. */
-export interface WorkerContext extends DeliveryContext {
-  clock: Clock;
-}
+/**
+ * What the worker's jobs need: sending account e-mails, the time for the deletion jobs and the
+ * plans, and the flags that hold features back (CODE-20).
+ */
+export interface WorkerContext extends DeliveryContext, PlansContext {}
 
 type Environment = Record<string, string | undefined>;
 
@@ -36,6 +38,7 @@ export async function startWorker(env: Environment = process.env) {
     db,
     mailer: smtpMailer(settings.smtp),
     clock: systemClock,
+    flags: flagSource(env),
   });
   stdoutLogger().info('worker.started');
   return async () => {
@@ -56,6 +59,13 @@ export async function workQueues(context: WorkerContext) {
   await queue.work<Jobs['expired-sign-up-links']>('expired-sign-up-links', () =>
     deleteExpiredSignUpLinks(context),
   );
+  await queue.work<Jobs['plan-tick']>('plan-tick', () => tickPlans({ ...context, queue }));
+  await queue.work<Jobs['plan-draft']>('plan-draft', async (jobs) => {
+    for (const job of jobs) await draftScheduledPlan(context, job.data);
+  });
+  await queue.work<Jobs['plan-publish']>('plan-publish', async (jobs) => {
+    for (const job of jobs) await publishScheduledPlan(context, job.data);
+  });
   return queue;
 }
 

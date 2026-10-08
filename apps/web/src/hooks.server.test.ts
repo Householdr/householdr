@@ -106,6 +106,7 @@ describe('the flags of a request (ADR-0015 §3)', () => {
       shares: false,
       availability: false,
       tasks: false,
+      plans: false,
     });
   });
 
@@ -122,6 +123,7 @@ describe('the flags of a request (ADR-0015 §3)', () => {
       shares: false,
       availability: false,
       tasks: false,
+      plans: false,
     });
   });
 });

@@ -50,6 +50,7 @@ const on = {
   shares: false,
   availability: false,
   tasks: false,
+  plans: false,
 };
 let next = 0;
 

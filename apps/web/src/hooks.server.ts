@@ -1,10 +1,10 @@
+import { flagSource } from '@householdr/adapters';
 import { flagValues, membership, type Flags } from '@householdr/application';
 import { currentSession, sessionCookie } from '@householdr/auth';
 import { error, redirect } from '@sveltejs/kit';
 import { sequence, type Handle } from '@sveltejs/kit/hooks';
 import { paraglideMiddleware } from './lib/paraglide/server.js';
 import { authContext } from './lib/server/auth';
-import { flagSource } from './lib/server/flags';
 import { testFlagsCookie, withForcedFlags } from './lib/server/forced-flags';
 import { securityHeaders } from './security';
 

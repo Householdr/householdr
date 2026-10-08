@@ -1,4 +1,4 @@
-import { recordingMailer } from '@householdr/application/testing';
+import { recordingMailer, settableFlags } from '@householdr/application/testing';
 import {
   createTestAccount,
   testSignInContext,
@@ -14,7 +14,7 @@ let test: Awaited<ReturnType<typeof testSignInContext>>;
 let context: WorkerContext & { mailer: ReturnType<typeof recordingMailer> };
 beforeAll(async () => {
   test = await testSignInContext();
-  context = { ...test.context, mailer: recordingMailer() };
+  context = { ...test.context, mailer: recordingMailer(), flags: settableFlags() };
 });
 afterAll(() => test.close());
 

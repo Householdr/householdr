@@ -8,4 +8,4 @@ export { smtpMailer, type SmtpSettings } from './smtp-mailer';
 export { scrub, stdoutLogger } from './stdout-logger';
 export { checkBreachedPassword, type BreachCheck } from './breached-passwords';
 export { systemClock } from './system-clock';
-export { fliptFlags, type FliptSettings } from './flipt-flags';
+export { flagSource } from './flag-source';
