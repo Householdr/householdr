@@ -31,6 +31,7 @@ catalog:
   fast-check: ^4.10.2
   nodemailer: ^10.0.14
   pg: ^8.23.1
+  pg-boss: ^12.36.0
   prettier: ^3.9.9
   prettier-plugin-svelte: ^4.1.1
   prettier-plugin-tailwindcss: ^0.8.1

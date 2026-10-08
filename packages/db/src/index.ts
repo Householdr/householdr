@@ -1,5 +1,6 @@
 // Schema, migrations and queries (ADR-0008 §3, §9).
 export { connect, database, inHousehold, type Database, type Transaction } from './connection';
+export { jobQueue, queueJob, type Jobs, type QueueName } from './jobs';
 export { migrate } from './migrate';
 export {
   countAttempt,

@@ -1,7 +1,8 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["src"],
+  "include": ["src", "vite.config.ts"],
   "compilerOptions": {
-    "types": ["node"]
+    "types": ["node"],
+    "lib": ["es2024", "esnext.temporal"]
   }
 }

@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { settableClock } from '@householdr/application/testing';
-import { connect } from '@householdr/db';
+import { accountEmails, connect, jobQueue, queueJob, type Database } from '@householdr/db';
 import { testDatabase } from '@householdr/db/testing';
 import { createAuth, type Auth } from './auth';
 import { counterKeys } from './counter-keys';
@@ -63,4 +63,24 @@ export async function testSignInContext() {
     counterKey: counterKeys(secret),
   } satisfies SignInContext;
   return { context, close };
+}
+
+/**
+ * An account e-mail waiting for `accountId`, its job queued on `queue` when given, as the request
+ * for it will write them (ADR-0014 §7, clarification). Returns its row's ID.
+ */
+export async function waitingAccountEmail(
+  db: Database,
+  accountId: string,
+  queue?: ReturnType<typeof jobQueue>,
+) {
+  return db.transaction(async (tx) => {
+    const [row] = await tx
+      .insert(accountEmails)
+      .values({ kind: 'password-reset', accountId })
+      .returning({ id: accountEmails.id });
+    if (!row) throw new Error('No row');
+    if (queue) await queueJob(queue, tx, 'account-email', { id: row.id });
+    return row.id;
+  });
 }

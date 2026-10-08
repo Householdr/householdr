@@ -141,9 +141,14 @@ export const boundaries = defineConfig(
         {
           patterns: [
             {
-              group: ['@householdr/*', '!@householdr/application', '!@householdr/adapters'],
+              group: [
+                '@householdr/*',
+                '!@householdr/application',
+                '!@householdr/adapters',
+                '!@householdr/auth',
+              ],
               message:
-                'Jobs call use cases from the application package, with adapters for their ports (CODE-4, CODE-10).',
+                'Jobs call use cases from the application package, with adapters for their ports, and auth for account e-mails (CODE-4, CODE-10, ADR-0023 §2).',
             },
           ],
         },

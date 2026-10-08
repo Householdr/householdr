@@ -97,5 +97,25 @@
   "security.not-found": {
     "note": "Status message when the device to sign out was signed out already, for example from another tab.",
     "needsReview": ["nl"]
+  },
+  "email.password-reset.subject": {
+    "note": "Subject of the e-mail with a link to choose a new password (ADR-0010 §8). Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "email.password-reset.request": {
+    "note": "First line of the password reset e-mail. It doesn't say who asked: anyone can ask for any address.",
+    "needsReview": ["nl"]
+  },
+  "email.password-reset.action": {
+    "note": "Text of the link in the password reset e-mail, and the label before the link in its plain-text part.",
+    "needsReview": ["nl"]
+  },
+  "email.password-reset.expiry": {
+    "note": "Says how long the reset link works (ADR-0010 §8: once, for 30 minutes).",
+    "needsReview": ["nl"]
+  },
+  "email.password-reset.not-you": {
+    "note": "Last line of the password reset e-mail, for someone who didn't ask. Calm: nothing happens unless the link is used.",
+    "needsReview": ["nl"]
   }
 }

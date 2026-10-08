@@ -160,16 +160,18 @@ describe('every household-owned table (CODE-17)', () => {
 });
 
 describe('tables outside a household (ADR-0008 §9, clarification)', () => {
-  it('are the account tables and the rate-limit counts in auth, and no others', async () => {
-    // `drizzle` holds the list of migrations that have run.
+  it('are the account tables, rate-limit counts and account e-mails in auth, and no others', async () => {
+    // `drizzle` holds the list of migrations that have run, and `pgboss` the job queue, whose jobs
+    // carry IDs only (ADR-0014 §7, clarification) and whose tables change with pg-boss itself.
     const { rows } = await db.execute<{ name: string }>(sql`
       select n.nspname || '.' || c.relname as name
       from pg_class c join pg_namespace n on n.oid = c.relnamespace
       where c.relkind in ('r', 'p')
-        and n.nspname not in ('public', 'drizzle', 'pg_catalog', 'information_schema')
+        and n.nspname not in ('public', 'drizzle', 'pgboss', 'pg_catalog', 'information_schema')
         and n.nspname not like 'pg_toast%'
       order by name`);
     expect(rows.map((r) => r.name)).toEqual([
+      'auth.account_emails',
       'auth.accounts',
       'auth.credentials',
       'auth.rate_limits',

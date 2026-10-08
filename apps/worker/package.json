@@ -6,12 +6,18 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc"
+    "build": "pnpm prepare && vite build",
+    "prepare": "paraglide-js compile --project ../../project.inlang --outdir ./src/lib/paraglide --strategy baseLocale --emit-ts-declarations --silent",
+    "typecheck": "pnpm prepare && tsc"
   },
   "dependencies": {
-    "@householdr/application": "workspace:*"
+    "@householdr/adapters": "workspace:*",
+    "@householdr/application": "workspace:*",
+    "@householdr/auth": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "catalog:"
+    "@inlang/paraglide-js": "catalog:",
+    "@types/node": "catalog:",
+    "vite": "catalog:"
   }
 }
