@@ -86,6 +86,22 @@ set no lower age. Below that age, a person with parental responsibility has to c
   incorrect"; "if an account exists, we've sent a link").
 - Repeated failures slow down sign-in for that account and that address, with growing delays rather
   than a hard lock-out that an attacker could use to lock someone out.
+
+  > **Clarification (2026-10-08):** failures are counted three ways
+  > ([ADR-0017](0017-security-baseline.md) §5, clarification). After the free failures, each
+  > further one makes the next attempt wait: 1 second, then twice as long each time, up to a limit.
+  >
+  > | Failures counted by | Free | Longest wait |
+  > |---|---|---|
+  > | The e-mail address typed, whether or not it has an account | 5 | 1 minute |
+  > | The IP address the attempt comes from | 20 | 15 minutes |
+  > | The account, for a wrong two-factor or recovery code | 5 | 15 minutes |
+  >
+  > An attempt during a wait is turned away unchecked, saying when to try again, and isn't counted.
+  > A count is forgotten 24 hours after its last failure. Signing in or resetting the password
+  > clears the counts of that e-mail address and account, never the IP address's. The e-mail
+  > address's wait stays short because anyone can make it grow; passkeys, device sign-in and the
+  > links we e-mail are never slowed down, so the person whose account it is always has a way in.
 - The member is e-mailed when a new device signs in, and when their password, e-mail address,
   passkeys or two-factor settings change.
 
