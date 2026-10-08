@@ -3,6 +3,7 @@ import {
   dueDate,
   dueness,
   sinceLastDoneOccurrence,
+  spreadFirstDueDates,
   type AwayPeriod,
   type SinceLastDone,
 } from './since-last-done';
@@ -119,5 +120,40 @@ describe('sinceLastDoneOccurrence (ADR-0004 §8)', () => {
       '2026-11-09T00:00:00+01:00[Europe/Brussels]',
       '2026-11-16T00:00:00+01:00[Europe/Brussels]',
     ]);
+  });
+});
+
+describe('spreadFirstDueDates (ADR-0007 §6)', () => {
+  const shown = (map: Map<string, Temporal.PlainDate>) =>
+    Object.fromEntries([...map].map(([id, day]) => [id, day.toString()]));
+  const oven = { id: 'oven', every: { count: 6, unit: 'weeks' } } as const;
+  const windows = { id: 'windows', every: { count: 3, unit: 'months' } } as const;
+  const gutters = { id: 'gutters', every: { count: 6, unit: 'months' } } as const;
+
+  it('spreads the first due dates over the intervals, shortest first', () => {
+    // 42, 92 and 182 days: offsets 0, 92 / 3 and 182 × 2 / 3.
+    expect(shown(spreadFirstDueDates([gutters, oven, windows], date('2026-10-12')))).toEqual({
+      oven: '2026-10-12',
+      windows: '2026-11-11',
+      gutters: '2027-02-10',
+    });
+  });
+
+  it('makes a single task due at once', () => {
+    expect(shown(spreadFirstDueDates([windows], date('2026-10-12')))).toEqual({
+      windows: '2026-10-12',
+    });
+  });
+
+  it('orders equal intervals by id, whatever order they come in', () => {
+    const a = { id: 'a', every: { count: 4, unit: 'weeks' } } as const;
+    const b = { id: 'b', every: { count: 4, unit: 'weeks' } } as const;
+    const expected = { a: '2026-10-12', b: '2026-10-26' };
+    expect(shown(spreadFirstDueDates([a, b], date('2026-10-12')))).toEqual(expected);
+    expect(shown(spreadFirstDueDates([b, a], date('2026-10-12')))).toEqual(expected);
+  });
+
+  it('returns nothing for no tasks', () => {
+    expect(spreadFirstDueDates([], date('2026-10-12')).size).toBe(0);
   });
 });

@@ -50,6 +50,29 @@ export function sinceLastDoneOccurrence(
   return oneOffOccurrence(dueDate(task, lastDone, away), undefined, calendar);
 }
 
+/**
+ * First due dates for "since last done" tasks whose last completion nobody knows, such as those
+ * added in onboarding: spread over their intervals from `from`, so they don't all fall in the first
+ * week (ADR-0007 §6). Shorter intervals come first and ties go by id, so the result never depends
+ * on the order of `tasks`.
+ */
+export function spreadFirstDueDates(
+  tasks: readonly { id: string; every: Interval }[],
+  from: Temporal.PlainDate,
+): Map<string, Temporal.PlainDate> {
+  const lengths = tasks.map((task) => ({
+    id: task.id,
+    days: from.until(add(from, task.every)).days,
+  }));
+  lengths.sort((a, b) => a.days - b.days || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  return new Map(
+    lengths.map(({ id, days }, i) => [
+      id,
+      from.add({ days: Math.floor((days * i) / lengths.length) }),
+    ]),
+  );
+}
+
 /** How due the chore is on `today`, for the bar from "just done" to "due" (ADR-0004 §8). */
 export interface Dueness {
   /** Days until it is due; negative when overdue. */
