@@ -5,8 +5,10 @@ import { join, resolve } from 'node:path';
 export const pseudoLocale = 'en-XA';
 
 const letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+// eslint-disable-next-line e18e/prefer-spread-syntax -- Splits a string into its characters, which typescript-eslint's no-misused-spread forbids doing with a spread.
 const accents = Array.from('àƀçðèƒĝĥîĵķĺɱñöƥʠŕšţűʋŵẋýžÀƁÇĐÈƑĜĤÎĴĶĹṀÑÖƤɊŔŠŢŰṼŴẊÝŽ');
 const accented = new Map(Array.from(letters, (letter, i) => [letter, accents[i] ?? letter]));
+const placeholder = /(\{[^}]*\})/;
 
 /**
  * Text as the pseudo-locale shows it (ADR-0016 §5): every letter accented, about a third longer,
@@ -15,7 +17,7 @@ const accented = new Map(Array.from(letters, (letter, i) => [letter, accents[i] 
  */
 export function pseudoText(text: string): string {
   let visible = 0;
-  const parts = text.split(/(\{[^}]*\})/).map((part) => {
+  const parts = text.split(placeholder).map((part) => {
     if (part.startsWith('{')) return part;
     visible += part.length;
     return part.replace(/[A-Za-z]/g, (letter) => accented.get(letter) ?? letter);

@@ -10,7 +10,6 @@
     "typecheck": "tsc"
   },
   "dependencies": {
-    "@householdr/domain": "workspace:*",
     "@householdr/db": "workspace:*"
   }
 }

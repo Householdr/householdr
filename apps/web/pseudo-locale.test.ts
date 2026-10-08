@@ -14,7 +14,9 @@ describe('pseudoText', () => {
   it('changes every ASCII letter, so none can pass for English', () => {
     const letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
     const accented = pseudoText(letters).slice(1).split(' ')[0] ?? '';
+    // eslint-disable-next-line e18e/prefer-spread-syntax -- Splits a string into its characters, which typescript-eslint's no-misused-spread forbids doing with a spread.
     expect(Array.from(accented)).toHaveLength(letters.length);
+    // eslint-disable-next-line e18e/prefer-spread-syntax -- Splits a string into its characters, which typescript-eslint's no-misused-spread forbids doing with a spread.
     Array.from(accented).forEach((char, i) => {
       expect(char).not.toBe(letters[i]);
     });
@@ -22,6 +24,7 @@ describe('pseudoText', () => {
 
   it('makes text at least 30% longer', () => {
     for (const text of ['Ok', 'Householdr', 'Put the PMD bin out tonight']) {
+      // eslint-disable-next-line e18e/prefer-spread-syntax -- Splits a string into its characters, which typescript-eslint's no-misused-spread forbids doing with a spread.
       expect(Array.from(pseudoText(text)).length).toBeGreaterThanOrEqual(text.length * 1.3);
     }
   });

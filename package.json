@@ -8,10 +8,11 @@
     "node": "^26"
   },
   "scripts": {
-    "verify": "pnpm lint && pnpm deps:check && pnpm format:check && pnpm messages:check && pnpm typecheck && pnpm test",
+    "verify": "pnpm lint && pnpm deps:check && pnpm knip && pnpm format:check && pnpm messages:check && pnpm typecheck && pnpm test",
     "build": "pnpm --recursive build",
     "lint": "eslint .",
     "deps:check": "depcruise apps packages scripts --config dependency-cruiser.config.js",
+    "knip": "knip",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc && pnpm --recursive typecheck",
@@ -21,14 +22,17 @@
     "messages:check": "node scripts/check-messages.ts"
   },
   "devDependencies": {
+    "@e18e/eslint-plugin": "catalog:",
     "@eslint-community/eslint-plugin-eslint-comments": "catalog:",
     "@eslint/js": "catalog:",
+    "@eslint/json": "catalog:",
     "@inlang/plugin-message-format": "catalog:",
     "@types/node": "catalog:",
     "dependency-cruiser": "catalog:",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-svelte": "catalog:",
+    "knip": "catalog:",
     "prettier": "catalog:",
     "prettier-plugin-svelte": "catalog:",
     "prettier-plugin-tailwindcss": "catalog:",

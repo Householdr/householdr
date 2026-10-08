@@ -18,7 +18,7 @@ export function linkedPairs(
   occurrences: readonly PlannedOccurrence[],
   links: ReadonlyMap<string, string>,
 ): [PlannedOccurrence, PlannedOccurrence][] {
-  const sorted = [...occurrences].sort(byTime);
+  const sorted = occurrences.toSorted(byTime);
   const pairs: [PlannedOccurrence, PlannedOccurrence][] = [];
   for (const first of sorted) {
     const linked = links.get(first.task);
@@ -49,7 +49,7 @@ export function allocationUnits(
     if (a !== b) root.set(b, a);
   }
   const units = new Map<string, PlannedOccurrence[]>();
-  for (const occurrence of [...occurrences].sort(byTime)) {
+  for (const occurrence of occurrences.toSorted(byTime)) {
     const key = find(occurrence.id);
     const unit = units.get(key);
     if (unit) unit.push(occurrence);

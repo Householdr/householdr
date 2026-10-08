@@ -27,7 +27,7 @@ describe('flagValues', () => {
         return true;
       },
     });
-    expect(asked.sort()).toEqual([...keys].sort());
+    expect(asked.sort()).toEqual(keys.toSorted());
     expect(Object.values(values).every(Boolean)).toBe(true);
   });
 });

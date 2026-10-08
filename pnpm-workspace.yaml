@@ -6,8 +6,10 @@ packages:
 # as `catalog:`; `pnpm add` records new dependencies here, and unused entries are removed.
 catalog:
   '@axe-core/playwright': ^4.13.0
+  '@e18e/eslint-plugin': ^0.8.1
   '@eslint-community/eslint-plugin-eslint-comments': ^4.8.1
   '@eslint/js': ^10.0.1
+  '@eslint/json': ^2.1.0
   '@flipt-io/flipt-client-js': ^0.6.0
   '@inlang/paraglide-js': ^2.25.4
   '@inlang/plugin-message-format': ^4.4.4
@@ -29,6 +31,7 @@ catalog:
   eslint-config-prettier: ^10.1.8
   eslint-plugin-svelte: ^3.23.0
   fast-check: ^4.10.2
+  knip: ^6.39.0
   nodemailer: ^10.0.14
   pg: ^8.23.1
   pg-boss: ^12.36.0

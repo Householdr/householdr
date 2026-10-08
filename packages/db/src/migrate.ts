@@ -4,7 +4,7 @@ import type { Database } from './connection';
 import { migrateJobs } from './jobs';
 
 /** The versioned SQL migrations, oldest first (ADR-0008 §9, CODE-16). */
-export const migrationsFolder = fileURLToPath(new URL('../migrations', import.meta.url));
+const migrationsFolder = fileURLToPath(new URL('../migrations', import.meta.url));
 
 /**
  * Brings the database up to the latest migration, those already run skipped, and then pg-boss's

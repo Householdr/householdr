@@ -56,7 +56,7 @@ export async function testDatabase() {
     /** Where to connect, as the test role, for a process of its own such as a test server. */
     url: target.href,
     close: async () => {
-      const closed = [...open].map((client) => new Promise((done) => client.once('end', done)));
+      const closed = Array.from(open, (client) => new Promise((done) => client.once('end', done)));
       await pool.end();
       await Promise.all(closed);
       const cleanup = new pg.Client({ connectionString: url });

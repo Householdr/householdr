@@ -160,7 +160,7 @@ describe('estimateBurdens converges (ADR-0003 §4)', () => {
       feedback('b', 'easier', 0),
     ];
     const forwards = estimateBurdens(tasks, evidence);
-    const backwards = estimateBurdens(tasks, [...evidence].reverse());
+    const backwards = estimateBurdens(tasks, evidence.toReversed());
     for (const [id, estimate] of forwards) {
       expect(get(backwards, id).theta).toBeCloseTo(estimate.theta, 12);
     }

@@ -90,7 +90,7 @@ const earliest = (a: Temporal.ZonedDateTime, b: Temporal.ZonedDateTime) => (befo
 
 // Overlapping or touching windows as one, in order.
 function merge(windows: readonly Window[]) {
-  const sorted = [...windows].sort((a, b) => Temporal.ZonedDateTime.compare(a.start, b.start));
+  const sorted = windows.toSorted((a, b) => Temporal.ZonedDateTime.compare(a.start, b.start));
   const result: Window[] = [];
   for (const window of sorted) {
     const last = result.at(-1);

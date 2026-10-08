@@ -32,7 +32,7 @@ describe('unit invariants (ADR-0001 §7)', () => {
     fc.assert(
       fc.property(occurrences, links, (list, l) => {
         const all = unitIds(list, l).flat();
-        expect([...all].sort()).toEqual(list.map((o) => o.id).sort());
+        expect(all.toSorted()).toEqual(list.map((o) => o.id).sort());
       }),
     );
   });
