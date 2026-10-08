@@ -8,7 +8,7 @@
     "node": "^26"
   },
   "scripts": {
-    "verify": "pnpm lint && pnpm deps:check && pnpm format:check && pnpm typecheck && pnpm test",
+    "verify": "pnpm lint && pnpm deps:check && pnpm format:check && pnpm messages:check && pnpm typecheck && pnpm test",
     "build": "pnpm --recursive build",
     "lint": "eslint .",
     "deps:check": "depcruise apps packages scripts --config dependency-cruiser.config.js",
@@ -16,11 +16,13 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc && pnpm --recursive typecheck",
     "test": "vitest run",
-    "flags:check": "node scripts/check-flag-expiry.ts"
+    "flags:check": "node scripts/check-flag-expiry.ts",
+    "messages:check": "node scripts/check-messages.ts"
   },
   "devDependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "catalog:",
     "@eslint/js": "catalog:",
+    "@inlang/plugin-message-format": "catalog:",
     "@types/node": "catalog:",
     "dependency-cruiser": "catalog:",
     "eslint": "catalog:",

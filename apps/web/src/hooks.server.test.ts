@@ -1,16 +1,34 @@
 import type { RequestEvent } from '@sveltejs/kit';
+import type { Handle, ResolveOptions } from '@sveltejs/kit/hooks';
 import { describe, expect, it } from 'vitest';
-import { handle } from './hooks.server';
+import { harden, localise } from './hooks.server';
+
+const page = '<html lang="%paraglide.lang%"></html>';
+
+// The hooks run one by one: SvelteKit's `sequence` needs the store of a running server.
+
+/** Runs `hook` on a request for a page, rendering `page` the way SvelteKit would. */
+const respond = (hook: Handle, headers: Record<string, string> = {}) => {
+  const request = new Request('https://householdr.example.org/', { headers });
+  return hook({
+    event: { request, url: new URL(request.url) } as RequestEvent,
+    resolve: async (_event, options?: ResolveOptions) => {
+      const html = (await options?.transformPageChunk?.({ html: page, done: true })) ?? page;
+      return new Response(html, { headers: { 'content-type': 'text/html' } });
+    },
+  });
+};
+
+describe('the language of a page (ADR-0016 §1)', () => {
+  it('is English, even when the browser asks for Dutch, until Dutch is offered', async () => {
+    const response = await respond(localise, { 'accept-language': 'nl-BE,nl;q=0.9' });
+    expect(await response.text()).toBe('<html lang="en"></html>');
+  });
+});
 
 describe('the security headers (ADR-0017 §4)', () => {
-  const respond = () =>
-    handle({
-      event: {} as RequestEvent,
-      resolve: () => Promise.resolve(new Response('ok')),
-    });
-
   it('are on every response', async () => {
-    const headers = (await respond()).headers;
+    const headers = (await respond(harden)).headers;
     expect(headers.get('strict-transport-security')).toBe('max-age=63072000');
     expect(headers.get('x-content-type-options')).toBe('nosniff');
     expect(headers.get('referrer-policy')).toBe('strict-origin-when-cross-origin');
@@ -18,7 +36,7 @@ describe('the security headers (ADR-0017 §4)', () => {
   });
 
   it('keep the camera, and leave passkeys and Web Share at their default', async () => {
-    const policy = (await respond()).headers.get('permissions-policy') ?? '';
+    const policy = (await respond(harden)).headers.get('permissions-policy') ?? '';
     const features = Object.fromEntries(
       policy.split(', ').map((entry) => entry.split('=') as [string, string]),
     );

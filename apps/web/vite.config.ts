@@ -1,3 +1,4 @@
+import { paraglideVitePlugin } from '@inlang/paraglide-js';
 import adapter from '@sveltejs/adapter-node';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
@@ -5,6 +6,14 @@ import { contentSecurityPolicy } from './src/security.ts';
 
 export default defineConfig({
   plugins: [
+    // Messages compile into typed functions (ADR-0008 §6). Everyone reads English for now: Dutch is
+    // maintained but sits behind a release flag until it is offered (ADR-0016 §1), so the locale
+    // follows the base language until flags and accounts can choose it.
+    paraglideVitePlugin({
+      project: '../../project.inlang',
+      outdir: './src/lib/paraglide',
+      strategy: ['baseLocale'],
+    }),
     sveltekit({
       // Runes only, everywhere except in dependencies (CODE-7).
       compilerOptions: {

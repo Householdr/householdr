@@ -6,6 +6,8 @@ node_modules/
 dist/
 build/
 .svelte-kit/
+# Compiled from messages/ by Paraglide (ADR-0008 §6).
+apps/web/src/lib/paraglide/
 .output/
 *.tsbuildinfo
 

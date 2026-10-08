@@ -6,13 +6,14 @@
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
-    "prepare": "svelte-kit sync",
-    "typecheck": "svelte-kit sync && tsc"
+    "prepare": "paraglide-js compile --project ../../project.inlang --outdir ./src/lib/paraglide && svelte-kit sync",
+    "typecheck": "pnpm prepare && tsc"
   },
   "dependencies": {
     "@householdr/application": "workspace:*"
   },
   "devDependencies": {
+    "@inlang/paraglide-js": "catalog:",
     "@sveltejs/adapter-node": "catalog:",
     "@sveltejs/kit": "catalog:",
     "@sveltejs/vite-plugin-svelte": "catalog:",

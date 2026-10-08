@@ -105,6 +105,11 @@ jobs:
         if: ${{ !cancelled() }}
         run: pnpm flags:check
 
+      # Every maintained language has every message, with the same placeholders (ADR-0016 §4).
+      - name: '🧹 Lint: Messages'
+        if: ${{ !cancelled() }}
+        run: pnpm messages:check
+
       # The same scan as the pre-commit hook, over the pull request's commits (ADR-0021 §4).
       # Keep the version in step with .pre-commit-config.yaml.
       - name: '🧹 Lint: Secrets'
