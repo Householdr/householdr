@@ -40,6 +40,11 @@ export function dueDate(
   }
 }
 
+/** Whether the household is away on `day`: within one of its periods away (ADR-0005 §5). */
+export function isAway(day: Temporal.PlainDate, away: readonly AwayPeriod[]): boolean {
+  return away.some((period) => within(day, period));
+}
+
 /** The one open occurrence: flexible within the week of its due date (ADR-0004 §8). */
 export function sinceLastDoneOccurrence(
   task: SinceLastDone,

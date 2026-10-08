@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   dueDate,
   dueness,
+  isAway,
   sinceLastDoneOccurrence,
   spreadFirstDueDates,
   type AwayPeriod,
@@ -155,5 +156,14 @@ describe('spreadFirstDueDates (ADR-0007 §6)', () => {
 
   it('returns nothing for no tasks', () => {
     expect(spreadFirstDueDates([], date('2026-10-12')).size).toBe(0);
+  });
+});
+
+describe('isAway (ADR-0005 §5)', () => {
+  it('is true from the first to the last day of a period, both included', () => {
+    const periods = [away('2026-10-12', '2026-10-14'), away('2026-10-20', '2026-10-20')];
+    const days = ['2026-10-11', '2026-10-12', '2026-10-14', '2026-10-15', '2026-10-20'];
+    expect(days.map((day) => isAway(date(day), periods))).toEqual([false, true, true, false, true]);
+    expect(isAway(date('2026-10-12'), [])).toBe(false);
   });
 });

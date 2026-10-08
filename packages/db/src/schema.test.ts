@@ -1,13 +1,16 @@
-import type { HouseholdCalendar } from '@householdr/domain';
+import type { HouseholdCalendar, RebalancePreset } from '@householdr/domain';
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { inHousehold, type Database } from './connection';
 import { accountEmails, accounts, sessions } from './auth-schema';
 import {
   absences,
+  assignments,
   awayPeriods,
   households,
   members,
+  occurrences,
+  plans,
   schedules,
   tasks,
   temporaryShares,
@@ -60,8 +63,31 @@ describe('households', () => {
       ...household(id),
       weekStartChangeFrom: null,
       weekStartPreviousDay: null,
+      // In setup, with the plan timings and rebalance rate of the ADRs (ADR-0007 §2, ADR-0006 §2,
+      // ADR-0002 §3).
+      firstPlanWeek: null,
+      draftHours: 48,
+      publishHours: 12,
+      rebalance: 'normal',
       version: 1,
     });
+  });
+
+  it('drafts before it publishes, at the latest when the week starts (ADR-0006 §2)', async () => {
+    expect(await refusal(addHousehold({ draftHours: 12, publishHours: 0 }))).toBeUndefined();
+    expect(await refusal(addHousehold({ draftHours: 12, publishHours: 12 }))).toBe(
+      'households_plan_timings',
+    );
+    expect(await refusal(addHousehold({ draftHours: 12, publishHours: -1 }))).toBe(
+      'households_plan_timings',
+    );
+  });
+
+  it('catches up at one of the rebalance rates (ADR-0002 §3)', async () => {
+    expect(await refusal(addHousehold({ rebalance: 'slow' }))).toBeUndefined();
+    expect(await refusal(addHousehold({ rebalance: 'instant' as RebalancePreset }))).toBe(
+      'households_rebalance',
+    );
   });
 
   it('needs a name, a country code, a language code and a time zone', async () => {
@@ -382,6 +408,180 @@ describe('schedules and tasks (ADR-0001 §1, ADR-0004)', () => {
     expect(await refusal(inHousehold(db, task.householdId, (tx) => tx.delete(schedules)))).toBe(
       'tasks_schedule',
     );
+  });
+});
+
+describe('plans, occurrences and assignments (ADR-0001 §1, ADR-0006)', () => {
+  const window = {
+    windowStart: new Date('2026-10-11T22:00:00Z'),
+    windowEnd: new Date('2026-10-18T22:00:00Z'),
+  };
+  /** A household with a head, a weekly task and a draft for the week of 12 October. */
+  const planned = async () => {
+    const id = newId();
+    return inHousehold(db, id, async (tx) => {
+      await tx.insert(households).values(household(id));
+      const [member] = await tx
+        .insert(members)
+        .values({ householdId: id, name: 'Robin', role: 'head' })
+        .returning();
+      const [schedule] = await tx
+        .insert(schedules)
+        .values({ householdId: id, rules: [{ rrule: 'FREQ=WEEKLY', start: '2026-10-08' }] })
+        .returning();
+      if (!member || !schedule) throw new Error('No member or schedule');
+      const [task] = await tx
+        .insert(tasks)
+        .values({
+          householdId: id,
+          scheduleId: schedule.id,
+          name: 'Vacuum',
+          duration: 30,
+          timing: 'flexible',
+          onMiss: 'roll over',
+        })
+        .returning();
+      const [plan] = await tx
+        .insert(plans)
+        .values({
+          householdId: id,
+          weekStart: '2026-10-12',
+          weekEnd: '2026-10-19',
+          status: 'draft',
+          draftedAt: new Date(),
+        })
+        .returning();
+      if (!task || !plan) throw new Error('No task or plan');
+      const [occurrence] = await tx
+        .insert(occurrences)
+        .values({ householdId: id, taskId: task.id, date: '2026-10-14', ...window })
+        .returning();
+      if (!occurrence) throw new Error('No occurrence');
+      return { id, member, task, plan, occurrence };
+    });
+  };
+  type Planned = Awaited<ReturnType<typeof planned>>;
+  const inIt = <T>(p: Planned, work: Parameters<typeof inHousehold<T>>[2]) =>
+    inHousehold(db, p.id, work);
+
+  it('keeps one plan a week of 4 to 10 days, published with when (ADR-0006 §1–§2)', async () => {
+    const p = await planned();
+    expect(p.plan).toMatchObject({ status: 'draft', publishedAt: null, version: 1 });
+    const add = (fields: Partial<typeof plans.$inferInsert>) =>
+      inIt(p, (tx) =>
+        tx.insert(plans).values({
+          householdId: p.id,
+          weekStart: '2026-10-19',
+          weekEnd: '2026-10-26',
+          status: 'draft',
+          draftedAt: new Date(),
+          ...fields,
+        }),
+      );
+    expect(await refusal(add({ weekStart: '2026-10-12', weekEnd: '2026-10-19' }))).toBe(
+      'plans_week',
+    );
+    for (const weekEnd of ['2026-10-22', '2026-10-30']) {
+      expect(await refusal(add({ weekEnd }))).toBe('plans_week_length');
+    }
+    expect(await refusal(add({ status: 'published' }))).toBe('plans_published');
+    expect(await refusal(add({ publishedAt: new Date() }))).toBe('plans_published');
+    expect(await refusal(add({ status: 'final' as 'draft' }))).toBe('plans_status');
+    expect(
+      await refusal(add({ weekEnd: '2026-10-23', status: 'published', publishedAt: new Date() })),
+    ).toBeUndefined();
+  });
+
+  it('keeps an occurrence once per task and date, open until closed by a plan (ADR-0002 §2, ADR-0005 §5)', async () => {
+    const p = await planned();
+    expect(p.occurrence).toMatchObject({ status: 'open', closedByPlan: null });
+    const add = (fields: Partial<typeof occurrences.$inferInsert>) =>
+      inIt(p, (tx) =>
+        tx.insert(occurrences).values({
+          householdId: p.id,
+          taskId: p.task.id,
+          date: '2026-10-21',
+          ...window,
+          ...fields,
+        }),
+      );
+    expect(await refusal(add({ date: '2026-10-14' }))).toBe('occurrences_task_date');
+    expect(await refusal(add({ windowEnd: window.windowStart }))).toBe('occurrences_window');
+    expect(await refusal(add({ status: 'missed' }))).toBe('occurrences_closed');
+    expect(await refusal(add({ status: 'open', closedByPlan: p.plan.id }))).toBe(
+      'occurrences_closed',
+    );
+    expect(await refusal(add({ status: 'late' as 'open' }))).toBe('occurrences_status');
+    for (const status of ['missed', 'away'] as const) {
+      const date = status === 'missed' ? '2026-10-28' : '2026-11-04';
+      expect(await refusal(add({ date, status, closedByPlan: p.plan.id }))).toBeUndefined();
+    }
+  });
+
+  it('gives an occurrence to a member with its cost and reason, or leaves it with a cause (ADR-0001 §7)', async () => {
+    const p = await planned();
+    const add = (fields: Partial<typeof assignments.$inferInsert>) =>
+      inIt(p, (tx) =>
+        tx.insert(assignments).values({
+          householdId: p.id,
+          planId: p.plan.id,
+          occurrenceId: p.occurrence.id,
+          ...window,
+          ...fields,
+        }),
+      );
+    const given = { memberId: p.member.id, cost: 30, reason: 'lowest relative load' } as const;
+    for (const fields of [
+      {},
+      { memberId: p.member.id },
+      { ...given, cost: null },
+      { ...given, unassignedCause: 'nobody eligible' as const },
+      { reason: 'bound' as const, unassignedCause: 'nobody eligible' as const },
+    ]) {
+      expect(await refusal(add(fields))).toBe('assignments_assigned');
+    }
+    expect(await refusal(add({ ...given, cost: -1 }))).toBe('assignments_cost');
+    expect(await refusal(add({ ...given, reason: 'luck' as 'bound' }))).toBe('assignments_reason');
+    expect(await refusal(add({ unassignedCause: 'busy' as 'nobody eligible' }))).toBe(
+      'assignments_unassigned_cause',
+    );
+    expect(await refusal(add({ ...given, windowEnd: window.windowStart }))).toBe(
+      'assignments_window',
+    );
+    expect(await refusal(add(given))).toBeUndefined();
+    expect(await refusal(add({ unassignedCause: 'nobody eligible' }))).toBe(
+      'assignments_plan_occurrence',
+    );
+  });
+
+  it('go with their plan and household, and keep the tasks and members they refer to', async () => {
+    const p = await planned();
+    await inIt(p, (tx) =>
+      tx.insert(assignments).values({
+        householdId: p.id,
+        planId: p.plan.id,
+        occurrenceId: p.occurrence.id,
+        ...window,
+        memberId: p.member.id,
+        cost: 30,
+        reason: 'only eligible member',
+      }),
+    );
+    expect(await refusal(inIt(p, (tx) => tx.delete(tasks)))).toBe('occurrences_task');
+    expect(await refusal(inIt(p, (tx) => tx.delete(members)))).toBe('assignments_member');
+    const afterPlan = await inIt(p, async (tx) => {
+      await tx.delete(plans);
+      return tx.select().from(assignments);
+    });
+    expect(afterPlan).toEqual([]);
+    const left = await inIt(p, async (tx) => {
+      await tx.delete(households);
+      return {
+        plans: await tx.select().from(plans),
+        occurrences: await tx.select().from(occurrences),
+      };
+    });
+    expect(left).toEqual({ plans: [], occurrences: [] });
   });
 });
 

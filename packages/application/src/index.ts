@@ -36,6 +36,17 @@ export {
   type HouseholdMember,
   type HouseholdsContext,
 } from './households/membership';
+export { draftPlan } from './plans/draft-plan';
+export { queueDuePlanSteps, type ScheduleContext } from './plans/plan-schedule';
+export type { PlanContext } from './plans/planning';
+export { publishPlan } from './plans/publish-plan';
+export {
+  viewPlan,
+  type MemberPlan,
+  type PlannedAssignment,
+  type UnassignedOccurrence,
+  type WeekPlan,
+} from './plans/view-plan';
 export type { MemberShare, PlannedShare } from './shares/member-share';
 export { changeShare, householdShares, type ShareChange } from './shares/shares';
 export {

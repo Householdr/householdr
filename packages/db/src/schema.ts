@@ -1,8 +1,20 @@
-import type { HouseholdCalendar, PlanTask, Role, Timing } from '@householdr/domain';
+import {
+  defaultPlanTimings,
+  defaultRebalance,
+  type HouseholdCalendar,
+  type PlanStatus,
+  type PlanTask,
+  type Reason,
+  type RebalancePreset,
+  type Role,
+  type Timing,
+  type UnassignedCause,
+} from '@householdr/domain';
 import { sql, type AnyColumn } from 'drizzle-orm';
 import {
   check,
   date,
+  doublePrecision,
   foreignKey,
   index,
   integer,
@@ -53,6 +65,16 @@ export const households = pgTable(
     /** The latest change of start day: weeks before this date start on `weekStartPreviousDay`. */
     weekStartChangeFrom: date(),
     weekStartPreviousDay: smallint().$type<Weekday>(),
+    /**
+     * The first day of its first plan week, which Start records; none while it is in setup, when no
+     * plan is drafted or published for it (ADR-0007 §2).
+     */
+    firstPlanWeek: date(),
+    /** When plans are drafted and published: hours before the week starts (ADR-0006 §2). */
+    draftHours: smallint().notNull().default(defaultPlanTimings.draft),
+    publishHours: smallint().notNull().default(defaultPlanTimings.publish),
+    /** How fast balances are caught up on (ADR-0002 §3). */
+    rebalance: text().$type<RebalancePreset>().notNull().default(defaultRebalance),
     /** For versioned updates (CODE-14, ADR-0023 §1). */
     version: integer().notNull().default(1),
   },
@@ -73,6 +95,12 @@ export const households = pgTable(
           and ${t.weekStartPreviousDay} <> ${t.weekStartDay}
           and extract(isodow from ${t.weekStartChangeFrom}) = ${t.weekStartPreviousDay})`,
     ),
+    // A draft comes before publishing, which comes at the latest when the week starts.
+    check(
+      'households_plan_timings',
+      sql`${t.publishHours} >= 0 and ${t.draftHours} > ${t.publishHours}`,
+    ),
+    check('households_rebalance', sql`${t.rebalance} in ('fast', 'normal', 'slow')`),
   ],
 );
 
@@ -106,6 +134,8 @@ export const members = pgTable(
   },
   (t) => [
     householdOnly(t.householdId),
+    // Assignments refer to a member together with their household, so never to another's.
+    unique('members_household_id').on(t.householdId, t.id),
     index('members_household').on(t.householdId),
     // One profile per household for an account (ADR-0010 §5).
     uniqueIndex('members_account').on(t.householdId, t.accountId),
@@ -320,10 +350,172 @@ export const tasks = pgTable(
       columns: [t.householdId, t.scheduleId],
       foreignColumns: [schedules.householdId, schedules.id],
     }),
+    // Occurrences refer to a task together with its household, so never to another's.
+    unique('tasks_household_id').on(t.householdId, t.id),
     index('tasks_household_schedule').on(t.householdId, t.scheduleId),
     check('tasks_name', sql`${t.name} <> ''`),
     check('tasks_duration', sql`${t.duration} between 1 and 1440`),
     check('tasks_timing', sql`${t.timing} in ('flexible', 'floating')`),
     check('tasks_on_miss', sql`${t.onMiss} in ('roll over', 'lapse')`),
+  ],
+);
+
+/**
+ * A household's plan for one plan week (ADR-0001 §1, ADR-0006 §1–§2): from 00:00 on `weekStart` up
+ * to 00:00 on `weekEnd` in the household's time zone, seven days, or 4 to 10 for the transition week
+ * after a change of start day. A draft only heads see, then published and frozen (ADR-0006 §3).
+ * A week the household is away for entirely has none (ADR-0005 §5).
+ */
+export const plans = pgTable(
+  'plans',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    weekStart: date().notNull(),
+    weekEnd: date().notNull(),
+    status: text().$type<PlanStatus>().notNull(),
+    /** When the allocator last drafted it. */
+    draftedAt: timestamp({ withTimezone: true }).notNull(),
+    /** When it was published: by the scheduler at its time, or earlier by a head. */
+    publishedAt: timestamp({ withTimezone: true }),
+    /** A head publishes the draft they saw (ADR-0019 §5); drafting it again moves it on. */
+    version: integer().notNull().default(1),
+  },
+  (t) => [
+    householdOnly(t.householdId),
+    unique('plans_household_id').on(t.householdId, t.id),
+    // One plan a week, found by its first day.
+    unique('plans_week').on(t.householdId, t.weekStart),
+    check('plans_week_length', sql`${t.weekEnd} - ${t.weekStart} between 4 and 10`),
+    check('plans_status', sql`${t.status} in ('draft', 'published')`),
+    check('plans_published', sql`(${t.status} = 'published') = (${t.publishedAt} is not null)`),
+  ],
+);
+
+/** Where an occurrence is: still to do, done, closed as missed, or skipped as away. */
+export type OccurrenceStatus = 'open' | 'done' | 'missed' | 'away';
+
+/**
+ * One concrete instance of a task, with its own window (ADR-0001 §1, ADR-0004 §4), as `occurrences`
+ * gives it: for a floating one, the weeks it may float over, not the week it was planned in. Its
+ * task and schedule date are who it is, across drafts and weeks: the domain names it
+ * `task@date`. It outlives the plans it is in: an open one goes back into the next week's pool, and
+ * closes as missed by its task's on-miss policy (ADR-0002 §2), or as away when its whole window
+ * falls while the household is away (ADR-0005 §5). Done waits for completions (ADR-0006 §4).
+ */
+export const occurrences = pgTable(
+  'occurrences',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    taskId: uuid().notNull(),
+    /** Its schedule date, in the household's time zone. */
+    date: date().notNull(),
+    windowStart: timestamp({ withTimezone: true }).notNull(),
+    windowEnd: timestamp({ withTimezone: true }).notNull(),
+    status: text().$type<OccurrenceStatus>().notNull().default('open'),
+    /**
+     * The plan whose drafting closed it as missed or away; drafting that plan again, while it is a
+     * draft, opens it again first.
+     */
+    closedByPlan: uuid(),
+  },
+  (t) => [
+    householdOnly(t.householdId),
+    unique('occurrences_household_id').on(t.householdId, t.id),
+    unique('occurrences_task_date').on(t.householdId, t.taskId, t.date),
+    // A task of the occurrence's own household, kept while it has occurrences.
+    foreignKey({
+      name: 'occurrences_task',
+      columns: [t.householdId, t.taskId],
+      foreignColumns: [tasks.householdId, tasks.id],
+    }),
+    foreignKey({
+      name: 'occurrences_closed_by_plan',
+      columns: [t.householdId, t.closedByPlan],
+      foreignColumns: [plans.householdId, plans.id],
+    }),
+    // The open ones, which every draft reads as the pool from earlier weeks.
+    index('occurrences_household_status').on(t.householdId, t.status),
+    check('occurrences_window', sql`${t.windowStart} < ${t.windowEnd}`),
+    check('occurrences_status', sql`${t.status} in ('open', 'done', 'missed', 'away')`),
+    check(
+      'occurrences_closed',
+      sql`(${t.status} in ('missed', 'away')) = (${t.closedByPlan} is not null)`,
+    ),
+  ],
+);
+
+/**
+ * An occurrence in a plan (ADR-0001 §1, §7): given to a member, with the points it costs them and
+ * the reason it went to them, or left unassigned with the cause, which heads see (ADR-0001 §7,
+ * clarification). Its window is the one in this plan, which for an occurrence from an earlier week
+ * or a floating one is part of its own. Heads' changes to a draft go by its version (ADR-0019 §5).
+ */
+export const assignments = pgTable(
+  'assignments',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    planId: uuid().notNull(),
+    occurrenceId: uuid().notNull(),
+    windowStart: timestamp({ withTimezone: true }).notNull(),
+    windowEnd: timestamp({ withTimezone: true }).notNull(),
+    memberId: uuid(),
+    /** Points: the task's minutes times the member's burden (ADR-0001 §5). */
+    cost: doublePrecision(),
+    reason: text().$type<Reason>(),
+    unassignedCause: text().$type<UnassignedCause>(),
+    /** For versioned updates (CODE-14, ADR-0019 §5). */
+    version: integer().notNull().default(1),
+  },
+  (t) => [
+    householdOnly(t.householdId),
+    // An occurrence is in a plan once.
+    unique('assignments_plan_occurrence').on(t.planId, t.occurrenceId),
+    // The plans an occurrence is in, which tell whether it was planned before.
+    index('assignments_occurrence_plans').on(t.occurrenceId),
+    // A plan of the household's own, whose assignments go with it.
+    foreignKey({
+      name: 'assignments_plan',
+      columns: [t.householdId, t.planId],
+      foreignColumns: [plans.householdId, plans.id],
+    }).onDelete('cascade'),
+    foreignKey({
+      name: 'assignments_occurrence',
+      columns: [t.householdId, t.occurrenceId],
+      foreignColumns: [occurrences.householdId, occurrences.id],
+    }),
+    foreignKey({
+      name: 'assignments_member',
+      columns: [t.householdId, t.memberId],
+      foreignColumns: [members.householdId, members.id],
+    }),
+    check('assignments_window', sql`${t.windowStart} < ${t.windowEnd}`),
+    // Given to a member with its cost and reason, or unassigned with its cause.
+    check(
+      'assignments_assigned',
+      sql`(${t.memberId} is not null and ${t.cost} is not null and ${t.reason} is not null
+          and ${t.unassignedCause} is null)
+        or (${t.memberId} is null and ${t.cost} is null and ${t.reason} is null
+          and ${t.unassignedCause} is not null)`,
+    ),
+    check('assignments_cost', sql`${t.cost} >= 0`),
+    check(
+      'assignments_reason',
+      sql`${t.reason} in ('bound', 'assigned by head', 'linked', 'only eligible member',
+        'lowest relative load', 'catching up')`,
+    ),
+    check(
+      'assignments_unassigned_cause',
+      sql`${t.unassignedCause} in ('nobody eligible', 'bound member not eligible',
+        'linked member not eligible')`,
+    ),
   ],
 );

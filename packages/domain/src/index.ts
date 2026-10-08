@@ -33,6 +33,7 @@ export {
 } from './burdens/estimate';
 export {
   completionCredits,
+  defaultRebalance,
   rebalanceRates,
   settleWeek,
   type CostedTask,
@@ -62,7 +63,17 @@ export {
   type Role,
 } from './permissions/household';
 export {
+  defaultPlanTimings,
+  duePlanStep,
+  nextPlanWeek,
+  planTimes,
+  type PlanStatus,
+  type PlanStep,
+  type PlanTimings,
+} from './plans/plan-times';
+export {
   averageWeeklyMinutes,
+  occurrenceId,
   weekOccurrences,
   type PlanTask,
   type Recurrence,

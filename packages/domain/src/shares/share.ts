@@ -1,3 +1,4 @@
+import { isAway, type AwayPeriod } from '../schedules/since-last-done';
 import { planWeek, type HouseholdCalendar } from '../schedules/week';
 
 /**
@@ -54,20 +55,26 @@ export function overlap(
 /**
  * A member's share for the plan week of `date`: the override or the default on the week's first
  * day, replaced by a temporary share on the days it covers, averaged over the week's days: seven,
- * or the transition week's actual length (ADR-0001 §4, ADR-0006 §1, clarifications).
+ * or the transition week's actual length (ADR-0001 §4, ADR-0006 §1, clarifications). Days the
+ * household is away don't count: a week partly away is planned for its days at home, with fair
+ * portions over those days (ADR-0005 §5).
  */
 export function weekShare(
   settings: ShareSettings,
   date: Temporal.PlainDate,
   calendar: HouseholdCalendar,
+  away: readonly AwayPeriod[] = [],
 ): number {
   const { start, end } = planWeek(date, calendar);
-  const length = start.until(end).days;
+  const home: Temporal.PlainDate[] = [];
+  for (let day = start; Temporal.PlainDate.compare(day, end) < 0; day = day.add({ days: 1 })) {
+    if (!isAway(day, away)) home.push(day);
+  }
   const base = settings.override ?? defaultShare(settings.basis, start);
   let share = base;
-  for (let day = 0; day < length; day++) {
-    const temporary = settings.temporary.find((t) => covers(t, start.add({ days: day })));
-    if (temporary) share += (temporary.share - base) / length;
+  for (const day of home) {
+    const temporary = settings.temporary.find((t) => covers(t, day));
+    if (temporary) share += (temporary.share - base) / home.length;
   }
   return share;
 }

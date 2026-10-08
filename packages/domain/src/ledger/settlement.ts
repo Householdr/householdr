@@ -58,3 +58,6 @@ export function settleWeek(
 export const rebalanceRates = { fast: 0.5, normal: 0.25, slow: 0.1 } as const;
 
 export type RebalancePreset = keyof typeof rebalanceRates;
+
+/** The preset a household starts with (ADR-0002 §3). */
+export const defaultRebalance: RebalancePreset = 'normal';
