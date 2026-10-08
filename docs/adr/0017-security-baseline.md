@@ -95,6 +95,12 @@ A CSP violation during end-to-end tests fails the test (§10).
 > inline style stays blocked. If an upgrade changes the text, the end-to-end tests fail on the
 > violation, and the hash is updated after a look at what changed.
 
+> **Clarification (2026-10-08):** under `no-referrer`, a browser posts a form with `Origin: null`,
+> and the origin check on form actions refuses it, so the pages reached through a token link
+> wouldn't work without JavaScript ([ADR-0008](0008-tech-stack.md) §4). Those pages, from the
+> link's own address to the page it leads to, send `Referrer-Policy: same-origin` instead: other
+> sites still get no referrer at all, and the site's own forms keep their origin.
+
 ### 5. Rate limits and abuse
 
 | What | Limit (initial values, tuned with use) |
