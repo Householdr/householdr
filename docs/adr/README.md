@@ -15,7 +15,7 @@
 | [0011](0011-accessibility-and-responsive-baseline.md) | Accessibility and responsive-first baseline | Draft |
 | [0012](0012-privacy-and-data-protection.md) | Privacy and data protection | Accepted |
 | [0013](0013-monetisation.md) | Monetisation (public copy; billing operations private) | Draft |
-| [0014](0014-notifications-and-reminders.md) | Notifications and reminders | Draft |
+| [0014](0014-notifications-and-reminders.md) | Notifications and reminders | Accepted |
 | [0015](0015-feature-flags-and-experiments.md) | Feature flags, segments and experiments (public copy; how our Flipt runs is private) | Accepted |
 | [0016](0016-localisation.md) | Localisation | Accepted |
 | [0017](0017-security-baseline.md) | Security baseline | Accepted |
