@@ -1,12 +1,17 @@
 # ADR-0014: Notifications and reminders
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Date:** 2026-10-04
 - **Deciders:** Jens
-- **Related:** [ADR-0006](0006-plan-lifecycle-and-completion.md) §5 (what is sent to whom),
-  [ADR-0008](0008-tech-stack.md) §7, §10 (Web Push, worker),
+- **Related:** [ADR-0005](0005-membership-and-availability.md) §5,
+  [ADR-0006](0006-plan-lifecycle-and-completion.md) §5 (what is sent to whom),
+  [ADR-0007](0007-onboarding.md) §2, [ADR-0008](0008-tech-stack.md) §7, §10 (Web Push, worker),
   [ADR-0010](0010-identity-invitations-and-childrens-accounts.md) (security e-mails),
-  [ADR-0011](0011-accessibility-and-responsive-baseline.md), [ADR-0012](0012-privacy-and-data-protection.md)
+  [ADR-0011](0011-accessibility-and-responsive-baseline.md),
+  [ADR-0012](0012-privacy-and-data-protection.md), [ADR-0013](0013-monetisation.md),
+  [ADR-0015](0015-feature-flags-and-experiments.md) §5, [ADR-0016](0016-localisation.md),
+  [ADR-0017](0017-security-baseline.md) §5, §6, [ADR-0018](0018-household-safety.md),
+  [ADR-0021](0021-self-hosted-edition.md)
 
 ## Context
 
@@ -35,7 +40,7 @@ No SMS: it costs money per message and needs phone numbers, which we otherwise d
 
 ### 2. The catalogue
 
-| Event | To | Push | E-mail | Can turn off |
+| Event | To | Push | E-mail | Member chooses |
 |---|---|---|---|---|
 | Your week's plan is published | Each member with assignments | ✅ | Fallback (§5) | Yes |
 | **Fixed-task reminder** ("put the PMD bin out tonight") | Assignee | ✅ at window start, plus one nudge 1 hour before it closes if not done | Fallback | Yes |
@@ -45,9 +50,21 @@ No SMS: it costs money per message and needs phone numbers, which we otherwise d
 | Draft ready for review | Heads | ✅ | — | Yes |
 | Child's completion awaiting approval | Heads | ✅, batched hourly | — | Yes |
 | Plan summary for the coming week | Member | — | Opt-in, weekly | Yes |
-| New device signed in, password, passkey or 2FA changed, recovery used | Account owner | — | ✅ | **No** |
+| Asked to become head, or named as successor ([ADR-0010](0010-identity-invitations-and-childrens-accounts.md) §3) | That adult | ✅ | Fallback | Yes |
+| A member turned 18 and became an adult ([ADR-0010](0010-identity-invitations-and-childrens-accounts.md) §7) | Heads | ✅ | — | Yes |
+| A member left or was removed ([ADR-0018](0018-household-safety.md) §6) | Heads | — (in-app only) | — | **No** |
+| Household deletion started or restored ([ADR-0012](0012-privacy-and-data-protection.md) §6) | Heads | ✅ | ✅ | **No** |
+| Household inactive, to be deleted in 30 days ([ADR-0012](0012-privacy-and-data-protection.md) §5) | Heads | — | ✅ | **No** |
+| A child took over their account ([ADR-0010](0010-identity-invitations-and-childrens-accounts.md) §7) | The child's guardians | ✅ | ✅ | **No** |
+| A child was removed from a household ([ADR-0010](0010-identity-invitations-and-childrens-accounts.md) §10) | The child's guardians | ✅ | ✅ | **No** |
+| New device signed in; password, e-mail address (to the previous address), passkey or 2FA changed; recovery used; account unlinked from a profile ([ADR-0010](0010-identity-invitations-and-childrens-accounts.md) §2, §5, §8) | Account owner | — | ✅ | **No** |
 | Verification, invitation, password reset | Recipient | — | ✅ | **No** (only sent on request) |
-| Data export ready, inactivity warning | Account owner | — | ✅ | **No** |
+| Data export ready, account inactivity warning | Account owner | — | ✅ | **No** |
+
+The Push and E-mail columns are the **defaults**. For every row marked *Yes*, each member chooses
+how they get it (§3). Rows marked **No** keep their channels: security and account messages always
+reach the person, and a member leaving is shown to heads in the app only, so that leaving stays
+quiet ([ADR-0018](0018-household-safety.md) §6).
 
 Product news and offers are a separate, opt-in category with their own rules (§8).
 
@@ -56,33 +73,47 @@ messages, re-engagement nudges ("we miss you"), and promotional **push** notific
 
 ### 3. Preferences
 
-- Each member turns each category on or off, per channel, from one settings page. Mandatory messages
-  (security and account) are shown as on and locked, with the reason.
+- Each member chooses, for each category, **how they receive it**: by push, by e-mail, both, or only
+  in the app's list, from one settings page. The catalogue's channels are the defaults. The fixed
+  rows of §2 (security and account messages, and a member leaving) are shown as on and locked, with
+  the reason.
 - **Children's managed accounts** have push **off by default**; a guardian can turn reminders on for
   them, and sets the account's other preferences (quiet hours, daily overview) until the child takes
-  the account over. Children never get e-mail (they have no address,
-  [ADR-0010](0010-identity-invitations-and-childrens-accounts.md) §7).
+  the account over.
+- **Children get no chore or promotional e-mail**
+  ([ADR-0012](0012-privacy-and-data-protection.md) §7, clarification). A managed account's generated
+  address is never mailed ([ADR-0010](0010-identity-invitations-and-childrens-accounts.md) §7,
+  clarification). A child with their own account gets only the account and security e-mails of §2
+  (verification, password reset, security notices), so a child's choice is push or only the app, and
+  the fallback of §5 doesn't apply.
 - Preferences belong to the account, so a member of two households sets them once; each notification
   names the household it comes from.
 
 ### 4. Timing: quiet hours and limits
 
-- **Quiet hours**, default **21:30 to 07:30** in the household's time zone, adjustable per member.
-  Push notifications that fall inside them wait until they end. Security e-mails are sent
-  immediately; e-mail doesn't wake anyone.
+- **Quiet hours**, default **21:30 to 07:30**, adjustable per member. Push notifications that fall
+  inside them wait until they end. Security e-mails are sent immediately; e-mail doesn't wake
+  anyone.
+- Quiet hours and the daily overview's time are read in the **time zone of the household the
+  notification comes from**, so a member of two households in different zones needs no zone of their
+  own.
 - **Fixed-task reminders are planned around quiet hours**: if a task's window starts or closes inside
   them (the bin must be out by 07:00), the reminder moves to the last moment before quiet hours begin
   ("bin out tonight, collection tomorrow morning").
-- **Coalescing**: changes to the same member within 5 minutes become one notification ("your plan
+- **Coalescing**: changes to the same person within 5 minutes become one notification ("your plan
   changed: 3 tasks"), so a head rearranging a draft doesn't set off a burst.
-- **Ceiling**: at most **5 pushes per member per day**; anything beyond that goes to the in-app list
-  only. Reminders for fixed tasks take priority within the ceiling.
+- **Ceiling**: at most **5 pushes per person per day**, across their households; anything beyond
+  that goes to the in-app list only. Reminders for fixed tasks take priority within the ceiling.
 - A reminder is **cancelled if the task is done** before it goes out; the check happens at send time.
+- **No reminders** are sent while the household is away
+  ([ADR-0005](0005-membership-and-availability.md) §5).
 
 ### 5. Members without push
 
-A member with no working push subscription (never allowed, not installed on iOS, or the subscription
-expired) gets the push-worthy notifications by **e-mail instead**, combined:
+An adult member with no working push subscription (never allowed, not installed on iOS, or the
+subscription expired) gets the rows marked **Fallback** in §2 that would have been pushed to them by
+**e-mail instead**. Those e-mails, and the ones for categories the member chose to get by e-mail,
+are combined:
 
 - one **morning e-mail** with the day's reminders and any changes since the last one;
 - an immediate e-mail only for a plan change or swap that needs an answer the same day.
@@ -94,12 +125,19 @@ home screen) at the moments it would have helped, at most once a week.
 
 - Written in the **recipient's culture** ([ADR-0008](0008-tech-stack.md) §6), with times in the
   household's time zone, in plain language ([ADR-0011](0011-accessibility-and-responsive-baseline.md)
-  §5).
+  §5). A recipient without an account gets an invitation in the household's language
+  ([ADR-0016](0016-localisation.md) §2), and a sign-up's verification in the language they chose
+  before signing in ([ADR-0012](0012-privacy-and-data-protection.md) §1).
 - A push is short and says what to do and by when. It may name the task, since that is what makes it
-  useful on a lock screen, but **never** balances, burdens or anything about another member.
+  useful on a lock screen, and the member who acts with you (who proposed a swap, whose completion
+  waits for approval), but **never** balances, burdens or anyone's misses.
 - Tapping a push opens the exact task or change, where it can be completed or answered in one tap.
 - **E-mails** have an accessible HTML part and a plain-text part, **no tracking pixels and no click
   tracking**, and a one-click unsubscribe (`List-Unsubscribe`) on everything that isn't mandatory.
+- E-mails to a household's **own members** may name its tasks and the household: plain, escaped
+  text, never turned into links, and cut to a fixed length. Anyone outside the household, such as an
+  invitee, gets no text written by a member beyond who invited them to which household
+  ([ADR-0017](0017-security-baseline.md) §5, clarification).
 
 ### 7. Delivery
 
@@ -109,20 +147,26 @@ home screen) at the moments it would have helped, at most once a week.
 - The **worker** delivers each notification per channel as a pg-boss job keyed on *(notification,
   channel)*, so a retry or restart never sends twice ([ADR-0008](0008-tech-stack.md) §10). Failed
   sends are retried with backoff; a push subscription the push service reports as gone is deleted.
+- **Push** goes out through the guarded outbound client, and a subscription whose endpoint isn't one
+  of the known push services is refused when it is saved
+  ([ADR-0017](0017-security-baseline.md) §6).
 - **Scheduled reminders** come from the same per-minute tick as drafting and publishing: a domain
   function lists the reminders due for each household, keyed on *(occurrence, reminder kind)*. Quiet
   hours, coalescing and the daily ceiling are applied there, as pure logic with the clock passed in,
   so they are unit-tested like the allocator.
 - **E-mail** goes out over SMTP to an **EU-based transactional e-mail provider** under a processing
   agreement ([ADR-0012](0012-privacy-and-data-protection.md) §8), from our own domain with SPF, DKIM
-  and DMARC. SMTP keeps the provider replaceable; which provider is chosen with the hosting ADR.
+  and DMARC. SMTP keeps the provider replaceable; which provider is chosen with the hosting ADR. A
+  self-hosted instance uses its own SMTP server ([ADR-0021](0021-self-hosted-edition.md) §5).
 - In-app notifications are kept **90 days**, then deleted.
 
 ### 8. Promotional communication: product news and offers
 
-The platform needs a way to tell people about new features and about offers such as a discount on the
-yearly Plus plan ([ADR-0013](0013-monetisation.md)). It gets one, kept apart from the chore
-notifications so that neither spoils the other:
+The platform needs a way to tell people about new features and about offers such as a discount on
+the yearly Plus plan ([ADR-0013](0013-monetisation.md)). It gets one, kept apart from the chore
+notifications so that neither spoils the other. It belongs to our hosted service: the operator
+console that writes it lives in `householdr-cloud`, so a self-hosted instance has none of it
+([ADR-0021](0021-self-hosted-edition.md) §1).
 
 | Channel | What | Who | Consent |
 |---|---|---|---|
@@ -132,10 +176,12 @@ notifications so that neither spoils the other:
 
 Rules:
 
-- **Consent is opt-in**: an unticked checkbox in onboarding and in settings, separate from accepting the
-  terms, with a plain description of what will be sent and how often. The consent is stored with when
-  and the text shown, confirmed by a link in a first e-mail (double opt-in), and withdrawn with one
-  click in any newsletter or in settings ([ADR-0012](0012-privacy-and-data-protection.md) §2).
+- **Consent is opt-in**: an unticked checkbox when an adult creates their account (the founding head
+  in onboarding step 1, [ADR-0007](0007-onboarding.md) §2, clarification; an invitee on accepting)
+  and in settings, separate from accepting the terms, with a plain description of what will be sent
+  and how often. The consent is stored with when and the text shown, confirmed by a link in a first
+  e-mail (double opt-in), and withdrawn with one click in any newsletter or in settings
+  ([ADR-0012](0012-privacy-and-data-protection.md) §2).
 - **Never to children**, in any channel, and never in a child's view on a shared device.
 - **Never by push.** Push stays reserved for chores, so members keep trusting it.
 - **Never mixed into transactional or chore messages**: a reminder or security e-mail never carries an
@@ -167,15 +213,29 @@ Rules:
 - **Reminding about misses or falling behind.** Effective pressure, but exactly the punishment the
   product avoids ([ADR-0002](0002-balance-ledger.md), [ADR-0006](0006-plan-lifecycle-and-completion.md)
   §5).
+- **Fixed channels per message type**, only on or off. Simpler settings, but a member who wants
+  some things by e-mail and others by push can't have it.
+- **A time zone per account** for quiet hours. Right for the rare person whose households are in
+  different zones, but one more thing to store and keep current; the sending household's zone is
+  right for everyone else.
+- **E-mails without task names.** The strictest reading of [ADR-0017](0017-security-baseline.md) §5,
+  but a fallback e-mail that can't say what to do is no use; members already see the same names in
+  the app.
 
 ## Consequences
 
-- Every new feature that wants to notify someone adds a row to the catalogue (§2), with a default and
-  whether it can be turned off; nothing notifies outside it.
+- Every new feature that wants to notify someone adds a row to the catalogue (§2), with its default
+  channels and whether members choose them; nothing notifies outside it.
+- Preferences store a channel choice per category for each account, and delivery reads it for every
+  notification.
 - Quiet hours, coalescing and the ceiling make reminder timing a piece of domain logic with its own
   fixtures, including daylight-saving changes and windows that span midnight.
 - A transactional e-mail provider is needed before the first release (sign-up already depends on it).
-- [ADR-0012](0012-privacy-and-data-protection.md) §5 gains one retention line: in-app notifications,
-  90 days. §2 gains newsletter consent as personal data processed on the basis of consent.
+- [ADR-0012](0012-privacy-and-data-protection.md) lists newsletter consent (§2) and keeps in-app
+  notifications 90 days (§5).
 - "What's new" entries and offers need a small operator page to write and schedule them; they are
   translated like the rest of the product.
+
+## Open questions
+
+None.

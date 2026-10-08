@@ -98,6 +98,11 @@ A CSP violation during end-to-end tests fails the test (§10).
   you to which household and nothing more. That keeps our sending domain from carrying someone else's
   phishing message.
 
+  > **Clarification (2026-10-08):** "other people" are people outside the household, such as an
+  > invitee. E-mails to a household's own members may name its tasks and the household, which
+  > members wrote, as plain, escaped text that is never turned into a link and is cut to a fixed
+  > length ([ADR-0014](0014-notifications-and-reminders.md) §6).
+
 ### 6. Outbound requests: one guarded client
 
 Some features make our server fetch a URL that came from outside: **calendar import** (a URL a head

@@ -186,6 +186,13 @@ Self-service wherever possible, so exercising a right never needs an e-mail to u
 - The least data of anyone: a name or nickname, a birth date, and their chore records.
 - No marketing or promotions in any channel, no e-mails to children, no profiling beyond the burden fit that shapes their own
   chores.
+
+  > **Clarification (2026-10-08):** "no e-mails to children" means no chore or promotional e-mail. A
+  > child with their own account ([ADR-0010](0010-identity-invitations-and-childrens-accounts.md)
+  > §7) gets the account and security e-mails the account can't work without: verification, password
+  > reset and security notices. A managed account's generated address is never mailed
+  > ([ADR-0014](0014-notifications-and-reminders.md) §3).
+
 - Guardians can see and manage a managed account and delete it; at the consent age, the child takes
   their account over ([ADR-0010](0010-identity-invitations-and-childrens-accounts.md) §7).
 - The walkthrough explains privacy to children in words they understand, including that heads can't

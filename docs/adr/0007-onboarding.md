@@ -57,6 +57,10 @@ Setup starts once the head's e-mail address is verified
 
 The target is a first plan in **under five minutes** when the head accepts the defaults.
 
+> **Clarification (2026-10-08):** step 1 also offers the newsletter, as an **unticked checkbox**
+> separate from accepting the terms ([ADR-0014](0014-notifications-and-reminders.md) §8). Leaving it
+> unticked is the default and asks nothing more.
+
 **Members (step 2):**
 
 - Creating a **child's profile** is for someone with parental responsibility: they confirm it and
