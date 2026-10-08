@@ -163,10 +163,15 @@ export function weekOccurrences(input: WeekInput): WeekOccurrences {
   }
 
   // Floating occurrences go into a quiet week, or into the last week of their window that has a
-  // plan, soonest end first (ADR-0004 §4, clarification). A transition week's target follows its
-  // length (ADR-0006 §1, clarification).
+  // plan, soonest end first (ADR-0004 §4, clarification). The target follows the week's days at
+  // home: a transition week's length (ADR-0006 §1, clarification), less the days the household is
+  // away (ADR-0005 §5), such as the days before the first week's start (ADR-0007 §3).
   let total = [...due, ...kept].reduce((sum, o) => sum + cost(o), 0);
-  const target = (averageWeeklyMinutes(input.tasks, start) * start.until(end).days) / 7;
+  let daysHome = 0;
+  for (let day = start; Temporal.PlainDate.compare(day, end) < 0; day = day.add({ days: 1 })) {
+    if (!isAway(day)) daysHome++;
+  }
+  const target = (averageWeeklyMinutes(input.tasks, start) * daysHome) / 7;
   const laterPlan = (w: Window) => {
     const last = w.end.toPlainDate();
     for (let s = end; Temporal.PlainDate.compare(s, last) < 0;) {

@@ -279,6 +279,18 @@ describe('weekOccurrences, floating (ADR-0004 §4, clarification)', () => {
     );
   });
 
+  it('fills a week partly away up to the average times its days at home ÷ 7', () => {
+    // Away Monday to Wednesday (ADR-0005 §5), as before the first week's start (ADR-0007 §3): four
+    // days of dishes, 120 minutes, against about 224 × 4 / 7 ≈ 128.
+    const away3 = [away('2026-10-12', '2026-10-14')];
+    expect(ids({ tasks: [dishes, fridge], away: away3 })).toContain('fridge@2026-10-01');
+    // With an hour of painting it is 180, over the target, so the fridge waits; the full week's
+    // 224 would have let it in.
+    expect(
+      ids({ tasks: [dishes, fridge, oneOff('paint', '2026-10-15')], away: away3 }),
+    ).not.toContain('fridge@2026-10-01');
+  });
+
   it('is never placed twice', () => {
     expect(
       ids({ tasks: [dishes, fridge], placedEarlier: new Set(['fridge@2026-10-01']) }),
