@@ -4,6 +4,8 @@ import { ErrorStrategy, FetchMode, FliptClient } from '@flipt-io/flipt-client-js
 export interface FliptSettings {
   /** Flipt's address inside the instance, such as `http://flipt:8080`; never on the internet. */
   url: string;
+  /** The Flipt v2 environment to read, such as `production`; Flipt's default when absent. */
+  environment?: string;
   /** A client token, when Flipt's authentication is on (ADR-0015 §2). */
   token?: string;
 }
@@ -66,9 +68,10 @@ export function fliptFlags(
   };
 }
 
-async function connectToFlipt({ url, token }: FliptSettings): Promise<Evaluator> {
+async function connectToFlipt({ url, environment, token }: FliptSettings): Promise<Evaluator> {
   return FliptClient.init({
     url,
+    environment,
     authentication: token ? { clientToken: token } : undefined,
     // Changes arrive as Flipt makes them; between them, the last rules keep working.
     fetchMode: FetchMode.Streaming,

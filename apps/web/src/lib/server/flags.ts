@@ -8,5 +8,12 @@ import { defaultFlags, type Flags } from '@householdr/application';
 export function flagSource(env: Record<string, string | undefined> = process.env): Flags {
   const url = env.FLIPT_URL;
   if (!url) return defaultFlags;
-  return fliptFlags({ url, token: env.FLIPT_CLIENT_TOKEN || undefined }, stdoutLogger());
+  return fliptFlags(
+    {
+      url,
+      environment: env.FLIPT_ENVIRONMENT || undefined,
+      token: env.FLIPT_CLIENT_TOKEN || undefined,
+    },
+    stdoutLogger(),
+  );
 }

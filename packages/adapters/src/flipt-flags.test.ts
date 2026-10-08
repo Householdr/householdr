@@ -38,6 +38,14 @@ describe('fliptFlags', () => {
     expect(asked).toContainEqual({ flagKey: 'sign-in', entityId: 'everyone', context: {} });
   });
 
+  it('connects with the instance’s settings', async () => {
+    const connect = vi.fn(() => Promise.resolve(evaluator([])));
+    fliptFlags({ ...settings, environment: 'production' }, recordingLogger(), connect).close();
+    await vi.waitFor(() => {
+      expect(connect).toHaveBeenCalledWith({ ...settings, environment: 'production' });
+    });
+  });
+
   it('falls back to the default for a flag Flipt doesn’t have', async () => {
     const flags = fliptFlags(settings, recordingLogger(), () =>
       Promise.resolve({
