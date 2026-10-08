@@ -25,3 +25,8 @@ export function weekdayName(day: number, locale: string) {
 export function dayOf(at: number, timeZone: string, locale: string) {
   return new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone }).format(at);
 }
+
+/** `percent` (such as 36) as a percentage in `locale`, such as “36%” or “36 %”. */
+export function percentage(percent: number, locale: string) {
+  return new Intl.NumberFormat(locale, { style: 'percent' }).format(percent / 100);
+}

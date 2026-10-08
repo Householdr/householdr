@@ -43,6 +43,12 @@ export const flags = {
     owner: 'Jens',
     expires: '2027-03-31',
   },
+  shares: {
+    kind: 'release',
+    description: "Members' shares, which heads set (ADR-0001 §4, ADR-0007 §2 step 6).",
+    owner: 'Jens',
+    expires: '2027-03-31',
+  },
 } as const satisfies Record<string, Flag>;
 
 export type FlagKey = keyof typeof flags;

@@ -93,6 +93,11 @@ export const members = pgTable(
      * profile, without it (§10).
      */
     accountId: uuid().references(() => accounts.id, { onDelete: 'set null' }),
+    /**
+     * The share a head set instead of the default by role and age, in whole percent of a full
+     * share; none for the default (ADR-0001 §4). Never a reason for it (ADR-0012 §2).
+     */
+    sharePercent: smallint(),
     /** For versioned updates (CODE-14, ADR-0023 §1). */
     version: integer().notNull().default(1),
   },
@@ -104,6 +109,7 @@ export const members = pgTable(
     check('members_name', sql`${t.name} <> ''`),
     check('members_role', sql`${t.role} in ('head', 'adult', 'child')`),
     check('members_birth_date', sql`(${t.role} = 'child') = (${t.birthDate} is not null)`),
+    check('members_share_percent', sql`${t.sharePercent} between 0 and 100`),
   ],
 );
 

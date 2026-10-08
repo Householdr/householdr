@@ -89,6 +89,11 @@
         {m['household.activity']()}
       </a>
     {/if}
+    {#if data.flags.shares}
+      <a href="/households/{page.params.household}/shares" class="underline underline-offset-4">
+        {m['household.shares']()}
+      </a>
+    {/if}
     <a href="/security" class="underline underline-offset-4">{m['security.title']()}</a>
   </nav>
 </main>
