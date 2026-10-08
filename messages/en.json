@@ -409,5 +409,19 @@
   "tasks.invalid-duration": "Enter the minutes it takes, a whole number from {min} to {max}.",
   "tasks.invalid-frequency": "Choose how often it’s done.",
   "tasks.invalid-start": "Choose a day from today up to a year from now.",
-  "tasks.invalid-on-miss": "Choose what happens if it isn’t done in time."
+  "tasks.invalid-on-miss": "Choose what happens if it isn’t done in time.",
+  "comparisons.title": "What’s hard for you",
+  "comparisons.page-title": "What’s hard for you · {household} · Householdr",
+  "comparisons.why": "The app learns which tasks each of you finds hard, so plans can give each task to whoever minds it least. Nobody else sees your answers, not even the household’s heads.",
+  "comparisons.question": "Which is harder for you?",
+  "comparisons.skip": "Skip this one",
+  "comparisons.answered": "Saved: {harder} is harder for you than {easier}.",
+  "comparisons.not-saved": "Your answer wasn’t saved",
+  "comparisons.changed": "The tasks may have changed in the meantime. Here’s a new question.",
+  "comparisons.none": "There’s nothing to compare yet. Once your household has at least two tasks, you can say here which ones you find harder.",
+  "comparisons.effect": "What your answers change",
+  "comparisons.effect-none": "Once you’ve answered a few, you’ll see here how much each task counts for you.",
+  "comparisons.effect-hint": "An average task counts as {average}×. The harder a task is for you, the more it counts when plans share out the work.",
+  "comparisons.counts": "{task} counts as {factor}× for you",
+  "comparisons.back": "Back to {household}"
 }

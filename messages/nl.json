@@ -409,5 +409,19 @@
   "tasks.invalid-duration": "Vul in hoeveel minuten het duurt, een heel getal van {min} tot {max}.",
   "tasks.invalid-frequency": "Kies hoe vaak het moet gebeuren.",
   "tasks.invalid-start": "Kies een dag vanaf vandaag tot een jaar van nu.",
-  "tasks.invalid-on-miss": "Kies wat er gebeurt als het niet op tijd gedaan is."
+  "tasks.invalid-on-miss": "Kies wat er gebeurt als het niet op tijd gedaan is.",
+  "comparisons.title": "Wat jij zwaar vindt",
+  "comparisons.page-title": "Wat jij zwaar vindt · {household} · Householdr",
+  "comparisons.why": "De app leert welke taken ieder van jullie zwaar vindt, zodat een planning elke taak kan geven aan wie het het minst erg vindt. Niemand anders ziet je antwoorden, ook de hoofden van het huishouden niet.",
+  "comparisons.question": "Wat vind jij zwaarder?",
+  "comparisons.skip": "Deze overslaan",
+  "comparisons.answered": "Bewaard: jij vindt {harder} zwaarder dan {easier}.",
+  "comparisons.not-saved": "Je antwoord is niet bewaard",
+  "comparisons.changed": "De taken zijn intussen misschien veranderd. Hier is een nieuwe vraag.",
+  "comparisons.none": "Er valt nog niets te vergelijken. Zodra jullie huishouden minstens twee taken heeft, kun je hier zeggen welke je zwaarder vindt.",
+  "comparisons.effect": "Wat je antwoorden veranderen",
+  "comparisons.effect-none": "Zodra je er een paar hebt beantwoord, zie je hier hoeveel elke taak voor jou telt.",
+  "comparisons.effect-hint": "Een gemiddelde taak telt als {average}×. Hoe zwaarder een taak voor jou is, hoe meer ze telt als een planning het werk verdeelt.",
+  "comparisons.counts": "{task} telt voor jou als {factor}×",
+  "comparisons.back": "Terug naar {household}"
 }

@@ -1385,5 +1385,61 @@
   "tasks.invalid-on-miss": {
     "note": "Why adding didn't work: neither choice for what happens to a time that isn't done was picked.",
     "needsReview": ["nl"]
+  },
+  "comparisons.title": {
+    "note": "Heading of the comparison game's page, where a member says which of two tasks is harder for them, and the link to it from the household's page.",
+    "needsReview": ["nl"]
+  },
+  "comparisons.page-title": {
+    "note": "Browser tab title of the comparison game. {household} is the household's name; Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "comparisons.why": {
+    "note": "Why the game is there, below the heading. Plain and reassuring, also for children: the app shows a member's answers to nobody else, heads included (ADR-0003 §5, ADR-0007 §5).",
+    "needsReview": ["nl"]
+  },
+  "comparisons.question": {
+    "note": "The question above two buttons, each with a task's name. Harder means more effort, or more draining, for this person.",
+    "needsReview": ["nl"]
+  },
+  "comparisons.skip": {
+    "note": "Button that moves on to another pair of tasks without answering, for when the member can't choose or finds them about the same. Nothing is saved.",
+    "needsReview": ["nl"]
+  },
+  "comparisons.answered": {
+    "note": "Status after an answer. {harder} and {easier} are the names of the two tasks, as typed.",
+    "needsReview": ["nl"]
+  },
+  "comparisons.not-saved": {
+    "note": "Heading of the box that says an answer didn't go through, which happens when a task was changed or removed while the page was open.",
+    "needsReview": ["nl"]
+  },
+  "comparisons.changed": {
+    "note": "Below 'Your answer wasn't saved'. The page shows another pair of tasks right after it.",
+    "needsReview": ["nl"]
+  },
+  "comparisons.none": {
+    "note": "Shown instead of the question while the household has fewer than two tasks.",
+    "needsReview": ["nl"]
+  },
+  "comparisons.effect": {
+    "note": "Heading of the list of how much each task counts for the member, which their answers change.",
+    "needsReview": ["nl"]
+  },
+  "comparisons.effect-none": {
+    "note": "Shown instead of the list until the member has answered at least once.",
+    "needsReview": ["nl"]
+  },
+  "comparisons.effect-hint": {
+    "note": "Above the list. {average} is 1.0, written for the reader's language. × means times.",
+    "needsReview": ["nl"]
+  },
+  "comparisons.counts": {
+    "note": "One line of the list. {task} is a task's name, as typed; {factor} how much it counts for this member, a number with one decimal such as 1.6, written for the reader's language. × means times.",
+    "needsReview": ["nl"]
+  },
+  "comparisons.back": {
+    "note": "Link from the comparison game back to the household's page. {household} is the household's name.",
+    "needsReview": ["nl"]
   }
 }
