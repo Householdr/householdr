@@ -32,6 +32,27 @@ interface Content {
 }
 
 /**
+ * The e-mails with a link: their subject, why it came, the link, how long it works, and what to do
+ * if it wasn't you.
+ */
+const links = {
+  'sign-up': [
+    m['email.sign-up.subject'],
+    m['email.sign-up.request'],
+    m['email.sign-up.action'],
+    m['email.sign-up.expiry'],
+    m['email.sign-up.not-you'],
+  ],
+  'password-reset': [
+    m['email.password-reset.subject'],
+    m['email.password-reset.request'],
+    m['email.password-reset.action'],
+    m['email.password-reset.expiry'],
+    m['email.password-reset.not-you'],
+  ],
+} as const;
+
+/**
  * The notices that a way of signing in changed (ADR-0014 §2): their subject, what happened, and
  * what to do if it wasn't you.
  */
@@ -56,14 +77,15 @@ const notices = {
 /** What each account e-mail says, in `locale`. */
 function content(email: AccountEmail, locale: Locale): Content {
   const say = { locale };
-  if (email.kind === 'password-reset') {
+  if ('link' in email) {
+    const [subject, request, action, expiry, notYou] = links[email.kind];
     return {
-      subject: m['email.password-reset.subject']({}, say),
+      subject: subject({}, say),
       paragraphs: [
-        m['email.password-reset.request']({}, say),
-        { text: m['email.password-reset.action']({}, say), link: email.link },
-        m['email.password-reset.expiry']({}, say),
-        m['email.password-reset.not-you']({}, say),
+        request({}, say),
+        { text: action({}, say), link: email.link },
+        expiry({}, say),
+        notYou({}, say),
       ],
     };
   }

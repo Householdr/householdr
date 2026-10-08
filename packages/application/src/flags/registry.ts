@@ -18,6 +18,13 @@ export const flags = {
     owner: 'Jens',
     expires: '2027-03-31',
   },
+  onboarding: {
+    kind: 'release',
+    description:
+      'Signing up with a confirmed e-mail address, and setting up a new household (ADR-0007 §2, ADR-0010 §1).',
+    owner: 'Jens',
+    expires: '2027-03-31',
+  },
   passkeys: {
     kind: 'release',
     description: 'Adding and removing passkeys on the security page (ADR-0010 §2).',

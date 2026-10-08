@@ -51,4 +51,10 @@ describe('the job queue', () => {
     );
     expect(tables.rows).toEqual([{ name: 'queue' }]);
   });
+
+  it('sends a job to delete expired sign-up links every hour (ADR-0012 §5)', async () => {
+    expect(await queue.getSchedules()).toEqual([
+      expect.objectContaining({ name: 'expired-sign-up-links', cron: '23 * * * *' }),
+    ]);
+  });
 });

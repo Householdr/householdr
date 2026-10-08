@@ -1,7 +1,7 @@
 import type { HouseholdCalendar } from '@householdr/domain';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { inHousehold, type Database } from './connection';
-import { accounts, sessions } from './auth-schema';
+import { accountEmails, accounts, sessions } from './auth-schema';
 import { households, members } from './schema';
 import { refusal, testDatabase } from './testing';
 
@@ -158,6 +158,26 @@ describe('accounts and sessions (ADR-0010)', () => {
     expect(await refusal(session({ userAgent: '' }))).toBe('sessions_no_user_agent');
     expect(await refusal(session({ userAgent: 'Mozilla/5.0 (X11; Linux x86_64)' }))).toBe(
       'sessions_no_user_agent',
+    );
+  });
+
+  it('sends a sign-up’s e-mail to an address, and every other one to an account (ADR-0014 §7)', async () => {
+    const [account] = await addAccount();
+    if (!account) throw new Error('No account');
+    const email = (fields: Omit<typeof accountEmails.$inferInsert, 'kind'>, kind = 'sign-up') =>
+      db.insert(accountEmails).values({ kind: kind as 'sign-up', ...fields });
+    expect(await refusal(email({ email: 'kim@example.org' }))).toBeUndefined();
+    expect(await refusal(email({ accountId: account.id }, 'password-reset'))).toBeUndefined();
+    expect(await refusal(email({}))).toBe('account_emails_recipient');
+    expect(await refusal(email({ accountId: account.id }))).toBe('account_emails_recipient');
+    expect(await refusal(email({ accountId: account.id, email: 'kim@example.org' }))).toBe(
+      'account_emails_recipient',
+    );
+    expect(await refusal(email({ email: 'kim@example.org' }, 'password-reset'))).toBe(
+      'account_emails_recipient',
+    );
+    expect(await refusal(email({ email: 'kim@example.org' }, 'newsletter'))).toBe(
+      'account_emails_kind',
     );
   });
 });

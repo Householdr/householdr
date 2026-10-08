@@ -70,13 +70,20 @@ describe('the security headers (ADR-0017 §4)', () => {
     expect(features).not.toHaveProperty('web-share');
   });
 
-  it('send no referrer to other sites from the pages a reset link leads to (§4, clarification)', async () => {
-    for (const route of ['/reset-password/[token]', '/reset-password']) {
+  it('send no referrer to other sites from the pages a token link leads to (§4, clarification)', async () => {
+    for (const route of [
+      '/reset-password/[token]',
+      '/reset-password',
+      '/sign-up/[token]',
+      '/sign-up/household',
+    ]) {
       const headers = (await respond(harden, {}, {}, {}, route)).headers;
       expect(headers.get('referrer-policy')).toBe('same-origin');
     }
-    const elsewhere = (await respond(harden, {}, {}, {}, '/forgot-password')).headers;
-    expect(elsewhere.get('referrer-policy')).toBe('strict-origin-when-cross-origin');
+    for (const route of ['/forgot-password', '/sign-up']) {
+      const elsewhere = (await respond(harden, {}, {}, {}, route)).headers;
+      expect(elsewhere.get('referrer-policy')).toBe('strict-origin-when-cross-origin');
+    }
   });
 });
 
@@ -84,13 +91,23 @@ describe('the flags of a request (ADR-0015 §3)', () => {
   it('are evaluated once, at their defaults on an instance without Flipt', async () => {
     const locals = {} as App.Locals;
     await respond(flag, {}, locals);
-    expect(locals.flags).toEqual({ 'sign-in': false, 'password-reset': false, passkeys: false });
+    expect(locals.flags).toEqual({
+      'sign-in': false,
+      'password-reset': false,
+      onboarding: false,
+      passkeys: false,
+    });
   });
 
   it('can be forced by a test, in the test build (ADR-0015 §10)', async () => {
     const locals = {} as App.Locals;
     await respond(flag, {}, locals, { 'test-flags': 'sign-in=on' });
-    expect(locals.flags).toEqual({ 'sign-in': true, 'password-reset': false, passkeys: false });
+    expect(locals.flags).toEqual({
+      'sign-in': true,
+      'password-reset': false,
+      onboarding: false,
+      passkeys: false,
+    });
   });
 });
 
@@ -149,6 +166,9 @@ describe('the guard (ADR-0017 §2)', () => {
       '/forgot-password',
       '/reset-password',
       '/reset-password/[token]',
+      '/sign-up',
+      '/sign-up/[token]',
+      '/sign-up/household',
       '/health',
     ]) {
       expect(await outcome(signedOut, route)).toBe(200);

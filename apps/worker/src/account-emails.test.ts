@@ -5,13 +5,13 @@ import {
   waitingAccountEmail,
 } from '@householdr/auth/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { deliverAccountEmail, written, type DeliveryContext } from './account-emails';
-import { workQueues } from './index';
+import { deliverAccountEmail, written } from './account-emails';
+import { workQueues, type WorkerContext } from './index';
 
 // Account e-mails from the queue to the mailer (ADR-0014 §6, §7), on a real database (TEST-11).
 
 let test: Awaited<ReturnType<typeof testSignInContext>>;
-let context: DeliveryContext & { mailer: ReturnType<typeof recordingMailer> };
+let context: WorkerContext & { mailer: ReturnType<typeof recordingMailer> };
 beforeAll(async () => {
   test = await testSignInContext();
   context = { ...test.context, mailer: recordingMailer() };
@@ -56,6 +56,24 @@ describe('the password reset e-mail (ADR-0010 §8, ADR-0014 §6)', () => {
       '<a href="https://householdr.example.org/reset-password/a-token?x=1&amp;y=&lt;2&gt;">Choose a new password</a>',
     );
     expect(html).not.toMatch(/<img|<script|style=/);
+  });
+});
+
+describe('the sign-up e-mail (ADR-0010 §1, ADR-0014 §6)', () => {
+  it('says what was asked and how long the link works', () => {
+    const link = 'https://householdr.example.org/sign-up/a-token';
+    const { to, subject, text, html } = written({ kind: 'sign-up', to: 'kim@example.org', link });
+    expect(to).toBe('kim@example.org');
+    expect(subject).toBe('Confirm your e-mail address for Householdr');
+    expect(text).toBe(
+      [
+        'Someone asked to create a household on Householdr with this e-mail address.',
+        `Confirm and continue:\n${link}`,
+        'The link works for 30 minutes.',
+        'Wasn’t it you? Then ignore this e-mail: nothing is created without the link.',
+      ].join('\n\n'),
+    );
+    expect(html).toContain(`<a href="${link}">Confirm and continue</a>`);
   });
 });
 
@@ -107,6 +125,18 @@ describe('delivering an account e-mail (ADR-0014 §7, clarification)', () => {
     expect(context.mailer.sent.splice(0).map((mail) => mail.to)).toEqual([account.email]);
   });
 
+  it('sends a sign-up’s link to the address typed', async () => {
+    const email = `new-${String(++next)}@example.org`;
+    const { rows } = await test.context.db.$client.query<{ id: string }>(
+      "insert into auth.account_emails (kind, email) values ('sign-up', $1) returning id",
+      [email],
+    );
+    await deliverAccountEmail(context, rows[0]?.id ?? '');
+    const [mail] = context.mailer.sent.splice(0);
+    expect(mail?.to).toBe(email);
+    expect(mail?.text).toMatch(/https:\/\/householdr\.example\.org\/sign-up\/[\w-]+/);
+  });
+
   it('is what the worker does with a queued job', async () => {
     const account = await newAccount();
     const queue = await workQueues(context);
@@ -118,6 +148,32 @@ describe('delivering an account e-mail (ADR-0014 §7, clarification)', () => {
     } finally {
       await queue.stop({ graceful: false });
       context.mailer.sent.splice(0);
+    }
+  });
+});
+
+describe('deleting expired sign-up links (ADR-0012 §5, clarification)', () => {
+  it('is what the worker does with the scheduled job', async () => {
+    // Links that expired 8 and 6 days ago, by the test's clock.
+    for (const days of [8, 6]) {
+      const expiry = test.context.clock.now().subtract({ hours: days * 24 });
+      await test.context.db.$client.query(
+        "insert into auth.verifications (identifier, value, purpose, expires_at) values ($1, $2, 'sign-up', $3)",
+        [`expired-${String(days)}`, `expired-${String(days)}@example.org`, expiry.toString()],
+      );
+    }
+    const links = async () =>
+      (
+        await test.context.db.$client.query<{ value: string }>(
+          "select value from auth.verifications where purpose = 'sign-up' and value like 'expired-%'",
+        )
+      ).rows.map((row) => row.value);
+    const queue = await workQueues(context);
+    try {
+      await queue.send('expired-sign-up-links', {});
+      await expect.poll(links, { timeout: 10_000 }).toEqual(['expired-6@example.org']);
+    } finally {
+      await queue.stop({ graceful: false });
     }
   });
 });

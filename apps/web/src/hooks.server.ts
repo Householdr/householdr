@@ -8,6 +8,14 @@ import { flagSource } from './lib/server/flags';
 import { testFlagsCookie, withForcedFlags } from './lib/server/forced-flags';
 import { securityHeaders } from './security';
 
+/** The pages reached through a token link, from the link's own address to the page it leads to. */
+const tokenLinkPages = new Set([
+  '/reset-password/[token]',
+  '/reset-password',
+  '/sign-up/[token]',
+  '/sign-up/household',
+]);
+
 /**
  * Every response carries the browser hardening of ADR-0017 §4. Pages reached through a token link
  * send no referrer to other sites, so the token can't leak there, yet their forms keep their origin
@@ -16,7 +24,7 @@ import { securityHeaders } from './security';
 export const harden: Handle = async ({ event, resolve }) => {
   const response = await resolve(event);
   for (const [name, value] of Object.entries(securityHeaders)) response.headers.set(name, value);
-  if (event.route.id?.startsWith('/reset-password')) {
+  if (tokenLinkPages.has(event.route.id ?? '')) {
     response.headers.set('referrer-policy', 'same-origin');
   }
   return response;
@@ -69,6 +77,9 @@ const open = new Set([
   '/forgot-password',
   '/reset-password',
   '/reset-password/[token]',
+  '/sign-up',
+  '/sign-up/[token]',
+  '/sign-up/household',
   '/health',
 ]);
 

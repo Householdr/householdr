@@ -1,8 +1,13 @@
 // Background jobs that build a system context and call one use case each (ADR-0008 §10, CODE-10).
-import { smtpMailer, stdoutLogger } from '@householdr/adapters';
-import { connect, jobQueue, type Jobs } from '@householdr/application';
-import { createAuth } from '@householdr/auth';
+import { smtpMailer, stdoutLogger, systemClock } from '@householdr/adapters';
+import { connect, jobQueue, type Clock, type Jobs } from '@householdr/application';
+import { createAuth, deleteExpiredSignUpLinks } from '@householdr/auth';
 import { deliverAccountEmail, type DeliveryContext } from './account-emails';
+
+/** What the worker's jobs need: sending account e-mails, and the time for the deletion jobs. */
+export interface WorkerContext extends DeliveryContext {
+  clock: Clock;
+}
 
 type Environment = Record<string, string | undefined>;
 
@@ -30,6 +35,7 @@ export async function startWorker(env: Environment = process.env) {
     auth: createAuth({ db, baseUrl: settings.origin, secret: settings.secret }),
     db,
     mailer: smtpMailer(settings.smtp),
+    clock: systemClock,
   });
   stdoutLogger().info('worker.started');
   return async () => {
@@ -38,12 +44,18 @@ export async function startWorker(env: Environment = process.env) {
   };
 }
 
-/** Works every queue's jobs with `context`, until the returned queue is stopped. */
-export async function workQueues(context: DeliveryContext) {
+/**
+ * Works every queue's jobs with `context`, and sends the scheduled ones, until the returned queue is
+ * stopped.
+ */
+export async function workQueues(context: WorkerContext) {
   const queue = await jobQueue(context.db, { worker: true }).start();
   await queue.work<Jobs['account-email']>('account-email', async (jobs) => {
     for (const job of jobs) await deliverAccountEmail(context, job.data.id);
   });
+  await queue.work<Jobs['expired-sign-up-links']>('expired-sign-up-links', () =>
+    deleteExpiredSignUpLinks(context),
+  );
   return queue;
 }
 

@@ -6,7 +6,7 @@ import { expect } from '@playwright/test';
  */
 export const mailServer = { smtp: { host: 'localhost', port: 1025 }, api: 'http://localhost:8025' };
 
-/** Mailpit's search for the e-mails to `address`. */
+/** Mailpit's search for the e-mails to `address`, and to any address that contains it. */
 const toAddress = (address: string) =>
   `${mailServer.api}/api/v1/search?${new URLSearchParams({ query: `to:"${address}"` }).toString()}`;
 
@@ -22,6 +22,14 @@ export async function expectMailServer() {
 export async function forgetMail(address: string) {
   const response = await fetch(toAddress(address), { method: 'DELETE' });
   expect(response.ok).toBe(true);
+}
+
+/** The subjects of the e-mails to `address` that have arrived so far. */
+export async function subjectsTo(address: string) {
+  const { messages } = (await (await fetch(toAddress(address))).json()) as {
+    messages: { Subject: string }[];
+  };
+  return messages.map((message) => message.Subject);
 }
 
 /** The text of the e-mail to `address` with `subject`, waiting for it to arrive. */
