@@ -8,7 +8,7 @@
 | [0004](0004-recurrence-schedules.md) | Recurrence schedules | Accepted |
 | [0005](0005-membership-and-availability.md) | Membership and availability | Accepted |
 | [0006](0006-plan-lifecycle-and-completion.md) | Plan lifecycle and completion | Accepted |
-| [0007](0007-onboarding.md) | Onboarding a new household | Draft |
+| [0007](0007-onboarding.md) | Onboarding a new household | Accepted |
 | [0008](0008-tech-stack.md) | Tech stack and engineering principles | Accepted |
 | [0009](0009-development-workflow-and-releases.md) | Development workflow, CI/CD and releases | Accepted, superseded in part by 0024 |
 | [0010](0010-identity-invitations-and-childrens-accounts.md) | Identity, invitations and children's accounts | Accepted |

@@ -67,6 +67,11 @@ The constraints come from earlier decisions: no third-party analytics and no dat
   household sees the same thing, and the same household always lands in the same rollout bucket. The
   plan is shared; two members seeing different versions of it would be confusing and, for anything
   near the plan, unfair. A member of two households sees each household's own values.
+
+  > **Clarification (2026-10-08):** before a household exists, in the first step of onboarding
+  > ([ADR-0007](0007-onboarding.md) §2), there is no entity ID to evaluate with. A flag evaluated
+  > there is on or off for everyone, with no percentage rollout, segment or experiment; once the
+  > household exists, its ID is the entity as always.
 - The **context** sent with an evaluation is built from data we already hold: plan, country, created
   date, founding household or not, number of members, whether it has children, the viewer's role, and
   whether the household opted out of experiments (§8). Nothing else.

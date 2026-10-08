@@ -105,6 +105,11 @@ log**, visible to every member of the household, children included
 
 Entries say who did what to whom, never a value hidden from the reader: no share figures, no reasons.
 
+> **Clarification (2026-10-08):** during onboarding ([ADR-0007](0007-onboarding.md) §2), what the
+> founding head sets for other members before the household starts (shares, constraints, acting for a
+> profile without an account) is recorded as one entry when it starts, listing what was set, with the
+> same limits.
+
 The log can't be edited or deleted by anyone in the household, and is kept as long as the ledger.
 Members notice what is done in their name; disputes have a record.
 
