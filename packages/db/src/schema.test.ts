@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { inHousehold, type Database } from './connection';
 import { accountEmails, accounts, sessions } from './auth-schema';
-import { households, members, parentalConsents, profileGuardians } from './schema';
+import { households, members, parentalConsents, profileGuardians, temporaryShares } from './schema';
 import { refusal, testDatabase } from './testing';
 
 // The database keeps to the domain's rules as a second line of defence (ADR-0006 §1, ADR-0012 §2).
@@ -355,6 +355,44 @@ describe('accounts and sessions (ADR-0010)', () => {
     );
     expect(await refusal(email({ email: 'kim@example.org' }, 'newsletter'))).toBe(
       'account_emails_kind',
+    );
+  });
+});
+
+describe('temporary_shares', () => {
+  const addTemporaryShare = (
+    fields: Pick<typeof temporaryShares.$inferInsert, 'firstDay' | 'lastDay' | 'percent'>,
+  ) => {
+    const id = newId();
+    return inHousehold(db, id, async (tx) => {
+      await tx.insert(households).values(household(id));
+      const [member] = await tx
+        .insert(members)
+        .values({ householdId: id, name: 'Sam', role: 'adult' })
+        .returning({ id: members.id });
+      if (!member) throw new Error('No member');
+      await tx.insert(temporaryShares).values({ householdId: id, memberId: member.id, ...fields });
+    });
+  };
+
+  it('covers at least a day, both included, at a share from none to a full one (ADR-0001 §4)', async () => {
+    const week = { firstDay: '2026-10-12', lastDay: '2026-10-18' };
+    expect(await refusal(addTemporaryShare({ ...week, percent: 0 }))).toBeUndefined();
+    expect(
+      await refusal(
+        addTemporaryShare({ firstDay: '2026-10-12', lastDay: '2026-10-12', percent: 100 }),
+      ),
+    ).toBeUndefined();
+    expect(
+      await refusal(
+        addTemporaryShare({ firstDay: '2026-10-12', lastDay: '2026-10-11', percent: 50 }),
+      ),
+    ).toBe('temporary_shares_days');
+    expect(await refusal(addTemporaryShare({ ...week, percent: 101 }))).toBe(
+      'temporary_shares_percent',
+    );
+    expect(await refusal(addTemporaryShare({ ...week, percent: -1 }))).toBe(
+      'temporary_shares_percent',
     );
   });
 });

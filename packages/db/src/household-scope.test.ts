@@ -159,6 +159,7 @@ describe('every household-owned table (CODE-17)', () => {
       'members',
       'parental_consents',
       'profile_guardians',
+      'temporary_shares',
     ]);
     for (const row of rows) {
       // Not forced: it binds the app's role, not the owner (ADR-0008 §9, clarification).

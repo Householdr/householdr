@@ -1,7 +1,7 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { planWeek, type HouseholdCalendar } from '../schedules/week';
-import { ageShare, weekShare, type ShareSettings, type TemporaryShare } from './share';
+import { ageShare, overlap, weekShare, type ShareSettings, type TemporaryShare } from './share';
 
 // Invariants of shares over generated members, birth dates and weeks, with and without a change of
 // week start day (TEST-1, ADR-0006 §1).
@@ -101,6 +101,39 @@ describe('share invariants (ADR-0001 §4)', () => {
         expect(now).toBeGreaterThanOrEqual(0);
         expect(now).toBeLessThanOrEqual(1);
         expect(ageShare(b, d.add({ days: later }))).toBeGreaterThanOrEqual(now);
+      }),
+    );
+  });
+});
+
+describe('overlap (ADR-0001 §4, clarification)', () => {
+  const period = fc
+    .tuple(day(60), fc.integer({ min: 0, max: 20 }))
+    .map(([from, length]) => ({ from, to: from.add({ days: length }) }));
+
+  it('is symmetric, and true exactly when a day lies in both', () => {
+    fc.assert(
+      fc.property(period, period, (a, b) => {
+        const within = (p: typeof a, d: Temporal.PlainDate) =>
+          Temporal.PlainDate.compare(p.from, d) <= 0 && Temporal.PlainDate.compare(d, p.to) <= 0;
+        let shared = false;
+        for (let d = a.from; Temporal.PlainDate.compare(d, a.to) <= 0; d = d.add({ days: 1 })) {
+          if (within(b, d)) shared = true;
+        }
+        expect(overlap(a, b)).toBe(overlap(b, a));
+        expect(overlap(a, b)).toBe(shared);
+      }),
+    );
+  });
+
+  it('never holds between generated temporary shares, which never overlap', () => {
+    fc.assert(
+      fc.property(temporaries, (list) => {
+        list.forEach((a, i) => {
+          list.slice(i + 1).forEach((b) => {
+            expect(overlap(a, b)).toBe(false);
+          });
+        });
       }),
     );
   });
