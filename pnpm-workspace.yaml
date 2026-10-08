@@ -8,6 +8,7 @@ catalog:
   '@axe-core/playwright': ^4.13.0
   '@eslint-community/eslint-plugin-eslint-comments': ^4.8.1
   '@eslint/js': ^10.0.1
+  '@flipt-io/flipt-client-js': ^0.6.0
   '@inlang/paraglide-js': ^2.25.4
   '@inlang/plugin-message-format': ^4.4.4
   '@playwright/test': ~1.63.0

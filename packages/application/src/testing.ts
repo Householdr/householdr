@@ -1,4 +1,6 @@
-import type { Clock, LogFields, Logger, Mail, Mailer } from './ports';
+import { defaultFlags } from './flags/values';
+import type { FlagKey } from './flags/registry';
+import type { Clock, Flags, LogFields, Logger, Mail, Mailer } from './ports';
 
 /** A mailer that keeps what it is asked to send, for use-case tests (TEST-11). */
 export function recordingMailer(): Mailer & { sent: Mail[] } {
@@ -41,4 +43,9 @@ export function settableClock(start: Temporal.Instant): Clock & {
       now = now.add(by);
     },
   };
+}
+
+/** Flags at their registry defaults, except those a test sets (TEST-9). */
+export function settableFlags(values: Partial<Record<FlagKey, boolean>> = {}): Flags {
+  return { isOn: (flag) => values[flag] ?? defaultFlags.isOn(flag) };
 }

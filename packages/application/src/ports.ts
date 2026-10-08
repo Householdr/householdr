@@ -1,3 +1,5 @@
+import type { FlagKey } from './flags/registry';
+
 /**
  * An e-mail to one person (ADR-0014 §6): a plain-text part and an accessible HTML part, written in
  * the recipient's culture. Who it comes from is the mailer's setting.
@@ -30,4 +32,13 @@ export interface Logger {
 /** Tells the time: the system's clock in the app, one tests set (ADR-0023 §3). */
 export interface Clock {
   now: () => Temporal.Instant;
+}
+
+/**
+ * Whether a flag of the registry is on (ADR-0015 §3, §4): from Flipt in the app, at the registry's
+ * safe defaults without it, as a test sets it in tests (TEST-9). Flags are evaluated for everyone
+ * until households exist in the app (ADR-0015 §3, clarification).
+ */
+export interface Flags {
+  isOn: (flag: FlagKey) => boolean;
 }

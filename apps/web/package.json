@@ -12,6 +12,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@householdr/adapters": "workspace:*",
     "@householdr/application": "workspace:*"
   },
   "devDependencies": {
