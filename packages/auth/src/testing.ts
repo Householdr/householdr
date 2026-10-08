@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { settableClock } from '@householdr/application/testing';
+import { connect } from '@householdr/db';
 import { testDatabase } from '@householdr/db/testing';
 import { createAuth, type Auth } from './auth';
 import { counterKeys } from './counter-keys';
@@ -32,14 +33,23 @@ export async function createTestAccount(
 }
 
 /**
- * A fresh database with `account` in it, for a test server of its own (TEST-11): where to connect,
- * and how to drop it afterwards. Until sign-up exists, this is how an account comes to be.
+ * A fresh database for a test server of its own (TEST-11): where to connect, and how to drop it
+ * afterwards.
  */
-export async function databaseWithAccount(account: TestAccount) {
-  const { db, url, close } = await testDatabase();
-  const secret = randomBytes(32).toString('base64');
-  await createTestAccount(createAuth({ db, baseUrl: 'http://localhost', secret }), account);
+export async function serverDatabase() {
+  const { url, close } = await testDatabase();
   return { url, close };
+}
+
+/**
+ * Adds accounts to the database at `url` from a process other than the server's, such as an
+ * end-to-end test's. Until sign-up exists, this is how an account comes to be.
+ */
+export async function testAccounts(url: string) {
+  const { db, close } = await connect(url);
+  const secret = randomBytes(32).toString('base64');
+  const auth = createAuth({ db, baseUrl: 'http://localhost', secret });
+  return { add: (account: TestAccount) => createTestAccount(auth, account), close };
 }
 
 /** What signing in needs, over a fresh database and with a clock the test sets (TEST-11). */

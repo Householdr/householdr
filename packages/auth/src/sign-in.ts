@@ -31,23 +31,30 @@ export type SignInResult =
   /** Turned away unchecked, after repeated failures (ADR-0010 §2, clarification). */
   | { ok: false; error: 'wait'; until: Temporal.Instant };
 
+/** Where an attempt comes from: its IP address, and its browser's user agent if it sent one. */
+export interface Client {
+  address: string;
+  userAgent: string | null;
+}
+
 /**
- * Signs in with an e-mail address and a password, from the IP address `address` (ADR-0010 §2).
- * Every attempt counts as a failure, under the e-mail address typed and under `address`, until it
+ * Signs in with an e-mail address and a password, from `client` (ADR-0010 §2). Every attempt
+ * counts as a failure, under the e-mail address typed and under the client's IP address, until it
  * turns out not to be one; after repeated failures the next attempt waits, and one made during the
- * wait is turned away without its password being checked (§2, clarification).
+ * wait is turned away without its password being checked (§2, clarification). The session keeps
+ * the names of the client's browser and system (§6).
  */
 export async function signInWithPassword(
   context: SignInContext,
   input: unknown,
-  address: string,
+  client: Client,
 ): Promise<SignInResult> {
   const parsed = v.safeParse(passwordSignIn, input);
   // Nothing was checked, so there is nothing to count.
   if (!parsed.success) return { ok: false, error: 'incorrect' };
   const { email, password } = parsed.output;
   const emailKey = context.counterKey('sign-in:email', email);
-  const addressKey = context.counterKey('sign-in:address', addressPrefix(address));
+  const addressKey = context.counterKey('sign-in:address', addressPrefix(client.address));
   const attempt = await countAttempt(
     context.db,
     [
@@ -61,6 +68,7 @@ export async function signInWithPassword(
   try {
     const { headers } = await context.auth.api.signInEmail({
       body: { email, password },
+      headers: new Headers(client.userAgent ? { 'user-agent': client.userAgent } : {}),
       returnHeaders: true,
     });
     // Signing in clears the e-mail address's count, never the IP address's.

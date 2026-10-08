@@ -27,5 +27,29 @@
         "countPlural=other": "Na een paar pogingen pauzeert het inloggen even. Over {count} minuten kun je het opnieuw proberen."
       }
     }
-  ]
+  ],
+  "security.title": "Beveiliging",
+  "security.page-title": "Beveiliging · Householdr",
+  "security.devices": "Ingelogde apparaten",
+  "security.device": "{browser} op {system}",
+  "security.unknown-browser": "Een browser",
+  "security.unknown-system": "een onbekend systeem",
+  "security.unknown-device": "Een onbekend apparaat",
+  "security.this-device": "Dit apparaat",
+  "security.used-today": "Gebruikt in de afgelopen 24 uur",
+  "security.used-days": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Laatst gebruikt {count} dag geleden",
+        "countPlural=other": "Laatst gebruikt {count} dagen geleden"
+      }
+    }
+  ],
+  "security.sign-out": "Uitloggen",
+  "security.sign-out-others": "Uitloggen op alle andere apparaten",
+  "security.signed-out": "Dat apparaat is uitgelogd.",
+  "security.signed-out-others": "Alle andere apparaten zijn uitgelogd.",
+  "security.not-found": "Dat apparaat was al uitgelogd."
 }

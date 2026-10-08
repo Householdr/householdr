@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { proxyHeaders } from './e2e/proxy';
 
 const port = 4173;
 const origin = `http://localhost:${String(port)}`;
@@ -18,13 +19,7 @@ export default defineConfig({
     ['junit', { outputFile: 'test-results/e2e.xml' }],
     ['html', { open: 'never', outputFolder: 'playwright-report' }],
   ],
-  use: {
-    baseURL: origin,
-    // The test server runs on plain HTTP, which a production instance only sees behind a proxy
-    // that says so; without it, SvelteKit takes the requests for HTTPS and refuses form posts.
-    extraHTTPHeaders: { 'x-forwarded-proto': 'http' },
-    trace: 'retain-on-failure',
-  },
+  use: { baseURL: origin, extraHTTPHeaders: proxyHeaders, trace: 'retain-on-failure' },
   projects: [
     { name: 'phone, light', use: { ...devices['Pixel 7'], colorScheme: 'light' } },
     { name: 'phone, dark', use: { ...devices['Pixel 7'], colorScheme: 'dark' } },

@@ -1,6 +1,7 @@
 import { accounts, credentials, sessions, verifications, type Database } from '@householdr/db';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { deviceOf } from './device';
 
 export interface AuthSettings {
   db: Database;
@@ -38,8 +39,16 @@ export function createAuth({ db, baseUrl, secret }: AuthSettings) {
       // Accounts are made from a confirmed address; one that isn't confirmed can't sign in.
       requireEmailVerification: true,
     },
-    // A session lasts 30 days and is extended while used (ADR-0010 §6).
-    session: { expiresIn: 30 * day, updateAge: day },
+    session: {
+      // A session lasts 30 days and is extended while used (ADR-0010 §6).
+      expiresIn: 30 * day,
+      updateAge: day,
+      // The device it was started on, for the security page (ADR-0010 §6).
+      additionalFields: {
+        browser: { type: 'string', required: false, input: false },
+        system: { type: 'string', required: false, input: false },
+      },
+    },
     advanced: {
       // Random UUID keys, like every other table (CODE-17).
       database: { generateId: 'uuid' },
@@ -51,10 +60,21 @@ export function createAuth({ db, baseUrl, secret }: AuthSettings) {
       defaultCookieAttributes: { secure: true, httpOnly: true, sameSite: 'lax', path: '/' },
     },
     databaseHooks: {
-      // Without tracking the library still writes an empty address; a session keeps none, and the
-      // database refuses one (ADR-0012 §2, clarification).
+      // Without tracking the library still writes an empty address; a session keeps none, and of
+      // the user agent only the browser's and system's names. The database refuses the rest
+      // (ADR-0012 §2, clarification).
       session: {
-        create: { before: (session) => Promise.resolve({ data: { ...session, ipAddress: null } }) },
+        create: {
+          before: (session) =>
+            Promise.resolve({
+              data: {
+                ...session,
+                ...deviceOf(session.userAgent),
+                ipAddress: null,
+                userAgent: null,
+              },
+            }),
+        },
       },
     },
     // Tokens and codes are looked up by their hash, never stored as they are (SEC-7).

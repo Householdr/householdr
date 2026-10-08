@@ -1,25 +1,25 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { once } from 'node:events';
-import { databaseWithAccount } from '@householdr/auth/testing';
+import { serverDatabase } from '@householdr/auth/testing';
 import type { FullConfig } from '@playwright/test';
-import { account } from './account';
+import { protocolHeader } from './proxy';
 
 /**
- * Starts the test build (`pnpm build:test`) on a fresh database with `account` in it, and returns
- * what stops both after the run. Playwright's own web server would start before the database
- * exists.
+ * Starts the test build (`pnpm build:test`) on a fresh database, and returns what stops both after
+ * the run. Playwright's own web server would start before the database exists. The tests add their
+ * own accounts to the database at `E2E_DATABASE_URL`.
  */
 export default async function startServer(config: FullConfig) {
   const origin = new URL(config.projects[0]?.use.baseURL ?? '');
-  const database = await databaseWithAccount(account);
+  const database = await serverDatabase();
+  process.env.E2E_DATABASE_URL = database.url;
   const server = spawn(process.execPath, ['build-test'], {
     cwd: new URL('..', import.meta.url),
     env: {
       ...process.env,
       PORT: origin.port,
-      // The protocol comes from the header `playwright.config.ts` sends.
-      PROTOCOL_HEADER: 'x-forwarded-proto',
+      PROTOCOL_HEADER: protocolHeader,
       ORIGIN: origin.origin,
       DATABASE_URL: database.url,
       SESSION_SECRET: randomBytes(32).toString('base64'),

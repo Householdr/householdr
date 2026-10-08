@@ -38,8 +38,9 @@ const newAccount = async (emailVerified = true) => {
   const email = `person-${String(++next)}@example.org`;
   return { id: await createTestAccount(context.auth, { email, password }, emailVerified), email };
 };
+const firefox = 'Mozilla/5.0 (X11; Linux x86_64; rv:143.0) Gecko/20100101 Firefox/143.0';
 const signIn = (email: string, typed: string, address = '192.0.2.1') =>
-  signInWithPassword(context, { email, password: typed }, address);
+  signInWithPassword(context, { email, password: typed }, { address, userAgent: firefox });
 const later = (seconds: number) => context.clock.now().add({ seconds });
 
 describe('signing in with a password (ADR-0010 §2)', () => {
@@ -64,6 +65,18 @@ describe('signing in with a password (ADR-0010 §2)', () => {
     expect(rows).toHaveLength(1);
   });
 
+  it('keeps the names of the browser and system, and nothing else of the client (ADR-0012 §2)', async () => {
+    const account = await newAccount();
+    await signIn(account.email, password);
+    const [row] = await db.select().from(sessions).where(eq(sessions.userId, account.id));
+    expect(row).toMatchObject({
+      browser: 'Firefox',
+      system: 'Linux',
+      userAgent: null,
+      ipAddress: null,
+    });
+  });
+
   it('takes the e-mail address however it is typed', async () => {
     const account = await newAccount();
     expect(await signIn(`  ${account.email.toUpperCase()} `, password)).toMatchObject({ ok: true });
@@ -82,7 +95,13 @@ describe('signing in with a password (ADR-0010 §2)', () => {
   });
 
   it('turns away what isn’t an e-mail address and a password, without counting it', async () => {
-    expect(await signInWithPassword(context, { email: 'robin' }, '192.0.2.1')).toEqual({
+    expect(
+      await signInWithPassword(
+        context,
+        { email: 'robin' },
+        { address: '192.0.2.1', userAgent: null },
+      ),
+    ).toEqual({
       ok: false,
       error: 'incorrect',
     });

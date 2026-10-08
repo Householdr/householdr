@@ -73,7 +73,11 @@ export const sessions = auth.table(
     updatedAt: updatedAt(),
     /** Always empty: a sign-in's address is kept in the security records only (ADR-0012 §2). */
     ipAddress: text(),
+    /** Always empty: of the user agent, only the names below are kept (ADR-0012 §2, clarification). */
     userAgent: text(),
+    /** The browser and operating system the session was started on, by name (ADR-0010 §6). */
+    browser: text(),
+    system: text(),
     userId: uuid()
       .notNull()
       .references(() => accounts.id, { onDelete: 'cascade' }),
@@ -81,6 +85,7 @@ export const sessions = auth.table(
   (t) => [
     index('sessions_user').on(t.userId),
     check('sessions_no_ip_address', sql`${t.ipAddress} is null`),
+    check('sessions_no_user_agent', sql`${t.userAgent} is null`),
   ],
 );
 

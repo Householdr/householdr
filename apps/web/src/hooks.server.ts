@@ -1,6 +1,9 @@
 import { flagValues, type Flags } from '@householdr/application';
+import { currentSession, sessionCookie } from '@householdr/auth';
+import { redirect } from '@sveltejs/kit';
 import { sequence, type Handle } from '@sveltejs/kit/hooks';
 import { paraglideMiddleware } from './lib/paraglide/server.js';
+import { authContext } from './lib/server/auth';
 import { flagSource } from './lib/server/flags';
 import { testFlagsCookie, withForcedFlags } from './lib/server/forced-flags';
 import { securityHeaders } from './security';
@@ -36,5 +39,33 @@ export const flag: Handle = ({ event, resolve }) => {
   return resolve(event);
 };
 
+/**
+ * Who the request is signed in as, from its session cookie (ADR-0010 §6, ADR-0023 §2,
+ * clarification). Only a request with the cookie needs the database.
+ */
+export const authenticate: Handle = async ({ event, resolve }) => {
+  event.locals.session = null;
+  if (event.cookies.get(sessionCookie) !== undefined) {
+    const { auth } = await authContext();
+    const { session, cookies } = await currentSession(auth, event.request.headers);
+    for (const cookie of cookies) event.cookies.set(cookie.name, cookie.value, cookie.options);
+    event.locals.session = session;
+  }
+  return resolve(event);
+};
+
+/** The routes anyone may open; every other one needs a session (ADR-0017 §2). */
+const open = new Set(['/sign-in', '/health']);
+
+/**
+ * One guard, deny by default: without a session, a route sends to the sign-in page (ADR-0017 §2).
+ * Membership of the household named in the request joins it once accounts are linked to members.
+ */
+export const guard: Handle = ({ event, resolve }) => {
+  const route = event.route.id;
+  if (route !== null && !open.has(route) && !event.locals.session) redirect(303, '/sign-in');
+  return resolve(event);
+};
+
 // Hardening comes first, so it also covers any response the localisation returns itself.
-export const handle = sequence(harden, localise, flag);
+export const handle = sequence(harden, localise, flag, authenticate, guard);

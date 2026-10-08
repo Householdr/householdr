@@ -93,7 +93,7 @@ otherwise its updates quietly touch no rows.
 End-to-end tests run against a test build of the web app: `pnpm --filter @householdr/web build:test`,
 then `pnpm test:e2e` (the first time, `pnpm --filter @householdr/web exec playwright install
 chromium`). They also need `TEST_DATABASE_URL`: each run starts the test build on a database of its
-own, with one account in it, and drops it at the end. The dev server
+own, where every test adds the accounts it signs in to, and drops it at the end. The dev server
 (`pnpm --filter @householdr/web dev`) and the test build also have a pseudo-locale: with the cookie
 `PARAGLIDE_LOCALE=en-XA`, all text from the message catalogue shows accented, longer and in
 brackets, so a hard-coded string or a layout too tight for longer languages stands out
