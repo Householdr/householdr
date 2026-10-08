@@ -81,6 +81,13 @@ The threats we design against, and where each is handled:
 
 A CSP violation during end-to-end tests fails the test (§10).
 
+> **Clarification (2026-10-08):** the `Permissions-Policy` keeps the camera for this site and
+> switches off every other powerful feature the app doesn't use, such as location, the microphone,
+> payment, USB and motion sensors. Passkeys
+> ([ADR-0010](0010-identity-invitations-and-childrens-accounts.md) §2) and Web Share (ADR-0010 §5)
+> are features of the same policy and keep their same-site default, since accepted ADRs depend on
+> them.
+
 ### 5. Rate limits and abuse
 
 | What | Limit (initial values, tuned with use) |
