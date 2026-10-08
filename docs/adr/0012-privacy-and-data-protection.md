@@ -77,6 +77,11 @@ touches it, and how people exercise their rights.
 > ([ADR-0010](0010-identity-invitations-and-childrens-accounts.md) §6). The IP address of a sign-in
 > is kept only in the security records, for their 90 days (§5).
 
+> **Clarification (2026-10-08):** **rate-limit counters** ([ADR-0017](0017-security-baseline.md)
+> §5, clarification) hold a keyed hash of an e-mail address or IP address, a count and when it
+> changed, never the address itself. They protect accounts and keep our e-mail from being abused,
+> on the basis of legitimate interest (f), and are forgotten when their window ends (§5).
+
 What is deliberately **not** stored:
 
 - **No reasons**: not for a reduced share, not for an absence, not for sudden unavailability. "I can't
@@ -147,6 +152,9 @@ by the fewest people possible, and every such access is logged with its reason.
 > pending invitation: deleted 7 days after it expires or is used. **Consent records** of a child
 > with only a profile are kept as long as the profile exists, plus one year
 > ([ADR-0010](0010-identity-invitations-and-childrens-accounts.md) §9, clarification).
+
+> **Clarification (2026-10-08):** **rate-limit counters** are forgotten when their window ends, at
+> most 24 hours after they last changed ([ADR-0017](0017-security-baseline.md) §5, clarification).
 
 Deletion jobs run in the worker like any other scheduled job ([ADR-0008](0008-tech-stack.md) §10).
 

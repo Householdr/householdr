@@ -101,6 +101,23 @@ A CSP violation during end-to-end tests fails the test (§10).
 
 - Counters live in PostgreSQL (an unlogged table); no Redis ([ADR-0008](0008-tech-stack.md) §10). The
   reverse proxy adds a coarse per-IP limit in front.
+
+  > **Clarification (2026-10-08):** a counter is kept under a keyed hash of what it counts, never
+  > the e-mail address or IP address itself, and is forgotten when its window ends. An IPv6 address
+  > is counted by its /64 prefix, since one connection usually gets a whole /64. The counters are an
+  > unlogged table in the `auth` schema ([ADR-0008](0008-tech-stack.md) §9, clarification): they are
+  > looked up before anyone is known and belong to no household. The first values:
+  >
+  > | What | Limit |
+  > |---|---|
+  > | Sign-in attempts | Waits that grow with each failure ([ADR-0010](0010-identity-invitations-and-childrens-accounts.md) §2, clarification) |
+  > | Sign-ups | 10 per IP address per hour |
+  > | E-mails we send to one address | 3 per hour and 12 per day, verification, reset and invitation e-mails counted together |
+  >
+  > The other rows get their values when what they limit is built. Over a limit, what the screen
+  > says never shows whether an address has an account
+  > ([ADR-0010](0010-identity-invitations-and-childrens-accounts.md) §2): an e-mail over its limit
+  > is simply not sent.
 - **No user-written text goes into e-mails** to other people: an invitation e-mail says who invited
   you to which household and nothing more. That keeps our sending domain from carrying someone else's
   phishing message.
