@@ -368,7 +368,7 @@ describe('head pre-assignments (ADR-0006 §2)', () => {
 describe('ties (ADR-0001 §7, step 6)', () => {
   it('break the same way whatever order the members come in', () => {
     const base = week({ tasks: [task('dishes', 30)], occurrences: dishes(1) });
-    const reversed = { ...base, members: [...base.members].reverse() };
+    const reversed = { ...base, members: base.members.toReversed() };
     expect(who(reversed)).toEqual(who(base));
   });
 

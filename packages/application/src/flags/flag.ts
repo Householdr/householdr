@@ -1,5 +1,5 @@
 /** An ISO calendar date, `YYYY-MM-DD`. */
-export type IsoDate = `${number}-${number}-${number}`;
+type IsoDate = `${number}-${number}-${number}`;
 
 interface FlagInfo {
   /** What the flag guards. */
@@ -9,13 +9,13 @@ interface FlagInfo {
 }
 
 /** Hides unfinished work until it is ready, and is removed after full rollout (CODE-20). */
-export interface ReleaseFlag extends FlagInfo {
+interface ReleaseFlag extends FlagInfo {
   kind: 'release';
   expires: IsoDate;
 }
 
 /** Switches a working feature off within seconds, without a deploy. Permanent. */
-export interface KillSwitch extends FlagInfo {
+interface KillSwitch extends FlagInfo {
   kind: 'kill-switch';
 }
 

@@ -1,0 +1,15 @@
+{
+  // Unused files, exports and dependencies, and undeclared ones (ADR-0008 §12, clarification).
+  "$schema": "./node_modules/knip/schema-jsonc.json",
+  "workspaces": {
+    ".": {
+      // The inlang project loads its plugin by path, in project.inlang/settings.json.
+      "ignoreDependencies": ["@inlang/plugin-message-format"],
+    },
+    "apps/web": {
+      // Read, not run: the config finds the inlang project from the working directory and writes
+      // the pseudo-locale's copy there (ADR-0016 §5).
+      "vite": { "config": [], "entry": ["vite.config.ts"] },
+    },
+  },
+}

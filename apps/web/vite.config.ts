@@ -6,6 +6,8 @@ import { defineConfig } from 'vite';
 import { writePseudoProject } from './pseudo-locale.ts';
 import { contentSecurityPolicy } from './src/security.ts';
 
+const pathSeparator = /[/\\]/;
+
 export default defineConfig(({ mode }) => {
   // The dev server and the test build add the pseudo-locale, chosen by Paraglide's locale cookie
   // (ADR-0016 §5); a production build never has it (ADR-0009 §5, clarification).
@@ -26,7 +28,7 @@ export default defineConfig(({ mode }) => {
         // Runes only, everywhere except in dependencies (CODE-7).
         compilerOptions: {
           runes: ({ filename }) =>
-            filename.split(/[/\\]/).includes('node_modules') ? undefined : true,
+            filename.split(pathSeparator).includes('node_modules') ? undefined : true,
         },
         // A plain Node server keeps the container simple (ADR-0008 §4, §13). The test build goes
         // elsewhere, so it never takes the production build's place.

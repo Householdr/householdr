@@ -15,7 +15,7 @@ export interface MessagesReport {
 const placeholder = /\{\s*([A-Za-z_]\w*)\s*\}/g;
 
 function placeholders(value: unknown) {
-  return [...new Set([...JSON.stringify(value).matchAll(placeholder)].map((match) => match[1]))]
+  return [...new Set(Array.from(JSON.stringify(value).matchAll(placeholder), (match) => match[1]))]
     .sort()
     .join(', ');
 }

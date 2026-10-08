@@ -1,6 +1,8 @@
 // @ts-check
+import e18e from '@e18e/eslint-plugin';
 import comments from '@eslint-community/eslint-plugin-eslint-comments/configs';
 import js from '@eslint/js';
+import json from '@eslint/json';
 import prettier from 'eslint-config-prettier';
 import svelte from 'eslint-plugin-svelte';
 import { defineConfig, globalIgnores } from 'eslint/config';
@@ -180,6 +182,9 @@ export const boundaries = defineConfig(
   },
 );
 
+/** The files ESLint lints as code; `package.json` files are linted as JSON. */
+const code = ['**/*.{js,mjs,cjs,ts,mts,cts,tsx,svelte}'];
+
 export default defineConfig(
   globalIgnores([
     '**/dist/',
@@ -191,10 +196,13 @@ export default defineConfig(
     '**/test-results/',
     '**/playwright-report/',
   ]),
-  js.configs.recommended,
-  tseslint.configs.strictTypeChecked,
-  svelte.configs.recommended,
   {
+    files: code,
+    extends: [
+      js.configs.recommended,
+      tseslint.configs.strictTypeChecked,
+      svelte.configs.recommended,
+    ],
     languageOptions: {
       parserOptions: {
         projectService: true,
@@ -202,8 +210,8 @@ export default defineConfig(
         extraFileExtensions: ['.svelte'],
       },
     },
-    linterOptions: { reportUnusedDisableDirectives: 'error' },
   },
+  { linterOptions: { reportUnusedDisableDirectives: 'error' } },
   {
     files: ['**/*.svelte', '**/*.svelte.ts'],
     languageOptions: { parserOptions: { parser: tseslint.parser } },
@@ -211,11 +219,24 @@ export default defineConfig(
     rules: { 'svelte/valid-compile': 'error' },
   },
   // Disabling a rule inline needs a reason (CODE-24).
-  comments.recommended,
-  { rules: { '@eslint-community/eslint-comments/require-description': 'error' } },
+  {
+    files: code,
+    extends: [comments.recommended],
+    rules: { '@eslint-community/eslint-comments/require-description': 'error' },
+  },
   // Non-null assertions are allowed in tests only (CODE-1).
   { files: ['**/*.test.ts'], rules: { '@typescript-eslint/no-non-null-assertion': 'off' } },
+  // Lighter or native alternatives to dependencies and to older patterns, in code and in every
+  // `package.json` (ADR-0008 §12, clarification).
+  { files: code, extends: [e18e.configs.recommended] },
+  // A test runs its patterns once, and an assertion reads better with its pattern in place.
+  { files: ['**/*.test.ts', '**/*.e2e.ts'], rules: { 'e18e/prefer-static-regex': 'off' } },
+  {
+    files: ['**/package.json'],
+    language: 'json/json',
+    plugins: { json },
+    extends: [e18e.configs.recommended],
+  },
   boundaries,
-  svelte.configs.prettier,
-  prettier,
+  { files: code, extends: [svelte.configs.prettier, prettier] },
 );

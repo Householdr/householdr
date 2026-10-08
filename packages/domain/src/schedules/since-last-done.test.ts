@@ -125,7 +125,7 @@ describe('sinceLastDoneOccurrence (ADR-0004 §8)', () => {
 
 describe('spreadFirstDueDates (ADR-0007 §6)', () => {
   const shown = (map: Map<string, Temporal.PlainDate>) =>
-    Object.fromEntries([...map].map(([id, day]) => [id, day.toString()]));
+    Object.fromEntries(Array.from(map, ([id, day]) => [id, day.toString()]));
   const oven = { id: 'oven', every: { count: 6, unit: 'weeks' } } as const;
   const windows = { id: 'windows', every: { count: 3, unit: 'months' } } as const;
   const gutters = { id: 'gutters', every: { count: 6, unit: 'months' } } as const;

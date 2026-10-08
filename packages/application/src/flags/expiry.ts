@@ -3,7 +3,7 @@ import type { Flag } from './flag';
 /** How long a release flag may stay past its expiry date before CI fails (ADR-0015 §4). */
 export const gracePeriodDays = 30;
 
-export interface ExpiredFlag {
+interface ExpiredFlag {
   key: string;
   expires: string;
   daysPast: number;

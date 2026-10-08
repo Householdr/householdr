@@ -12,7 +12,7 @@ function tokensAfter(from: string): Record<string, string> {
   if (start < 0) throw new Error(`No ${from} in app.css.`);
   const body = /:root\s*{([^}]*)}/.exec(css.slice(start))?.[1] ?? '';
   return Object.fromEntries(
-    [...body.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)].map(([, name = '', value = '']) => [
+    Array.from(body.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g), ([, name = '', value = '']) => [
       name,
       value.trim(),
     ]),

@@ -122,7 +122,7 @@ function awayDays(
 
 // Overlapping or adjoining periods as one, so no day counts twice.
 function merged(away: readonly AwayPeriod[]) {
-  const sorted = [...away].sort((a, b) => Temporal.PlainDate.compare(a.from, b.from));
+  const sorted = away.toSorted((a, b) => Temporal.PlainDate.compare(a.from, b.from));
   const result: AwayPeriod[] = [];
   for (const period of sorted) {
     const last = result.at(-1);

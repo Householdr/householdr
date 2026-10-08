@@ -17,7 +17,7 @@ export interface CostedTask {
  * several did it together.
  */
 export function completionCredits(task: CostedTask, doers: readonly string[]): Points[] {
-  return [...new Set(doers)].map((member) => {
+  return Array.from(new Set(doers), (member) => {
     const burden = task.burden.get(member);
     if (burden === undefined) throw new RangeError(`No burden for ${member}`);
     return { member, points: task.duration * burden };
@@ -47,7 +47,7 @@ export function settleWeek(
     if (!fairFractions.has(member)) throw new RangeError(`${member} is not settled this week`);
   }
   const total = allocated.reduce((sum, a) => sum + a.points, 0);
-  return [...fairFractions].map(([member, fairFraction]) => {
+  return Array.from(fairFractions, ([member, fairFraction]) => {
     const owed = fairFraction * total;
     const credited = done.filter((d) => d.member === member).reduce((sum, d) => sum + d.points, 0);
     return { member, owed, done: credited, change: credited - owed };

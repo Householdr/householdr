@@ -114,10 +114,12 @@ describe('spreading first due dates (ADR-0007 §6)', () => {
   it('does not depend on the order of the tasks', () => {
     fc.assert(
       fc.property(tasks, day, (list, from) => {
-        const forward = [...spreadFirstDueDates(list, from)].map(
+        const forward = Array.from(
+          spreadFirstDueDates(list, from),
           ([id, d]) => `${id}${d.toString()}`,
         );
-        const backward = [...spreadFirstDueDates([...list].reverse(), from)].map(
+        const backward = Array.from(
+          spreadFirstDueDates(list.toReversed(), from),
           ([id, d]) => `${id}${d.toString()}`,
         );
         expect(backward.sort()).toEqual(forward.sort());
@@ -134,7 +136,7 @@ describe('spreading first due dates (ADR-0007 §6)', () => {
         (n, extra, from) => {
           const every = { count: n + extra, unit: 'days' } as const;
           const list = Array.from({ length: n }, (_, i) => ({ id: `task-${String(i)}`, every }));
-          const days = [...spreadFirstDueDates(list, from).values()].map((d) => d.toString());
+          const days = Array.from(spreadFirstDueDates(list, from).values(), (d) => d.toString());
           expect(new Set(days).size).toBe(n);
         },
       ),

@@ -20,7 +20,7 @@ export interface Cookie {
  */
 export function cookiesFrom(headers: Headers): Cookie[] {
   return headers.getSetCookie().flatMap((header) =>
-    [...parseSetCookieHeader(header)].map(([name, attributes]) => ({
+    Array.from(parseSetCookieHeader(header), ([name, attributes]) => ({
       name,
       value: attributes.value,
       options: {
