@@ -601,5 +601,97 @@
   "household.invalid-name": {
     "note": "Why adding didn't work: no name, or one over 100 characters. 'Their' is gender-neutral.",
     "needsReview": ["nl"]
+  },
+  "household.more": {
+    "note": "Accessible name of the navigation at the bottom of a household's page (settings, activity, security).",
+    "needsReview": ["nl"]
+  },
+  "household.settings": {
+    "note": "Link to the household's settings, for heads.",
+    "needsReview": ["nl"]
+  },
+  "household.activity": {
+    "note": "Link to the household's activity log, for every member.",
+    "needsReview": ["nl"]
+  },
+  "settings.page-title": {
+    "note": "Browser tab title of the household settings page.",
+    "needsReview": ["nl"]
+  },
+  "settings.title": {
+    "note": "Heading of the household settings page.",
+    "needsReview": ["nl"]
+  },
+  "settings.country-hint": {
+    "note": "Under the country: the country decides the digital consent age, from which a child can have their own account.",
+    "needsReview": ["nl"]
+  },
+  "settings.logged": {
+    "note": "Above the save button: changes show in the household's activity log, which every member sees (without the new values).",
+    "needsReview": ["nl"]
+  },
+  "settings.save": {
+    "note": "Button that saves the household's settings.",
+    "needsReview": ["nl"]
+  },
+  "settings.saved": {
+    "note": "Status after saving.",
+    "needsReview": ["nl"]
+  },
+  "settings.failed": {
+    "note": "Heading of the error summary when saving didn't work.",
+    "needsReview": ["nl"]
+  },
+  "settings.conflict": {
+    "note": "Another head ({name}) saved the settings after this form was loaded, so nothing was saved; the person's input stays in the form.",
+    "needsReview": ["nl"]
+  },
+  "settings.conflict-someone": {
+    "note": "Same as settings.conflict, when it isn't known who changed them.",
+    "needsReview": ["nl"]
+  },
+  "settings.current": {
+    "note": "Heading of the list of the settings as they are now, shown with a conflict.",
+    "needsReview": ["nl"]
+  },
+  "settings.back": {
+    "note": "Link back to the household's page.",
+    "needsReview": ["nl"]
+  },
+  "activity.page-title": {
+    "note": "Browser tab title of the household's activity log.",
+    "needsReview": ["nl"]
+  },
+  "activity.title": {
+    "note": "Heading of the household's activity log.",
+    "needsReview": ["nl"]
+  },
+  "activity.intro": {
+    "note": "Explains the activity log: actions that affect others, visible to every member, never changed or deleted.",
+    "needsReview": ["nl"]
+  },
+  "activity.none": {
+    "note": "Shown when the log is empty.",
+    "needsReview": ["nl"]
+  },
+  "activity.former-member": {
+    "note": "Stands for {actor} in the entries when the person is no longer a member. Starts with a capital, as it begins the sentence.",
+    "needsReview": ["nl"]
+  },
+  "activity.household-name": {
+    "note": "Log entry. {actor} is a member's name, or 'A former member'.",
+    "needsReview": ["nl"]
+  },
+  "activity.household-country": {
+    "note": "Log entry. {actor} is a member's name, or 'A former member'.",
+    "needsReview": ["nl"]
+  },
+  "activity.household-time-zone": {
+    "note": "Log entry. {actor} is a member's name, or 'A former member'.",
+    "needsReview": ["nl"]
+  },
+  "activity.household-language": {
+    "note": "Log entry. {actor} is a member's name, or 'A former member'.",
+    "needsReview": ["nl"]
   }
 }

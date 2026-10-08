@@ -12,5 +12,6 @@ export {
   type CountedAttempt,
   type Limit,
 } from './rate-limits';
+export { atVersion, nextVersion } from './versioned';
 export * from './auth-schema';
 export * from './schema';

@@ -9,6 +9,7 @@ import {
   pgTable,
   smallint,
   text,
+  timestamp,
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
@@ -103,5 +104,37 @@ export const members = pgTable(
     check('members_name', sql`${t.name} <> ''`),
     check('members_role', sql`${t.role} in ('head', 'adult', 'child')`),
     check('members_birth_date', sql`(${t.role} = 'child') = (${t.birthDate} is not null)`),
+  ],
+);
+
+/** What an entry of the activity log says was done (ADR-0018 §5). */
+export type ActivityAction =
+  /** A head changed the household's name, time zone, language or country (ADR-0007 §2). */
+  'household.name' | 'household.timeZone' | 'household.language' | 'household.country';
+
+/**
+ * The household's activity log (ADR-0018 §5): who did what to whom, for every member to see. An
+ * entry never changes and is never deleted while the household exists: the app's role may only add
+ * and read them (`migrate.ts`).
+ */
+export const activityLog = pgTable(
+  'activity_log',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    at: timestamp({ withTimezone: true }).notNull(),
+    /** Who did it; none once their profile is deleted, when they show as a former member. */
+    actorId: uuid().references(() => members.id, { onDelete: 'set null' }),
+    action: text().$type<ActivityAction>().notNull(),
+  },
+  (t) => [
+    householdOnly(t.householdId),
+    index('activity_log_household_at').on(t.householdId, t.at),
+    check(
+      'activity_log_action',
+      sql`${t.action} in ('household.name', 'household.timeZone', 'household.language', 'household.country')`,
+    ),
   ],
 );

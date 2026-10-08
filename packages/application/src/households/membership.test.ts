@@ -1,6 +1,7 @@
 import { accounts, inHousehold, members, passkeys, type Database } from '@householdr/db';
 import { testDatabase } from '@householdr/db/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { settableClock } from '../testing';
 import { createHousehold } from './create-household';
 import { accountHouseholdList, membership, viewHousehold } from './membership';
 
@@ -24,6 +25,7 @@ const newAccount = async () => {
   return row.id;
 };
 const signedIn = (account: string) => ({ account, twoFactor: true });
+const clock = settableClock(Temporal.Instant.from('2026-10-08T08:00:00Z'));
 
 /** A household created by `founder`, as its head. */
 const household = async (founder: string, name = 'Ash Lane') => {
@@ -106,7 +108,7 @@ describe('viewHousehold (ADR-0007 §1, ADR-0018 §3)', () => {
     await addMembers(id, { name: 'Sam', role: 'child' }, { name: 'Alex', role: 'adult' });
     const member = await membership({ db }, robin, id);
     if (!member) throw new Error('Not a member');
-    const view = await viewHousehold({ db, householdId: id, member });
+    const view = await viewHousehold({ db, clock, householdId: id, member });
     expect(view).toMatchObject({
       ok: true,
       name: 'Ash Lane',
@@ -126,7 +128,7 @@ describe('viewHousehold (ADR-0007 §1, ADR-0018 §3)', () => {
       hasAccount: false,
       twoFactor: false,
     };
-    expect(await viewHousehold({ db, householdId: id, member: profile })).toEqual({
+    expect(await viewHousehold({ db, clock, householdId: id, member: profile })).toEqual({
       ok: false,
       error: 'not-allowed',
     });

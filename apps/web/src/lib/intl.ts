@@ -20,3 +20,8 @@ export function weekdayName(day: number, locale: string) {
   const date = Date.UTC(2026, 9, 4 + day);
   return new Intl.DateTimeFormat(locale, { weekday: 'long', timeZone: 'UTC' }).format(date);
 }
+
+/** The day of `at` (epoch milliseconds) in `timeZone`, in `locale`, such as “8 October 2026”. */
+export function dayOf(at: number, timeZone: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone }).format(at);
+}

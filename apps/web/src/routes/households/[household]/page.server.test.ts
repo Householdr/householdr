@@ -79,6 +79,7 @@ describe('a household’s page (ADR-0007 §1)', () => {
       name: 'Ash Lane',
       members: [{ id: membership.member.id, name: 'Robin', role: 'head' }],
       mayAddMembers: false,
+      mayChangeSettings: false,
       you: membership.member.id,
     });
   });

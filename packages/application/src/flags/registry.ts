@@ -31,6 +31,18 @@ export const flags = {
     owner: 'Jens',
     expires: '2027-03-31',
   },
+  'household-settings': {
+    kind: 'release',
+    description: "Changing a household's name, country, time zone and language (ADR-0007 §2).",
+    owner: 'Jens',
+    expires: '2027-03-31',
+  },
+  'activity-log': {
+    kind: 'release',
+    description: "A household's activity log, which every member sees (ADR-0018 §5).",
+    owner: 'Jens',
+    expires: '2027-03-31',
+  },
 } as const satisfies Record<string, Flag>;
 
 export type FlagKey = keyof typeof flags;

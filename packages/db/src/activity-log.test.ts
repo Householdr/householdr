@@ -1,0 +1,124 @@
+import { eq } from 'drizzle-orm';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { inHousehold, type Database } from './connection';
+import { activityLog, households, members } from './schema';
+import { refusal, testDatabase } from './testing';
+import { atVersion, nextVersion } from './versioned';
+
+// The activity log keeps its entries as they were (ADR-0018 §5), and versioned updates never
+// overwrite a change made since (ADR-0019 §5), on a real database as the app's role (TEST-11).
+
+let db: Database;
+let owner: Database;
+let close: () => Promise<void>;
+beforeAll(async () => {
+  ({ db, owner, close } = await testDatabase());
+});
+afterAll(() => close());
+
+let next = 0;
+const newId = () => `00000000-0000-4000-8000-${String(++next).padStart(12, '0')}`;
+
+/** A household with Robin, its head, and one entry of the log, by Robin. */
+const withEntry = async () => {
+  const id = newId();
+  return inHousehold(db, id, async (tx) => {
+    await tx.insert(households).values({
+      id,
+      name: 'Ash Lane',
+      country: 'BE',
+      language: 'en',
+      timeZone: 'Europe/Brussels',
+      weekStartDay: 1,
+    });
+    const [robin] = await tx
+      .insert(members)
+      .values({ householdId: id, name: 'Robin', role: 'head' })
+      .returning({ id: members.id });
+    if (!robin) throw new Error('No member');
+    const at = new Date('2026-10-08T08:00:00Z');
+    await tx
+      .insert(activityLog)
+      .values({ householdId: id, at, actorId: robin.id, action: 'household.name' });
+    return { id, robin: robin.id };
+  });
+};
+
+describe('the activity log (ADR-0018 §5)', () => {
+  it('takes and shows entries in their household', async () => {
+    const { id, robin } = await withEntry();
+    const entries = await inHousehold(db, id, (tx) => tx.select().from(activityLog));
+    expect(entries).toEqual([
+      {
+        id: expect.any(String) as string,
+        householdId: id,
+        at: new Date('2026-10-08T08:00:00Z'),
+        actorId: robin,
+        action: 'household.name',
+      },
+    ]);
+  });
+
+  it('can’t be changed or deleted by the app (`migrate.ts`)', async () => {
+    const { id } = await withEntry();
+    // PostgreSQL's code for a missing privilege.
+    expect(
+      await refusal(
+        inHousehold(db, id, (tx) => tx.update(activityLog).set({ action: 'household.country' })),
+      ),
+    ).toBe('42501');
+    expect(await refusal(inHousehold(db, id, (tx) => tx.delete(activityLog)))).toBe('42501');
+  });
+
+  it('keeps an entry whose actor’s profile goes, without them', async () => {
+    const { id, robin } = await withEntry();
+    // Profiles are deleted by a use case not built yet; the owner stands in for it here.
+    await owner.delete(members).where(eq(members.id, robin));
+    const entries = await inHousehold(db, id, (tx) => tx.select().from(activityLog));
+    expect(entries).toMatchObject([{ actorId: null, action: 'household.name' }]);
+  });
+
+  it('takes only the actions it knows', async () => {
+    const { id } = await withEntry();
+    const unknown = inHousehold(db, id, (tx) =>
+      tx.insert(activityLog).values({
+        householdId: id,
+        at: new Date(),
+        action: 'household.colour' as 'household.name',
+      }),
+    );
+    expect(await refusal(unknown)).toBe('activity_log_action');
+  });
+});
+
+/** Renames household `id` from `version`, as a use case would; returns whether it did. */
+const rename = (id: string, version: number, name: string) =>
+  inHousehold(db, id, async (tx) => {
+    const updated = await tx
+      .update(households)
+      .set({ name, version: nextVersion(households) })
+      .where(atVersion(households, id, version))
+      .returning({ id: households.id });
+    return updated.length > 0;
+  });
+
+describe('atVersion and nextVersion (ADR-0019 §5)', () => {
+  it('updates a row still at the version it was read at, and moves the version on', async () => {
+    const { id } = await withEntry();
+    expect(await rename(id, 1, 'Birch Court')).toBe(true);
+    const [row] = await inHousehold(db, id, (tx) =>
+      tx.select({ name: households.name, version: households.version }).from(households),
+    );
+    expect(row).toEqual({ name: 'Birch Court', version: 2 });
+  });
+
+  it('changes nothing at a version that has moved on', async () => {
+    const { id } = await withEntry();
+    await rename(id, 1, 'Birch');
+    expect(await rename(id, 1, 'Cedar Row')).toBe(false);
+    const [row] = await inHousehold(db, id, (tx) =>
+      tx.select({ name: households.name, version: households.version }).from(households),
+    );
+    expect(row).toEqual({ name: 'Birch', version: 2 });
+  });
+});

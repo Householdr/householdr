@@ -9,8 +9,8 @@ import type { Actions, PageServerLoad } from './$types';
  */
 async function householdContext(locals: App.Locals) {
   if (!locals.flags.onboarding || !locals.membership) error(404);
-  const { db } = await authContext();
-  return { db, ...locals.membership };
+  const { db, clock } = await authContext();
+  return { db, clock, ...locals.membership };
 }
 
 /** The household's name and its members, and what the member opening it may do there. */
@@ -22,6 +22,7 @@ export const load = (async ({ locals }) => {
     name: result.name,
     members: result.members,
     mayAddMembers: result.mayAddMembers,
+    mayChangeSettings: result.mayChangeSettings,
     you: context.member.id,
   };
 }) satisfies PageServerLoad;

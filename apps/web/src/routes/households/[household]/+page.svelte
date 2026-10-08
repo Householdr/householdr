@@ -1,5 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
+  import { page } from '$app/state';
   import ErrorSummary from '#lib/components/ErrorSummary.svelte';
   import { Button } from '#lib/components/ui/button/index.js';
   import { Input } from '#lib/components/ui/input/index.js';
@@ -77,5 +78,17 @@
     </section>
   {/if}
 
-  <a href="/security" class="underline underline-offset-4">{m['security.title']()}</a>
+  <nav aria-label={m['household.more']()} class="flex flex-wrap gap-x-6 gap-y-2">
+    {#if data.flags['household-settings'] && data.mayChangeSettings}
+      <a href="/households/{page.params.household}/settings" class="underline underline-offset-4">
+        {m['household.settings']()}
+      </a>
+    {/if}
+    {#if data.flags['activity-log']}
+      <a href="/households/{page.params.household}/activity" class="underline underline-offset-4">
+        {m['household.activity']()}
+      </a>
+    {/if}
+    <a href="/security" class="underline underline-offset-4">{m['security.title']()}</a>
+  </nav>
 </main>

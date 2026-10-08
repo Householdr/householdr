@@ -9,14 +9,19 @@ import {
 import { can, type Member, type Role } from '@householdr/domain';
 import { eq } from 'drizzle-orm';
 import * as v from 'valibot';
+import type { Clock } from '../ports';
 
 /** What reading households needs: the database. */
 export interface HouseholdsContext {
   db: Database;
 }
 
-/** What a use case in a household needs: the household, and the member acting in it (ADR-0023 §4). */
+/**
+ * What a use case in a household needs: the household, the member acting in it, and the time
+ * (ADR-0023 §4).
+ */
 export interface HouseholdContext extends HouseholdsContext {
+  clock: Clock;
   householdId: string;
   member: Member;
 }
@@ -97,6 +102,8 @@ type ViewHouseholdResult =
       members: HouseholdMember[];
       /** Whether the member viewing it may add members: a head with two factors (ADR-0001 §2). */
       mayAddMembers: boolean;
+      /** Whether they may change the household's settings, which only heads do (ADR-0007 §2). */
+      mayChangeSettings: boolean;
     }
   | { ok: false; error: 'not-allowed' };
 
@@ -117,6 +124,13 @@ export async function viewHousehold(context: HouseholdContext): Promise<ViewHous
       .from(members);
     list.sort((a, b) => roleOrder[a.role] - roleOrder[b.role] || a.name.localeCompare(b.name));
     const mayAddMembers = can(context.member, { action: 'household.invite' });
-    return { ok: true as const, name: household.name, members: list, mayAddMembers };
+    const mayChangeSettings = can(context.member, { action: 'household.settings' });
+    return {
+      ok: true as const,
+      name: household.name,
+      members: list,
+      mayAddMembers,
+      mayChangeSettings,
+    };
   });
 }
