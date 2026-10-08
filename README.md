@@ -76,7 +76,8 @@ You need Node.js 26 and pnpm (`corepack enable` picks up the version the reposit
 
 The database tests need a PostgreSQL server, on which each test file creates and drops its own
 database. Point `TEST_DATABASE_URL` at a superuser there, for example in a throwaway container
-reachable only from your machine (the tests themselves run as a role without superuser rights):
+reachable only from your machine. The tests themselves run as the two roles of production, neither a
+superuser: the owner, which migrates, and the app's, which row-level security binds:
 
 ```sh
 docker run --rm -d -p 127.0.0.1:5432:5432 -e POSTGRES_HOST_AUTH_METHOD=trust postgres:18
@@ -85,10 +86,9 @@ export TEST_DATABASE_URL=postgres://postgres@localhost:5432/postgres
 
 After changing `packages/db/src/schema.ts`, generate the migration with
 `pnpm --filter @householdr/db generate --name <what-changed>`, and review the SQL it writes. A new
-household-owned table forces row-level security in the same migration (CODE-17). Row-level security
-also binds migrations, so a data migration across households first runs
-`ALTER TABLE … NO FORCE ROW LEVEL SECURITY` and ends with `FORCE` again, in the same transaction;
-otherwise its updates quietly touch no rows.
+household-owned table gets row-level security and its policy in the same migration (CODE-17).
+Migrations run as the tables' owner, which row-level security doesn't bind, so a data migration
+reaches every household; the app's role is bound always (ADR-0008 §9, clarification).
 
 End-to-end tests run against a test build of the web app and the built worker:
 `pnpm --filter @householdr/web build:test` and `pnpm --filter @householdr/worker build`, then

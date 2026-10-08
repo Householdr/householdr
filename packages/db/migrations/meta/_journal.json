@@ -64,6 +64,13 @@
       "when": 1791480286138,
       "tag": "0008_member-accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791483192668,
+      "tag": "0009_database-roles",
+      "breakpoints": true
     }
   ]
 }

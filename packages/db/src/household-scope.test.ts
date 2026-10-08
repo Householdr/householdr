@@ -9,6 +9,7 @@ import { refusal, refusedByRowSecurity, testDatabase, testServerUrl } from './te
 // without superuser rights, the way the app connects.
 
 let db: Database;
+let owner: Database;
 let close: () => Promise<void>;
 const ash = '00000000-0000-4000-8000-00000000000a';
 const birch = '00000000-0000-4000-8000-00000000000b';
@@ -22,7 +23,7 @@ const household = (id: string, name: string) => ({
 });
 
 beforeAll(async () => {
-  ({ db, close } = await testDatabase());
+  ({ db, owner, close } = await testDatabase());
   for (const [id, name, head] of [
     [ash, 'Ash Lane', 'Robin'],
     [birch, 'Birch Court', 'Sam'],
@@ -105,6 +106,10 @@ describe('connect (ADR-0008 §9)', () => {
     await expect(connect(testServerUrl())).rejects.toThrow('bypasses row-level security');
   });
 
+  it('refuses the owner of the tables, whom row-level security does not bind', async () => {
+    await expect(refuseBypass(owner.$client)).rejects.toThrow('householdr_test owns the tables');
+  });
+
   // The server's own superuser also has BYPASSRLS, so each attribute gets a role of its own.
   it.each([
     ['a superuser without BYPASSRLS', 'householdr_test_superuser', 'superuser nobypassrls'],
@@ -129,7 +134,7 @@ describe('connect (ADR-0008 §9)', () => {
 });
 
 describe('every household-owned table (CODE-17)', () => {
-  it('has a household id, forced row-level security and a policy', async () => {
+  it('has a household id, row-level security and a policy', async () => {
     const { rows } = await db.execute<{
       table: string;
       enabled: boolean;
@@ -148,13 +153,33 @@ describe('every household-owned table (CODE-17)', () => {
       order by c.relname`);
     expect(rows.map((r) => r.table)).toEqual(['households', 'members']);
     for (const row of rows) {
+      // Not forced: it binds the app's role, not the owner (ADR-0008 §9, clarification).
       expect(row).toEqual({
         table: row.table,
         enabled: true,
-        forced: true,
+        forced: false,
         policies: 1,
         scoped: true,
       });
+    }
+  });
+});
+
+describe('the two roles (ADR-0008 §9, clarification)', () => {
+  it('leave the owner, which runs the migrations, unbound by row-level security', async () => {
+    const names = await owner.select({ name: members.name }).from(members).orderBy(members.name);
+    expect(names).toEqual([{ name: 'Robin' }, { name: 'Sam' }]);
+  });
+
+  it('let the app read and write data, but never change the schema', async () => {
+    for (const statement of [
+      sql`create table extra (id uuid)`,
+      sql`alter table members add column extra text`,
+      sql`alter table members disable row level security`,
+      sql`drop table auth.rate_limits`,
+    ]) {
+      // PostgreSQL's code for a missing privilege: here, owning the table or schema.
+      expect(await refusal(db.execute(statement))).toBe('42501');
     }
   });
 });
