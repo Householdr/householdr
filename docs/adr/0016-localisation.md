@@ -1,6 +1,6 @@
 # ADR-0016: Localisation
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Date:** 2026-10-04
 - **Deciders:** Jens
 - **Related:** [ADR-0007](0007-onboarding.md) §6 (template catalogue), [ADR-0008](0008-tech-stack.md) §6
@@ -52,6 +52,10 @@ an edge case.
   country separately.
 - Every member of a household can have a different culture. Each sees the app, receives notifications
   and e-mails ([ADR-0014](0014-notifications-and-reminders.md) §6) in their own language.
+- A **household** has a language, one of the offered ones, next to its country: chosen by the head who
+  creates it and changeable by any head ([ADR-0018](0018-household-safety.md) §5). Someone who creates
+  their account by accepting an invitation starts with the household's language and country as their
+  culture, instead of the browser's, and can change it at any time like everyone else.
 
 ### 3. Writing the text
 

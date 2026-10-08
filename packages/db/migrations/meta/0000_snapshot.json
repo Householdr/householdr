@@ -1,0 +1,228 @@
+{
+  "id": "e968057b-5738-4ea4-b12d-7996b2be26ff",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.households": {
+      "name": "households",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "country": {
+          "name": "country",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "language": {
+          "name": "language",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "time_zone": {
+          "name": "time_zone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "week_start_day": {
+          "name": "week_start_day",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "week_start_change_from": {
+          "name": "week_start_change_from",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "week_start_previous_day": {
+          "name": "week_start_previous_day",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "household_only": {
+          "name": "household_only",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "public"
+          ],
+          "using": "\"households\".\"id\" = nullif(current_setting('householdr.household_id', true), '')::uuid",
+          "withCheck": "\"households\".\"id\" = nullif(current_setting('householdr.household_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {
+        "households_name": {
+          "name": "households_name",
+          "value": "\"households\".\"name\" <> ''"
+        },
+        "households_country": {
+          "name": "households_country",
+          "value": "\"households\".\"country\" ~ '^[A-Z]{2}$'"
+        },
+        "households_language": {
+          "name": "households_language",
+          "value": "\"households\".\"language\" ~ '^[a-z]{2,3}$'"
+        },
+        "households_time_zone": {
+          "name": "households_time_zone",
+          "value": "\"households\".\"time_zone\" <> ''"
+        },
+        "households_week_start_day": {
+          "name": "households_week_start_day",
+          "value": "\"households\".\"week_start_day\" between 1 and 7"
+        },
+        "households_week_start_change": {
+          "name": "households_week_start_change",
+          "value": "(\"households\".\"week_start_change_from\" is null and \"households\".\"week_start_previous_day\" is null)\n        or (\"households\".\"week_start_change_from\" is not null and \"households\".\"week_start_previous_day\" is not null\n          and \"households\".\"week_start_previous_day\" <> \"households\".\"week_start_day\"\n          and extract(isodow from \"households\".\"week_start_change_from\") = \"households\".\"week_start_previous_day\")"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.members": {
+      "name": "members",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "household_id": {
+          "name": "household_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "birth_date": {
+          "name": "birth_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        }
+      },
+      "indexes": {
+        "members_household": {
+          "name": "members_household",
+          "columns": [
+            {
+              "expression": "household_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "members_household_id_households_id_fk": {
+          "name": "members_household_id_households_id_fk",
+          "tableFrom": "members",
+          "tableTo": "households",
+          "columnsFrom": [
+            "household_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "household_only": {
+          "name": "household_only",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "public"
+          ],
+          "using": "\"members\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid",
+          "withCheck": "\"members\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {
+        "members_name": {
+          "name": "members_name",
+          "value": "\"members\".\"name\" <> ''"
+        },
+        "members_role": {
+          "name": "members_role",
+          "value": "\"members\".\"role\" in ('head', 'adult', 'child')"
+        },
+        "members_birth_date": {
+          "name": "members_birth_date",
+          "value": "(\"members\".\"role\" = 'child') = (\"members\".\"birth_date\" is not null)"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

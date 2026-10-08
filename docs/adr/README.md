@@ -17,7 +17,7 @@
 | [0013](0013-monetisation.md) | Monetisation (public copy; billing operations private) | Draft |
 | [0014](0014-notifications-and-reminders.md) | Notifications and reminders | Draft |
 | [0015](0015-feature-flags-and-experiments.md) | Feature flags, segments and experiments (public copy; how our Flipt runs is private) | Accepted |
-| [0016](0016-localisation.md) | Localisation | Draft |
+| [0016](0016-localisation.md) | Localisation | Accepted |
 | [0017](0017-security-baseline.md) | Security baseline | Accepted |
 | [0018](0018-household-safety.md) | Safety inside the household | Accepted |
 | [0019](0019-live-updates-and-concurrent-edits.md) | Live updates and concurrent edits | Draft |
