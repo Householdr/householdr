@@ -178,6 +178,13 @@ building again:
   artifact work inside the container.
 - The container images are built from the same artifact ([ADR-0008](0008-tech-stack.md) §13).
 
+> **Clarification (2026-10-08):** the Bundle job builds the web app a second time, in a `test` mode
+> that adds what only tests may use: the pseudo-locale ([ADR-0016](0016-localisation.md) §5) and the
+> flag overrides of end-to-end tests ([ADR-0015](0015-feature-flags-and-experiments.md) §10). Both
+> builds come from the same install and sources and go into the same artifact. The E2E job runs
+> against the test build; the container images are built from the production build only, so
+> neither addition ever reaches production.
+
 ### 6. Releases with release-please
 
 - **One version for the whole product.** Web, worker and migrations ship together as one bundle, so
