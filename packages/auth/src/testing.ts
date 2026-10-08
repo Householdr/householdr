@@ -5,6 +5,7 @@ import {
   accountEmails,
   accounts,
   connect,
+  passkeys,
   sessions,
   type Database,
   type JobQueue,
@@ -72,6 +73,25 @@ export async function testAccounts(url: string) {
   const auth = createAuth({ db, baseUrl: 'http://localhost', secret });
   return {
     add: (account: TestAccount) => createTestAccount(auth, account),
+    /**
+     * Gives the account at `email` a second factor, as heads need (ADR-0010 §3): a passkey that no
+     * device holds, so it can't sign in.
+     */
+    addSecondFactor: async (email: string) => {
+      const [account] = await db
+        .select({ id: accounts.id })
+        .from(accounts)
+        .where(eq(accounts.email, email));
+      if (!account) throw new Error('No such account');
+      await db.insert(passkeys).values({
+        userId: account.id,
+        publicKey: 'a-key-no-device-holds',
+        credentialID: randomBytes(16).toString('base64url'),
+        counter: 0,
+        deviceType: 'singleDevice',
+        backedUp: false,
+      });
+    },
     /**
      * A household named `name`, founded by the account at `email` as its head (ADR-0007 §2).
      * Returns its ID.

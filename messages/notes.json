@@ -573,5 +573,33 @@
   "household.child": {
     "note": "Role of a member under 18.",
     "needsReview": ["nl"]
+  },
+  "household.add-adult": {
+    "note": "Heading of the form on a household's page where a head adds an adult member's profile.",
+    "needsReview": ["nl"]
+  },
+  "household.add-adult-intro": {
+    "note": "Explains the form: the profile is a member at once, and the person can link an account to it later through an invitation.",
+    "needsReview": ["nl"]
+  },
+  "household.name": {
+    "note": "Label of the name field of the person being added.",
+    "needsReview": ["nl"]
+  },
+  "household.add": {
+    "note": "Button that adds the profile.",
+    "needsReview": ["nl"]
+  },
+  "household.added": {
+    "note": "Shown once a profile is added. {name} is its name. The head is asked to tell that person, who can see what is recorded about them once they join (GDPR transparency).",
+    "needsReview": ["nl"]
+  },
+  "household.add-failed": {
+    "note": "Heading of the error summary when adding a profile didn't work.",
+    "needsReview": ["nl"]
+  },
+  "household.invalid-name": {
+    "note": "Why adding didn't work: no name, or one over 100 characters. 'Their' is gender-neutral.",
+    "needsReview": ["nl"]
   }
 }

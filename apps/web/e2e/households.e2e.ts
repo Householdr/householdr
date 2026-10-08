@@ -23,9 +23,51 @@ for (const javaScriptEnabled of [true, false]) {
       await expect(page.getByRole('list', { name: 'Members' }).getByRole('listitem')).toHaveText([
         /Robin \(you\)\s*Head/,
       ]);
+      // Adding members waits for a second factor (ADR-0010 §3).
+      await expect(page.getByRole('heading', { name: 'Add an adult' })).toHaveCount(0);
       if (javaScriptEnabled) await expectAccessible(page);
       await page.getByRole('link', { name: 'Security' }).click();
       await expect(page).toHaveURL('/security');
+    });
+
+    test('a head adds an adult, and is asked to let them know', async ({
+      page,
+      accounts,
+      account,
+    }) => {
+      await accounts.addSecondFactor(account.email);
+      const id = await accounts.addHousehold(account.email, 'Ash Lane');
+      await signIn(page, account, `/households/${id}`);
+      if (javaScriptEnabled) await expectAccessible(page);
+      await page.getByLabel('Name').fill('Sam');
+      await page.getByRole('button', { name: 'Add', exact: true }).click();
+      await expect(page.getByRole('status')).toHaveText(
+        'Sam is added. Let them know: once they join with an account of their own, they can see everything recorded about them.',
+      );
+      await expect(page.getByRole('list', { name: 'Members' }).getByRole('listitem')).toHaveText([
+        /Robin \(you\)\s*Head/,
+        /Sam\s*Adult/,
+      ]);
+      await expect(page.getByLabel('Name')).toHaveValue('');
+      if (javaScriptEnabled) await expectAccessible(page, 'adult added');
+    });
+
+    test('says when a name won’t do, and keeps it', async ({ page, accounts, account }) => {
+      await accounts.addSecondFactor(account.email);
+      const id = await accounts.addHousehold(account.email, 'Ash Lane');
+      await signIn(page, account, `/households/${id}`);
+      // Spaces get past the browser's check, not the server's (CODE-12).
+      await page.getByLabel('Name').fill('   ');
+      await page.getByRole('button', { name: 'Add', exact: true }).click();
+      const summary = page.getByRole('region', { name: 'Adding didn’t work' });
+      await expect(summary).toHaveText(/Enter their name, up to 100 characters\./);
+      await expect(summary).toBeFocused();
+      await expect(page.getByLabel('Name')).toHaveAttribute('aria-invalid', 'true');
+      await expect(page.getByLabel('Name')).toHaveValue('   ');
+      await expect(page.getByRole('list', { name: 'Members' }).getByRole('listitem')).toHaveCount(
+        1,
+      );
+      if (javaScriptEnabled) await expectAccessible(page, 'name refused');
     });
   });
 }

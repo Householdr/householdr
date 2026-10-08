@@ -179,5 +179,12 @@
   "household.you": "{name} (jij)",
   "household.head": "Hoofd",
   "household.adult": "Volwassene",
-  "household.child": "Kind"
+  "household.child": "Kind",
+  "household.add-adult": "Een volwassene toevoegen",
+  "household.add-adult-intro": "Voeg de andere volwassenen toe die hier wonen, zodat zij ook mee de taken doen. Elk van hen kan later aansluiten met een eigen account.",
+  "household.name": "Naam",
+  "household.add": "Toevoegen",
+  "household.added": "{name} is toegevoegd. Laat het hen weten: zodra ze aansluiten met een eigen account, zien ze alles wat over hen is vastgelegd.",
+  "household.add-failed": "Toevoegen is niet gelukt",
+  "household.invalid-name": "Vul hun naam in, tot 100 tekens."
 }
