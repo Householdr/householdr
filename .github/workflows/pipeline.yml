@@ -83,6 +83,10 @@ jobs:
         if: ${{ !cancelled() }}
         run: pnpm lint
 
+      - name: '🧹 Lint: Import cycles'
+        if: ${{ !cancelled() }}
+        run: pnpm deps:check
+
       - name: '💅 Format: Prettier'
         if: ${{ !cancelled() }}
         run: pnpm format:check
