@@ -27,18 +27,30 @@ export function database(pool: pg.Pool): Database {
 }
 
 /**
- * Throws if `pool` connects as a superuser or a role with BYPASSRLS: row-level security doesn't
- * apply to them even when forced, so one household could see another's rows (ADR-0008 §9).
+ * Throws if `pool` connects as a role that row-level security doesn't bind: a superuser, a role with
+ * BYPASSRLS, or the owner of the tables, which runs the migrations; one household could otherwise
+ * see another's rows (ADR-0008 §9, clarification).
  */
 export async function refuseBypass(pool: pg.Pool) {
-  const { rows } = await pool.query<{ role: string; bypasses: boolean }>(
-    'select rolname as role, rolsuper or rolbypassrls as bypasses from pg_roles where rolname = current_user',
-  );
+  const { rows } = await pool.query<{ role: string; bypasses: boolean; owns: boolean }>(`
+    select rolname as role, rolsuper or rolbypassrls as bypasses,
+      exists (
+        select from pg_tables
+        where schemaname in ('public', 'auth') and pg_has_role(current_user, tableowner, 'usage')
+      ) as owns
+    from pg_roles where rolname = current_user`);
   const [current] = rows;
   if (!current || current.bypasses) {
     throw new Error(
       `The database role ${current?.role ?? '(unknown)'} bypasses row-level security. Connect as a ` +
         'role without superuser or BYPASSRLS rights (ADR-0008 §9).',
+    );
+  }
+  if (current.owns) {
+    throw new Error(
+      `The database role ${current.role} owns the tables, so row-level security doesn't bind it. ` +
+        'Connect as the role that only reads and writes data; the owner runs the migrations ' +
+        '(ADR-0008 §9, clarification).',
     );
   }
 }

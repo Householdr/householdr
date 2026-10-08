@@ -9,11 +9,12 @@ import { testDatabase } from './testing';
 // The job queue (ADR-0008 §10, clarification), on a real database (TEST-11).
 
 let db: Database;
+let owner: Database;
 let close: () => Promise<void>;
 let queue: PgBoss;
 
 beforeAll(async () => {
-  ({ db, close } = await testDatabase());
+  ({ db, owner, close } = await testDatabase());
   queue = await jobQueue(db).start();
 });
 afterAll(async () => {
@@ -45,7 +46,7 @@ describe('the job queue', () => {
   });
 
   it('is created by the migration step, which can run again', async () => {
-    await expect(migrate(db)).resolves.toBeUndefined();
+    await expect(migrate(owner, 'householdr_test_app')).resolves.toBeUndefined();
     const tables = await db.execute<{ name: string }>(
       sql`select table_name as name from information_schema.tables where table_schema = 'pgboss' and table_name = 'queue'`,
     );
