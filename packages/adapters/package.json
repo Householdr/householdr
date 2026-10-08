@@ -8,6 +8,10 @@
   "scripts": {
     "typecheck": "tsc"
   },
+  "dependencies": {
+    "@householdr/application": "workspace:*",
+    "nodemailer": "catalog:"
+  },
   "devDependencies": {
     "@types/node": "catalog:"
   }
