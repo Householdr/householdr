@@ -71,8 +71,8 @@ export type NewPasswordResult =
 
 /**
  * Sets a new password with the token of a reset link (ADR-0010 §8). It ends every session of the
- * account, forgets the failed sign-ins of its e-mail address (§2, clarification), and e-mails the
- * member that the password was changed.
+ * account, forgets the failed sign-ins of its e-mail address and the wrong codes of the account
+ * (§2, clarification), and e-mails the member that the password was changed.
  */
 export async function setNewPassword(
   context: PasswordResetContext,
@@ -105,6 +105,7 @@ export async function setNewPassword(
   const { account } = reset;
   if (!account) throw new Error('The library reset no password.');
   await forgetCount(context.db, context.counterKey('sign-in:email', account.email));
+  await forgetCount(context.db, context.counterKey('sign-in:account', account.id));
   await context.db.transaction((tx) =>
     queueAccountEmail(tx, context.queue, account.id, 'password-changed'),
   );

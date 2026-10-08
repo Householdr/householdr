@@ -3,7 +3,13 @@ import { isIPv4, isIPv6 } from 'node:net';
 
 /** What a count is for, and what it counts by. */
 type CounterKind =
-  'sign-in:email' | 'sign-in:address' | 'sign-ups:address' | 'emails:hour' | 'emails:day';
+  | 'sign-in:email'
+  | 'sign-in:address'
+  | 'sign-in:account'
+  | 'two-factor:code'
+  | 'sign-ups:address'
+  | 'emails:hour'
+  | 'emails:day';
 
 /** The key a count is stored under, for one kind and value. */
 export type CounterKey = (kind: CounterKind, value: string) => string;

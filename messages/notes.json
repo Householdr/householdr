@@ -246,6 +246,42 @@
     "note": "For someone who didn't remove it. The quoted text is the sign-in page's link, sign-in.forgot-password, and must match it.",
     "needsReview": ["nl"]
   },
+  "email.two-factor-on.subject": {
+    "note": "Subject of the e-mail sent when two-factor authentication was turned on (ADR-0010 §2, ADR-0014 §2). Householdr is the product name, not translated. Use the same term for two-factor authentication everywhere.",
+    "needsReview": ["nl"]
+  },
+  "email.two-factor-on.done": {
+    "note": "First line of the two-factor-on e-mail: what happened, and what changes when signing in.",
+    "needsReview": ["nl"]
+  },
+  "email.two-factor-on.not-you": {
+    "note": "For someone who didn't turn it on: someone else is signed in. The quoted text is the sign-in page's link, sign-in.forgot-password, and must match it.",
+    "needsReview": ["nl"]
+  },
+  "email.two-factor-off.subject": {
+    "note": "Subject of the e-mail sent when two-factor authentication was turned off. Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "email.two-factor-off.done": {
+    "note": "First line of the two-factor-off e-mail: what happened, and what it means for signing in.",
+    "needsReview": ["nl"]
+  },
+  "email.two-factor-off.not-you": {
+    "note": "For someone who didn't turn it off. The quoted text is the sign-in page's link, sign-in.forgot-password, and must match it.",
+    "needsReview": ["nl"]
+  },
+  "email.recovery-codes-changed.subject": {
+    "note": "Subject of the e-mail sent when new recovery codes replaced the old ones (ADR-0010 §2). Recovery codes sign in once each when the authenticator app isn't at hand. Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "email.recovery-codes-changed.done": {
+    "note": "First line of the e-mail about new recovery codes.",
+    "needsReview": ["nl"]
+  },
+  "email.recovery-codes-changed.not-you": {
+    "note": "For someone who didn't make new recovery codes. The quoted text is the sign-in page's link, sign-in.forgot-password, and must match it.",
+    "needsReview": ["nl"]
+  },
   "sign-in.forgot-password": {
     "note": "Link on the sign-in page to ask for a password reset. The password-changed e-mail quotes it, so keep both the same.",
     "needsReview": ["nl"]

@@ -2,7 +2,7 @@ import type { HouseholdCalendar } from '@householdr/domain';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { inHousehold, type Database } from './connection';
-import { accountEmails, accounts, sessions } from './auth-schema';
+import { accountEmails, accounts, sessions, twoFactors } from './auth-schema';
 import { households, members, parentalConsents, profileGuardians, temporaryShares } from './schema';
 import { refusal, testDatabase } from './testing';
 
@@ -336,6 +336,29 @@ describe('accounts and sessions (ADR-0010)', () => {
     expect(await refusal(session({ userAgent: 'Mozilla/5.0 (X11; Linux x86_64)' }))).toBe(
       'sessions_no_user_agent',
     );
+  });
+
+  it('keeps two factors encrypted, one per account (ADR-0012 §4, ADR-0017 §7)', async () => {
+    const [account] = await addAccount();
+    if (!account) throw new Error('No account');
+    const twoFactor = (fields: Partial<typeof twoFactors.$inferInsert>) =>
+      db.insert(twoFactors).values({
+        userId: account.id,
+        secret: '$ba$1$0123abcd',
+        backupCodes: '$ba$1$4567cdef',
+        ...fields,
+      });
+    expect(await refusal(twoFactor({ secret: 'JBSWY3DPEHPK3PXP' }))).toBe(
+      'two_factors_secret_encrypted',
+    );
+    expect(await refusal(twoFactor({ backupCodes: '["abcde-12345"]' }))).toBe(
+      'two_factors_backup_codes_encrypted',
+    );
+    expect(await refusal(twoFactor({}))).toBeUndefined();
+    expect(await refusal(twoFactor({}))).toBe('two_factors_userId_unique');
+    const [row] = await db.select().from(twoFactors).where(eq(twoFactors.userId, account.id));
+    // Not set up until the first code was right.
+    expect(row?.verified).toBe(false);
   });
 
   it('sends a sign-up’s e-mail to an address, and every other one to an account (ADR-0014 §7)', async () => {

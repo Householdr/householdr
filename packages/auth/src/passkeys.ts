@@ -8,7 +8,8 @@ import { cookiesFrom, type Cookie } from './cookies';
 import { deviceOf } from './device';
 import type { PasswordResetContext } from './password-reset';
 import type { Session } from './sessions';
-import { signInWithPassword, type Client, type SignInResult } from './sign-in';
+import { signInWithPassword, type Client } from './sign-in';
+import { appCode, signInWithCode, twoFactorOn } from './two-factor-sign-in';
 
 /** What adding and removing passkeys needs from the app: signing in, and the job queue. */
 export type PasskeysContext = Omit<PasswordResetContext, 'checkBreach'>;
@@ -71,24 +72,50 @@ async function emailOf(context: Pick<PasskeysContext, 'db'>, session: Session) {
   return account.email;
 }
 
+type ConfirmResult =
+  /** Confirmed: the cookie of the new session that replaced this one. */
+  | { ok: true; cookies: Cookie[] }
+  | { ok: false; error: 'incorrect' }
+  /** The password was right, but the code from the app is wrong or missing. */
+  | { ok: false; error: 'incorrect-code' }
+  /** Turned away unchecked, after repeated failures (ADR-0010 §2, clarification). */
+  | { ok: false; error: 'wait'; until: Temporal.Instant };
+
 /**
- * Confirms it is still the person signed in to `session`, with their password: a new sign-in
- * replaces the session, so it is recent again (ADR-0010 §6). Failures count as sign-in failures
- * do (§2, clarification).
+ * Confirms it is still the person signed in to `session`, with their password, and a code from
+ * their authenticator app if they have two-factor on: a new sign-in replaces the session, so it is
+ * recent again (ADR-0010 §6). Failures count as sign-in failures do (§2, clarification).
  */
 export async function confirmWithPassword(
   context: PasskeysContext,
   session: Session,
-  input: { password?: unknown },
+  input: { password?: unknown; code?: unknown },
   client: Client,
-): Promise<SignInResult> {
-  const result = await signInWithPassword(
-    context,
-    { email: await emailOf(context, session), password: input.password },
-    client,
-  );
-  if (result.ok) await context.db.delete(sessions).where(eq(sessions.id, session.id));
-  return result;
+): Promise<ConfirmResult> {
+  const withCode = await twoFactorOn(context, session.accountId);
+  // Nothing is checked without a code that could be one.
+  if (withCode && !v.is(appCode, input.code)) return { ok: false, error: 'incorrect-code' };
+  const email = await emailOf(context, session);
+  const result = await signInWithPassword(context, { email, password: input.password }, client);
+  let cookies: Cookie[];
+  if (result.ok) {
+    cookies = result.cookies;
+  } else if (result.error === 'needs-code') {
+    // The step the right password started goes no further than here.
+    const step = new Headers({
+      cookie: result.cookies
+        .map(({ name, value }) => `${name}=${encodeURIComponent(value)}`)
+        .join('; '),
+      ...(client.userAgent ? { 'user-agent': client.userAgent } : {}),
+    });
+    const coded = await signInWithCode(context, step, { code: input.code });
+    if (!coded.ok) return coded.error === 'wait' ? coded : { ok: false, error: 'incorrect-code' };
+    cookies = coded.cookies;
+  } else {
+    return result.error === 'wait' ? result : { ok: false, error: 'incorrect' };
+  }
+  await context.db.delete(sessions).where(eq(sessions.id, session.id));
+  return { ok: true, cookies };
 }
 
 type PasskeyOptionsResult =

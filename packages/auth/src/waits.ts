@@ -6,11 +6,16 @@ export interface WaitRule {
   longest: Temporal.Duration;
 }
 
-/** Failed password sign-ins, counted by what was typed and where it came from. */
+/**
+ * Failed sign-ins, counted by what was typed and where it came from, and wrong two-factor or
+ * recovery codes, counted by the account.
+ */
 export const signInWaits = {
   /** Anyone can make this one grow by typing someone's address, so it stays short. */
   email: { free: 5, longest: Temporal.Duration.from({ minutes: 1 }) },
   address: { free: 20, longest: Temporal.Duration.from({ minutes: 15 }) },
+  /** Only someone who knows the password gets as far as a code. */
+  account: { free: 5, longest: Temporal.Duration.from({ minutes: 15 }) },
 } as const satisfies Record<string, WaitRule>;
 
 /** A count is forgotten 24 hours after its last failure. */

@@ -8,6 +8,7 @@ import {
   text,
   timestamp,
   uuid,
+  type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
 
 /**
@@ -43,6 +44,11 @@ export const accounts = auth.table(
      */
     termsVersion: text(),
     termsAcceptedAt: timestamp({ withTimezone: true }),
+    /**
+     * Whether signing in with the password also asks for a code from an authenticator app
+     * (ADR-0010 §2): the library's `twoFactorEnabled`, set once the first code was right.
+     */
+    twoFactorEnabled: boolean().notNull().default(false),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -137,6 +143,43 @@ export const passkeys = auth.table(
   (t) => [index('passkeys_user').on(t.userId), check('passkeys_no_name', sql`${t.name} is null`)],
 );
 
+/** What the library writes in front of what it encrypted, with the version of the key it used. */
+const encrypted = (column: AnyPgColumn) => sql`${column} like '$ba$%'`;
+
+/**
+ * The authenticator app of an account with a password, and its recovery codes (ADR-0010 §2): the
+ * library's `twoFactor`. Both are encrypted in the application with a versioned key before they
+ * reach the database, never stored as they are (ADR-0012 §4, ADR-0017 §7).
+ */
+export const twoFactors = auth.table(
+  'two_factors',
+  {
+    id: key(),
+    /** The shared secret of the authenticator app, encrypted. */
+    secret: text().notNull(),
+    /** The recovery codes not used yet, encrypted together; each works once. */
+    backupCodes: text().notNull(),
+    userId: uuid()
+      .notNull()
+      .unique()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    /** False while being set up: until the first code from the app was right. */
+    verified: boolean().notNull().default(false),
+    /**
+     * The library's own lock-out, which is off: wrong codes make the next attempt wait instead
+     * (ADR-0010 §2, clarification). So these stay 0 and empty.
+     */
+    failedVerificationCount: integer().notNull().default(0),
+    lockedUntil: timestamp({ withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    check('two_factors_secret_encrypted', encrypted(t.secret)),
+    check('two_factors_backup_codes_encrypted', encrypted(t.backupCodes)),
+  ],
+);
+
 /** A pending check of an e-mail address or a reset, by a hashed identifier (SEC-7). */
 export const verifications = auth.table(
   'verifications',
@@ -162,7 +205,14 @@ export const verifications = auth.table(
 
 /** The account e-mails there are (ADR-0014 §2). */
 export type AccountEmailKind =
-  'sign-up' | 'password-reset' | 'password-changed' | 'passkey-added' | 'passkey-removed';
+  | 'sign-up'
+  | 'password-reset'
+  | 'password-changed'
+  | 'passkey-added'
+  | 'passkey-removed'
+  | 'two-factor-on'
+  | 'two-factor-off'
+  | 'recovery-codes-changed';
 
 /** The account e-mails with a token link, which `auth.verifications` marks by purpose. */
 export type LinkKind = Extract<AccountEmailKind, 'sign-up' | 'password-reset'>;
@@ -184,7 +234,7 @@ export const accountEmails = auth.table(
   (t) => [
     check(
       'account_emails_kind',
-      sql`${t.kind} in ('sign-up', 'password-reset', 'password-changed', 'passkey-added', 'passkey-removed')`,
+      sql`${t.kind} in ('sign-up', 'password-reset', 'password-changed', 'passkey-added', 'passkey-removed', 'two-factor-on', 'two-factor-off', 'recovery-codes-changed')`,
     ),
     // A sign-up's goes to an address, every other one to an account. Both sides are true or false,
     // never null, which a check would let through.

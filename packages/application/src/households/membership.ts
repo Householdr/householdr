@@ -1,6 +1,7 @@
 import {
   accountHouseholds,
   accounts,
+  credentials,
   households,
   inHousehold,
   invitations,
@@ -8,8 +9,15 @@ import {
   passkeys,
   type Database,
 } from '@householdr/db';
-import { can, type Member, type Role } from '@householdr/domain';
-import { eq } from 'drizzle-orm';
+import {
+  can,
+  hasTwoFactors,
+  mayTurnOffTotp,
+  type Member,
+  type Role,
+  type SignInMethods,
+} from '@householdr/domain';
+import { and, eq, isNotNull } from 'drizzle-orm';
 import * as v from 'valibot';
 import type { Clock } from '../ports';
 
@@ -30,10 +38,28 @@ export interface HouseholdContext extends HouseholdsContext {
 
 const householdId = v.pipe(v.string(), v.uuid());
 
+/** How the account signs in: with a passkey, a password, and codes from an app (ADR-0010 §2). */
+async function signInMethods(db: Database, accountId: string): Promise<SignInMethods> {
+  const [[passkey], [password], [account]] = await Promise.all([
+    db.select({ id: passkeys.id }).from(passkeys).where(eq(passkeys.userId, accountId)).limit(1),
+    db
+      .select({ id: credentials.id })
+      .from(credentials)
+      .where(and(eq(credentials.userId, accountId), isNotNull(credentials.password)))
+      .limit(1),
+    db.select({ totp: accounts.twoFactorEnabled }).from(accounts).where(eq(accounts.id, accountId)),
+  ]);
+  return {
+    passkey: passkey !== undefined,
+    password: password !== undefined,
+    totp: account?.totp ?? false,
+  };
+}
+
 /**
  * The member the signed-in account is in household `id`, as permissions see them, or null if it is
  * none of its members: what the guard checks before anything in a household (ADR-0017 §2). Head
- * powers wait for two factors, which a passkey gives (ADR-0010 §3).
+ * powers wait for two factors: a passkey, or a password with TOTP (ADR-0010 §3).
  */
 export async function membership(
   context: HouseholdsContext,
@@ -48,12 +74,8 @@ export async function membership(
       .where(eq(members.accountId, accountId)),
   );
   if (!member) return null;
-  const [passkey] = await context.db
-    .select({ id: passkeys.id })
-    .from(passkeys)
-    .where(eq(passkeys.userId, accountId))
-    .limit(1);
-  return { ...member, hasAccount: true, twoFactor: passkey !== undefined };
+  const twoFactor = hasTwoFactors(await signInMethods(context.db, accountId));
+  return { ...member, hasAccount: true, twoFactor };
 }
 
 /** A household of the signed-in account, as the list of them shows it. */
@@ -88,6 +110,18 @@ export async function accountHouseholdList(
     ),
   );
   return list.sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+}
+
+/**
+ * Whether the account may turn TOTP off: a head of any of its households must keep two factors,
+ * so one without a passkey is refused (ADR-0010 §3).
+ */
+export async function mayTurnOffTwoFactor(
+  context: HouseholdsContext,
+  accountId: string,
+): Promise<boolean> {
+  const head = (await accountHouseholdList(context, accountId)).some(({ role }) => role === 'head');
+  return mayTurnOffTotp(await signInMethods(context.db, accountId), head);
 }
 
 /** A member of the household, as the member viewing it sees them (ADR-0018 §3). */
