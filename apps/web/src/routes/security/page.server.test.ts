@@ -73,6 +73,7 @@ const on = {
   shares: false,
   'two-factor': false,
   tasks: false,
+  comparisons: false,
 };
 type Locals = App.Locals;
 const loadFor = (locals: Partial<Locals>, address = 'https://householdr.example.org/security') =>

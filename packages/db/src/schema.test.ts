@@ -1,9 +1,10 @@
 import type { HouseholdCalendar } from '@householdr/domain';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { inHousehold, type Database } from './connection';
+import { inHousehold, type Database, type Transaction } from './connection';
 import { accountEmails, accounts, sessions, twoFactors } from './auth-schema';
 import {
+  comparisons,
   households,
   members,
   parentalConsents,
@@ -397,6 +398,106 @@ describe('schedules and tasks (ADR-0001 §1, ADR-0004)', () => {
     expect(await refusal(inHousehold(db, task.householdId, (tx) => tx.delete(schedules)))).toBe(
       'tasks_schedule',
     );
+  });
+});
+
+describe('comparisons (ADR-0003 §3a, ADR-0012 §5)', () => {
+  const answeredAt = new Date('2026-10-08T08:00:00Z');
+  /**
+   * A household of its own with a member, Robin, and two tasks, Dishes and Ironing, and an answer
+   * of Robin's that ironing is harder.
+   */
+  const answered = async () => {
+    const id = newId();
+    return inHousehold(db, id, async (tx) => {
+      await tx.insert(households).values(household(id));
+      const [member] = await tx
+        .insert(members)
+        .values({ householdId: id, name: 'Robin', role: 'head' })
+        .returning();
+      const [schedule] = await tx
+        .insert(schedules)
+        .values({ householdId: id, rules: [{ rrule: 'FREQ=WEEKLY', start: '2026-10-08' }] })
+        .returning();
+      if (!member || !schedule) throw new Error('No member or schedule');
+      const task = { householdId: id, scheduleId: schedule.id, duration: 30 } as const;
+      const [dishes, ironing] = await tx
+        .insert(tasks)
+        .values(
+          ['Dishes', 'Ironing'].map((name) => ({
+            ...task,
+            name,
+            timing: 'flexible' as const,
+            onMiss: 'roll over' as const,
+          })),
+        )
+        .returning();
+      if (!dishes || !ironing) throw new Error('No tasks');
+      const [row] = await tx
+        .insert(comparisons)
+        .values({
+          householdId: id,
+          memberId: member.id,
+          harderTaskId: ironing.id,
+          easierTaskId: dishes.id,
+          answeredAt,
+        })
+        .returning();
+      if (!row) throw new Error('No answer');
+      return { id, member: member.id, dishes: dishes.id, ironing: ironing.id, row };
+    });
+  };
+  /** What is left of household `id`'s answers once `work` ran in it. */
+  const leftAfter = (id: string, work: (tx: Transaction) => Promise<unknown>) =>
+    inHousehold(db, id, async (tx) => {
+      await work(tx);
+      return tx.select().from(comparisons);
+    });
+
+  it('stores which task is harder for whom, and when', async () => {
+    const { member, dishes, ironing, row } = await answered();
+    expect(row).toEqual({
+      id: expect.any(String) as unknown,
+      householdId: row.householdId,
+      memberId: member,
+      harderTaskId: ironing,
+      easierTaskId: dishes,
+      answeredAt,
+    });
+  });
+
+  it('compares two different tasks', async () => {
+    const { id, member, ironing } = await answered();
+    expect(
+      await refusal(
+        inHousehold(db, id, (tx) =>
+          tx.insert(comparisons).values({
+            householdId: id,
+            memberId: member,
+            harderTaskId: ironing,
+            easierTaskId: ironing,
+            answeredAt,
+          }),
+        ),
+      ),
+    ).toBe('comparisons_two_tasks');
+  });
+
+  it('go with the member’s profile, with either task and with the household', async () => {
+    const byMember = await answered();
+    expect(
+      await leftAfter(byMember.id, (tx) =>
+        tx.delete(members).where(eq(members.id, byMember.member)),
+      ),
+    ).toEqual([]);
+    for (const task of ['dishes', 'ironing'] as const) {
+      const byTask = await answered();
+      expect(
+        await leftAfter(byTask.id, (tx) => tx.delete(tasks).where(eq(tasks.id, byTask[task]))),
+      ).toEqual([]);
+    }
+    const byHousehold = await answered();
+    expect(await leftAfter(byHousehold.id, (tx) => tx.delete(households))).toEqual([]);
   });
 });
 

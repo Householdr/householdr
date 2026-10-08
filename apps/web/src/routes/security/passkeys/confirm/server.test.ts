@@ -50,6 +50,7 @@ const on = {
   shares: false,
   'two-factor': false,
   tasks: false,
+  comparisons: false,
 };
 let next = 0;
 

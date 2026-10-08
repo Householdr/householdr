@@ -2,6 +2,8 @@
 export type { Clock, Flags, LogFields, Logger, Mail, Mailer } from './ports';
 export { flags, type FlagKey } from './flags/registry';
 export { householdActivity, type ActivityEntry } from './households/activity';
+export { answerComparison } from './burdens/answer-comparison';
+export { comparisonGame, type ComparedTask, type OwnBurden } from './burdens/comparison-game';
 export { addAdult } from './households/add-adult';
 export { addChild, type NewChildProblem } from './households/add-child';
 export { name as nameField } from './households/name';
