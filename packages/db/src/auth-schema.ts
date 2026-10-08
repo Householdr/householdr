@@ -103,7 +103,7 @@ export const verifications = auth.table(
      * What an e-mailed link is for, so a newer link replaces the older one; the hashed identifier
      * can't tell (ADR-0014 §7, clarification). Empty for the library's other checks.
      */
-    purpose: text().$type<AccountEmailKind>(),
+    purpose: text().$type<LinkKind>(),
   },
   (t) => [
     index('verifications_identifier').on(t.identifier),
@@ -113,7 +113,10 @@ export const verifications = auth.table(
 );
 
 /** The account e-mails there are (ADR-0014 §2). */
-export type AccountEmailKind = 'password-reset';
+export type AccountEmailKind = 'password-reset' | 'password-changed';
+
+/** The account e-mails with a token link, which `auth.verifications` marks by purpose. */
+export type LinkKind = Extract<AccountEmailKind, 'password-reset'>;
 
 /**
  * An account e-mail waiting to be sent: deleted once it is, and holding nothing the e-mail can't
@@ -129,7 +132,7 @@ export const accountEmails = auth.table(
       .references(() => accounts.id, { onDelete: 'cascade' }),
     createdAt: createdAt(),
   },
-  (t) => [check('account_emails_kind', sql`${t.kind} in ('password-reset')`)],
+  (t) => [check('account_emails_kind', sql`${t.kind} in ('password-reset', 'password-changed')`)],
 );
 
 /**

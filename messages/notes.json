@@ -117,5 +117,101 @@
   "email.password-reset.not-you": {
     "note": "Last line of the password reset e-mail, for someone who didn't ask. Calm: nothing happens unless the link is used.",
     "needsReview": ["nl"]
+  },
+  "email.password-changed.subject": {
+    "note": "Subject of the e-mail sent after a password was changed through a reset link (ADR-0010 §8). Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "email.password-changed.done": {
+    "note": "First line of the password-changed e-mail: what happened, including that every device was signed out.",
+    "needsReview": ["nl"]
+  },
+  "email.password-changed.not-you": {
+    "note": "For someone who didn't change it: their mailbox is the way in. The quoted text is the sign-in page's link, sign-in.forgot-password, and must match it.",
+    "needsReview": ["nl"]
+  },
+  "sign-in.forgot-password": {
+    "note": "Link on the sign-in page to ask for a password reset. The password-changed e-mail quotes it, so keep both the same.",
+    "needsReview": ["nl"]
+  },
+  "sign-in.password-changed": {
+    "note": "Status message on the sign-in page after a new password was saved.",
+    "needsReview": ["nl"]
+  },
+  "forgot.title": {
+    "note": "Heading of the page to ask for a link to choose a new password (ADR-0010 §8).",
+    "needsReview": ["nl"]
+  },
+  "forgot.page-title": {
+    "note": "Browser tab title of the forgotten-password page. Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "forgot.intro": {
+    "note": "Explains the forgotten-password page.",
+    "needsReview": ["nl"]
+  },
+  "forgot.email": {
+    "note": "Label of the e-mail address field on the forgotten-password page.",
+    "needsReview": ["nl"]
+  },
+  "forgot.submit": {
+    "note": "Button that asks for the reset link.",
+    "needsReview": ["nl"]
+  },
+  "forgot.sent": {
+    "note": "After asking for a link. It never says whether {email}, the address typed, has an account (ADR-0010 §2).",
+    "needsReview": ["nl"]
+  },
+  "forgot.failed": {
+    "note": "Heading of the box that says why asking for a link didn't work.",
+    "needsReview": ["nl"]
+  },
+  "forgot.invalid": {
+    "note": "When what was typed isn't an e-mail address. The example address is an invented one.",
+    "needsReview": ["nl"]
+  },
+  "reset.title": {
+    "note": "Heading of the page reached from the reset link, to choose a new password.",
+    "needsReview": ["nl"]
+  },
+  "reset.page-title": {
+    "note": "Browser tab title of the new-password page. Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "reset.password": {
+    "note": "Label of the new password field.",
+    "needsReview": ["nl"]
+  },
+  "reset.hint": {
+    "note": "Hint under the new password field (ADR-0010 §2: at least 12 characters, no composition rules).",
+    "needsReview": ["nl"]
+  },
+  "reset.submit": {
+    "note": "Button that saves the new password.",
+    "needsReview": ["nl"]
+  },
+  "reset.failed": {
+    "note": "Heading of the box that says why saving the new password didn't work.",
+    "needsReview": ["nl"]
+  },
+  "reset.too-short": {
+    "note": "When the new password has fewer than 12 characters.",
+    "needsReview": ["nl"]
+  },
+  "reset.too-long": {
+    "note": "When the new password has more than 128 characters.",
+    "needsReview": ["nl"]
+  },
+  "reset.breached": {
+    "note": "When the new password is in Have I Been Pwned's list of breached passwords (ADR-0010 §2). Calm: it says why, without blame.",
+    "needsReview": ["nl"]
+  },
+  "reset.expired": {
+    "note": "When the reset link was used already, is older than 30 minutes, or isn't one.",
+    "needsReview": ["nl"]
+  },
+  "reset.ask-again": {
+    "note": "Link to the forgotten-password page, after an expired link.",
+    "needsReview": ["nl"]
   }
 }

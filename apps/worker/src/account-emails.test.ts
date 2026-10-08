@@ -59,6 +59,16 @@ describe('the password reset e-mail (ADR-0010 §8, ADR-0014 §6)', () => {
   });
 });
 
+describe('the password-changed e-mail (ADR-0010 §8)', () => {
+  it('says the password was changed and every device signed out, with no link', () => {
+    const { subject, text, html } = written({ kind: 'password-changed', to: 'robin@example.org' });
+    expect(subject).toBe('Your Householdr password was changed');
+    expect(text).toContain('every device was signed out');
+    expect(text).toContain('Secure your e-mail account first');
+    expect(html).not.toContain('<a ');
+  });
+});
+
 describe('delivering an account e-mail (ADR-0014 §7, clarification)', () => {
   it('sends it with a fresh link and deletes its row', async () => {
     const account = await newAccount();

@@ -69,19 +69,28 @@ describe('the security headers (ADR-0017 §4)', () => {
     expect(features).not.toHaveProperty('publickey-credentials-create');
     expect(features).not.toHaveProperty('web-share');
   });
+
+  it('send no referrer to other sites from the pages a reset link leads to (§4, clarification)', async () => {
+    for (const route of ['/reset-password/[token]', '/reset-password']) {
+      const headers = (await respond(harden, {}, {}, {}, route)).headers;
+      expect(headers.get('referrer-policy')).toBe('same-origin');
+    }
+    const elsewhere = (await respond(harden, {}, {}, {}, '/forgot-password')).headers;
+    expect(elsewhere.get('referrer-policy')).toBe('strict-origin-when-cross-origin');
+  });
 });
 
 describe('the flags of a request (ADR-0015 §3)', () => {
   it('are evaluated once, at their defaults on an instance without Flipt', async () => {
     const locals = {} as App.Locals;
     await respond(flag, {}, locals);
-    expect(locals.flags).toEqual({ 'sign-in': false });
+    expect(locals.flags).toEqual({ 'sign-in': false, 'password-reset': false });
   });
 
   it('can be forced by a test, in the test build (ADR-0015 §10)', async () => {
     const locals = {} as App.Locals;
     await respond(flag, {}, locals, { 'test-flags': 'sign-in=on' });
-    expect(locals.flags).toEqual({ 'sign-in': true });
+    expect(locals.flags).toEqual({ 'sign-in': true, 'password-reset': false });
   });
 });
 
@@ -131,8 +140,15 @@ describe('the guard (ADR-0017 §2)', () => {
 
   it('sends a request without a session to the sign-in page, on every route but the open ones', async () => {
     expect(await outcome(signedOut, '/security')).toBe('→ /sign-in');
-    expect(await outcome(signedOut, '/sign-in')).toBe(200);
-    expect(await outcome(signedOut, '/health')).toBe(200);
+    for (const route of [
+      '/sign-in',
+      '/forgot-password',
+      '/reset-password',
+      '/reset-password/[token]',
+      '/health',
+    ]) {
+      expect(await outcome(signedOut, route)).toBe(200);
+    }
   });
 
   it('lets a request with a session through', async () => {

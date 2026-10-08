@@ -10,6 +10,7 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@householdr/adapters": "workspace:*",
     "@householdr/application": "workspace:*",
     "@householdr/db": "workspace:*",
     "better-auth": "catalog:",

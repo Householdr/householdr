@@ -7,7 +7,7 @@
   import { m } from '#lib/paraglide/messages.js';
   import type { PageProps } from './$types';
 
-  let { form }: PageProps = $props();
+  let { data, form }: PageProps = $props();
 
   /** The error code of a failed sign-in, in words (CODE-13). */
   const problem = $derived.by(() => {
@@ -27,6 +27,10 @@
 
 <main class="mx-auto flex w-full max-w-sm flex-col gap-6 px-4 py-12">
   <h1 class="text-2xl font-semibold">{m['sign-in.title']()}</h1>
+
+  {#if data.passwordChanged && !form}
+    <p role="status">{m['sign-in.password-changed']()}</p>
+  {/if}
 
   <!-- A new summary for every attempt, so it takes the focus again. -->
   {#key form}
@@ -59,4 +63,8 @@
     </div>
     <Button type="submit" class="mt-2 w-full">{m['sign-in.submit']()}</Button>
   </form>
+
+  {#if data.flags['password-reset']}
+    <p><a href="/forgot-password" class="underline">{m['sign-in.forgot-password']()}</a></p>
+  {/if}
 </main>
