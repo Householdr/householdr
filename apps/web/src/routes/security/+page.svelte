@@ -1,5 +1,6 @@
 <script lang="ts">
   import { enhance, type SubmitFunction } from '$app/forms';
+  import { goto } from '$app/navigation';
   import ErrorSummary from '#lib/components/ErrorSummary.svelte';
   import { Button } from '#lib/components/ui/button/index.js';
   import { Input } from '#lib/components/ui/input/index.js';
@@ -39,7 +40,7 @@
   /** What the last change to the passkeys did, for their status message (UI-12). */
   const passkeysStatus = $derived.by(() => {
     if (passkeys.outcome === 'added') return m['security.passkey-added']();
-    if (passkeys.outcome === 'failed') return m['security.passkey-failed']();
+    if (passkeys.outcome === 'not-added') return m['security.passkey-failed']();
     if (form?.done === 'passkey-removed') return m['security.passkey-removed']();
     if (form?.done === 'passkey-not-found') return m['security.passkey-not-found']();
     if (data.confirmed && data.passkeys?.changeable) return m['security.confirmed']();
@@ -48,6 +49,7 @@
 
   /** Why confirming it's you didn't work, in words (CODE-13). */
   const confirmProblem = $derived.by(() => {
+    if (passkeys.outcome === 'not-signed') return m['security.passkey-confirm-failed']();
     if (!form?.confirm) return undefined;
     if (form.confirm !== 'wait') return m['security.incorrect-password']();
     const { seconds } = form;
@@ -67,6 +69,18 @@
       target()?.focus();
     };
   const keepFocus = keepFocusOn(() => heading);
+
+  /** Confirms it's you with one of the account's passkeys, then shows the page again. */
+  async function confirmWithPasskey() {
+    if (await passkeys.sign('/security/passkeys/confirm')) {
+      await goto('/security?passkeys=confirmed', { invalidateAll: true });
+    }
+  }
+
+  /** A password sent to confirm it's you replaces what a passkey's failure said. */
+  const confirmWithPassword: SubmitFunction = () => {
+    passkeys.clear();
+  };
 </script>
 
 <svelte:head>
@@ -148,14 +162,26 @@
       {/if}
       {#if !data.passkeys.changeable}
         <!-- Changing a way of signing in needs a recent sign-in (ADR-0010 §6). -->
-        <form method="POST" action="?/confirm" use:enhance class="flex flex-col gap-4">
-          <h3 class="font-semibold">{m['security.confirm']()}</h3>
-          <p id="confirm-intro">{m['security.confirm-intro']()}</p>
-          {#key form}
+        <h3 class="font-semibold">{m['security.confirm']()}</h3>
+        <p id="confirm-intro">{m['security.confirm-intro']()}</p>
+        {#key form}
+          {#key passkeys.attempts}
             {#if confirmProblem}
               <ErrorSummary heading={m['security.confirm-failed']()} message={confirmProblem} />
             {/if}
           {/key}
+        {/key}
+        {#if data.passkeys.list.length > 0 && passkeys.supported}
+          <Button type="button" variant="outline" onclick={confirmWithPasskey}>
+            {m['security.confirm-passkey']()}
+          </Button>
+        {/if}
+        <form
+          method="POST"
+          action="?/confirm"
+          use:enhance={confirmWithPassword}
+          class="flex flex-col gap-4"
+        >
           <div class="flex flex-col gap-2">
             <Label for="confirm-password">{m['security.confirm-password']()}</Label>
             <Input

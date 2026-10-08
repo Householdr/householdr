@@ -8,6 +8,7 @@ export {
 export { createAuth, type Auth, type AuthSettings } from './auth';
 export { type Cookie } from './cookies';
 export { counterKeys, type CounterKey } from './counter-keys';
+export { confirmWithPasskey, passkeyChallenge, signInWithPasskey } from './passkey-sign-in';
 export {
   accountPasskeys,
   addPasskey,

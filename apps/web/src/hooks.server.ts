@@ -64,6 +64,8 @@ export const authenticate: Handle = async ({ event, resolve }) => {
 /** The routes anyone may open; every other one needs a session (ADR-0017 §2). */
 const open = new Set([
   '/sign-in',
+  '/sign-in/passkey/options',
+  '/sign-in/passkey',
   '/forgot-password',
   '/reset-password',
   '/reset-password/[token]',

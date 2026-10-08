@@ -1,4 +1,4 @@
-import { createHash, generateKeyPairSync, randomBytes } from 'node:crypto';
+import { createHash, generateKeyPairSync, randomBytes, sign, type KeyObject } from 'node:crypto';
 import { settableClock } from '@householdr/application/testing';
 import {
   accountEmails,
@@ -126,55 +126,113 @@ function cbor(value: Cbor): Buffer {
   ]);
 }
 
-/**
- * A passkey made for registration `options` on the site at `origin`, as a browser hands it back
- * from `navigator.credentials.create` (WebAuthn's JSON form): an ES256 key, without attestation.
- */
-export function testPasskey(options: { challenge: string; rp: { id?: string } }, origin: string) {
-  const jwk = generateKeyPairSync('ec', { namedCurve: 'P-256' }).publicKey.export({
-    format: 'jwk',
-  });
-  const credentialId = randomBytes(16);
-  const publicKey = new Map<number, Cbor>([
-    [1, 2], // key type: EC2
-    [3, -7], // algorithm: ES256
-    [-1, 1], // curve: P-256
-    [-2, Buffer.from(jwk.x ?? '', 'base64url')],
-    [-3, Buffer.from(jwk.y ?? '', 'base64url')],
-  ]);
-  const authenticatorData = Buffer.concat([
-    createHash('sha256')
-      .update(options.rp.id ?? '')
-      .digest(),
-    Buffer.from([0x45]), // the user was present and verified, and a credential follows
-    Buffer.alloc(4), // signature counter
-    Buffer.alloc(16), // no AAGUID
-    Buffer.from([0, credentialId.length]),
-    credentialId,
-    cbor(publicKey),
-  ]);
-  const clientData = { type: 'webauthn.create', challenge: options.challenge, origin };
-  const attestation = new Map<string, Cbor>([
-    ['fmt', 'none'],
-    ['attStmt', new Map()],
-    ['authData', authenticatorData],
-  ]);
-  return {
-    id: credentialId.toString('base64url'),
-    rawId: credentialId.toString('base64url'),
-    type: 'public-key',
-    response: {
-      clientDataJSON: Buffer.from(JSON.stringify(clientData)).toString('base64url'),
-      attestationObject: cbor(attestation).toString('base64url'),
-      transports: ['internal'],
-    },
-    clientExtensionResults: {},
-    authenticatorAttachment: 'platform',
-  };
+/** What a site asks of an authenticator: to make a passkey, or to sign in with one. */
+interface TestCreationOptions {
+  challenge: string;
+  rp: { id?: string };
+}
+interface TestRequestOptions {
+  challenge: string;
+  rpId?: string;
+  allowCredentials?: { id: string }[];
 }
 
 /**
- * Adds a passkey made by `testPasskey` to the account of `session`, signed in with `cookie` from
+ * A software authenticator, like the one built into a phone, that says yes to every fingerprint.
+ * It answers as a browser hands answers back from `navigator.credentials` (WebAuthn's JSON form),
+ * with ES256 keys and no attestation, and keeps the passkeys it made to sign in with them.
+ */
+export function testAuthenticator() {
+  const made = new Map<string, { privateKey: KeyObject; signCount: number }>();
+  const sha256 = (data: string | Buffer) => createHash('sha256').update(data).digest();
+  const clientData = (type: string, challenge: string, origin: string) =>
+    Buffer.from(JSON.stringify({ type, challenge, origin }));
+  return {
+    /** A passkey made for registration `options` on the site at `origin`. */
+    register(options: TestCreationOptions, origin: string) {
+      const { privateKey, publicKey } = generateKeyPairSync('ec', { namedCurve: 'P-256' });
+      const jwk = publicKey.export({ format: 'jwk' });
+      const credentialId = randomBytes(16);
+      made.set(credentialId.toString('base64url'), { privateKey, signCount: 0 });
+      const coseKey = new Map<number, Cbor>([
+        [1, 2], // key type: EC2
+        [3, -7], // algorithm: ES256
+        [-1, 1], // curve: P-256
+        [-2, Buffer.from(jwk.x ?? '', 'base64url')],
+        [-3, Buffer.from(jwk.y ?? '', 'base64url')],
+      ]);
+      const authenticatorData = Buffer.concat([
+        sha256(options.rp.id ?? ''),
+        Buffer.from([0x45]), // the user was present and verified, and a credential follows
+        Buffer.alloc(4), // signature counter
+        Buffer.alloc(16), // no AAGUID
+        Buffer.from([0, credentialId.length]),
+        credentialId,
+        cbor(coseKey),
+      ]);
+      const attestation = new Map<string, Cbor>([
+        ['fmt', 'none'],
+        ['attStmt', new Map()],
+        ['authData', authenticatorData],
+      ]);
+      return {
+        id: credentialId.toString('base64url'),
+        rawId: credentialId.toString('base64url'),
+        type: 'public-key',
+        response: {
+          clientDataJSON: clientData('webauthn.create', options.challenge, origin).toString(
+            'base64url',
+          ),
+          attestationObject: cbor(attestation).toString('base64url'),
+          transports: ['internal'],
+        },
+        clientExtensionResults: {},
+        authenticatorAttachment: 'platform',
+      };
+    },
+    /**
+     * Signs the challenge of sign-in `options` on the site at `origin` with one of the passkeys it
+     * made: the first the site allows, or the first it made when the site allows any.
+     */
+    authenticate(options: TestRequestOptions, origin: string) {
+      const allowed = options.allowCredentials?.map((credential) => credential.id) ?? [];
+      const id = [...made.keys()].find((key) => allowed.length === 0 || allowed.includes(key));
+      const passkey = id === undefined ? undefined : made.get(id);
+      if (id === undefined || !passkey) throw new Error('No passkey for this site.');
+      passkey.signCount += 1;
+      const signCount = Buffer.alloc(4);
+      signCount.writeUInt32BE(passkey.signCount);
+      const authenticatorData = Buffer.concat([
+        sha256(options.rpId ?? ''),
+        Buffer.from([0x05]), // the user was present and verified
+        signCount,
+      ]);
+      const data = clientData('webauthn.get', options.challenge, origin);
+      const signature = sign(
+        'sha256',
+        Buffer.concat([authenticatorData, sha256(data)]),
+        passkey.privateKey,
+      );
+      return {
+        id,
+        rawId: id,
+        type: 'public-key',
+        response: {
+          clientDataJSON: data.toString('base64url'),
+          authenticatorData: authenticatorData.toString('base64url'),
+          signature: signature.toString('base64url'),
+        },
+        clientExtensionResults: {},
+        authenticatorAttachment: 'platform',
+      };
+    },
+  };
+}
+
+export type TestAuthenticator = ReturnType<typeof testAuthenticator>;
+
+/**
+ * Adds a passkey made by `authenticator` to the account of `session`, signed in with `cookie` from
  * `client`, the way the security page does, and returns what came of it.
  */
 export async function addTestPasskey(
@@ -182,6 +240,7 @@ export async function addTestPasskey(
   session: Session,
   cookie: Cookie,
   client: Client,
+  authenticator: TestAuthenticator = testAuthenticator(),
 ) {
   const headers = (...cookies: Cookie[]) =>
     new Headers({
@@ -191,6 +250,6 @@ export async function addTestPasskey(
   const options = await passkeyOptions(context, session, headers(cookie));
   if (!options.ok) return options;
   const origin = new URL(context.auth.options.baseURL).origin;
-  const response = testPasskey(options.options as Parameters<typeof testPasskey>[0], origin);
+  const response = authenticator.register(options.options as TestCreationOptions, origin);
   return addPasskey(context, session, headers(cookie, ...options.cookies), { response }, client);
 }
