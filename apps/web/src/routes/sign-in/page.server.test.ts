@@ -1,4 +1,11 @@
-import { createTestAccount, testSignInContext } from '@householdr/auth/testing';
+import { jobQueue, type JobQueue } from '@householdr/application';
+import { recordingLogger } from '@householdr/application/testing';
+import { currentSession, signInWithPassword } from '@householdr/auth';
+import {
+  createTestAccount,
+  testSignInContext,
+  turnOnTestTwoFactor,
+} from '@householdr/auth/testing';
 import { isActionFailure, isHttpError, isRedirect } from '@sveltejs/kit';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { actions, load } from './+page.server';
@@ -10,10 +17,15 @@ type Test = Awaited<ReturnType<typeof testSignInContext>>;
 let test: Test;
 vi.mock('#lib/server/auth.js', () => ({ authContext: () => Promise.resolve(test.context) }));
 
+let queue: JobQueue;
 beforeAll(async () => {
   test = await testSignInContext();
+  queue = await jobQueue(test.context.db).start();
 });
-afterAll(() => test.close());
+afterAll(async () => {
+  await queue.stop({ graceful: false });
+  await test.close();
+});
 
 const password = 'correct horse battery staple';
 let next = 0;
@@ -112,5 +124,36 @@ describe('the sign-in page (ADR-0010 §2)', () => {
       status: 429,
       data: { email, error: 'wait', seconds: 1 },
     });
+  });
+});
+
+describe('the sign-in page with two-factor on (ADR-0010 §2)', () => {
+  it('starts no session after the password, and asks for a code next', async () => {
+    const email = await newAccount();
+    const client = { address: '192.0.2.1', userAgent: null };
+    const signedIn = await signInWithPassword(test.context, { email, password }, client);
+    if (!signedIn.ok) throw new Error(signedIn.error);
+    const [cookie] = signedIn.cookies;
+    if (!cookie) throw new Error('No cookie');
+    const headers = new Headers({ cookie: `${cookie.name}=${encodeURIComponent(cookie.value)}` });
+    const { session } = await currentSession(test.context.auth, headers);
+    if (!session) throw new Error('No session');
+    const context = { ...test.context, queue, logger: recordingLogger() };
+    await turnOnTestTwoFactor(context, session, cookie);
+
+    const { thrown, set } = await submit({ email, password });
+    expect(isRedirect(thrown) && thrown).toMatchObject({
+      status: 303,
+      location: '/sign-in/two-factor',
+    });
+    expect(set).toHaveBeenCalledWith(
+      '__Host-householdr.two_factor',
+      expect.stringMatching(/.+/),
+      expect.objectContaining({ path: '/', secure: true, httpOnly: true, maxAge: 600 }),
+    );
+    // Any session cookie it sets is one that ends a session, never one that starts it.
+    for (const [name, value] of set.mock.calls as [string, string][]) {
+      if (name === '__Host-householdr.session_token') expect(value).toBe('');
+    }
   });
 });

@@ -33,6 +33,7 @@ const on = {
   'household-settings': false,
   'activity-log': false,
   shares: false,
+  'two-factor': false,
 };
 const signUpCookie = '__Host-householdr.sign-up';
 let next = 0;

@@ -136,12 +136,13 @@ test('confirms it’s you with a passkey once the sign-in is 10 minutes old', as
   await expect(page.getByText('The passkey is added.')).toBeVisible();
   await accounts.signedInLongAgo(account.email);
   await page.reload();
+  const confirm = page.getByRole('region', { name: 'Confirm it’s you' });
+  await confirm.getByRole('button', { name: 'Confirm with a passkey' }).click();
+  await expect(page).toHaveURL('/security?confirmed');
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Confirmed. For the next 10 minutes' }),
+  ).toHaveText('Confirmed. For the next 10 minutes, you can change how you sign in.');
   const section = page.getByRole('region', { name: 'Passkeys' });
-  await section.getByRole('button', { name: 'Confirm with a passkey' }).click();
-  await expect(page).toHaveURL('/security?passkeys=confirmed');
-  await expect(section.getByRole('status')).toHaveText(
-    'Confirmed. For the next 10 minutes, you can add and remove passkeys.',
-  );
   await expect(section.getByRole('button', { name: 'Add a passkey' })).toBeVisible();
 });
 
@@ -200,9 +201,11 @@ for (const javaScriptEnabled of [true, false]) {
       await signIn(page, account);
       await accounts.signedInLongAgo(account.email);
       await page.reload();
-      const section = page.getByRole('region', { name: 'Passkeys' });
+      const section = page.getByRole('region', { name: 'Confirm it’s you' });
       await expect(section.getByRole('heading', { name: 'Confirm it’s you' })).toBeVisible();
-      await expect(section.getByRole('button', { name: 'Add a passkey' })).toHaveCount(0);
+      await expect(page.getByRole('button', { name: 'Add a passkey' })).toHaveCount(0);
+      // Without two-factor on, the password is enough.
+      await expect(section.getByLabel('Code from your authenticator app')).toHaveCount(0);
       if (javaScriptEnabled) await expectAccessible(page, 'confirm it’s you');
 
       const field = section.getByLabel('Password');
@@ -217,11 +220,11 @@ for (const javaScriptEnabled of [true, false]) {
 
       await section.getByLabel('Password').fill(account.password);
       await section.getByRole('button', { name: 'Confirm' }).click();
-      await expect(page).toHaveURL('/security?passkeys=confirmed');
-      await expect(section.getByRole('status')).toHaveText(
-        'Confirmed. For the next 10 minutes, you can add and remove passkeys.',
-      );
-      await expect(section.getByRole('heading', { name: 'Confirm it’s you' })).toHaveCount(0);
+      await expect(page).toHaveURL('/security?confirmed');
+      await expect(
+        page.getByRole('status').filter({ hasText: 'Confirmed. For the next 10 minutes' }),
+      ).toHaveText('Confirmed. For the next 10 minutes, you can change how you sign in.');
+      await expect(page.getByRole('heading', { name: 'Confirm it’s you' })).toHaveCount(0);
       // One device signed in, not two: the confirmation replaced the old session.
       await expect(
         page.getByRole('list', { name: 'Signed-in devices' }).getByRole('listitem'),

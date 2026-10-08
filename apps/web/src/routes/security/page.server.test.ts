@@ -7,7 +7,14 @@ import {
   type Cookie,
   type PasskeysContext,
 } from '@householdr/auth';
-import { addTestPasskey, createTestAccount, testSignInContext } from '@householdr/auth/testing';
+import {
+  addTestPasskey,
+  createTestAccount,
+  testSignInContext,
+  totpCode,
+  turnOnTestTwoFactor,
+} from '@householdr/auth/testing';
+import { createHousehold } from '@householdr/application';
 import { isActionFailure, isHttpError, isRedirect } from '@sveltejs/kit';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { actions, load } from './+page.server';
@@ -64,6 +71,7 @@ const on = {
   'household-settings': false,
   'activity-log': false,
   shares: false,
+  'two-factor': false,
 };
 type Locals = App.Locals;
 const loadFor = (locals: Partial<Locals>, address = 'https://householdr.example.org/security') =>
@@ -196,24 +204,23 @@ describe('the security page’s passkeys (ADR-0010 §2, §6)', () => {
   it('lists the passkeys, named after their device, while changes are open', async () => {
     const { session, cookie } = await signedInHere();
     expect(await addTestPasskey(context, session, cookie, client)).toEqual({ ok: true });
-    expect((await loadFor({ session, flags: withPasskeys })).passkeys).toEqual({
-      list: [
-        {
-          id: expect.any(String) as string,
-          browser: 'Firefox',
-          system: 'Linux',
-          daysSinceAdded: expect.any(Number) as number,
-        },
-      ],
-      changeable: true,
-    });
+    const loaded = await loadFor({ session, flags: withPasskeys });
+    expect(loaded.passkeys).toEqual([
+      {
+        id: expect.any(String) as string,
+        browser: 'Firefox',
+        system: 'Linux',
+        daysSinceAdded: expect.any(Number) as number,
+      },
+    ]);
+    expect(loaded.changeable).toBe(true);
   });
 
   it('removes a passkey, and says so', async () => {
     const { session, cookie } = await signedInHere();
     await addTestPasskey(context, session, cookie, client);
     const passkeys = (await loadFor({ session, flags: withPasskeys })).passkeys;
-    const id = passkeys?.list[0]?.id ?? '';
+    const id = passkeys?.[0]?.id ?? '';
     const removed = await submit('removePasskey', session, { passkey: id }, withPasskeys);
     expect(removed.returned).toEqual({ done: 'passkey-removed' });
     const again = await submit('removePasskey', session, { passkey: id }, withPasskeys);
@@ -228,8 +235,8 @@ describe('the security page’s passkeys (ADR-0010 §2, §6)', () => {
     await addTestPasskey(context, session, cookie, client);
     await signedInLongAgo(session.id);
     const loaded = await loadFor({ session, flags: withPasskeys });
-    expect(loaded.passkeys?.changeable).toBe(false);
-    const id = loaded.passkeys?.list[0]?.id ?? '';
+    expect(loaded.changeable).toBe(false);
+    const id = loaded.passkeys?.[0]?.id ?? '';
     const refused = await submit('removePasskey', session, { passkey: id }, withPasskeys);
     expect(isActionFailure(refused.returned) && refused.returned).toMatchObject({
       status: 403,
@@ -247,7 +254,7 @@ describe('the security page’s passkeys (ADR-0010 §2, §6)', () => {
     const { thrown, set } = await submit('confirm', session, { password }, withPasskeys);
     expect(isRedirect(thrown) && thrown).toMatchObject({
       status: 303,
-      location: '/security?passkeys=confirmed',
+      location: '/security?confirmed',
     });
     expect(set).toHaveBeenCalledExactlyOnceWith(
       sessionCookie,
@@ -258,8 +265,215 @@ describe('the security page’s passkeys (ADR-0010 §2, §6)', () => {
 
   it('says it’s confirmed only while changes are open', async () => {
     const { session } = await signedInHere();
-    const after = 'https://householdr.example.org/security?passkeys=confirmed';
+    const after = 'https://householdr.example.org/security?confirmed';
     expect((await loadFor({ session, flags: withPasskeys }, after)).confirmed).toBe(true);
     expect((await loadFor({ session, flags: withPasskeys })).confirmed).toBe(false);
+  });
+});
+
+describe('the security page’s two-factor (ADR-0010 §2, §3, §6)', () => {
+  const withTwoFactor = { ...on, 'two-factor': true };
+  const client = { address: '192.0.2.1', userAgent: firefox };
+
+  /** A new account signed in on one device: its session, the cookie that carries it, its address. */
+  const signedInHere = async () => {
+    const email = `person-${String(++next)}@example.org`;
+    await createTestAccount(test.context.auth, { email, password });
+    const result = await signInWithPassword(test.context, { email, password }, client);
+    if (!result.ok) throw new Error(`Not signed in: ${result.error}`);
+    const [cookie] = result.cookies;
+    if (!cookie) throw new Error('No cookie');
+    const headers = new Headers({ cookie: `${cookie.name}=${encodeURIComponent(cookie.value)}` });
+    const { session } = await currentSession(test.context.auth, headers);
+    if (!session) throw new Error('No session');
+    return { session, cookie, email };
+  };
+
+  /** Makes the session's sign-in older than 10 minutes, by the context's clock. */
+  const signedInLongAgo = async (sessionId: string) => {
+    const at = new Date(context.clock.now().subtract({ minutes: 11 }).epochMilliseconds);
+    await test.context.db.$client.query('update auth.sessions set created_at = $1 where id = $2', [
+      at,
+      sessionId,
+    ]);
+  };
+
+  /**
+   * Sends one of the page's forms from the device that `cookie` signs in, with `flags` on, and
+   * returns what came of it and the request's locals.
+   */
+  const send = async (
+    action: keyof typeof actions,
+    { session, cookie }: { session: Locals['session']; cookie: Cookie },
+    fields: Record<string, string> = {},
+    flags: Locals['flags'] = withTwoFactor,
+  ) => {
+    const body = new FormData();
+    for (const [name, value] of Object.entries(fields)) body.set(name, value);
+    const set = vi.fn();
+    const locals = { flags, session };
+    const event = {
+      locals,
+      request: new Request('https://householdr.example.org/security', {
+        method: 'POST',
+        body,
+        headers: {
+          'user-agent': firefox,
+          cookie: `${cookie.name}=${encodeURIComponent(cookie.value)}`,
+        },
+      }),
+      cookies: { set },
+      getClientAddress: () => '192.0.2.1',
+    } as unknown as Parameters<(typeof actions)[typeof action]>[0];
+    try {
+      return { returned: await actions[action](event), set, locals };
+    } catch (thrown) {
+      return { thrown, set, locals };
+    }
+  };
+
+  it('isn’t there while its flag is off, and the page is as before (CODE-20)', async () => {
+    const person = await signedInHere();
+    const loaded = await loadFor({ session: person.session });
+    expect(loaded.twoFactor).toBeNull();
+    expect(loaded.confirmWithCode).toBe(false);
+    for (const action of [
+      'startTwoFactor',
+      'finishTwoFactor',
+      'turnOffTwoFactor',
+      'newRecoveryCodes',
+      'confirm',
+    ] as const) {
+      const { thrown } = await send(action, person, { code: '123456' }, on);
+      expect([action, isHttpError(thrown, 404)]).toEqual([action, true]);
+    }
+  });
+
+  it('turns it on with the app’s first code, and shows the recovery codes once', async () => {
+    const person = await signedInHere();
+    expect((await loadFor({ session: person.session, flags: withTwoFactor })).twoFactor).toEqual({
+      on: false,
+    });
+    const started = await send('startTwoFactor', person);
+    const setup = (started.returned as { setup: { key: string; qr: { size: number } } }).setup;
+    expect(started.returned).toEqual({
+      twoFactor: 'setup',
+      setup: {
+        key: expect.stringMatching(/^[A-Z2-7]{52}$/) as string,
+        qr: {
+          size: expect.any(Number) as number,
+          path: expect.stringMatching(/^(M\d+ \d+h1v1h-1z)+$/) as string,
+        },
+      },
+    });
+
+    const wrong = String((Number(totpCode(setup.key)) + 1) % 1_000_000).padStart(6, '0');
+    const refused = await send('finishTwoFactor', person, { code: wrong });
+    expect(isActionFailure(refused.returned) && refused.returned).toMatchObject({
+      status: 400,
+      data: { twoFactor: 'incorrect', setup: { key: setup.key } },
+    });
+    // The code never comes back into the page (ADR-0011 §6, clarification).
+    expect(JSON.stringify(refused.returned)).not.toContain(wrong);
+
+    const finished = await send('finishTwoFactor', person, { code: totpCode(setup.key) });
+    expect(finished.returned).toEqual({
+      twoFactor: 'on',
+      recoveryCodes: expect.arrayContaining([
+        expect.stringMatching(/^[a-z0-9]{5}-[a-z0-9]{5}$/) as string,
+      ]) as string[],
+    });
+    expect((finished.returned as { recoveryCodes: string[] }).recoveryCodes).toHaveLength(10);
+    // A new session replaced this one, and the page loads with it.
+    expect(finished.set).toHaveBeenCalledWith(
+      sessionCookie,
+      expect.any(String),
+      expect.objectContaining({ httpOnly: true }),
+    );
+    expect(finished.locals.session?.id).not.toBe(person.session.id);
+    const loaded = await loadFor({ session: finished.locals.session, flags: withTwoFactor });
+    expect(loaded).toMatchObject({
+      twoFactor: { on: true },
+      changeable: true,
+      confirmWithCode: true,
+      devices: [{ id: finished.locals.session?.id, current: true, browser: 'Firefox' }],
+    });
+  });
+
+  it('asks to confirm it’s you first once the sign-in is old, with a code while it is on', async () => {
+    const person = await signedInHere();
+    await signedInLongAgo(person.session.id);
+    const refused = await send('startTwoFactor', person);
+    expect(isActionFailure(refused.returned) && refused.returned).toMatchObject({
+      status: 403,
+      data: { done: 'confirm' },
+    });
+
+    const fresh = await signedInHere();
+    const on = await turnOnTestTwoFactor(context, fresh.session, fresh.cookie);
+    await signedInLongAgo(on.session.id);
+    const loaded = await loadFor({ session: on.session, flags: withTwoFactor });
+    expect(loaded).toMatchObject({ changeable: false, confirmWithCode: true });
+    for (const action of ['turnOffTwoFactor', 'newRecoveryCodes'] as const) {
+      const old = await send(action, on);
+      expect(isActionFailure(old.returned) && old.returned).toMatchObject({
+        status: 403,
+        data: { done: 'confirm' },
+      });
+    }
+    const withoutCode = await send('confirm', on, { password });
+    expect(isActionFailure(withoutCode.returned) && withoutCode.returned).toMatchObject({
+      status: 400,
+      data: { confirm: 'incorrect-code' },
+    });
+    const confirmed = await send('confirm', on, { password, code: totpCode(on.key) });
+    expect(isRedirect(confirmed.thrown) && confirmed.thrown.location).toBe('/security?confirmed');
+  });
+
+  it('makes new recovery codes, and turns it off', async () => {
+    const person = await signedInHere();
+    const on = await turnOnTestTwoFactor(context, person.session, person.cookie);
+    const codes = await send('newRecoveryCodes', on);
+    expect(codes.returned).toMatchObject({ twoFactor: 'new-codes' });
+    expect((codes.returned as { recoveryCodes: string[] }).recoveryCodes).toHaveLength(10);
+    expect((await send('turnOffTwoFactor', on)).returned).toEqual({ twoFactor: 'off' });
+    expect((await loadFor({ session: on.session, flags: withTwoFactor })).twoFactor).toEqual({
+      on: false,
+    });
+    const off = await send('newRecoveryCodes', on);
+    expect(isActionFailure(off.returned) && off.returned).toMatchObject({
+      status: 409,
+      data: { twoFactor: 'off' },
+    });
+  });
+
+  it('refuses to turn it off for a head without a passkey, with the reason (ADR-0010 §3)', async () => {
+    const person = await signedInHere();
+    const on = await turnOnTestTwoFactor(context, person.session, person.cookie);
+    const created = await createHousehold(
+      {
+        db: test.context.db,
+        actor: { account: person.session.accountId, twoFactor: true },
+        account: { id: person.session.accountId, managed: false, guardians: [] },
+      },
+      {
+        name: 'Ash Lane',
+        headName: 'Robin',
+        country: 'BE',
+        timeZone: 'Europe/Brussels',
+        language: 'en',
+        weekStartDay: 1,
+        adult: true,
+      },
+    );
+    expect(created.ok).toBe(true);
+    const refused = await send('turnOffTwoFactor', on);
+    expect(isActionFailure(refused.returned) && refused.returned).toMatchObject({
+      status: 403,
+      data: { twoFactor: 'head' },
+    });
+    expect((await loadFor({ session: on.session, flags: withTwoFactor })).twoFactor).toEqual({
+      on: true,
+    });
   });
 });

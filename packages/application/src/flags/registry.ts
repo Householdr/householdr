@@ -49,6 +49,13 @@ export const flags = {
     owner: 'Jens',
     expires: '2027-03-31',
   },
+  'two-factor': {
+    kind: 'release',
+    description:
+      'Two-factor codes from an authenticator app, with recovery codes, for accounts with a password: turning them on and off on the security page, and asking for a code after the password (ADR-0010 §2, §3).',
+    owner: 'Jens',
+    expires: '2027-03-31',
+  },
 } as const satisfies Record<string, Flag>;
 
 export type FlagKey = keyof typeof flags;

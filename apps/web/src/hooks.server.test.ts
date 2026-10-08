@@ -108,6 +108,7 @@ describe('the flags of a request (ADR-0015 §3)', () => {
       'household-settings': false,
       'activity-log': false,
       shares: false,
+      'two-factor': false,
     });
   });
 
@@ -122,6 +123,7 @@ describe('the flags of a request (ADR-0015 §3)', () => {
       'household-settings': false,
       'activity-log': false,
       shares: false,
+      'two-factor': false,
     });
   });
 });
@@ -187,6 +189,7 @@ describe('the guard (ADR-0017 §2)', () => {
       '/sign-in',
       '/sign-in/passkey/options',
       '/sign-in/passkey',
+      '/sign-in/two-factor',
       '/forgot-password',
       '/reset-password',
       '/reset-password/[token]',

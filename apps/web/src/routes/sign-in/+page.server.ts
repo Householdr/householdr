@@ -31,6 +31,11 @@ export const actions = {
       for (const cookie of result.cookies) cookies.set(cookie.name, cookie.value, cookie.options);
       redirect(303, afterSignIn(url));
     }
+    // The password was right, and two-factor is on: a code comes next (ADR-0010 §2).
+    if (result.error === 'needs-code') {
+      for (const cookie of result.cookies) cookies.set(cookie.name, cookie.value, cookie.options);
+      redirect(303, '/sign-in/two-factor');
+    }
     // The e-mail address stays in the form; the password never comes back (UI-10).
     const typed = typeof email === 'string' ? email : '';
     if (result.error === 'wait') {

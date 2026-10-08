@@ -47,6 +47,7 @@ const on = {
   'household-settings': false,
   'activity-log': false,
   shares: false,
+  'two-factor': false,
 };
 let next = 0;
 
