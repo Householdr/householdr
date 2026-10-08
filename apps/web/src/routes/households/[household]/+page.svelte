@@ -4,11 +4,24 @@
   import { Button } from '#lib/components/ui/button/index.js';
   import { Input } from '#lib/components/ui/input/index.js';
   import { Label } from '#lib/components/ui/label/index.js';
+  import { useCopy } from '#lib/hooks/use-copy.svelte.js';
   import { m } from '#lib/paraglide/messages.js';
   import type { Role } from '@householdr/application';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
+  const clipboard = useCopy();
+
+  /** The name of the member `id`, for the messages about their invitation. */
+  const nameOf = (id: string) => data.members.find((member) => member.id === id)?.name ?? '';
+
+  /** What the last change to an invitation did, for the status message (UI-12). */
+  const invitationStatus = $derived.by(() => {
+    if (form?.revoked) return m['household.revoked']({ name: nameOf(form.revoked) });
+    if (form?.notInvitable) return m['household.not-invitable']();
+    if (form?.link && clipboard.copied === form.link) return m['household.copied']();
+    return '';
+  });
 
   /** A role in words. */
   const roles: Record<Role, () => string> = {
@@ -27,13 +40,70 @@
 
   <section aria-labelledby="members" class="flex flex-col gap-4">
     <h2 id="members" class="text-lg font-semibold">{m['household.members']()}</h2>
+    <p role="status" class="wrap-break-word empty:hidden">{invitationStatus}</p>
     <ul aria-labelledby="members" class="flex flex-col divide-y rounded-lg border">
       {#each data.members as member (member.id)}
-        <li class="flex flex-col gap-1 p-4">
-          <span class="font-medium wrap-break-word">
-            {member.id === data.you ? m['household.you']({ name: member.name }) : member.name}
-          </span>
-          <span class="text-sm text-muted-foreground">{roles[member.role]()}</span>
+        <li class="flex flex-col gap-3 p-4">
+          <div class="flex flex-col gap-1">
+            <span class="font-medium wrap-break-word">
+              {member.id === data.you ? m['household.you']({ name: member.name }) : member.name}
+            </span>
+            <span class="text-sm text-muted-foreground">{roles[member.role]()}</span>
+            {#if member.account}
+              <!-- Who accepted the invitation, which heads see (ADR-0010 §5). -->
+              <span class="text-sm wrap-break-word text-muted-foreground">
+                {m['household.joined-as']({
+                  name: member.account.name,
+                  email: member.account.email,
+                })}
+              </span>
+            {/if}
+          </div>
+
+          {#if member.invitable}
+            {#if form?.link && form.invited === member.id}
+              {@const link = form.link}
+              <div class="flex flex-col gap-2">
+                <Label for="link-{member.id}">{m['household.link']({ name: member.name })}</Label>
+                <Input
+                  id="link-{member.id}"
+                  readonly
+                  value={link}
+                  aria-describedby="link-help-{member.id}"
+                />
+                <p id="link-help-{member.id}" class="text-sm text-muted-foreground">
+                  {m['household.link-help']({ name: member.name })}
+                </p>
+                {#if clipboard.supported}
+                  <Button type="button" variant="outline" onclick={() => clipboard.copy(form.link)}>
+                    {m['household.copy']()}
+                  </Button>
+                {/if}
+              </div>
+            {:else if member.invitationDaysLeft !== null}
+              <p class="text-sm">
+                {m['household.link-out']({ count: member.invitationDaysLeft })}
+              </p>
+            {/if}
+            <div class="flex flex-wrap gap-2">
+              <form method="POST" action="?/invite" use:enhance>
+                <input type="hidden" name="member" value={member.id} />
+                <Button type="submit" variant="outline">
+                  {member.invitationDaysLeft === null
+                    ? m['household.invite']({ name: member.name })
+                    : m['household.new-link']({ name: member.name })}
+                </Button>
+              </form>
+              {#if member.invitationDaysLeft !== null}
+                <form method="POST" action="?/revokeInvitation" use:enhance>
+                  <input type="hidden" name="member" value={member.id} />
+                  <Button type="submit" variant="ghost">
+                    {m['household.revoke']({ name: member.name })}
+                  </Button>
+                </form>
+              {/if}
+            </div>
+          {/if}
         </li>
       {/each}
     </ul>

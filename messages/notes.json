@@ -601,5 +601,93 @@
   "household.invalid-name": {
     "note": "Why adding didn't work: no name, or one over 100 characters. 'Their' is gender-neutral.",
     "needsReview": ["nl"]
+  },
+  "household.invite": {
+    "note": "Button on a household's page that makes an invitation link for the profile of {name}, an adult without an account yet.",
+    "needsReview": ["nl"]
+  },
+  "household.new-link": {
+    "note": "Button that replaces {name}'s invitation link with a new one; the old one stops working.",
+    "needsReview": ["nl"]
+  },
+  "household.revoke": {
+    "note": "Button that revokes {name}'s invitation link so it no longer works.",
+    "needsReview": ["nl"]
+  },
+  "household.link": {
+    "note": "Label of the read-only field holding the invitation link just made for {name}.",
+    "needsReview": ["nl"]
+  },
+  "household.link-help": {
+    "note": "Under the invitation link: the link works once and for 7 days; anyone who opens it can join as that profile, so it must only go to that person.",
+    "needsReview": ["nl"]
+  },
+  "household.link-out": {
+    "note": "Shown for a profile whose invitation link was made earlier and still works, with the whole days left.",
+    "needsReview": ["nl"]
+  },
+  "household.copy": {
+    "note": "Button that copies the invitation link to the clipboard.",
+    "needsReview": ["nl"]
+  },
+  "household.copied": {
+    "note": "Status once the link is copied.",
+    "needsReview": ["nl"]
+  },
+  "household.revoked": {
+    "note": "Status once {name}'s invitation link is revoked.",
+    "needsReview": ["nl"]
+  },
+  "household.not-invitable": {
+    "note": "Why no link was made: the profile has an account by now, or is gone.",
+    "needsReview": ["nl"]
+  },
+  "household.joined-as": {
+    "note": "Shown to heads under a member who accepted an invitation: the name and e-mail address of the account that accepted it, so a head can tell if the wrong person did.",
+    "needsReview": ["nl"]
+  },
+  "invitation.page-title": {
+    "note": "Browser tab title of the page an invitation link opens.",
+    "needsReview": ["nl"]
+  },
+  "invitation.title": {
+    "note": "Heading of that page. {household} is the household's name.",
+    "needsReview": ["nl"]
+  },
+  "invitation.title-expired": {
+    "note": "Heading of that page when the link no longer works.",
+    "needsReview": ["nl"]
+  },
+  "invitation.invited": {
+    "note": "What the invitation is for. {household} is the household's name, {profile} the name the head gave the person's profile.",
+    "needsReview": ["nl"]
+  },
+  "invitation.sign-in-first": {
+    "note": "Asks someone not signed in to sign in before accepting.",
+    "needsReview": ["nl"]
+  },
+  "invitation.sign-in": {
+    "note": "Link to the sign-in page, which comes back to the invitation.",
+    "needsReview": ["nl"]
+  },
+  "invitation.accept": {
+    "note": "Button that accepts the invitation and joins the household.",
+    "needsReview": ["nl"]
+  },
+  "invitation.failed": {
+    "note": "Heading of the error summary when accepting didn't work.",
+    "needsReview": ["nl"]
+  },
+  "invitation.member": {
+    "note": "Why accepting didn't work: the account already belongs to that household.",
+    "needsReview": ["nl"]
+  },
+  "invitation.not-allowed": {
+    "note": "Why accepting didn't work: the account's e-mail address isn't confirmed yet.",
+    "needsReview": ["nl"]
+  },
+  "invitation.expired": {
+    "note": "Shown when the link has expired, was used, revoked or replaced.",
+    "needsReview": ["nl"]
   }
 }

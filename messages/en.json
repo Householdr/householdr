@@ -186,5 +186,36 @@
   "household.add": "Add",
   "household.added": "{name} is added. Let them know: once they join with an account of their own, they can see everything recorded about them.",
   "household.add-failed": "Adding didn’t work",
-  "household.invalid-name": "Enter their name, up to 100 characters."
+  "household.invalid-name": "Enter their name, up to 100 characters.",
+  "household.invite": "Invite {name}",
+  "household.new-link": "Make a new link for {name}",
+  "household.revoke": "Revoke {name}’s link",
+  "household.link": "Invitation link for {name}",
+  "household.link-help": "Send this link to {name}. It works once, for 7 days. Whoever opens it can join as {name}, so send it to them only.",
+  "household.link-out": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "An invitation link is out. It works for {count} more day.",
+        "countPlural=other": "An invitation link is out. It works for {count} more days."
+      }
+    }
+  ],
+  "household.copy": "Copy the link",
+  "household.copied": "The link is copied.",
+  "household.revoked": "{name}’s link is revoked: it no longer works.",
+  "household.not-invitable": "That profile can’t be invited any more. It may have joined already.",
+  "household.joined-as": "Joined as {name}, {email}",
+  "invitation.page-title": "Invitation · Householdr",
+  "invitation.title": "Join {household}",
+  "invitation.title-expired": "Invitation",
+  "invitation.invited": "You’re invited to join {household} on Householdr as {profile}.",
+  "invitation.sign-in-first": "Sign in to accept.",
+  "invitation.sign-in": "Sign in",
+  "invitation.accept": "Join the household",
+  "invitation.failed": "Joining didn’t work",
+  "invitation.member": "You’re already a member of {household}.",
+  "invitation.not-allowed": "Confirm your e-mail address first: joining a household needs it.",
+  "invitation.expired": "This invitation has expired or was used already. Ask whoever invited you for a new link."
 }

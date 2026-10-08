@@ -1,4 +1,4 @@
-import { createHousehold, membership } from '@householdr/application';
+import { addAdult as addProfile, createHousehold, membership } from '@householdr/application';
 import { createTestAccount, testSignInContext } from '@householdr/auth/testing';
 import { isActionFailure, isHttpError } from '@sveltejs/kit';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -72,12 +72,37 @@ const addAdult = async (locals: object, name: string) => {
   }
 };
 
+/** Sends the form of action `name` about member `member`. */
+const aboutMember = async (name: 'invite' | 'revokeInvitation', locals: object, member: string) => {
+  const body = new FormData();
+  body.set('member', member);
+  const url = new URL('https://householdr.example.org/households/x');
+  const request = new Request(url, { method: 'POST', body });
+  try {
+    return await actions[name]({ locals, request, url } as unknown as Parameters<
+      (typeof actions)['invite']
+    >[0]);
+  } catch (thrown) {
+    if (isHttpError(thrown)) return thrown.status;
+    throw thrown;
+  }
+};
+
 describe('a household’s page (ADR-0007 §1)', () => {
   it('shows the household’s name and members, and which one is you', async () => {
     const membership = await founded();
     expect(await opened({ flags: { onboarding: true }, membership })).toEqual({
       name: 'Ash Lane',
-      members: [{ id: membership.member.id, name: 'Robin', role: 'head' }],
+      members: [
+        {
+          id: membership.member.id,
+          name: 'Robin',
+          role: 'head',
+          account: null,
+          invitable: false,
+          invitationDaysLeft: null,
+        },
+      ],
       mayAddMembers: false,
       you: membership.member.id,
     });
@@ -122,5 +147,51 @@ describe('a household’s page (ADR-0007 §1)', () => {
     const profile = { ...member, hasAccount: false };
     const locals = { flags: { onboarding: true }, membership: { householdId, member: profile } };
     expect(await opened(locals)).toBe(403);
+  });
+});
+
+describe('invitation links on a household’s page (ADR-0010 §5)', () => {
+  /** A head with two factors and Kim's profile. */
+  const withKim = async () => {
+    const membership = withTwoFactor(await founded());
+    const kim = await addProfile({ ...test.context, ...membership }, { name: 'Kim' });
+    if (!kim.ok) throw new Error('No profile');
+    return { locals: { flags: { onboarding: true }, membership }, kim: kim.memberId };
+  };
+
+  it('makes a link to show once, then says for how many days it works', async () => {
+    const { locals, kim } = await withKim();
+    const made = await aboutMember('invite', locals, kim);
+    expect(made).toEqual({
+      invited: kim,
+      link: expect.stringMatching(
+        /^https:\/\/householdr\.example\.org\/invitations\/[\w-]{43}$/,
+      ) as string,
+    });
+    expect(await opened(locals)).toMatchObject({
+      members: [{}, { id: kim, invitable: true, invitationDaysLeft: 7 }],
+    });
+  });
+
+  it('revokes a link, and refuses both to anyone but a head', async () => {
+    const { locals, kim } = await withKim();
+    await aboutMember('invite', locals, kim);
+    expect(await aboutMember('revokeInvitation', locals, kim)).toEqual({ revoked: kim });
+    expect(await opened(locals)).toMatchObject({ members: [{}, { invitationDaysLeft: null }] });
+    const adult = {
+      ...locals,
+      membership: { ...locals.membership, member: { ...locals.membership.member, role: 'adult' } },
+    };
+    expect(await aboutMember('invite', adult, kim)).toBe(403);
+    expect(await aboutMember('revokeInvitation', adult, kim)).toBe(403);
+  });
+
+  it('says when a profile can’t be invited', async () => {
+    const { locals } = await withKim();
+    const refused = await aboutMember('invite', locals, locals.membership.member.id);
+    expect(isActionFailure(refused) && refused).toMatchObject({
+      status: 404,
+      data: { notInvitable: true },
+    });
   });
 });
