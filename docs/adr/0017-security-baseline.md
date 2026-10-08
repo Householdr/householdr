@@ -88,6 +88,13 @@ A CSP violation during end-to-end tests fails the test (§10).
 > are features of the same policy and keep their same-site default, since accepted ADRs depend on
 > them.
 
+> **Clarification (2026-10-08):** the one inline style Svelte needs so far is SvelteKit's route
+> announcer, which tells screen readers that a new page has loaded and hides itself with a `style`
+> attribute ([ADR-0011](0011-accessibility-and-responsive-baseline.md)). The policy allows exactly
+> that attribute's text, by its hash (`style-src-attr 'unsafe-hashes' 'sha256-…'`); every other
+> inline style stays blocked. If an upgrade changes the text, the end-to-end tests fail on the
+> violation, and the hash is updated after a look at what changed.
+
 ### 5. Rate limits and abuse
 
 | What | Limit (initial values, tuned with use) |
