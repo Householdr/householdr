@@ -5,10 +5,12 @@ packages:
 # One version of each external dependency for the whole workspace (PRIN-3). Packages refer to it
 # as `catalog:`; `pnpm add` records new dependencies here, and unused entries are removed.
 catalog:
+  '@axe-core/playwright': ^4.13.0
   '@eslint-community/eslint-plugin-eslint-comments': ^4.8.1
   '@eslint/js': ^10.0.1
   '@inlang/paraglide-js': ^2.25.4
   '@inlang/plugin-message-format': ^4.4.4
+  '@playwright/test': ~1.63.0
   '@sveltejs/adapter-node': ^6.0.0
   '@sveltejs/kit': ^3.0.0
   '@sveltejs/vite-plugin-svelte': ^7.3.1

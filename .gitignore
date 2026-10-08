@@ -8,6 +8,9 @@ build/
 .svelte-kit/
 # Compiled from messages/ by Paraglide (ADR-0008 §6).
 apps/web/src/lib/paraglide/
+# Written by the end-to-end tests.
+apps/web/test-results/
+apps/web/playwright-report/
 .output/
 *.tsbuildinfo
 

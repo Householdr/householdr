@@ -181,6 +181,8 @@ export default defineConfig(
     '**/coverage/',
     '**/.svelte-kit/',
     '**/src/lib/paraglide/',
+    '**/test-results/',
+    '**/playwright-report/',
   ]),
   js.configs.recommended,
   tseslint.configs.strictTypeChecked,

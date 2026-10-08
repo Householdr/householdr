@@ -7,13 +7,16 @@
     "build": "vite build",
     "preview": "vite preview",
     "prepare": "paraglide-js compile --project ../../project.inlang --outdir ./src/lib/paraglide && svelte-kit sync",
-    "typecheck": "pnpm prepare && tsc"
+    "typecheck": "pnpm prepare && tsc",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@householdr/application": "workspace:*"
   },
   "devDependencies": {
+    "@axe-core/playwright": "catalog:",
     "@inlang/paraglide-js": "catalog:",
+    "@playwright/test": "catalog:",
     "@sveltejs/adapter-node": "catalog:",
     "@sveltejs/kit": "catalog:",
     "@sveltejs/vite-plugin-svelte": "catalog:",

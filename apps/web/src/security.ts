@@ -4,7 +4,7 @@ type CspDirectives = NonNullable<NonNullable<Config['csp']>['directives']>;
 
 /**
  * The Content Security Policy of ADR-0017 §4. SvelteKit adds a nonce per request to `script-src`;
- * inline scripts never run, and no inline style is allowed until Svelte needs one.
+ * inline scripts never run, and the only inline style is the one Svelte needs.
  */
 export const contentSecurityPolicy: CspDirectives = {
   'default-src': ['self'],
@@ -16,6 +16,9 @@ export const contentSecurityPolicy: CspDirectives = {
   // Data and blob URLs for the QR codes of invitations and device sign-in (ADR-0010 §4, §5).
   'img-src': ['self', 'data:', 'blob:'],
   'connect-src': ['self'],
+  // SvelteKit's route announcer hides itself with this exact style attribute, and no other inline
+  // style is allowed (ADR-0017 §4, clarification). A new hash needs a look at what changed.
+  'style-src-attr': ['unsafe-hashes', 'sha256-S8qMpvofolR8Mpjy4kQvEm7m1q8clzU4dfDH0AmvZjo='],
 };
 
 /**
