@@ -48,6 +48,7 @@ const on = {
   'activity-log': false,
   shares: false,
   availability: false,
+  tasks: false,
 };
 let next = 0;
 

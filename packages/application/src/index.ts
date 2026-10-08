@@ -44,6 +44,8 @@ export {
   type TemporaryShareField,
   type TemporaryShareInput,
 } from './shares/temporary-shares';
+export { addTask, type NewTaskField } from './tasks/add-task';
+export { listTasks, type TaskSummary } from './tasks/list-tasks';
 // The household member as permissions see them, which the web app's guard keeps per request.
 export type { Member, Role } from '@householdr/domain';
 export { defaultFlags, flagValues } from './flags/values';

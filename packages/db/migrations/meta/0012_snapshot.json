@@ -1,5 +1,5 @@
 {
-  "id": "cc8b1f32-c1ca-469a-9f30-0ca8f34c5615",
+  "id": "5c117e67-ae39-41c9-ace6-73265432a96e",
   "prevId": "4d30db0f-fa61-4f8b-b268-a2c4e8bc481b",
   "version": "7",
   "dialect": "postgresql",
@@ -595,6 +595,244 @@
         "members_share_percent": {
           "name": "members_share_percent",
           "value": "\"members\".\"share_percent\" between 0 and 100"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.schedules": {
+      "name": "schedules",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "household_id": {
+          "name": "household_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rules": {
+          "name": "rules",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "extra_dates": {
+          "name": "extra_dates",
+          "type": "date[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'"
+        },
+        "exception_dates": {
+          "name": "exception_dates",
+          "type": "date[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'"
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "schedules_household_id_households_id_fk": {
+          "name": "schedules_household_id_households_id_fk",
+          "tableFrom": "schedules",
+          "tableTo": "households",
+          "columnsFrom": [
+            "household_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "schedules_household_id": {
+          "name": "schedules_household_id",
+          "nullsNotDistinct": false,
+          "columns": [
+            "household_id",
+            "id"
+          ]
+        }
+      },
+      "policies": {
+        "household_only": {
+          "name": "household_only",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "public"
+          ],
+          "using": "\"schedules\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid",
+          "withCheck": "\"schedules\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {
+        "schedules_rules": {
+          "name": "schedules_rules",
+          "value": "jsonb_typeof(\"schedules\".\"rules\") = 'array'\n        and not jsonb_path_exists(\"schedules\".\"rules\", '$[*] ? (\n  @.type() != \"object\"\n  || !exists(@.rrule ? (@.type() == \"string\" && @ != \"\"))\n  || !exists(@.start ? (@ like_regex \"^[0-9]{4}-[0-9]{2}-[0-9]{2}$\"))\n  || (exists(@.season) && !(exists(@.season.from ? (@ like_regex \"^[0-9]{2}-[0-9]{2}$\"))\n    && exists(@.season.to ? (@ like_regex \"^[0-9]{2}-[0-9]{2}$\"))))\n)')"
+        },
+        "schedules_dates": {
+          "name": "schedules_dates",
+          "value": "\"schedules\".\"rules\" <> '[]'::jsonb or cardinality(\"schedules\".\"extra_dates\") > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.tasks": {
+      "name": "tasks",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "household_id": {
+          "name": "household_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "duration": {
+          "name": "duration",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "schedule_id": {
+          "name": "schedule_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "timing": {
+          "name": "timing",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "on_miss": {
+          "name": "on_miss",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        }
+      },
+      "indexes": {
+        "tasks_household_schedule": {
+          "name": "tasks_household_schedule",
+          "columns": [
+            {
+              "expression": "household_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "schedule_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "tasks_household_id_households_id_fk": {
+          "name": "tasks_household_id_households_id_fk",
+          "tableFrom": "tasks",
+          "tableTo": "households",
+          "columnsFrom": [
+            "household_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "tasks_schedule": {
+          "name": "tasks_schedule",
+          "tableFrom": "tasks",
+          "tableTo": "schedules",
+          "columnsFrom": [
+            "household_id",
+            "schedule_id"
+          ],
+          "columnsTo": [
+            "household_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "household_only": {
+          "name": "household_only",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "public"
+          ],
+          "using": "\"tasks\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid",
+          "withCheck": "\"tasks\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {
+        "tasks_name": {
+          "name": "tasks_name",
+          "value": "\"tasks\".\"name\" <> ''"
+        },
+        "tasks_duration": {
+          "name": "tasks_duration",
+          "value": "\"tasks\".\"duration\" between 1 and 1440"
+        },
+        "tasks_timing": {
+          "name": "tasks_timing",
+          "value": "\"tasks\".\"timing\" in ('flexible', 'floating')"
+        },
+        "tasks_on_miss": {
+          "name": "tasks_on_miss",
+          "value": "\"tasks\".\"on_miss\" in ('roll over', 'lapse')"
         }
       },
       "isRLSEnabled": false

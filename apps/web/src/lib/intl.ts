@@ -52,3 +52,12 @@ const utc = (day: string) => {
   const [year = 0, month = 1, date = 1] = day.split('-').map(Number);
   return Date.UTC(year, month - 1, date);
 };
+
+/** A number of minutes in words, in `locale`, such as “30 minutes”. */
+export function minutesText(minutes: number, locale: string) {
+  return new Intl.NumberFormat(locale, {
+    style: 'unit',
+    unit: 'minute',
+    unitDisplay: 'long',
+  }).format(minutes);
+}

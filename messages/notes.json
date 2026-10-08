@@ -913,5 +913,129 @@
   "availability.household-plan": {
     "note": "Legend of the form where a head plans time when the whole household is away.",
     "needsReview": ["nl"]
+  },
+  "tasks.title": {
+    "note": "Heading of a household's task list, and the link to it from the household's page.",
+    "needsReview": ["nl"]
+  },
+  "tasks.page-title": {
+    "note": "Browser tab title of the task list. {household} is the household's name; Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "tasks.back": {
+    "note": "Link from the task list back to the household's page. {household} is the household's name.",
+    "needsReview": ["nl"]
+  },
+  "tasks.none": {
+    "note": "Shown instead of the task list while the household has no tasks.",
+    "needsReview": ["nl"]
+  },
+  "tasks.how-often": {
+    "note": "Label of a task's frequency in the list, and of the field that chooses it when adding a task.",
+    "needsReview": ["nl"]
+  },
+  "tasks.how-long": {
+    "note": "Label of how long one time of a task takes, in the list. The value next to it is a number of minutes.",
+    "needsReview": ["nl"]
+  },
+  "tasks.if-not-done": {
+    "note": "Label, in the task list, of what happens to a time of the task that isn't done (ADR-0002 §2). The value next to it is tasks.roll-over or tasks.lapse.",
+    "needsReview": ["nl"]
+  },
+  "tasks.daily": {
+    "note": "A task's frequency, in the list and as a choice when adding a task (ADR-0004 §3).",
+    "needsReview": ["nl"]
+  },
+  "tasks.weekly": {
+    "note": "A task's frequency, in the list and as a choice when adding a task (ADR-0004 §3).",
+    "needsReview": ["nl"]
+  },
+  "tasks.biweekly": {
+    "note": "A task's frequency, in the list and as a choice when adding a task (ADR-0004 §3).",
+    "needsReview": ["nl"]
+  },
+  "tasks.monthly": {
+    "note": "A task's frequency, in the list and as a choice when adding a task (ADR-0004 §3).",
+    "needsReview": ["nl"]
+  },
+  "tasks.tri-monthly": {
+    "note": "A task's frequency, in the list and as a choice when adding a task (ADR-0004 §3).",
+    "needsReview": ["nl"]
+  },
+  "tasks.yearly": {
+    "note": "A task's frequency, in the list and as a choice when adding a task (ADR-0004 §3).",
+    "needsReview": ["nl"]
+  },
+  "tasks.add": {
+    "note": "Heading of the form where a head adds a task of their own to the household.",
+    "needsReview": ["nl"]
+  },
+  "tasks.name": {
+    "note": "Label of the new task's name field.",
+    "needsReview": ["nl"]
+  },
+  "tasks.name-hint": {
+    "note": "Hint under the new task's name field, with an example of a task name.",
+    "needsReview": ["nl"]
+  },
+  "tasks.duration": {
+    "note": "Label of the field for how many minutes one time of the task takes.",
+    "needsReview": ["nl"]
+  },
+  "tasks.start": {
+    "note": "Label of the date field for the first day the new task is due.",
+    "needsReview": ["nl"]
+  },
+  "tasks.start-hint": {
+    "note": "Hint under the first-time date field: later times are counted from it, by the chosen frequency.",
+    "needsReview": ["nl"]
+  },
+  "tasks.on-miss": {
+    "note": "Heading (legend) of the two choices for what happens to a time of the new task that isn't done in its week or window (ADR-0002 §2).",
+    "needsReview": ["nl"]
+  },
+  "tasks.roll-over": {
+    "note": "Choice, and its value in the task list: a time that isn't done stays open and goes into the next week's work, like cleaning the bathroom (ADR-0002 §2). The form starts on it. Calm: nobody is blamed.",
+    "needsReview": ["nl"]
+  },
+  "tasks.lapse": {
+    "note": "Choice, and its value in the task list: a time that isn't done closes, since doing it later makes no sense, like putting the bins out (ADR-0002 §2). Calm: nobody is blamed.",
+    "needsReview": ["nl"]
+  },
+  "tasks.submit": {
+    "note": "Button that adds the task.",
+    "needsReview": ["nl"]
+  },
+  "tasks.added": {
+    "note": "Shown once a task is added. {name} is the task's name, as typed.",
+    "needsReview": ["nl"]
+  },
+  "tasks.add-failed": {
+    "note": "Heading of the error summary when adding a task didn't work.",
+    "needsReview": ["nl"]
+  },
+  "tasks.check": {
+    "note": "Leads to the list of fields that need changing, each a link to its field.",
+    "needsReview": ["nl"]
+  },
+  "tasks.invalid-name": {
+    "note": "Why adding didn't work: no name, or one over 100 characters.",
+    "needsReview": ["nl"]
+  },
+  "tasks.invalid-duration": {
+    "note": "Why adding didn't work: the minutes aren't a whole number in range. {min} and {max} are the fewest and most minutes allowed (1 and 1440, a day).",
+    "needsReview": ["nl"]
+  },
+  "tasks.invalid-frequency": {
+    "note": "Why adding didn't work: no frequency chosen.",
+    "needsReview": ["nl"]
+  },
+  "tasks.invalid-start": {
+    "note": "Why adding didn't work: the first time is not a day from today up to a year from today.",
+    "needsReview": ["nl"]
+  },
+  "tasks.invalid-on-miss": {
+    "note": "Why adding didn't work: neither choice for what happens to a time that isn't done was picked.",
+    "needsReview": ["nl"]
   }
 }

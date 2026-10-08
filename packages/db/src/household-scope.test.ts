@@ -2,7 +2,7 @@ import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import pg from 'pg';
 import { connect, inHousehold, refuseBypass, type Database } from './connection';
-import { absences, households, members } from './schema';
+import { absences, households, members, schedules, tasks } from './schema';
 import { refusal, refusedByRowSecurity, testDatabase, testServerUrl } from './testing';
 
 // Row-level security keeps every household to its own rows (ADR-0008 §9, CODE-17), as a role
@@ -154,6 +154,97 @@ describe('absences (ADR-0005 §2, ADR-0018 §3)', () => {
   });
 });
 
+describe('schedules and tasks (ADR-0008 §9, CODE-17)', () => {
+  const weekly = { rrule: 'FREQ=WEEKLY', start: '2026-10-08' };
+  /** A weekly schedule and a task on it in household `id`, read as that household. */
+  const addTask = (id: string, name: string) =>
+    inHousehold(db, id, async (tx) => {
+      const [schedule] = await tx
+        .insert(schedules)
+        .values({ householdId: id, rules: [weekly] })
+        .returning({ id: schedules.id });
+      if (!schedule) throw new Error('No schedule');
+      await tx.insert(tasks).values({
+        householdId: id,
+        name,
+        duration: 30,
+        scheduleId: schedule.id,
+        timing: 'flexible',
+        onMiss: 'roll over',
+      });
+      return schedule.id;
+    });
+  let birchSchedule: string;
+  beforeAll(async () => {
+    await addTask(ash, 'Vacuum');
+    birchSchedule = await addTask(birch, 'Water the plants');
+  });
+
+  it('sees only its own', async () => {
+    const seen = await inHousehold(db, ash, async (tx) => ({
+      tasks: await tx.select({ name: tasks.name }).from(tasks),
+      schedules: await tx.select({ id: schedules.id }).from(schedules),
+    }));
+    expect(seen.tasks).toEqual([{ name: 'Vacuum' }]);
+    expect(seen.schedules).toHaveLength(1);
+    expect(seen.schedules).not.toContainEqual({ id: birchSchedule });
+  });
+
+  it('cannot add one to another household', async () => {
+    expect(
+      await refusal(
+        inHousehold(db, ash, (tx) =>
+          tx.insert(schedules).values({ householdId: birch, rules: [weekly] }),
+        ),
+      ),
+    ).toBe(refusedByRowSecurity);
+    expect(
+      await refusal(
+        inHousehold(db, ash, (tx) =>
+          tx.insert(tasks).values({
+            householdId: birch,
+            name: 'Taken',
+            duration: 30,
+            scheduleId: birchSchedule,
+            timing: 'flexible',
+            onMiss: 'roll over',
+          }),
+        ),
+      ),
+    ).toBe(refusedByRowSecurity);
+  });
+
+  it('cannot put a task on another household’s schedule', async () => {
+    // Foreign keys are checked past row-level security, so the key includes the household.
+    expect(
+      await refusal(
+        inHousehold(db, ash, (tx) =>
+          tx.insert(tasks).values({
+            householdId: ash,
+            name: 'Borrowed',
+            duration: 30,
+            scheduleId: birchSchedule,
+            timing: 'flexible',
+            onMiss: 'roll over',
+          }),
+        ),
+      ),
+    ).toBe('tasks_schedule');
+  });
+
+  it('cannot change or delete another household’s', async () => {
+    const changed = await inHousehold(db, ash, async (tx) => ({
+      tasks: await tx
+        .update(tasks)
+        .set({ name: 'Taken' })
+        .where(eq(tasks.name, 'Water the plants'))
+        .returning(),
+      schedules: await tx.delete(schedules).where(eq(schedules.id, birchSchedule)).returning(),
+    }));
+    expect(changed).toEqual({ tasks: [], schedules: [] });
+  });
+});
+
 describe('connect (ADR-0008 §9)', () => {
   it('refuses a superuser, whom row-level security does not bind', async () => {
     await expect(connect(testServerUrl())).rejects.toThrow('bypasses row-level security');
@@ -205,12 +296,15 @@ describe('every household-owned table (CODE-17)', () => {
       where n.nspname = 'public' and c.relkind = 'r'
       order by c.relname`);
     expect(rows.map((r) => r.table)).toEqual([
+      'absences',
       'activity_log',
+      'away_periods',
       'households',
       'members',
+      'schedules',
+      'tasks',
       'temporary_shares',
     ]);
-    expect(rows.map((r) => r.table)).toEqual(['absences', 'away_periods', 'households', 'members']);
     for (const row of rows) {
       // Not forced: it binds the app's role, not the owner (ADR-0008 §9, clarification).
       expect(row).toEqual({

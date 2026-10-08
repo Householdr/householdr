@@ -102,6 +102,14 @@
         {m['availability.title']()}
       </a>
     {/if}
+    {#if data.flags.tasks}
+      <a
+        href="/households/{page.params.household}/tasks"
+        class="flex min-h-11 items-center self-start underline underline-offset-4"
+      >
+        {m['tasks.title']()}
+      </a>
+    {/if}
     <a href="/security" class="underline underline-offset-4">{m['security.title']()}</a>
   </nav>
 </main>
