@@ -11,6 +11,18 @@ export interface Jobs {
   'account-email': { id: string };
   /** Deletes the links to sign up that expired a week ago: carries nothing (ADR-0012 §5). */
   'expired-sign-up-links': Record<string, never>;
+  /** Queues the plan steps that are due, household by household: carries nothing (ADR-0008 §10). */
+  'plan-tick': Record<string, never>;
+  /** Drafts a household's plan: its id, and the first day of the plan week (ADR-0006 §2). */
+  'plan-draft': PlanJob;
+  /** Publishes a household's draft: its id, and the first day of the plan week (ADR-0006 §2). */
+  'plan-publish': PlanJob;
+}
+
+/** A step for one household's plan week: the household's id, and the week's first day. */
+interface PlanJob {
+  household: string;
+  week: string;
 }
 
 export type QueueName = keyof Jobs;
@@ -20,12 +32,32 @@ const queues: Record<QueueName, Parameters<PgBoss['createQueue']>[1]> = {
   'account-email': { retryLimit: 10, retryDelay: 60, retryBackoff: true },
   // A failed run waits for the next one.
   'expired-sign-up-links': { retryLimit: 0 },
+  // One tick at a time; a failed one waits for the next.
+  'plan-tick': { policy: 'exclusive', retryLimit: 0 },
+  // One job for a household's week at a time, by its key (ADR-0008 §10); a failed one is queued
+  // again by the next tick while it is still due.
+  'plan-draft': { policy: 'exclusive', retryLimit: 0 },
+  'plan-publish': { policy: 'exclusive', retryLimit: 0 },
 };
 
-/** The queues that get a job on a schedule, in cron's terms and UTC: the deletion jobs (ADR-0012 §5). */
+/**
+ * What a job of the queues with one is known by while it waits or runs, so it is never queued twice
+ * (ADR-0008 §10): the household, the week and, by its queue, the step.
+ */
+const keys: { [Q in QueueName]?: (data: Jobs[Q]) => string } = {
+  'plan-draft': ({ household, week }) => `${household}/${week}`,
+  'plan-publish': ({ household, week }) => `${household}/${week}`,
+};
+
+/**
+ * The queues that get a job on a schedule, in cron's terms and UTC: the deletion jobs (ADR-0012 §5)
+ * and the plans' tick (ADR-0008 §10).
+ */
 const schedules: Partial<Record<QueueName, string>> = {
   // Every hour, off the full hour that other schedules crowd.
   'expired-sign-up-links': '23 * * * *',
+  // Every minute, which is as late as a draft or a publish may come (ADR-0008 §10).
+  'plan-tick': '* * * * *',
 };
 
 /** pg-boss's statements over `db`'s pool, as its own connections. */
@@ -52,8 +84,12 @@ export async function queueJob<Q extends QueueName>(
   name: Q,
   data: Jobs[Q],
 ) {
+  const key = keys[name]?.(data);
   // pg-boss's statements run in `tx`, so the job commits or rolls back with the change.
-  await queue.send(name, data, { db: fromDrizzle(tx, sql) });
+  await queue.send(name, data, {
+    db: fromDrizzle(tx, sql),
+    ...(key === undefined ? {} : { singletonKey: key }),
+  });
 }
 
 /** Creates or upgrades pg-boss's tables, its queues and their schedules: part of the migration step. */

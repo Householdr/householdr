@@ -82,6 +82,40 @@ describe('share invariants (ADR-0001 §4)', () => {
     );
   });
 
+  it('counts only the days at home in a week the household is partly away (ADR-0005 §5)', () => {
+    fc.assert(
+      fc.property(settings, calendar, day(60), day(60), fc.nat(9), (s, c, d, from, length) => {
+        const away = [{ from, to: from.add({ days: length }) }];
+        const { start, end } = planWeek(d, c);
+        const home = (day: Temporal.PlainDate) =>
+          Temporal.PlainDate.compare(day, from) < 0 ||
+          Temporal.PlainDate.compare(day, away[0]?.to ?? from) > 0;
+        const homeDays: Temporal.PlainDate[] = [];
+        for (
+          let day = start;
+          Temporal.PlainDate.compare(day, end) < 0;
+          day = day.add({ days: 1 })
+        ) {
+          if (home(day)) homeDays.push(day);
+        }
+        // As if the week were only its days at home: each of them weighs the same.
+        const daily = homeDays.map((day) => {
+          const covering = s.temporary.find(
+            (t) =>
+              Temporal.PlainDate.compare(t.from, day) <= 0 &&
+              Temporal.PlainDate.compare(day, t.to) <= 0,
+          );
+          return covering ? covering.share : base(s, d, c);
+        });
+        const expected =
+          daily.length === 0
+            ? base(s, d, c)
+            : daily.reduce((sum, share) => sum + share, 0) / daily.length;
+        expect(weekShare(s, d, c, away)).toBeCloseTo(expected, 12);
+      }),
+    );
+  });
+
   it('is the base share without temporary shares, and lies between the shares of its days', () => {
     fc.assert(
       fc.property(settings, calendar, day(60), (s, c, d) => {

@@ -74,26 +74,36 @@ export interface Week {
   week: PlanWeek;
 }
 
+/** The columns of `households` its calendar comes from. */
+export const calendarColumns = {
+  timeZone: households.timeZone,
+  weekStartDay: households.weekStartDay,
+  changeFrom: households.weekStartChangeFrom,
+  previousDay: households.weekStartPreviousDay,
+};
+
+/** The household's calendar from its row: its time zone, start day and latest change of it. */
+export function calendarOf(row: {
+  timeZone: string;
+  weekStartDay: HouseholdCalendar['weekStartDay'];
+  changeFrom: string | null;
+  previousDay: HouseholdCalendar['weekStartDay'] | null;
+}): HouseholdCalendar {
+  const { timeZone, weekStartDay, changeFrom, previousDay } = row;
+  return changeFrom !== null && previousDay !== null
+    ? {
+        timeZone,
+        weekStartDay,
+        change: { from: Temporal.PlainDate.from(changeFrom), previous: previousDay },
+      }
+    : { timeZone, weekStartDay };
+}
+
 export async function thisWeek(tx: Transaction, context: HouseholdContext): Promise<Week> {
-  const [household] = await tx
-    .select({
-      timeZone: households.timeZone,
-      weekStartDay: households.weekStartDay,
-      changeFrom: households.weekStartChangeFrom,
-      previousDay: households.weekStartPreviousDay,
-    })
-    .from(households);
+  const [household] = await tx.select(calendarColumns).from(households);
   if (!household) throw new Error('The household of a member is gone.');
-  const { timeZone, weekStartDay, changeFrom, previousDay } = household;
-  const today = context.clock.now().toZonedDateTimeISO(timeZone).toPlainDate();
-  const calendar: HouseholdCalendar =
-    changeFrom !== null && previousDay !== null
-      ? {
-          timeZone,
-          weekStartDay,
-          change: { from: Temporal.PlainDate.from(changeFrom), previous: previousDay },
-        }
-      : { timeZone, weekStartDay };
+  const calendar = calendarOf(household);
+  const today = context.clock.now().toZonedDateTimeISO(calendar.timeZone).toPlainDate();
   return { today, calendar, week: planWeek(today, calendar) };
 }
 
@@ -163,7 +173,8 @@ function shareOf(row: ShareRow, temporary: PlannedShare[], now: Week): MemberSha
   };
 }
 
-function basisOf(row: ShareRow): ShareBasis {
+/** What a member's default share depends on: their role and, for a child, their age. */
+export function basisOf(row: Pick<ShareRow, 'role' | 'birthDate'>): ShareBasis {
   if (row.role !== 'child') return { role: row.role };
   if (row.birthDate === null) throw new Error('A child without a birth date.');
   return { role: 'child', birthDate: Temporal.PlainDate.from(row.birthDate) };

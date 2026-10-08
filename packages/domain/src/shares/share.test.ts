@@ -118,6 +118,24 @@ describe('weekShare (ADR-0001 §4)', () => {
   });
 });
 
+describe('weekShare in a week the household is partly away (ADR-0005 §5)', () => {
+  const away = (from: string, to: string) => ({ from: date(from), to: date(to) });
+
+  it('averages over the days at home only', () => {
+    // Away from Monday to Wednesday; half a share on Thursday and Friday, of the four days home.
+    const exams = { ...adult, temporary: [temporary('2026-10-12', '2026-10-16', 0.5)] };
+    expect(weekShare(exams, week, mondays, [away('2026-10-10', '2026-10-14')])).toBeCloseTo(
+      (2 * 0.5 + 2) / 4,
+    );
+    expect(weekShare(exams, week, mondays)).toBeCloseTo((5 * 0.5 + 2) / 7);
+  });
+
+  it('is the base share when the household is away all week, which gets no plan', () => {
+    const exams = { ...adult, temporary: [temporary('2026-10-12', '2026-10-16', 0.5)] };
+    expect(weekShare(exams, week, mondays, [away('2026-10-01', '2026-10-31')])).toBe(1);
+  });
+});
+
 describe('temporaryShareDays (ADR-0001 §4)', () => {
   it('runs from the first day of this plan week to a year from today', () => {
     expect(temporaryShareDays(date('2026-10-15'), mondays)).toEqual({

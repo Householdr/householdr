@@ -5,10 +5,13 @@ import { connect, inHousehold, refuseBypass, type Database } from './connection'
 import { accounts } from './auth-schema';
 import {
   absences,
+  assignments,
   comparisons,
   households,
   members,
+  occurrences,
   parentalConsents,
+  plans,
   profileGuardians,
   schedules,
   tasks,
@@ -199,6 +202,132 @@ describe('schedules and tasks (ADR-0008 §9, CODE-17)', () => {
       schedules: await tx.delete(schedules).where(eq(schedules.id, birchSchedule)).returning(),
     }));
     expect(changed).toEqual({ tasks: [], schedules: [] });
+  });
+});
+
+describe('plans, occurrences and assignments (ADR-0008 §9, CODE-17)', () => {
+  const week = { weekStart: '2026-10-12', weekEnd: '2026-10-19' };
+  const window = {
+    windowStart: new Date('2026-10-11T22:00:00Z'),
+    windowEnd: new Date('2026-10-18T22:00:00Z'),
+  };
+  /** A household's head, task, plan and occurrence, read as that household. */
+  const planned = (id: string) =>
+    inHousehold(db, id, async (tx) => {
+      const [member] = await tx.select({ id: members.id }).from(members);
+      const [task] = await tx.select({ id: tasks.id }).from(tasks);
+      if (!member || !task) throw new Error('No member or task');
+      const [plan] = await tx
+        .insert(plans)
+        .values({ householdId: id, ...week, status: 'draft', draftedAt: new Date() })
+        .returning({ id: plans.id });
+      const [occurrence] = await tx
+        .insert(occurrences)
+        .values({ householdId: id, taskId: task.id, date: '2026-10-14', ...window })
+        .returning({ id: occurrences.id });
+      if (!plan || !occurrence) throw new Error('No plan or occurrence');
+      await tx.insert(assignments).values({
+        householdId: id,
+        planId: plan.id,
+        occurrenceId: occurrence.id,
+        ...window,
+        memberId: member.id,
+        cost: 30,
+        reason: 'lowest relative load',
+      });
+      return { member: member.id, task: task.id, plan: plan.id, occurrence: occurrence.id };
+    });
+  let ashPlan: Awaited<ReturnType<typeof planned>>;
+  let birchPlan: Awaited<ReturnType<typeof planned>>;
+  beforeAll(async () => {
+    ashPlan = await planned(ash);
+    birchPlan = await planned(birch);
+  });
+
+  it('are seen in their own household only', async () => {
+    const seen = (id: string) =>
+      inHousehold(db, id, async (tx) => ({
+        plans: await tx.select({ id: plans.id }).from(plans),
+        occurrences: await tx.select({ id: occurrences.id }).from(occurrences),
+        assignments: await tx.select({ member: assignments.memberId }).from(assignments),
+      }));
+    expect(await seen(ash)).toEqual({
+      plans: [{ id: ashPlan.plan }],
+      occurrences: [{ id: ashPlan.occurrence }],
+      assignments: [{ member: ashPlan.member }],
+    });
+    expect(await db.select().from(assignments)).toEqual([]);
+  });
+
+  it('cannot be added to another household', async () => {
+    expect(
+      await refusal(
+        inHousehold(db, ash, (tx) =>
+          tx.insert(plans).values({
+            householdId: birch,
+            weekStart: '2026-10-19',
+            weekEnd: '2026-10-26',
+            status: 'draft',
+            draftedAt: new Date(),
+          }),
+        ),
+      ),
+    ).toBe(refusedByRowSecurity);
+  });
+
+  it('never refer to another household’s task, plan, occurrence or member', async () => {
+    // Foreign keys are checked past row-level security, so each key includes the household.
+    const own = { householdId: ash, ...window };
+    const [other] = await inHousehold(db, ash, (tx) =>
+      tx
+        .insert(occurrences)
+        .values({ ...own, taskId: ashPlan.task, date: '2026-10-16' })
+        .returning({ id: occurrences.id }),
+    );
+    if (!other) throw new Error('No occurrence');
+    const unplanned = { ...ashPlan, occurrence: other.id };
+    for (const [constraint, values] of [
+      ['assignments_member', { ...unplanned, member: birchPlan.member }],
+      ['assignments_occurrence', { ...ashPlan, occurrence: birchPlan.occurrence }],
+      ['assignments_plan', { ...unplanned, plan: birchPlan.plan }],
+    ] as const) {
+      expect(
+        await refusal(
+          inHousehold(db, ash, (tx) =>
+            tx.insert(assignments).values({
+              ...own,
+              planId: values.plan,
+              occurrenceId: values.occurrence,
+              memberId: values.member,
+              cost: 30,
+              reason: 'lowest relative load',
+            }),
+          ),
+        ),
+      ).toBe(constraint);
+    }
+    expect(
+      await refusal(
+        inHousehold(db, ash, (tx) =>
+          tx.insert(occurrences).values({ ...own, taskId: birchPlan.task, date: '2026-10-15' }),
+        ),
+      ),
+    ).toBe('occurrences_task');
+  });
+
+  it('cannot be changed or deleted by another household', async () => {
+    const changed = await inHousehold(db, ash, async (tx) => ({
+      plans: await tx
+        .update(plans)
+        .set({ status: 'published', publishedAt: new Date() })
+        .where(eq(plans.id, birchPlan.plan))
+        .returning(),
+      assignments: await tx
+        .delete(assignments)
+        .where(eq(assignments.memberId, birchPlan.member))
+        .returning(),
+    }));
+    expect(changed).toEqual({ plans: [], assignments: [] });
   });
 });
 
@@ -419,12 +548,15 @@ describe('every household-owned table (CODE-17)', () => {
     expect(rows.map((r) => r.table)).toEqual([
       'absences',
       'activity_log',
+      'assignments',
       'away_periods',
       'comparisons',
       'households',
       'invitations',
       'members',
+      'occurrences',
       'parental_consents',
+      'plans',
       'profile_guardians',
       'schedules',
       'tasks',

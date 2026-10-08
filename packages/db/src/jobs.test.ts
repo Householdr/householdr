@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm';
 import type { PgBoss } from 'pg-boss';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Database } from './connection';
-import { jobQueue, queueJob } from './jobs';
+import { jobQueue, queueJob, type Jobs } from './jobs';
 import { migrate } from './migrate';
 import { testDatabase } from './testing';
 
@@ -53,9 +53,29 @@ describe('the job queue', () => {
     expect(tables.rows).toEqual([{ name: 'queue' }]);
   });
 
-  it('sends a job to delete expired sign-up links every hour (ADR-0012 §5)', async () => {
-    expect(await queue.getSchedules()).toEqual([
+  it('sends a job to delete expired sign-up links every hour (ADR-0012 §5), and the plans’ tick every minute (ADR-0008 §10)', async () => {
+    const schedules = await queue.getSchedules();
+    expect(schedules.sort((a, b) => a.name.localeCompare(b.name))).toEqual([
       expect.objectContaining({ name: 'expired-sign-up-links', cron: '23 * * * *' }),
+      expect.objectContaining({ name: 'plan-tick', cron: '* * * * *' }),
     ]);
+  });
+
+  it('queues a household’s step for a week once while it waits, by its key (ADR-0008 §10)', async () => {
+    const household = crypto.randomUUID();
+    const send = (week: string) =>
+      db.transaction((tx) => queueJob(queue, tx, 'plan-draft', { household, week }));
+    await send('2026-10-12');
+    await send('2026-10-12');
+    await send('2026-10-19');
+    await db.transaction((tx) =>
+      queueJob(queue, tx, 'plan-draft', { household: crypto.randomUUID(), week: '2026-10-12' }),
+    );
+    const jobs = await queue.fetch<Jobs['plan-draft']>('plan-draft', { batchSize: 100 });
+    expect(jobs.filter((job) => job.data.household === household).map((job) => job.data)).toEqual([
+      { household, week: '2026-10-12' },
+      { household, week: '2026-10-19' },
+    ]);
+    expect(jobs).toHaveLength(3);
   });
 });
