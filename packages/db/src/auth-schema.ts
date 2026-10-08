@@ -1,5 +1,14 @@
 import { sql } from 'drizzle-orm';
-import { boolean, check, index, pgSchema, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  check,
+  index,
+  integer,
+  pgSchema,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
 /**
  * What belongs to an account rather than a household, without row-level security: it is looked up
@@ -87,4 +96,25 @@ export const verifications = auth.table(
     updatedAt: updatedAt(),
   },
   (t) => [index('verifications_identifier').on(t.identifier)],
+);
+
+/**
+ * Counts for the rate limits of ADR-0017 §5, under a keyed hash of what they count, never an e-mail
+ * or IP address (ADR-0012 §2, clarification). Unlogged: a crash empties it, which only starts the
+ * counts again.
+ */
+export const rateLimits = auth.table(
+  'rate_limits',
+  {
+    key: text().primaryKey(),
+    /** Failures, and attempts not yet known to be failures; 0 when all were taken back. */
+    count: integer().notNull(),
+    changedAt: timestamp({ withTimezone: true }).notNull(),
+    /** When the count is forgotten (ADR-0012 §5, clarification). */
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+  },
+  (t) => [
+    index('rate_limits_expires_at').on(t.expiresAt),
+    check('rate_limits_count', sql`${t.count} >= 0`),
+  ],
 );

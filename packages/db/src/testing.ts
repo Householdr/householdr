@@ -40,13 +40,22 @@ export async function testDatabase() {
   const target = new URL(url);
   target.pathname = `/${name}`;
   const pool = new pg.Pool({ connectionString: target.href, options: `-c role=${testRole}` });
+  // The pool's `end` only asks its connections to close; dropping the database while one still is
+  // would break it off mid-way.
+  const open = new Set<pg.PoolClient>();
+  pool.on('connect', (client) => {
+    open.add(client);
+    client.on('end', () => open.delete(client));
+  });
   await refuseBypass(pool);
   const db = database(pool);
   await migrate(db);
   return {
     db,
     close: async () => {
+      const closed = [...open].map((client) => new Promise((done) => client.once('end', done)));
       await pool.end();
+      await Promise.all(closed);
       const cleanup = new pg.Client({ connectionString: url });
       await cleanup.connect();
       try {

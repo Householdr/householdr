@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { recordingLogger, recordingMailer } from './testing';
+import { recordingLogger, recordingMailer, settableClock } from './testing';
 
 describe('recordingMailer', () => {
   it('keeps every mail it is asked to send, in order', async () => {
@@ -21,5 +21,14 @@ describe('recordingLogger', () => {
       { level: 'info', event: 'started', fields: {} },
       { level: 'warn', event: 'breach-check-unknown', fields: { status: 503 } },
     ]);
+  });
+});
+
+describe('settableClock', () => {
+  it('tells the same time until it is moved on', () => {
+    const clock = settableClock(Temporal.Instant.from('2026-10-08T08:00:00Z'));
+    expect(clock.now()).toEqual(clock.now());
+    clock.advance({ minutes: 90 });
+    expect(clock.now()).toEqual(Temporal.Instant.from('2026-10-08T09:30:00Z'));
   });
 });

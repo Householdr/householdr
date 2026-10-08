@@ -1,4 +1,4 @@
-import type { LogFields, Logger, Mail, Mailer } from './ports';
+import type { Clock, LogFields, Logger, Mail, Mailer } from './ports';
 
 /** A mailer that keeps what it is asked to send, for use-case tests (TEST-11). */
 export function recordingMailer(): Mailer & { sent: Mail[] } {
@@ -28,4 +28,17 @@ export function recordingLogger(): Logger & { lines: LogLine[] } {
       lines.push({ level, event, fields });
     };
   return { lines, info: at('info'), warn: at('warn'), error: at('error') };
+}
+
+/** A clock that stands still until a test moves it on (TEST-11). */
+export function settableClock(start: Temporal.Instant): Clock & {
+  advance: (by: Temporal.DurationLike) => void;
+} {
+  let now = start;
+  return {
+    now: () => now,
+    advance: (by) => {
+      now = now.add(by);
+    },
+  };
 }
