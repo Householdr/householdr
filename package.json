@@ -16,6 +16,7 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc && pnpm --recursive typecheck",
     "test": "vitest run",
+    "test:e2e": "pnpm --filter @householdr/web test:e2e",
     "flags:check": "node scripts/check-flag-expiry.ts",
     "messages:check": "node scripts/check-messages.ts"
   },

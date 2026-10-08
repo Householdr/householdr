@@ -126,3 +126,64 @@ jobs:
           echo "${SHA256}  ${archive}" | sha256sum --check --strict
           tar -xzf "$archive" -C "$RUNNER_TEMP" gitleaks
           "$RUNNER_TEMP/gitleaks" git --no-banner --redact --log-opts="${BASE_SHA}..${HEAD_SHA}" .
+
+  # End-to-end and accessibility tests in Chromium, against the built app (ADR-0009 §4, §5).
+  e2e:
+    name: '🧪 Test: E2E'
+    needs: bundle
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: '📂 Source: Checkout'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: '📦 Dependencies: Setup'
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          cache: 'false'
+
+      - name: '🗃️ Artifact: Restore'
+        uses: ./.github/actions/restore-build
+
+      # The browser is cached per Playwright version; the system libraries it needs are not.
+      - name: '📦 Dependencies: Playwright version'
+        id: playwright
+        run: echo "version=$(pnpm --filter @householdr/web exec playwright --version)" >> "$GITHUB_OUTPUT"
+
+      - name: '📦 Dependencies: Browser cache'
+        id: browser
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      - name: '📦 Dependencies: Browser'
+        run: |
+          if [[ "$CACHED" == true ]]; then
+            pnpm --filter @householdr/web exec playwright install-deps chromium
+          else
+            pnpm --filter @householdr/web exec playwright install --with-deps chromium
+          fi
+        env:
+          CACHED: ${{ steps.browser.outputs.cache-hit }}
+
+      - name: '🧪 Test: E2E'
+        run: pnpm test:e2e
+
+      # Traces and screenshots of the failures, for a few days (ADR-0009 §9).
+      - name: '🗃️ Artifact: Upload report'
+        id: report
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report
+          retention-days: 3
+
+      - name: '🗃️ Artifact: Link report'
+        if: ${{ failure() && steps.report.outputs.artifact-url }}
+        env:
+          URL: ${{ steps.report.outputs.artifact-url }}
+        run: echo "End-to-end tests failed, see the [Playwright report]($URL)." >> "$GITHUB_STEP_SUMMARY"
