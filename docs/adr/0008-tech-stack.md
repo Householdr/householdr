@@ -253,6 +253,12 @@ The timing does not use one cron entry per household. Instead:
 Changing a household's settings needs no rescheduling: the next tick reads the new settings. Several
 worker replicas can run safely, because pg-boss hands each job to one of them.
 
+> **Clarification (2026-10-08):** the queue lives in **`packages/db`**: a job is queued inside the
+> transaction of the change that causes it, through the same database connection, so both commit or
+> neither does, and the worker takes it from there. **pg-boss's own tables** are created and
+> upgraded by the migration step, right after the schema's migrations; the web app and the worker
+> start pg-boss with its migrations off, so the schema only ever changes in that step.
+
 ### 11. Libraries for time, recurrence and the fit
 
 - **Time**: the `Temporal` API (via a polyfill where the runtime doesn't ship it yet) for every
