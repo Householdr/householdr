@@ -54,3 +54,14 @@ export async function mailTo(address: string, subject: string) {
     .toBeDefined();
   return text ?? '';
 }
+
+/** A link to sign up, in an e-mail's text. */
+const signUpLinkPattern = /https?:\/\/\S+\/sign-up\/\S+/;
+
+/** The link in the sign-up e-mail to `address`, waiting for it to arrive. */
+export async function signUpLink(address: string) {
+  const text = await mailTo(address, 'Confirm your e-mail address for Householdr');
+  const link = signUpLinkPattern.exec(text)?.[0];
+  if (!link) throw new Error(`No link in: ${text}`);
+  return link;
+}

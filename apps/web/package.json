@@ -18,6 +18,7 @@
     "@householdr/adapters": "workspace:*",
     "@householdr/application": "workspace:*",
     "@householdr/auth": "workspace:*",
+    "@householdr/domain": "workspace:*",
     "@internationalized/date": "catalog:",
     "@opentelemetry/api": "catalog:",
     "bits-ui": "catalog:",

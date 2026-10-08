@@ -394,6 +394,126 @@
     "note": "Link to the sign-up page, after an expired link.",
     "needsReview": ["nl"]
   },
+  "household-setup.intro": {
+    "note": "Under the heading of the first step of setting up a household (ADR-0007 §2). The household's settings, and the head's name and language, can all be changed later.",
+    "needsReview": ["nl"]
+  },
+  "household-setup.household": {
+    "note": "Heading of the group of the household's own fields: its name, country, time zone, language and week start day.",
+    "needsReview": ["nl"]
+  },
+  "household-setup.household-name": {
+    "note": "Label of the household's name field, such as a family name or a street. Everyone in the household sees it.",
+    "needsReview": ["nl"]
+  },
+  "household-setup.country": {
+    "note": "Label of the household's country, one of the EU and the EEA (ADR-0016 §1), filled in from the browser's time zone.",
+    "needsReview": ["nl"]
+  },
+  "household-setup.choose-country": {
+    "note": "The empty first choice of the country list, shown until a country is chosen.",
+    "needsReview": ["nl"]
+  },
+  "household-setup.time-zone": {
+    "note": "Label of the household's time zone: one of the chosen country's, such as Europe/Brussels.",
+    "needsReview": ["nl"]
+  },
+  "household-setup.language": {
+    "note": "Label of the household's language, which people invited to it start with (ADR-0016 §2). Each language is listed in its own name.",
+    "needsReview": ["nl"]
+  },
+  "household-setup.language-hint": {
+    "note": "Hint under the household's language, which differs from the head's own (ADR-0016 §2).",
+    "needsReview": ["nl"]
+  },
+  "household-setup.week-start": {
+    "note": "Label of the household's week start day, a list of weekday names; Monday unless changed (ADR-0007 §2).",
+    "needsReview": ["nl"]
+  },
+  "household-setup.you": {
+    "note": "Heading of the group of the head's own fields: their name and language, their age, and the terms.",
+    "needsReview": ["nl"]
+  },
+  "household-setup.your-name": {
+    "note": "Label of the head's name, which becomes their account's name and their profile's in the household (ADR-0007 §2, clarification).",
+    "needsReview": ["nl"]
+  },
+  "household-setup.your-language": {
+    "note": "Label of the language the head reads the app in, which can differ from the household's (ADR-0007 §2, clarification). Each language is listed in its own name.",
+    "needsReview": ["nl"]
+  },
+  "household-setup.adult": {
+    "note": "Checkbox: only an adult creates a household (ADR-0010 §1). A plain statement, not a question.",
+    "needsReview": ["nl"]
+  },
+  "household-setup.terms": {
+    "note": "Checkbox, only on an instance that has its own terms (ADR-0007 §2, clarification). The link below it opens them.",
+    "needsReview": ["nl"]
+  },
+  "household-setup.read-terms": {
+    "note": "Link under the terms checkbox to the instance's terms, which open in a new tab so the form stays as it is.",
+    "needsReview": ["nl"]
+  },
+  "household-setup.passkey": {
+    "note": "Above the button that creates the household: the account is secured with a passkey, which the device asks for next (ADR-0010 §3).",
+    "needsReview": ["nl"]
+  },
+  "household-setup.create": {
+    "note": "The step's button: the device makes a passkey, then the household and the account are created.",
+    "needsReview": ["nl"]
+  },
+  "household-setup.unsupported": {
+    "note": "In place of the button, in a browser without JavaScript or without passkeys. Calm: the link from the e-mail still works in another browser.",
+    "needsReview": ["nl"]
+  },
+  "household-setup.failed": {
+    "note": "Heading of the box at the top of the step that says why the household wasn't created.",
+    "needsReview": ["nl"]
+  },
+  "household-setup.check": {
+    "note": "Leads to the list of fields that need changing, each a link to its field.",
+    "needsReview": ["nl"]
+  },
+  "household-setup.not-created": {
+    "note": "When making the passkey was cancelled or refused, or creating the household failed. Calm: nothing was stored, and the link still works.",
+    "needsReview": ["nl"]
+  },
+  "household-setup.invalid-name": {
+    "note": "Next to the household's name, and in the summary, when it is empty or too long.",
+    "needsReview": ["nl"]
+  },
+  "household-setup.invalid-country": {
+    "note": "Next to the country, and in the summary, when none of the list is chosen.",
+    "needsReview": ["nl"]
+  },
+  "household-setup.invalid-time-zone": {
+    "note": "Next to the time zone, and in the summary, when it isn't one of the chosen country's.",
+    "needsReview": ["nl"]
+  },
+  "household-setup.invalid-language": {
+    "note": "Next to the household's language, and in the summary, when it isn't one of the offered ones.",
+    "needsReview": ["nl"]
+  },
+  "household-setup.invalid-week-start": {
+    "note": "Next to the week start day, and in the summary, when it isn't a day of the week.",
+    "needsReview": ["nl"]
+  },
+  "household-setup.invalid-head-name": {
+    "note": "Next to the head's name, and in the summary, when it is empty or too long.",
+    "needsReview": ["nl"]
+  },
+  "household-setup.invalid-head-language": {
+    "note": "Next to the head's language, and in the summary, when it isn't one of the offered ones.",
+    "needsReview": ["nl"]
+  },
+  "household-setup.invalid-adult": {
+    "note": "Next to the age checkbox, and in the summary, when it isn't ticked (ADR-0010 §1). States the rule without blame.",
+    "needsReview": ["nl"]
+  },
+  "household-setup.invalid-terms": {
+    "note": "Next to the terms checkbox, and in the summary, when it isn't ticked.",
+    "needsReview": ["nl"]
+  },
   "email.sign-up.subject": {
     "note": "Subject of the e-mail with a link to sign up (ADR-0010 §1). Householdr is the product name, not translated.",
     "needsReview": ["nl"]

@@ -1,5 +1,5 @@
 import { expect, expectAccessible, forceFlags, test } from './fixtures';
-import { forgetMail, mailTo, subjectsTo } from './mail';
+import { forgetMail, signUpLink, subjectsTo } from './mail';
 
 // Signing up starts by confirming the e-mail address with an e-mailed link (ADR-0010 §1,
 // clarifications), while the onboarding flag is off by default (CODE-20).
@@ -17,14 +17,6 @@ test('the sign-up pages aren’t there while their flag is off', async ({
   await page.goto('/sign-in');
   await expect(page.getByRole('link', { name: 'New here? Create a household' })).toHaveCount(0);
 });
-
-/** The link in the sign-up e-mail to `address`. */
-const signUpLink = async (address: string) => {
-  const text = await mailTo(address, 'Confirm your e-mail address for Householdr');
-  const link = /https?:\/\/\S+\/sign-up\/\S+/.exec(text)?.[0];
-  if (!link) throw new Error(`No link in: ${text}`);
-  return link;
-};
 
 /** What the sign-up page says once a link is asked for `email`, whether or not it has an account. */
 const sent = (email: string) =>
@@ -60,6 +52,7 @@ for (const javaScriptEnabled of [true, false]) {
       expect(response?.headers()['referrer-policy']).toBe('same-origin');
       await expect(page).toHaveTitle('Set up your household · Householdr');
       await expect(page.getByText(`Your e-mail address ${email} is confirmed.`)).toBeVisible();
+      await expect(page.getByRole('group', { name: 'Your household' })).toBeVisible();
       if (javaScriptEnabled) await expectAccessible(page, 'address confirmed');
     });
 

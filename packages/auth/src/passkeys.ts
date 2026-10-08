@@ -103,24 +103,18 @@ type PasskeyOptionsResult =
  * under the account's e-mail address in the person's password manager.
  */
 export async function passkeyOptions(
-  context: Pick<PasskeysContext, 'auth' | 'db'>,
+  context: Pick<PasskeysContext, 'auth' | 'db' | 'clock'>,
   session: Session,
   headers: Headers,
 ): Promise<PasskeyOptionsResult> {
+  if (!(await signedInRecently(context, session))) return { ok: false, error: 'confirm' };
   const email = await emailOf(context, session);
-  try {
-    const { headers: set, response } = await context.auth.api.generatePasskeyRegistrationOptions({
-      headers,
-      query: { name: email },
-      returnHeaders: true,
-    });
-    return { ok: true, options: response, cookies: cookiesFrom(set) };
-  } catch (error) {
-    if (isAPIError(error) && error.body?.code === 'SESSION_NOT_FRESH') {
-      return { ok: false, error: 'confirm' };
-    }
-    throw error;
-  }
+  const { headers: set, response } = await context.auth.api.generatePasskeyRegistrationOptions({
+    headers,
+    query: { name: email },
+    returnHeaders: true,
+  });
+  return { ok: true, options: response, cookies: cookiesFrom(set) };
 }
 
 /** What the browser sends back once it has made a passkey: WebAuthn's JSON form (CODE-12). */
@@ -146,6 +140,7 @@ export async function addPasskey(
 ): Promise<AddPasskeyResult> {
   const parsed = v.safeParse(newPasskey, input);
   if (!parsed.success) return { ok: false, error: 'failed' };
+  if (!(await signedInRecently(context, session))) return { ok: false, error: 'confirm' };
   let added: { id: string };
   try {
     added = await context.auth.api.verifyPasskeyRegistration({
@@ -154,7 +149,6 @@ export async function addPasskey(
     });
   } catch (error) {
     if (!isAPIError(error)) throw error;
-    if (error.body?.code === 'SESSION_NOT_FRESH') return { ok: false, error: 'confirm' };
     return { ok: false, error: 'failed' };
   }
   await context.db.transaction(async (tx) => {

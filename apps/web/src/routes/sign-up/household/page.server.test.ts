@@ -1,37 +1,22 @@
-import { jobQueue, type JobQueue } from '@householdr/application';
-import { prepareAccountEmail, requestSignUp } from '@householdr/auth';
-import { testSignInContext } from '@householdr/auth/testing';
+import type { HouseholdSignUpContext } from '@householdr/auth';
+import { signUpLinkTo, testSignInContext } from '@householdr/auth/testing';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { load } from './+page.server';
 
 // The first step of setting up a household knows whether the sign-up link still works (ADR-0010
-// §1, clarification), against a real database (TEST-11).
+// §1, clarification), and asks to accept the instance's terms only where it has them (ADR-0007
+// §2, clarification), against a real database (TEST-11).
 
 let test: Awaited<ReturnType<typeof testSignInContext>>;
-let queue: JobQueue;
-const context = () => ({ ...test.context, queue });
-vi.mock('#lib/server/auth.js', () => ({ authContext: () => Promise.resolve(context()) }));
+let terms: HouseholdSignUpContext['terms'] = null;
+vi.mock('#lib/server/auth.js', () => ({
+  authContext: () => Promise.resolve({ ...test.context, terms }),
+}));
 
 beforeAll(async () => {
   test = await testSignInContext();
-  queue = await jobQueue(test.context.db).start();
 });
-afterAll(async () => {
-  await queue.stop({ graceful: false });
-  await test.close();
-});
-
-/** The token of a sign-up link to `email`, as the worker would send it. */
-const linkTo = async (email: string) => {
-  await requestSignUp(context(), { email }, { address: '192.0.2.1' });
-  const { rows } = await test.context.db.$client.query<{ id: string }>(
-    'select id from auth.account_emails where email = $1',
-    [email],
-  );
-  const prepared = await prepareAccountEmail(test.context, rows[0]?.id ?? '');
-  if (prepared?.kind !== 'sign-up') throw new Error('No link');
-  return prepared.link.split('/').at(-1) ?? '';
-};
+afterAll(() => test.close());
 
 /** Opens the page with `token` in the cookie, the flag on unless said otherwise. */
 const open = (token: string | undefined, flags = { onboarding: true }) =>
@@ -47,13 +32,25 @@ describe('setting up a household, from a sign-up link (ADR-0007 §2)', () => {
     await expect(open('a-token', { onboarding: false })).rejects.toMatchObject({ status: 404 });
   });
 
-  it('knows the address the link was sent to', async () => {
-    const token = await linkTo('new@example.org');
-    expect(await open(token)).toEqual({ email: 'new@example.org' });
+  it('knows the address the link confirmed, and offers the languages households can have (ADR-0016 §1)', async () => {
+    const token = await signUpLinkTo(test.context, 'new@example.org');
+    expect(await open(token)).toEqual({
+      email: 'new@example.org',
+      languages: ['en'],
+      terms: null,
+    });
   });
 
   it('says when there is no link, or one that doesn’t work', async () => {
-    expect(await open(undefined)).toEqual({ email: null });
-    expect(await open('made-up')).toEqual({ email: null });
+    expect(await open(undefined)).toMatchObject({ email: null });
+    expect(await open('made-up')).toMatchObject({ email: null });
+  });
+
+  it('links to the instance’s terms, where it has them (ADR-0021 §5, clarification)', async () => {
+    terms = { url: 'https://householdr.example.org/terms', version: '2026-10-01' };
+    const token = await signUpLinkTo(test.context, 'terms@example.org');
+    expect(await open(token)).toMatchObject({ terms: 'https://householdr.example.org/terms' });
+    terms = null;
+    expect(await open(token)).toMatchObject({ terms: null });
   });
 });

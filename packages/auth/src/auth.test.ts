@@ -25,7 +25,10 @@ afterAll(() => close());
 
 const newAccount = async (email: string) => {
   const context = await auth.$context;
-  return context.internalAdapter.createUser({ name: 'Robin', email }, { method: 'email-password' });
+  return context.internalAdapter.createUser(
+    { name: 'Robin', email, culture: 'en-BE' },
+    { method: 'email-password' },
+  );
 };
 
 describe('the auth tables (ADR-0010)', () => {
