@@ -113,6 +113,34 @@ export const members = pgTable(
   ],
 );
 
+/**
+ * A share for a period, both days included, which replaces a member's share on the days it covers
+ * (ADR-0001 §4, clarifications). A member's never overlap, which adding one checks with the member
+ * locked. Never a reason for it (ADR-0012 §2).
+ */
+export const temporaryShares = pgTable(
+  'temporary_shares',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    memberId: uuid()
+      .notNull()
+      .references(() => members.id, { onDelete: 'cascade' }),
+    firstDay: date().notNull(),
+    lastDay: date().notNull(),
+    /** In whole percent of a full share, as `members.share_percent`. */
+    percent: smallint().notNull(),
+  },
+  (t) => [
+    householdOnly(t.householdId),
+    index('temporary_shares_member').on(t.householdId, t.memberId, t.firstDay),
+    check('temporary_shares_days', sql`${t.firstDay} <= ${t.lastDay}`),
+    check('temporary_shares_percent', sql`${t.percent} between 0 and 100`),
+  ],
+);
+
 /** What an entry of the activity log says was done (ADR-0018 §5). */
 export type ActivityAction =
   /** A head changed the household's name, time zone, language or country (ADR-0007 §2). */

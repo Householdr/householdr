@@ -227,5 +227,22 @@
   "shares.failed": "Opslaan is niet gelukt",
   "shares.check": "Controleer het aandeel dat je hebt ingevuld.",
   "shares.invalid": "Vul een geheel getal van {min} tot {max} in.",
-  "shares.conflict": "{name} is net veranderd, dus je wijziging is niet opgeslagen. Het aandeel is deze week {share}. Wat je hebt ingevuld, staat nog in het formulier, zodat je het opnieuw kunt opslaan."
+  "shares.conflict": "{name} is net veranderd, dus je wijziging is niet opgeslagen. Het aandeel is deze week {share}. Wat je hebt ingevuld, staat nog in het formulier, zodat je het opnieuw kunt opslaan.",
+  "shares.temporary-this-week": "{share} deze week, met een tijdelijk aandeel",
+  "shares.temporary-list": "Tijdelijke aandelen van {name}",
+  "shares.temporary": "{share} voor {days}",
+  "shares.remove-temporary": "{share} van {name} voor {days} verwijderen",
+  "shares.add-temporary": "Een tijdelijk aandeel toevoegen voor {name}",
+  "shares.temporary-hint": "Op de dagen die je kiest, beide meegerekend, vervangt het het aandeel. Het kan deze week beginnen, en tot een jaar vooruit. Er wordt geen reden gevraagd of bewaard.",
+  "shares.first-day": "Eerste dag",
+  "shares.last-day": "Laatste dag",
+  "shares.temporary-field": "Aandeel op die dagen (%)",
+  "shares.add-temporary-button": "Tijdelijk aandeel van {name} toevoegen",
+  "shares.added-temporary": "Het tijdelijke aandeel van {name} is toegevoegd.",
+  "shares.removed-temporary": "Het tijdelijke aandeel van {name} is verwijderd.",
+  "shares.check-temporary": "Controleer het tijdelijke aandeel dat je hebt ingevuld.",
+  "shares.invalid-first-day": "Kies een dag van {earliest} tot {latest}.",
+  "shares.invalid-last-day": "Kies een dag van de eerste dag tot {latest}.",
+  "shares.overlap": "{name} heeft al een tijdelijk aandeel van {share} voor {days}, en twee kunnen geen dag delen. Kies andere dagen, of verwijder dat eerst.",
+  "shares.overlap-days": "Kies dagen buiten {days}."
 }

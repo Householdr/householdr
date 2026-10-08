@@ -31,6 +31,27 @@ export interface ShareSettings {
 }
 
 /**
+ * The days a new temporary share can cover, given `today` in the household's time zone: from the
+ * first day of this plan week, which has no plan yet, up to a year from today (ADR-0001 §4).
+ */
+export function temporaryShareDays(today: Temporal.PlainDate, calendar: HouseholdCalendar) {
+  return { earliest: planWeek(today, calendar).start, latest: today.add({ years: 1 }) };
+}
+
+/**
+ * Whether two temporary shares have a day in common, which a member's never do (ADR-0001 §4,
+ * clarification).
+ */
+export function overlap(
+  a: Pick<TemporaryShare, 'from' | 'to'>,
+  b: Pick<TemporaryShare, 'from' | 'to'>,
+): boolean {
+  return (
+    Temporal.PlainDate.compare(a.from, b.to) <= 0 && Temporal.PlainDate.compare(b.from, a.to) <= 0
+  );
+}
+
+/**
  * A member's share for the plan week of `date`: the override or the default on the week's first
  * day, replaced by a temporary share on the days it covers, averaged over the week's days: seven,
  * or the transition week's actual length (ADR-0001 §4, ADR-0006 §1, clarifications).

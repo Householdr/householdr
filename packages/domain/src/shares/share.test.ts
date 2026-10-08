@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { HouseholdCalendar } from '../schedules/week';
-import { ageShare, weekShare, type ShareSettings } from './share';
+import { ageShare, overlap, temporaryShareDays, weekShare, type ShareSettings } from './share';
 
 const date = (iso: string) => Temporal.PlainDate.from(iso);
 const mondays: HouseholdCalendar = { timeZone: 'Europe/Brussels', weekStartDay: 1 };
@@ -114,6 +114,38 @@ describe('weekShare (ADR-0001 §4)', () => {
     expect(weekShare(exams, week, toFridays)).toBeCloseTo((2 + 2 * 0.5) / 4);
     expect(weekShare(child('2010-10-14'), week, toFridays)).toBeCloseTo(
       ageShare(date('2010-10-14'), week),
+    );
+  });
+});
+
+describe('temporaryShareDays (ADR-0001 §4)', () => {
+  it('runs from the first day of this plan week to a year from today', () => {
+    expect(temporaryShareDays(date('2026-10-15'), mondays)).toEqual({
+      earliest: date('2026-10-12'),
+      latest: date('2027-10-15'),
+    });
+    expect(temporaryShareDays(date('2026-10-15'), sundays)).toEqual({
+      earliest: date('2026-10-11'),
+      latest: date('2027-10-15'),
+    });
+  });
+});
+
+describe('overlap (ADR-0001 §4, clarification)', () => {
+  const period = (from: string, to: string) => ({ from: date(from), to: date(to) });
+
+  it('is a day in common, both ends included', () => {
+    expect(overlap(period('2026-10-12', '2026-10-18'), period('2026-10-18', '2026-10-20'))).toBe(
+      true,
+    );
+    expect(overlap(period('2026-10-12', '2026-10-18'), period('2026-10-14', '2026-10-14'))).toBe(
+      true,
+    );
+    expect(overlap(period('2026-10-12', '2026-10-18'), period('2026-10-19', '2026-10-20'))).toBe(
+      false,
+    );
+    expect(overlap(period('2026-10-19', '2026-10-20'), period('2026-10-12', '2026-10-18'))).toBe(
+      false,
     );
   });
 });

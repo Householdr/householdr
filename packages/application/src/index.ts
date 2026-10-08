@@ -25,7 +25,14 @@ export {
   type HouseholdMember,
   type HouseholdsContext,
 } from './households/membership';
-export { changeShare, householdShares, type MemberShare, type ShareChange } from './shares/shares';
+export type { MemberShare, PlannedShare } from './shares/member-share';
+export { changeShare, householdShares, type ShareChange } from './shares/shares';
+export {
+  addTemporaryShare,
+  removeTemporaryShare,
+  type TemporaryShareField,
+  type TemporaryShareInput,
+} from './shares/temporary-shares';
 // The household member as permissions see them, which the web app's guard keeps per request.
 export type { Member, Role } from '@householdr/domain';
 export { defaultFlags, flagValues } from './flags/values';

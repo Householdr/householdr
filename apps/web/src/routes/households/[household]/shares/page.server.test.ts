@@ -57,19 +57,24 @@ const opened = async (locals: object) => {
   }
 };
 
-const changed = async (locals: object, fields: Record<string, string>) => {
-  const body = new FormData();
-  for (const [name, value] of Object.entries(fields)) body.set(name, value);
-  const request = new Request('https://householdr.example.org/', { method: 'POST', body });
-  try {
-    return await actions.change({ locals, request } as unknown as Parameters<
-      typeof actions.change
-    >[0]);
-  } catch (thrown) {
-    if (isHttpError(thrown)) return thrown.status;
-    throw thrown;
-  }
-};
+const posted =
+  (action: 'change' | 'addTemporary' | 'removeTemporary') =>
+  async (locals: object, fields: Record<string, string>) => {
+    const body = new FormData();
+    for (const [name, value] of Object.entries(fields)) body.set(name, value);
+    const request = new Request('https://householdr.example.org/', { method: 'POST', body });
+    try {
+      return await actions[action]({ locals, request } as unknown as Parameters<
+        (typeof actions)[typeof action]
+      >[0]);
+    } catch (thrown) {
+      if (isHttpError(thrown)) return thrown.status;
+      throw thrown;
+    }
+  };
+const changed = posted('change');
+const added = posted('addTemporary');
+const removed = posted('removeTemporary');
 
 /** Sam's id, from the page. */
 const samIn = async (locals: object) => {
@@ -89,6 +94,10 @@ describe('the shares page (ADR-0001 §4, ADR-0018 §4)', () => {
       ],
       mayChange: true,
       range: { min: 0, max: 100 },
+      temporaryDays: {
+        earliest: expect.any(String) as unknown,
+        latest: expect.any(String) as unknown,
+      },
       you: head.membership.member.id,
     });
   });
@@ -151,5 +160,68 @@ describe('the shares page (ADR-0001 §4, ADR-0018 §4)', () => {
       status: 409,
       data: { member: sam, entered: '70', conflict: { id: sam, percent: 50, set: 50, version: 2 } },
     });
+  });
+});
+
+describe('temporary shares on the shares page (ADR-0001 §4, clarifications)', () => {
+  /** A week's days from a year on, which any test's today allows. */
+  const ahead = (days: number) => Temporal.Now.plainDateISO('Europe/Brussels').add({ days });
+
+  it('adds one and removes it, and says so', async () => {
+    const head = await headOf();
+    const sam = await samIn(head);
+    const days = { firstDay: ahead(7).toString(), lastDay: ahead(13).toString() };
+    expect(await added(head, { member: sam, ...days, percent: '50' })).toEqual({
+      added: { id: sam, name: 'Sam' },
+    });
+    const page = await opened(head);
+    const planned =
+      typeof page === 'object' ? page.shares.find(({ id }) => id === sam)?.temporary : undefined;
+    expect(planned).toEqual([{ id: expect.any(String) as unknown, ...days, percent: 50 }]);
+    expect(await removed(head, { id: planned?.[0]?.id ?? '' })).toEqual({
+      removed: { name: 'Sam' },
+    });
+    expect(await removed(head, { id: planned?.[0]?.id ?? '' })).toBe(404);
+  });
+
+  it('keeps what was entered, and says which fields aren’t valid or what it overlaps (UI-10)', async () => {
+    const head = await headOf();
+    const sam = await samIn(head);
+    const values = { firstDay: ahead(7).toString(), lastDay: ahead(6).toString(), percent: '' };
+    const refused = await added(head, { member: sam, ...values });
+    expect(isActionFailure(refused) && refused).toMatchObject({
+      status: 400,
+      data: { temporary: { member: sam, values, invalid: ['lastDay', 'percent'] } },
+    });
+    const days = { firstDay: ahead(7).toString(), lastDay: ahead(13).toString() };
+    await added(head, { member: sam, ...days, percent: '50' });
+    const late = await added(head, { member: sam, ...days, percent: ' 20 ' });
+    expect(isActionFailure(late) && late).toMatchObject({
+      status: 409,
+      data: {
+        temporary: {
+          member: sam,
+          values: { ...days, percent: '20' },
+          invalid: [],
+          overlapping: { ...days, percent: 50 },
+        },
+      },
+    });
+  });
+
+  it('is for heads only', async () => {
+    const head = await headOf();
+    const sam = await samIn(head);
+    const adult = {
+      ...head,
+      membership: { ...head.membership, member: { ...head.membership.member, role: 'adult' } },
+    };
+    const days = { firstDay: ahead(7).toString(), lastDay: ahead(13).toString() };
+    expect(await added(adult, { member: sam, ...days, percent: '50' })).toBe(403);
+    await added(head, { member: sam, ...days, percent: '50' });
+    const page = await opened(head);
+    const [planned] =
+      (typeof page === 'object' ? page.shares.find(({ id }) => id === sam)?.temporary : []) ?? [];
+    expect(await removed(adult, { id: planned?.id ?? '' })).toBe(403);
   });
 });

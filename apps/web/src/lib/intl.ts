@@ -6,6 +6,16 @@ export function countryName(code: string, locale: string) {
   return new Intl.DisplayNames([locale], { type: 'region' }).of(code) ?? code;
 }
 
+/**
+ * The calendar day `date` (`YYYY-MM-DD`) in `locale`, such as “Thursday, October 8, 2026”. It is
+ * already a day in the household's time zone, such as a planned absence's, so no zone shifts it.
+ */
+export function calendarDay(date: string, locale: string) {
+  const [year = 0, month = 1, day = 1] = date.split('-').map(Number);
+  const format = new Intl.DateTimeFormat(locale, { dateStyle: 'full', timeZone: 'UTC' });
+  return format.format(Date.UTC(year, month - 1, day));
+}
+
 /** The language `code` in its own name, such as “Nederlands” (ADR-0016 §2). */
 export function languageName(code: string) {
   const name = new Intl.DisplayNames([code], { type: 'language' }).of(code) ?? code;
@@ -30,3 +40,15 @@ export function dayOf(at: number, timeZone: string, locale: string) {
 export function percentage(percent: number, locale: string) {
   return new Intl.NumberFormat(locale, { style: 'percent' }).format(percent / 100);
 }
+
+/** The days from `first` to `last` (`YYYY-MM-DD`) in `locale`, such as “12–18 October 2026”. */
+export function calendarDays(first: string, last: string, locale: string) {
+  const format = new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' });
+  return format.formatRange(utc(first), utc(last));
+}
+
+// A calendar day as the instant it starts in UTC, which formats as that day in UTC.
+const utc = (day: string) => {
+  const [year = 0, month = 1, date = 1] = day.split('-').map(Number);
+  return Date.UTC(year, month - 1, date);
+};
