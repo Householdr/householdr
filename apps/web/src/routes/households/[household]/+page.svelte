@@ -1,5 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
+  import { page } from '$app/state';
   import ErrorSummary from '#lib/components/ErrorSummary.svelte';
   import { Button } from '#lib/components/ui/button/index.js';
   import { Input } from '#lib/components/ui/input/index.js';
@@ -75,6 +76,15 @@
         <Button type="submit" class="w-full">{m['household.add']()}</Button>
       </form>
     </section>
+  {/if}
+
+  {#if data.flags.tasks}
+    <a
+      href="/households/{page.params.household}/tasks"
+      class="flex min-h-11 items-center self-start underline underline-offset-4"
+    >
+      {m['tasks.title']()}
+    </a>
   {/if}
 
   <a href="/security" class="underline underline-offset-4">{m['security.title']()}</a>

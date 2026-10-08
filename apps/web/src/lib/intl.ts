@@ -20,3 +20,12 @@ export function weekdayName(day: number, locale: string) {
   const date = Date.UTC(2026, 9, 4 + day);
   return new Intl.DateTimeFormat(locale, { weekday: 'long', timeZone: 'UTC' }).format(date);
 }
+
+/** A number of minutes in words, in `locale`, such as “30 minutes”. */
+export function minutesText(minutes: number, locale: string) {
+  return new Intl.NumberFormat(locale, {
+    style: 'unit',
+    unit: 'minute',
+    unitDisplay: 'long',
+  }).format(minutes);
+}

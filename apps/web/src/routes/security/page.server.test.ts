@@ -56,7 +56,13 @@ const signedIn = async (devices = 1) => {
   return session;
 };
 
-const on = { 'sign-in': true, 'password-reset': false, onboarding: false, passkeys: false };
+const on = {
+  'sign-in': true,
+  'password-reset': false,
+  onboarding: false,
+  passkeys: false,
+  tasks: false,
+};
 type Locals = App.Locals;
 const loadFor = (locals: Partial<Locals>, address = 'https://householdr.example.org/security') =>
   load({
@@ -96,7 +102,13 @@ const devicesOf = async (session: Locals['session']) => (await loadFor({ session
 describe('the security page’s devices (ADR-0010 §6)', () => {
   it('isn’t there while sign-in’s flag is off, and needs a session', async () => {
     const thrown = await loadFor({
-      flags: { 'sign-in': false, 'password-reset': false, onboarding: false, passkeys: false },
+      flags: {
+        'sign-in': false,
+        'password-reset': false,
+        onboarding: false,
+        passkeys: false,
+        tasks: false,
+      },
     }).catch((e: unknown) => e);
     expect(isHttpError(thrown, 404)).toBe(true);
     const signedOut = await loadFor({}).catch((e: unknown) => e);
