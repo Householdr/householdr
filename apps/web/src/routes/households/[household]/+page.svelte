@@ -1,16 +1,19 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import ErrorSummary from '#lib/components/ErrorSummary.svelte';
+  import QrCode from '#lib/components/QrCode.svelte';
   import { Button } from '#lib/components/ui/button/index.js';
   import { Input } from '#lib/components/ui/input/index.js';
   import { Label } from '#lib/components/ui/label/index.js';
   import { useCopy } from '#lib/hooks/use-copy.svelte.js';
+  import { useShare } from '#lib/hooks/use-share.svelte.js';
   import { m } from '#lib/paraglide/messages.js';
   import type { Role } from '@householdr/application';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
   const clipboard = useCopy();
+  const sharing = useShare();
 
   /** The name of the member `id`, for the messages about their invitation. */
   const nameOf = (id: string) => data.members.find((member) => member.id === id)?.name ?? '';
@@ -74,10 +77,32 @@
                 <p id="link-help-{member.id}" class="text-sm text-muted-foreground">
                   {m['household.link-help']({ name: member.name })}
                 </p>
+                {#if sharing.supported}
+                  <Button
+                    type="button"
+                    onclick={() =>
+                      sharing.share({
+                        title: m['household.share-title']({ household: data.name }),
+                        text: m['household.share-text']({ household: data.name }),
+                        url: link,
+                      })}
+                  >
+                    {m['household.share']()}
+                  </Button>
+                {/if}
                 {#if clipboard.supported}
-                  <Button type="button" variant="outline" onclick={() => clipboard.copy(form.link)}>
+                  <Button type="button" variant="outline" onclick={() => clipboard.copy(link)}>
                     {m['household.copy']()}
                   </Button>
+                {/if}
+                <!-- For when both are in the same room (ADR-0010 §5). -->
+                <p class="text-sm">{m['household.qr-help']({ name: member.name })}</p>
+                {#if form.qr}
+                  <QrCode
+                    size={form.qr.size}
+                    path={form.qr.path}
+                    label={m['household.qr']({ name: member.name })}
+                  />
                 {/if}
               </div>
             {:else if member.invitationDaysLeft !== null}

@@ -23,7 +23,8 @@
     "@opentelemetry/api": "catalog:",
     "bits-ui": "catalog:",
     "cn": "catalog:",
-    "tailwind-variants": "catalog:"
+    "tailwind-variants": "catalog:",
+    "uqr": "catalog:"
   },
   "devDependencies": {
     "@axe-core/playwright": "catalog:",

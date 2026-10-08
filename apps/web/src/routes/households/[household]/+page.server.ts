@@ -1,6 +1,7 @@
 import { addAdult, invite, revokeInvitation, viewHousehold } from '@householdr/application';
 import { error, fail } from '@sveltejs/kit';
 import { authContext } from '#lib/server/auth.js';
+import { qrCode } from '#lib/server/qr-code.js';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
@@ -57,7 +58,9 @@ export const actions = {
     const member = await memberIn(request);
     const result = await invite(context, { member });
     if (result.ok) {
-      return { invited: member, link: new URL(`/invitations/${result.token}`, url).href };
+      const link = new URL(`/invitations/${result.token}`, url).href;
+      // Drawn from plain values on the page, for a phone in the same room (ADR-0010 §5).
+      return { invited: member, link, qr: qrCode(link) };
     }
     if (result.error === 'not-allowed') error(403);
     return fail(404, { notInvitable: true });

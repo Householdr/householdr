@@ -49,7 +49,7 @@ async function inviteKim(
   await page.getByRole('button', { name: 'Add', exact: true }).click();
   await expect(membersOf(page)).toHaveCount(2);
   await page.getByRole('button', { name: 'Invite Kim' }).click();
-  const link = page.getByLabel('Invitation link for Kim');
+  const link = page.getByLabel('Invitation link for Kim', { exact: true });
   await expect(link).toHaveAccessibleDescription(/It works once, for 7 days\./);
   return { id, link: await link.inputValue() };
 }
@@ -67,6 +67,10 @@ for (const javaScriptEnabled of [true, false]) {
     }, testInfo) => {
       const { id, link } = await inviteKim(page, accounts, account);
       expect(link).toMatch(/\/invitations\/[\w-]{43}$/);
+      // For when both are in the same room (ADR-0010 §5), with or without JavaScript.
+      await expect(
+        page.getByRole('img', { name: 'QR code of the invitation link for Kim' }),
+      ).toBeVisible();
       if (javaScriptEnabled) await expectAccessible(page, 'link made');
 
       const sam = { email: `${testInfo.testId}-sam@example.org`, password };
@@ -112,7 +116,7 @@ for (const javaScriptEnabled of [true, false]) {
     }) => {
       const first = await inviteKim(page, accounts, account);
       await page.getByRole('button', { name: 'Make a new link for Kim' }).click();
-      const field = page.getByLabel('Invitation link for Kim');
+      const field = page.getByLabel('Invitation link for Kim', { exact: true });
       await expect(field).not.toHaveValue(first.link);
       const second = await field.inputValue();
       await page.goto(`/households/${first.id}`);
@@ -254,4 +258,41 @@ test('says so where the browser can’t make a passkey', async ({
     invitee.getByRole('button', { name: 'Create my account with a passkey and join' }),
   ).toHaveCount(0);
   await invitee.context().close();
+});
+
+test('shares the link through the device’s share sheet where it has one', async ({
+  page,
+  accounts,
+  account,
+}) => {
+  // A share sheet that keeps what it was given, as a phone's would pass it on.
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'share', {
+      value: (data: ShareData) => {
+        Object.assign(window, { shared: data });
+        return Promise.resolve();
+      },
+    });
+  });
+  const { link } = await inviteKim(page, accounts, account);
+  await page.getByRole('button', { name: 'Share the link' }).click();
+  const shared = await page.evaluate(() => (window as unknown as { shared: ShareData }).shared);
+  expect(shared).toEqual({
+    title: 'Join Ash Lane on Householdr',
+    text: 'Here’s your invitation to join Ash Lane on Householdr, where we share the chores fairly.',
+    url: link,
+  });
+});
+
+test('offers no share button where the browser has no share sheet', async ({
+  page,
+  accounts,
+  account,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'share', { value: undefined });
+  });
+  await inviteKim(page, accounts, account);
+  await expect(page.getByRole('button', { name: 'Copy the link' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Share the link' })).toHaveCount(0);
 });

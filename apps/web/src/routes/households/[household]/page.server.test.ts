@@ -167,6 +167,8 @@ describe('invitation links on a household’s page (ADR-0010 §5)', () => {
       link: expect.stringMatching(
         /^https:\/\/householdr\.example\.org\/invitations\/[\w-]{43}$/,
       ) as string,
+      // The same link as a QR code, for a phone in the same room.
+      qr: { size: expect.any(Number) as number, path: expect.stringMatching(/^M\d/) as string },
     });
     expect(await opened(locals)).toMatchObject({
       members: [{}, { id: kim, invitable: true, invitationDaysLeft: 7 }],

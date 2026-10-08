@@ -745,5 +745,25 @@
   "invitation.invalid-terms": {
     "note": "Why the form was refused: the terms weren't accepted. Uses the same verb as the checkbox (household-setup.terms).",
     "needsReview": ["nl"]
+  },
+  "household.share": {
+    "note": "Button that opens the device's share sheet with the invitation link (only where the browser has one).",
+    "needsReview": ["nl"]
+  },
+  "household.share-title": {
+    "note": "Title of the shared invitation, as messaging apps show it. {household} is the household's name.",
+    "needsReview": ["nl"]
+  },
+  "household.share-text": {
+    "note": "Text that goes with the shared invitation link. {household} is the household's name.",
+    "needsReview": ["nl"]
+  },
+  "household.qr-help": {
+    "note": "Above the QR code: the invited person can scan it with their phone's camera. {name} is the profile's name.",
+    "needsReview": ["nl"]
+  },
+  "household.qr": {
+    "note": "Accessible name of the QR code image. {name} is the profile's name.",
+    "needsReview": ["nl"]
   }
 }
