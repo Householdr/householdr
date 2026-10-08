@@ -175,7 +175,13 @@ export const boundaries = defineConfig(
 );
 
 export default defineConfig(
-  globalIgnores(['**/dist/', '**/build/', '**/coverage/', '**/.svelte-kit/']),
+  globalIgnores([
+    '**/dist/',
+    '**/build/',
+    '**/coverage/',
+    '**/.svelte-kit/',
+    '**/src/lib/paraglide/',
+  ]),
   js.configs.recommended,
   tseslint.configs.strictTypeChecked,
   {
