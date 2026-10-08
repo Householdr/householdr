@@ -2,6 +2,7 @@
 import comments from '@eslint-community/eslint-plugin-eslint-comments/configs';
 import js from '@eslint/js';
 import prettier from 'eslint-config-prettier';
+import svelte from 'eslint-plugin-svelte';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import tseslint from 'typescript-eslint';
 
@@ -187,11 +188,22 @@ export default defineConfig(
   ]),
   js.configs.recommended,
   tseslint.configs.strictTypeChecked,
+  svelte.configs.recommended,
   {
     languageOptions: {
-      parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+        extraFileExtensions: ['.svelte'],
+      },
     },
     linterOptions: { reportUnusedDisableDirectives: 'error' },
+  },
+  {
+    files: ['**/*.svelte', '**/*.svelte.ts'],
+    languageOptions: { parserOptions: { parser: tseslint.parser } },
+    // The Svelte compiler's warnings, accessibility ones included, are errors (ADR-0011 §8).
+    rules: { 'svelte/valid-compile': 'error' },
   },
   // Disabling a rule inline needs a reason (CODE-24).
   comments.recommended,
@@ -199,5 +211,6 @@ export default defineConfig(
   // Non-null assertions are allowed in tests only (CODE-1).
   { files: ['**/*.test.ts'], rules: { '@typescript-eslint/no-non-null-assertion': 'off' } },
   boundaries,
+  svelte.configs.prettier,
   prettier,
 );
