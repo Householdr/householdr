@@ -63,6 +63,11 @@ The constraints come from earlier decisions: no third-party analytics and no dat
 - `web` and `worker` use Flipt's JavaScript client (`@flipt-io/flipt-client`) with **local
   evaluation**: the client holds a snapshot of the flag rules and Flipt **streams** changes to it. No
   network call per request, and if Flipt is briefly unavailable, the last snapshot keeps working.
+
+  > **Clarification (2026-10-08):** `@flipt-io/flipt-client` is deprecated. Its successor,
+  > `@flipt-io/flipt-client-js`, does the same under the same MIT licence: it evaluates locally (in
+  > WebAssembly) and receives Flipt v2's changes over a stream of server-sent events. The app uses
+  > the successor.
 - **The household is the unit**: the entity ID is always the household's ID, so every member of a
   household sees the same thing, and the same household always lands in the same rollout bucket. The
   plan is shared; two members seeing different versions of it would be confusing and, for anything
