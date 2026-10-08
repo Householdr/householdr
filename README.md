@@ -30,6 +30,7 @@ a household would see. There is nothing to run or self-host yet: self-hosting do
 | `packages/domain` | The business rules, as pure functions |
 | `packages/db` | Schema, migrations and queries |
 | `packages/application` | Use cases: authorise, validate, run the transaction, emit events |
+| `packages/adapters` | The outside world: the guarded outbound client, and the implementations of the use cases' ports |
 | `apps/web` | The SvelteKit app: pages, and routes that call use cases |
 | `apps/worker` | Background jobs that call use cases |
 
