@@ -1,6 +1,12 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { dueDate, dueness, type AwayPeriod, type SinceLastDone } from './since-last-done';
+import {
+  dueDate,
+  dueness,
+  spreadFirstDueDates,
+  type AwayPeriod,
+  type SinceLastDone,
+} from './since-last-done';
 
 // Invariants of the "since last done" clock over generated completions and away periods (TEST-1).
 
@@ -72,6 +78,66 @@ describe('since last done invariants (ADR-0004 §8, ADR-0005 §5)', () => {
         expect(progress).toBeGreaterThanOrEqual(0);
         expect(progress).toBeLessThanOrEqual(1);
       }),
+    );
+  });
+});
+
+describe('spreading first due dates (ADR-0007 §6)', () => {
+  const tasks = fc.uniqueArray(
+    fc.record({
+      id: fc.string({ minLength: 1, maxLength: 4 }),
+      every: fc.record({
+        count: fc.integer({ min: 1, max: 12 }),
+        unit: fc.constantFrom('days', 'weeks', 'months'),
+      }),
+    }),
+    { selector: (task) => task.id, maxLength: 12 },
+  );
+
+  it('gives every task one date, within its interval from the start', () => {
+    fc.assert(
+      fc.property(tasks, day, (list, from) => {
+        const spread = spreadFirstDueDates(list, from);
+        expect(spread.size).toBe(list.length);
+        for (const task of list) {
+          const first = spread.get(task.id);
+          expect(first).toBeDefined();
+          if (!first) return;
+          const interval = dueDate({ every: task.every, start: from }, from, []);
+          expect(Temporal.PlainDate.compare(first, from)).toBeGreaterThanOrEqual(0);
+          expect(Temporal.PlainDate.compare(first, interval)).toBeLessThan(0);
+        }
+      }),
+    );
+  });
+
+  it('does not depend on the order of the tasks', () => {
+    fc.assert(
+      fc.property(tasks, day, (list, from) => {
+        const forward = [...spreadFirstDueDates(list, from)].map(
+          ([id, d]) => `${id}${d.toString()}`,
+        );
+        const backward = [...spreadFirstDueDates([...list].reverse(), from)].map(
+          ([id, d]) => `${id}${d.toString()}`,
+        );
+        expect(backward.sort()).toEqual(forward.sort());
+      }),
+    );
+  });
+
+  it('gives tasks with the same interval different days, when it has enough of them', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 1, max: 12 }),
+        fc.integer({ min: 0, max: 60 }),
+        day,
+        (n, extra, from) => {
+          const every = { count: n + extra, unit: 'days' } as const;
+          const list = Array.from({ length: n }, (_, i) => ({ id: `task-${String(i)}`, every }));
+          const days = [...spreadFirstDueDates(list, from).values()].map((d) => d.toString());
+          expect(new Set(days).size).toBe(n);
+        },
+      ),
     );
   });
 });
