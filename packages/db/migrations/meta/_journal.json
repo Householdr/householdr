@@ -71,6 +71,13 @@
       "when": 1791483192668,
       "tag": "0009_database-roles",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791483838620,
+      "tag": "0010_account-households",
+      "breakpoints": true
     }
   ]
 }

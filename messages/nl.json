@@ -139,5 +139,15 @@
   "email.sign-up.request": "Iemand vroeg om met dit e-mailadres een huishouden aan te maken op Householdr.",
   "email.sign-up.action": "Bevestig en ga verder",
   "email.sign-up.expiry": "De link werkt 30 minuten.",
-  "email.sign-up.not-you": "Was jij het niet? Negeer deze e-mail dan: zonder de link wordt er niets aangemaakt."
+  "email.sign-up.not-you": "Was jij het niet? Negeer deze e-mail dan: zonder de link wordt er niets aangemaakt.",
+  "home.page-title": "Jouw huishoudens · Householdr",
+  "home.title": "Jouw huishoudens",
+  "home.none": "Je bent nog geen lid van een huishouden.",
+  "home.invitation": "Nodigt iemand je uit in hun huishouden? Open dan de link die je krijgt om lid te worden.",
+  "household.page-title": "{name} · Householdr",
+  "household.members": "Leden",
+  "household.you": "{name} (jij)",
+  "household.head": "Hoofd",
+  "household.adult": "Volwassene",
+  "household.child": "Kind"
 }

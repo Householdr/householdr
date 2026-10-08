@@ -1,6 +1,7 @@
+import { createHousehold } from '@householdr/application';
 import { sessionCookie, signInWithPassword, type Cookie } from '@householdr/auth';
 import { createTestAccount, testSignInContext } from '@householdr/auth/testing';
-import { isRedirect, type RequestEvent } from '@sveltejs/kit';
+import { isHttpError, isRedirect, type RequestEvent } from '@sveltejs/kit';
 import type { Handle, ResolveOptions } from '@sveltejs/kit/hooks';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { authenticate, flag, guard, harden, localise } from './hooks.server';
@@ -23,6 +24,7 @@ const respond = (
   locals = {},
   cookies: Record<string, string> = {},
   route: string | null = '/',
+  params: Record<string, string> = {},
 ) => {
   const request = new Request('https://householdr.example.org/', { headers });
   return hook({
@@ -30,6 +32,7 @@ const respond = (
       request,
       url: new URL(request.url),
       route: { id: route },
+      params,
       locals,
       cookies: { get: (name: string) => cookies[name], set: vi.fn() },
     } as unknown as RequestEvent,
@@ -147,11 +150,16 @@ describe('who a request is signed in as (ADR-0010 §6)', () => {
 describe('the guard (ADR-0017 §2)', () => {
   const signedOut = { session: null } as App.Locals;
   const signedIn = { session: { id: 'session', accountId: 'account' } } as App.Locals;
-  const outcome = async (locals: App.Locals, route: string | null) => {
+  const outcome = async (
+    locals: App.Locals,
+    route: string | null,
+    params: Record<string, string> = {},
+  ) => {
     try {
-      return (await respond(guard, {}, locals, {}, route)).status;
+      return (await respond(guard, {}, locals, {}, route, params)).status;
     } catch (thrown) {
-      return isRedirect(thrown) ? `→ ${thrown.location}` : thrown;
+      if (isRedirect(thrown)) return `→ ${thrown.location}`;
+      return isHttpError(thrown) ? thrown.status : thrown;
     }
   };
 
@@ -181,5 +189,59 @@ describe('the guard (ADR-0017 §2)', () => {
 
   it('leaves an address without a route to the error page', async () => {
     expect(await outcome(signedOut, null)).toBe(200);
+  });
+
+  describe('in a household', () => {
+    const route = '/households/[household]';
+    let next = 0;
+    /** A new account, signed in, and a household it founded. */
+    const founder = async () => {
+      const accountId = await createTestAccount(test.context.auth, {
+        email: `founder-${String(++next)}@example.org`,
+        password: 'correct horse battery staple',
+      });
+      const result = await createHousehold(
+        {
+          db: test.context.db,
+          actor: { account: accountId, twoFactor: true },
+          account: { id: accountId, managed: false, guardians: [] },
+        },
+        {
+          name: 'Ash Lane',
+          headName: 'Robin',
+          country: 'BE',
+          timeZone: 'Europe/Brussels',
+          language: 'en',
+          weekStartDay: 1,
+          adult: true,
+        },
+      );
+      if (!result.ok) throw new Error(`No household: ${result.error}`);
+      const locals = { session: { id: 'session', accountId } } as App.Locals;
+      return { locals, household: result.householdId, member: result.memberId };
+    };
+
+    it('lets a member in, as the member they are there', async () => {
+      const { locals, household, member } = await founder();
+      expect(await outcome(locals, route, { household })).toBe(200);
+      expect(locals.membership).toEqual({
+        householdId: household,
+        member: { id: member, role: 'head', hasAccount: true, twoFactor: false },
+      });
+    });
+
+    it('is not found for anyone else, whether or not the household exists', async () => {
+      const { household } = await founder();
+      const { locals } = await founder();
+      expect(await outcome(locals, route, { household })).toBe(404);
+      expect(await outcome(locals, route, { household: crypto.randomUUID() })).toBe(404);
+      expect(await outcome(locals, route, { household: 'not-a-household' })).toBe(404);
+      expect(locals.membership).toBeNull();
+    });
+
+    it('sends a request without a session to the sign-in page first', async () => {
+      const { household } = await founder();
+      expect(await outcome(signedOut, route, { household })).toBe('→ /sign-in');
+    });
   });
 });

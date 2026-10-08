@@ -1,6 +1,6 @@
-import { flagValues, type Flags } from '@householdr/application';
+import { flagValues, membership, type Flags } from '@householdr/application';
 import { currentSession, sessionCookie } from '@householdr/auth';
-import { redirect } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { sequence, type Handle } from '@sveltejs/kit/hooks';
 import { paraglideMiddleware } from './lib/paraglide/server.js';
 import { authContext } from './lib/server/auth';
@@ -84,12 +84,23 @@ const open = new Set([
 ]);
 
 /**
- * One guard, deny by default: without a session, a route sends to the sign-in page (ADR-0017 §2).
- * Membership of the household named in the request joins it once accounts are linked to members.
+ * One guard, deny by default: without a session, a route sends to the sign-in page, and a route in a
+ * household needs a membership of it, or is not found, whether or not the household exists
+ * (ADR-0017 §2).
  */
-export const guard: Handle = ({ event, resolve }) => {
+export const guard: Handle = async ({ event, resolve }) => {
   const route = event.route.id;
-  if (route !== null && !open.has(route) && !event.locals.session) redirect(303, '/sign-in');
+  const { session } = event.locals;
+  if (route !== null && !open.has(route) && !session) redirect(303, '/sign-in');
+  event.locals.membership = null;
+  const householdId = event.params.household;
+  if (householdId !== undefined) {
+    const member = session
+      ? await membership(await authContext(), session.accountId, householdId)
+      : null;
+    if (!member) error(404);
+    event.locals.membership = { householdId, member };
+  }
   return resolve(event);
 };
 

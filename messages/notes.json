@@ -413,5 +413,45 @@
   "email.sign-up.not-you": {
     "note": "Last line of the sign-up e-mail, for someone who didn't ask. Calm: nothing happens unless the link is used.",
     "needsReview": ["nl"]
+  },
+  "home.page-title": {
+    "note": "Browser tab title of the page listing the households an account belongs to.",
+    "needsReview": ["nl"]
+  },
+  "home.title": {
+    "note": "Heading of the page listing the households an account belongs to, and the link to it.",
+    "needsReview": ["nl"]
+  },
+  "home.none": {
+    "note": "Shown on that page when the account belongs to no household.",
+    "needsReview": ["nl"]
+  },
+  "home.invitation": {
+    "note": "Follows home.none: how to join a household. Invitations are links a head shares.",
+    "needsReview": ["nl"]
+  },
+  "household.page-title": {
+    "note": "Browser tab title of a household's page. {name} is the household's name.",
+    "needsReview": ["nl"]
+  },
+  "household.members": {
+    "note": "Heading of the list of the household's members.",
+    "needsReview": ["nl"]
+  },
+  "household.you": {
+    "note": "The signed-in person's own entry in the list of members. {name} is their name.",
+    "needsReview": ["nl"]
+  },
+  "household.head": {
+    "note": "Role of a member who manages the household (its settings, members and plans).",
+    "needsReview": ["nl"]
+  },
+  "household.adult": {
+    "note": "Role of an adult member who isn't a head.",
+    "needsReview": ["nl"]
+  },
+  "household.child": {
+    "note": "Role of a member under 18.",
+    "needsReview": ["nl"]
   }
 }

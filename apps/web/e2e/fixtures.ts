@@ -95,13 +95,16 @@ export async function forceFlags(
   ]);
 }
 
-/** Signs in on `page` with the sign-in page's form. */
-export async function signIn(page: Page, { email, password }: TestAccount) {
+/**
+ * Signs in on `page` with the sign-in page's form, landing on `landing`: the security page while
+ * onboarding's flag is off.
+ */
+export async function signIn(page: Page, { email, password }: TestAccount, landing = '/security') {
   await page.goto('/sign-in');
   await page.getByLabel('E-mail address').fill(email);
   await page.getByLabel('Password').fill(password);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-  await expect(page).toHaveURL('/security');
+  await expect(page).toHaveURL(landing);
 }
 
 /** Another device: a browser context of its own, as `userAgent`, with `flags` forced. */
