@@ -78,6 +78,12 @@ A use case does, in order and in one place:
 > linking a profile). Only the passkey (WebAuthn) steps, which need JavaScript anyway, are
 > endpoints; the library's own HTTP routes are not mounted.
 
+> **Clarification (2026-10-08):** the implementations of the ports of §3 (the SMTP mailer, Web Push,
+> Flipt) and the guarded outbound client ([ADR-0017](0017-security-baseline.md) §6) live in
+> **`packages/adapters`**, which depends on `application` for the port types. `apps/web`,
+> `apps/worker` and `auth` import it to build contexts and to reach the outside world; `application`
+> never imports it, so a use case reaches the outside only through its context's ports.
+
 ### 3. Ports only where there is a real alternative
 
 The application layer talks to the outside world through a few small interfaces, passed in with the
