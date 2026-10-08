@@ -178,6 +178,7 @@ export default defineConfig(
   globalIgnores([
     '**/dist/',
     '**/build/',
+    '**/build-test/',
     '**/coverage/',
     '**/.svelte-kit/',
     '**/src/lib/paraglide/',
