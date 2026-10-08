@@ -160,6 +160,16 @@ home screen) at the moments it would have helped, at most once a week.
   self-hosted instance uses its own SMTP server ([ADR-0021](0021-self-hosted-edition.md) §5).
 - In-app notifications are kept **90 days**, then deleted.
 
+> **Clarification (2026-10-08):** **account e-mails** (a sign-up's verification, a password reset,
+> security notices; §2) belong to no household, so their rows live in the `auth` schema
+> ([ADR-0008](0008-tech-stack.md) §9, clarification) and go out through the same worker and
+> pg-boss jobs. A job carries only its row's ID, and a row is deleted once its e-mail is sent. An
+> e-mail with a **token link** gets its token from the worker as it sends, so only the token's hash
+> is ever stored ([ADR-0017](0017-security-baseline.md) §4); the link's lifetime starts then, and a
+> newer link for the same purpose replaces the older one. The limit on e-mails to one address
+> ([ADR-0017](0017-security-baseline.md) §5, clarification) is counted when the row would be
+> written: over it, no row is written.
+
 ### 8. Promotional communication: product news and offers
 
 The platform needs a way to tell people about new features and about offers such as a discount on
