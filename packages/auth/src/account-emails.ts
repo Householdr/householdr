@@ -1,4 +1,12 @@
-import { accountEmails, accounts, type AccountEmailKind, type Database } from '@householdr/db';
+import {
+  accountEmails,
+  accounts,
+  queueJob,
+  type AccountEmailKind,
+  type Database,
+  type JobQueue,
+  type Transaction,
+} from '@householdr/db';
 import { eq } from 'drizzle-orm';
 import type { Auth } from './auth';
 import { linkInTheMaking, type Link } from './links';
@@ -10,11 +18,33 @@ export interface AccountEmailContext {
 }
 
 /** An account e-mail, ready to be written in the recipient's language and sent. */
-export interface AccountEmail {
-  kind: AccountEmailKind;
-  to: string;
-  /** A token link, made now: only its hash is stored (ADR-0014 §7, clarification). */
-  link: string;
+export type AccountEmail =
+  | {
+      kind: 'password-reset';
+      to: string;
+      /** A token link, made now: only its hash is stored (ADR-0014 §7, clarification). */
+      link: string;
+    }
+  /** The notice that the password was changed, which every recovery sends (ADR-0010 §8). */
+  | { kind: 'password-changed'; to: string };
+
+/**
+ * Queues an account e-mail to `accountId` inside `tx`: its row, and the job that sends it
+ * (ADR-0014 §7, clarification).
+ */
+export async function queueAccountEmail(
+  tx: Transaction,
+  queue: JobQueue,
+  accountId: string,
+  kind: AccountEmailKind,
+) {
+  const [row] = await tx
+    .insert(accountEmails)
+    .values({ kind, accountId })
+    .returning({ id: accountEmails.id });
+  if (!row) throw new Error('No account e-mail was written.');
+  await queueJob(queue, tx, 'account-email', { id: row.id });
+  return row.id;
 }
 
 /**
@@ -32,6 +62,7 @@ export async function prepareAccountEmail(
     .innerJoin(accounts, eq(accounts.id, accountEmails.accountId))
     .where(eq(accountEmails.id, id));
   if (!row) return null;
+  if (row.kind === 'password-changed') return { kind: row.kind, to: row.to };
   const link: Link = { purpose: row.kind };
   // The reset link lasts 30 minutes and works once (ADR-0010 §8).
   await linkInTheMaking.run(link, () =>

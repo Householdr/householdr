@@ -19,6 +19,7 @@
     "@householdr/application": "workspace:*",
     "@householdr/auth": "workspace:*",
     "@internationalized/date": "catalog:",
+    "@opentelemetry/api": "catalog:",
     "bits-ui": "catalog:",
     "cn": "catalog:",
     "tailwind-variants": "catalog:"

@@ -90,10 +90,14 @@ also binds migrations, so a data migration across households first runs
 `ALTER TABLE … NO FORCE ROW LEVEL SECURITY` and ends with `FORCE` again, in the same transaction;
 otherwise its updates quietly touch no rows.
 
-End-to-end tests run against a test build of the web app: `pnpm --filter @householdr/web build:test`,
-then `pnpm test:e2e` (the first time, `pnpm --filter @householdr/web exec playwright install
-chromium`). They also need `TEST_DATABASE_URL`: each run starts the test build on a database of its
-own, where every test adds the accounts it signs in to, and drops it at the end. The dev server
+End-to-end tests run against a test build of the web app and the built worker:
+`pnpm --filter @householdr/web build:test` and `pnpm --filter @householdr/worker build`, then
+`pnpm test:e2e` (the first time, `pnpm --filter @householdr/web exec playwright install chromium`).
+They also need `TEST_DATABASE_URL`: each run starts both on a database of its own, where every test
+adds the accounts it signs in to, and drops it at the end. The worker sends its e-mails to
+[Mailpit](https://mailpit.axllent.org) on its default ports (SMTP on 1025, the web interface and API
+on 8025), where the tests read them: run it with
+`docker run -p 1025:1025 -p 8025:8025 axllent/mailpit:v1.31.4`, the version CI uses, or its binary. The dev server
 (`pnpm --filter @householdr/web dev`) and the test build also have a pseudo-locale: with the cookie
 `PARAGLIDE_LOCALE=en-XA`, all text from the message catalogue shows accented, longer and in
 brackets, so a hard-coded string or a layout too tight for longer languages stands out

@@ -73,7 +73,9 @@ const devicesOf = async (session: Locals['session']) => (await loadFor({ session
 
 describe('the security page’s devices (ADR-0010 §6)', () => {
   it('isn’t there while sign-in’s flag is off, and needs a session', async () => {
-    const thrown = await loadFor({ flags: { 'sign-in': false } }).catch((e: unknown) => e);
+    const thrown = await loadFor({ flags: { 'sign-in': false, 'password-reset': false } }).catch(
+      (e: unknown) => e,
+    );
     expect(isHttpError(thrown, 404)).toBe(true);
     const signedOut = await loadFor({}).catch((e: unknown) => e);
     expect(isRedirect(signedOut) && signedOut.location).toBe('/sign-in');

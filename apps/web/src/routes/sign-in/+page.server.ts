@@ -8,8 +8,10 @@ function needsFlag(locals: App.Locals) {
   if (!locals.flags['sign-in']) error(404);
 }
 
-export const load: PageServerLoad = ({ locals }) => {
+export const load: PageServerLoad = ({ locals, url }) => {
   needsFlag(locals);
+  // After a new password was saved through a reset link (ADR-0010 §8).
+  return { passwordChanged: url.searchParams.get('password') === 'changed' };
 };
 
 export const actions = {

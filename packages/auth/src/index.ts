@@ -9,6 +9,14 @@ export { createAuth, type Auth, type AuthSettings } from './auth';
 export { type Cookie } from './cookies';
 export { counterKeys, type CounterKey } from './counter-keys';
 export {
+  passwordResetRequest,
+  requestPasswordReset,
+  resetLinkWorks,
+  setNewPassword,
+  type NewPasswordResult,
+  type PasswordResetContext,
+} from './password-reset';
+export {
   passwordSignIn,
   signInWithPassword,
   type Client,

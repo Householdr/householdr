@@ -28,7 +28,7 @@ const waiting = (accountId: string) => waitingAccountEmail(test.context.db, acco
 
 const prepare = async (id: string) => {
   const email = await prepareAccountEmail(test.context, id);
-  if (!email) throw new Error('Nothing to send');
+  if (email?.kind !== 'password-reset') throw new Error('No reset link to send');
   return { ...email, token: email.link.split('/').at(-1) ?? '' };
 };
 

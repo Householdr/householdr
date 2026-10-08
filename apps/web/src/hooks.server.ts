@@ -8,10 +8,17 @@ import { flagSource } from './lib/server/flags';
 import { testFlagsCookie, withForcedFlags } from './lib/server/forced-flags';
 import { securityHeaders } from './security';
 
-/** Every response carries the browser hardening of ADR-0017 §4. */
+/**
+ * Every response carries the browser hardening of ADR-0017 §4. Pages reached through a token link
+ * send no referrer to other sites, so the token can't leak there, yet their forms keep their origin
+ * (§4, clarification).
+ */
 export const harden: Handle = async ({ event, resolve }) => {
   const response = await resolve(event);
   for (const [name, value] of Object.entries(securityHeaders)) response.headers.set(name, value);
+  if (event.route.id?.startsWith('/reset-password')) {
+    response.headers.set('referrer-policy', 'same-origin');
+  }
   return response;
 };
 
@@ -55,7 +62,13 @@ export const authenticate: Handle = async ({ event, resolve }) => {
 };
 
 /** The routes anyone may open; every other one needs a session (ADR-0017 §2). */
-const open = new Set(['/sign-in', '/health']);
+const open = new Set([
+  '/sign-in',
+  '/forgot-password',
+  '/reset-password',
+  '/reset-password/[token]',
+  '/health',
+]);
 
 /**
  * One guard, deny by default: without a session, a route sends to the sign-in page (ADR-0017 §2).

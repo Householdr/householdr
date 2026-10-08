@@ -3,7 +3,7 @@ import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { and, eq } from 'drizzle-orm';
 import { deviceOf } from './device';
-import { linkInTheMaking } from './links';
+import { linkInTheMaking, passwordResetInTheMaking } from './links';
 
 export interface AuthSettings {
   db: Database;
@@ -46,6 +46,13 @@ export function createAuth({ db, baseUrl, secret }: AuthSettings) {
       sendResetPassword: ({ token }) => {
         const link = linkInTheMaking.getStore();
         if (link) link.token = token;
+        return Promise.resolve();
+      },
+      // Every recovery ends all sessions (ADR-0010 §8).
+      revokeSessionsOnPasswordReset: true,
+      onPasswordReset: ({ user }) => {
+        const reset = passwordResetInTheMaking.getStore();
+        if (reset) reset.account = { id: user.id, email: user.email };
         return Promise.resolve();
       },
     },

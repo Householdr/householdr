@@ -1,9 +1,9 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import type { AccountEmailKind } from '@householdr/db';
+import type { LinkKind } from '@householdr/db';
 
 /** A link the library makes for an account e-mail: what it is for, and its token once made. */
 export interface Link {
-  purpose: AccountEmailKind;
+  purpose: LinkKind;
   token?: string;
 }
 
@@ -12,3 +12,11 @@ export interface Link {
  * its configuration rather than to whoever asked, so the asker waits for it here.
  */
 export const linkInTheMaking = new AsyncLocalStorage<Link>();
+
+/**
+ * The account whose password the current call reset. The library reports it to a callback of its
+ * configuration rather than to whoever asked, so the asker waits for it here.
+ */
+export const passwordResetInTheMaking = new AsyncLocalStorage<{
+  account?: { id: string; email: string };
+}>();

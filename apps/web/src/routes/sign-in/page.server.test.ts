@@ -44,11 +44,24 @@ const submit = async (fields: Record<string, string>, flags = { 'sign-in': true 
 describe('the sign-in page (ADR-0010 §2)', () => {
   it('isn’t there while its flag is off (CODE-20)', async () => {
     const off = { 'sign-in': false };
-    expect(() => load({ locals: { flags: off } } as unknown as Parameters<typeof load>[0])).toThrow(
-      expect.objectContaining({ status: 404 }) as Error,
-    );
+    const url = new URL('https://householdr.example.org/sign-in');
+    expect(() =>
+      load({ locals: { flags: off }, url } as unknown as Parameters<typeof load>[0]),
+    ).toThrow(expect.objectContaining({ status: 404 }) as Error);
     const { thrown } = await submit({ email: 'person@example.org', password }, off);
     expect(isHttpError(thrown, 404)).toBe(true);
+  });
+
+  it('says the password is changed when a reset sent it here (ADR-0010 §8)', () => {
+    const opened = (address: string) =>
+      load({
+        locals: { flags: { 'sign-in': true } },
+        url: new URL(address),
+      } as unknown as Parameters<typeof load>[0]);
+    expect(opened('https://householdr.example.org/sign-in?password=changed')).toEqual({
+      passwordChanged: true,
+    });
+    expect(opened('https://householdr.example.org/sign-in')).toEqual({ passwordChanged: false });
   });
 
   it('sets the session’s cookie and goes to the security page', async () => {
