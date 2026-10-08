@@ -98,6 +98,78 @@
     "note": "Status message when the device to sign out was signed out already, for example from another tab.",
     "needsReview": ["nl"]
   },
+  "security.passkeys": {
+    "note": "Heading of the security page's list of passkeys (ADR-0010 §2). Passkey is the common word in both languages.",
+    "needsReview": ["nl"]
+  },
+  "security.passkeys-intro": {
+    "note": "Explains what a passkey is, in one line.",
+    "needsReview": ["nl"]
+  },
+  "security.no-passkeys": {
+    "note": "Shown instead of the list when the account has no passkeys.",
+    "needsReview": ["nl"]
+  },
+  "security.added-today": {
+    "note": "When a passkey was added less than a day ago.",
+    "needsReview": ["nl"]
+  },
+  "security.added-days": {
+    "note": "When a passkey was added, in whole days; {count} is at least 1.",
+    "needsReview": ["nl"]
+  },
+  "security.add-passkey": {
+    "note": "Button that starts adding a passkey; the browser then asks for the fingerprint, face or screen lock.",
+    "needsReview": ["nl"]
+  },
+  "security.remove-passkey": {
+    "note": "Button next to a passkey that removes it. Its device name is read with it.",
+    "needsReview": ["nl"]
+  },
+  "security.passkey-added": {
+    "note": "Status message after a passkey was added.",
+    "needsReview": ["nl"]
+  },
+  "security.passkey-removed": {
+    "note": "Status message after a passkey was removed.",
+    "needsReview": ["nl"]
+  },
+  "security.passkey-not-found": {
+    "note": "Status message when the passkey to remove was already gone.",
+    "needsReview": ["nl"]
+  },
+  "security.passkey-failed": {
+    "note": "When the browser or the server couldn't add the passkey, for instance because it was cancelled.",
+    "needsReview": ["nl"]
+  },
+  "security.confirm": {
+    "note": "Heading of the step that asks for the password again before passkeys can change (ADR-0010 §6).",
+    "needsReview": ["nl"]
+  },
+  "security.confirm-intro": {
+    "note": "Why the password is asked again: the sign-in is over 10 minutes old.",
+    "needsReview": ["nl"]
+  },
+  "security.confirm-password": {
+    "note": "Label of the password field when confirming it's you.",
+    "needsReview": ["nl"]
+  },
+  "security.confirm-submit": {
+    "note": "Button that confirms with the password.",
+    "needsReview": ["nl"]
+  },
+  "security.confirm-failed": {
+    "note": "Heading of the box that says why confirming didn't work.",
+    "needsReview": ["nl"]
+  },
+  "security.incorrect-password": {
+    "note": "When the password typed to confirm is wrong.",
+    "needsReview": ["nl"]
+  },
+  "security.confirmed": {
+    "note": "Status message after confirming: changes are possible for 10 minutes.",
+    "needsReview": ["nl"]
+  },
   "email.password-reset.subject": {
     "note": "Subject of the e-mail with a link to choose a new password (ADR-0010 §8). Householdr is the product name, not translated.",
     "needsReview": ["nl"]
@@ -128,6 +200,30 @@
   },
   "email.password-changed.not-you": {
     "note": "For someone who didn't change it: their mailbox is the way in. The quoted text is the sign-in page's link, sign-in.forgot-password, and must match it.",
+    "needsReview": ["nl"]
+  },
+  "email.passkey-added.subject": {
+    "note": "Subject of the e-mail sent when a passkey was added to the account (ADR-0010 §2, ADR-0014 §2). Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "email.passkey-added.done": {
+    "note": "First line of the passkey-added e-mail: what happened, and what a passkey can do.",
+    "needsReview": ["nl"]
+  },
+  "email.passkey-added.not-you": {
+    "note": "For someone who didn't add it: someone else is signed in. The quoted text is the sign-in page's link, sign-in.forgot-password, and must match it.",
+    "needsReview": ["nl"]
+  },
+  "email.passkey-removed.subject": {
+    "note": "Subject of the e-mail sent when a passkey was removed from the account. Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "email.passkey-removed.done": {
+    "note": "First line of the passkey-removed e-mail.",
+    "needsReview": ["nl"]
+  },
+  "email.passkey-removed.not-you": {
+    "note": "For someone who didn't remove it. The quoted text is the sign-in page's link, sign-in.forgot-password, and must match it.",
     "needsReview": ["nl"]
   },
   "sign-in.forgot-password": {

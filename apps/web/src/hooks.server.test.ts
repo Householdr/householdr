@@ -84,13 +84,13 @@ describe('the flags of a request (ADR-0015 §3)', () => {
   it('are evaluated once, at their defaults on an instance without Flipt', async () => {
     const locals = {} as App.Locals;
     await respond(flag, {}, locals);
-    expect(locals.flags).toEqual({ 'sign-in': false, 'password-reset': false });
+    expect(locals.flags).toEqual({ 'sign-in': false, 'password-reset': false, passkeys: false });
   });
 
   it('can be forced by a test, in the test build (ADR-0015 §10)', async () => {
     const locals = {} as App.Locals;
     await respond(flag, {}, locals, { 'test-flags': 'sign-in=on' });
-    expect(locals.flags).toEqual({ 'sign-in': true, 'password-reset': false });
+    expect(locals.flags).toEqual({ 'sign-in': true, 'password-reset': false, passkeys: false });
   });
 });
 

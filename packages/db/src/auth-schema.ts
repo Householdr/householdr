@@ -89,6 +89,34 @@ export const sessions = auth.table(
   ],
 );
 
+/**
+ * A passkey of an account (ADR-0010 §2): the library's `passkey`. It holds the credential's public
+ * key, never anything secret (ADR-0012 §2).
+ */
+export const passkeys = auth.table(
+  'passkeys',
+  {
+    id: key(),
+    /** The library's name for a passkey, which we leave empty: it is named after its device. */
+    name: text(),
+    /** The browser and operating system it was added on, by name (ADR-0010 §2). */
+    browser: text(),
+    system: text(),
+    publicKey: text().notNull(),
+    userId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    credentialID: text().notNull().unique(),
+    counter: integer().notNull(),
+    deviceType: text().notNull(),
+    backedUp: boolean().notNull(),
+    transports: text(),
+    createdAt: createdAt(),
+    aaguid: text(),
+  },
+  (t) => [index('passkeys_user').on(t.userId), check('passkeys_no_name', sql`${t.name} is null`)],
+);
+
 /** A pending check of an e-mail address or a reset, by a hashed identifier (SEC-7). */
 export const verifications = auth.table(
   'verifications',
@@ -113,7 +141,8 @@ export const verifications = auth.table(
 );
 
 /** The account e-mails there are (ADR-0014 §2). */
-export type AccountEmailKind = 'password-reset' | 'password-changed';
+export type AccountEmailKind =
+  'password-reset' | 'password-changed' | 'passkey-added' | 'passkey-removed';
 
 /** The account e-mails with a token link, which `auth.verifications` marks by purpose. */
 export type LinkKind = Extract<AccountEmailKind, 'password-reset'>;
@@ -132,7 +161,12 @@ export const accountEmails = auth.table(
       .references(() => accounts.id, { onDelete: 'cascade' }),
     createdAt: createdAt(),
   },
-  (t) => [check('account_emails_kind', sql`${t.kind} in ('password-reset', 'password-changed')`)],
+  (t) => [
+    check(
+      'account_emails_kind',
+      sql`${t.kind} in ('password-reset', 'password-changed', 'passkey-added', 'passkey-removed')`,
+    ),
+  ],
 );
 
 /**

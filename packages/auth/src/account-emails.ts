@@ -5,6 +5,7 @@ import {
   type AccountEmailKind,
   type Database,
   type JobQueue,
+  type LinkKind,
   type Transaction,
 } from '@householdr/db';
 import { eq } from 'drizzle-orm';
@@ -25,8 +26,11 @@ export type AccountEmail =
       /** A token link, made now: only its hash is stored (ADR-0014 §7, clarification). */
       link: string;
     }
-  /** The notice that the password was changed, which every recovery sends (ADR-0010 §8). */
-  | { kind: 'password-changed'; to: string };
+  /**
+   * A notice that a way of signing in changed: the password, which every recovery sends
+   * (ADR-0010 §8), or a passkey (§2).
+   */
+  | { kind: Exclude<AccountEmailKind, LinkKind>; to: string };
 
 /**
  * Queues an account e-mail to `accountId` inside `tx`: its row, and the job that sends it
@@ -62,7 +66,7 @@ export async function prepareAccountEmail(
     .innerJoin(accounts, eq(accounts.id, accountEmails.accountId))
     .where(eq(accountEmails.id, id));
   if (!row) return null;
-  if (row.kind === 'password-changed') return { kind: row.kind, to: row.to };
+  if (row.kind !== 'password-reset') return { kind: row.kind, to: row.to };
   const link: Link = { purpose: row.kind };
   // The reset link lasts 30 minutes and works once (ADR-0010 §8).
   await linkInTheMaking.run(link, () =>

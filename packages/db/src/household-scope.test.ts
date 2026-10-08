@@ -174,6 +174,7 @@ describe('tables outside a household (ADR-0008 §9, clarification)', () => {
       'auth.account_emails',
       'auth.accounts',
       'auth.credentials',
+      'auth.passkeys',
       'auth.rate_limits',
       'auth.sessions',
       'auth.verifications',

@@ -43,6 +43,13 @@
       "when": 1791461453197,
       "tag": "0005_password-changed",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791467211308,
+      "tag": "0006_passkeys",
+      "breakpoints": true
     }
   ]
 }

@@ -31,27 +31,44 @@ interface Content {
   paragraphs: (string | { text: string; link: string })[];
 }
 
+/**
+ * The notices that a way of signing in changed (ADR-0014 §2): their subject, what happened, and
+ * what to do if it wasn't you.
+ */
+const notices = {
+  'password-changed': [
+    m['email.password-changed.subject'],
+    m['email.password-changed.done'],
+    m['email.password-changed.not-you'],
+  ],
+  'passkey-added': [
+    m['email.passkey-added.subject'],
+    m['email.passkey-added.done'],
+    m['email.passkey-added.not-you'],
+  ],
+  'passkey-removed': [
+    m['email.passkey-removed.subject'],
+    m['email.passkey-removed.done'],
+    m['email.passkey-removed.not-you'],
+  ],
+} as const;
+
 /** What each account e-mail says, in `locale`. */
 function content(email: AccountEmail, locale: Locale): Content {
   const say = { locale };
-  if (email.kind === 'password-changed') {
+  if (email.kind === 'password-reset') {
     return {
-      subject: m['email.password-changed.subject']({}, say),
+      subject: m['email.password-reset.subject']({}, say),
       paragraphs: [
-        m['email.password-changed.done']({}, say),
-        m['email.password-changed.not-you']({}, say),
+        m['email.password-reset.request']({}, say),
+        { text: m['email.password-reset.action']({}, say), link: email.link },
+        m['email.password-reset.expiry']({}, say),
+        m['email.password-reset.not-you']({}, say),
       ],
     };
   }
-  return {
-    subject: m['email.password-reset.subject']({}, say),
-    paragraphs: [
-      m['email.password-reset.request']({}, say),
-      { text: m['email.password-reset.action']({}, say), link: email.link },
-      m['email.password-reset.expiry']({}, say),
-      m['email.password-reset.not-you']({}, say),
-    ],
-  };
+  const [subject, done, notYou] = notices[email.kind];
+  return { subject: subject({}, say), paragraphs: [done({}, say), notYou({}, say)] };
 }
 
 /**
