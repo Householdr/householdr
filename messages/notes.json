@@ -897,5 +897,77 @@
   "time-zone.name": {
     "note": "A time zone in a list or a summary, such as 'Brussels (Central European Time)'. {city} is the last part of the zone's IANA name, not translated; {zone} is the zone's name from the browser, already in the reader's language, or an offset such as 'GMT+03:00'.",
     "needsReview": ["nl"]
+  },
+  "household.shares": {
+    "note": "Link from the household page to its shares page.",
+    "needsReview": ["nl"]
+  },
+  "shares.page-title": {
+    "note": "Browser tab title of the shares page.",
+    "needsReview": ["nl"]
+  },
+  "shares.title": {
+    "note": "Heading of the page where heads set how much of the household's work each member does.",
+    "needsReview": ["nl"]
+  },
+  "shares.intro": {
+    "note": "Explains shares (ADR-0001 §4). 'Share' is the member's portion of the work, not a share in a company.",
+    "needsReview": ["nl"]
+  },
+  "shares.private-heads": {
+    "note": "Shown to heads: who sees shares (ADR-0018 §4).",
+    "needsReview": ["nl"]
+  },
+  "shares.private": {
+    "note": "Shown to members who aren't heads: who sees their share (ADR-0018 §4).",
+    "needsReview": ["nl"]
+  },
+  "shares.default": {
+    "note": "A member's share this week, which is the default for an adult. {share} is a formatted percentage, such as 100%.",
+    "needsReview": ["nl"]
+  },
+  "shares.by-age": {
+    "note": "A child's share this week, by their age. {share} is a formatted percentage, such as 36%.",
+    "needsReview": ["nl"]
+  },
+  "shares.set": {
+    "note": "A share a head set instead of the default. {share} is a formatted percentage, such as 50%.",
+    "needsReview": ["nl"]
+  },
+  "shares.hint": {
+    "note": "Hint under the share fields. {min} and {max} are numbers, such as 0 and 100.",
+    "needsReview": ["nl"]
+  },
+  "shares.field": {
+    "note": "Label of the field for a member's share, in percent. {name} is the member's name.",
+    "needsReview": ["nl"]
+  },
+  "shares.save": {
+    "note": "Button that saves a member's share.",
+    "needsReview": ["nl"]
+  },
+  "shares.use-default": {
+    "note": "Button that puts a member's share back to the default by role and age.",
+    "needsReview": ["nl"]
+  },
+  "shares.saved": {
+    "note": "Status after saving a member's share.",
+    "needsReview": ["nl"]
+  },
+  "shares.failed": {
+    "note": "Heading of the error summary when a share wasn't saved.",
+    "needsReview": ["nl"]
+  },
+  "shares.check": {
+    "note": "Error summary message when the share entered isn't valid.",
+    "needsReview": ["nl"]
+  },
+  "shares.invalid": {
+    "note": "Why a share wasn't accepted, next to its field and in the error summary. {min} and {max} are numbers, such as 0 and 100.",
+    "needsReview": ["nl"]
+  },
+  "shares.conflict": {
+    "note": "Shown when someone changed the member since the page was loaded (ADR-0019 §5). {name} is the member's name, {share} a formatted percentage.",
+    "needsReview": ["nl"]
   }
 }

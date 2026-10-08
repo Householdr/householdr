@@ -32,6 +32,7 @@ const on = {
   passkeys: true,
   'household-settings': false,
   'activity-log': false,
+  shares: false,
 };
 const signUpCookie = '__Host-householdr.sign-up';
 let next = 0;

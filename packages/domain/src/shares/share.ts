@@ -7,6 +7,13 @@ import { planWeek, type HouseholdCalendar } from '../schedules/week';
 export type ShareBasis =
   { role: 'head' | 'adult' } | { role: 'child'; birthDate: Temporal.PlainDate };
 
+/**
+ * The shares a head can set instead of the default, in whole percent of a full share: from none to a
+ * full one (ADR-0001 §4). Shares weigh members against each other, so someone does more when the
+ * others' shares are lower.
+ */
+export const setShares = { min: 0, max: 100 } as const;
+
 /** A share for a period, both dates included (ADR-0001 §4, clarification). */
 export interface TemporaryShare {
   from: Temporal.PlainDate;

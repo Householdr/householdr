@@ -107,6 +107,7 @@ describe('the flags of a request (ADR-0015 §3)', () => {
       passkeys: false,
       'household-settings': false,
       'activity-log': false,
+      shares: false,
     });
   });
 
@@ -120,6 +121,7 @@ describe('the flags of a request (ADR-0015 §3)', () => {
       passkeys: false,
       'household-settings': false,
       'activity-log': false,
+      shares: false,
     });
   });
 });
