@@ -13,7 +13,7 @@
 ## Structure ([ADR-0008](../adr/0008-tech-stack.md) §3)
 
 - **CODE-4 — Dependency direction.** `domain` ← `db` ← `application` ← `adapters` ← `auth` ← `web`,
-  and `adapters` ← `worker`. Nothing imports "upwards"; `web` and `worker` don't import `db`;
+  and `auth` ← `worker`. Nothing imports "upwards"; `web` and `worker` don't import `db`;
   `application` doesn't import SvelteKit, `adapters` or `auth`; the core never imports anything from
   `householdr-cloud` ([ADR-0021](../adr/0021-self-hosted-edition.md) §1,
   [ADR-0023](../adr/0023-application-layer.md) §2, clarifications).

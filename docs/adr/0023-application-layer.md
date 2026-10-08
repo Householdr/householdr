@@ -84,6 +84,11 @@ A use case does, in order and in one place:
 > `apps/worker` and `auth` import it to build contexts and to reach the outside world; `application`
 > never imports it, so a use case reaches the outside only through its context's ports.
 
+> **Clarification (2026-10-08):** **`apps/worker`** imports `auth` too, for account e-mails: `auth`
+> prepares one (the address, and a fresh link from the authentication library) and deletes its row
+> once it is sent, and the worker renders it from the shared message catalogue and sends it
+> ([ADR-0014](0014-notifications-and-reminders.md) §7, clarification).
+
 ### 3. Ports only where there is a real alternative
 
 The application layer talks to the outside world through a few small interfaces, passed in with the
