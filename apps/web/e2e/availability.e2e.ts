@@ -65,6 +65,38 @@ for (const javaScriptEnabled of [true, false]) {
       if (javaScriptEnabled) await expect(you.getByRole('heading')).toBeFocused();
     });
 
+    test('a head marks the whole household away, and removes it', async ({
+      page,
+      accounts,
+      account,
+    }) => {
+      await accounts.addSecondFactor(account.email);
+      const id = await accounts.addHousehold(account.email, 'Ash Lane');
+      await signIn(page, account, `/households/${id}`);
+      await openAvailability(page, id);
+      const household = page.getByRole('region', { name: 'The whole household' });
+      await expect(household).toContainText('No time away together planned.');
+      const [first, last] = [fromToday(30), fromToday(37)];
+      await household.getByLabel('First day').fill(first);
+      await household.getByLabel('Last day').fill(last);
+      await household.getByRole('button', { name: 'Add' }).click();
+      await expect(household.getByRole('status')).toHaveText('The days away are added.');
+      const days = household
+        .getByRole('list', { name: 'The whole household' })
+        .getByRole('listitem');
+      await expect(days).toHaveText([shown(first, last)]);
+      // Robin's own days are another matter.
+      await expect(page.getByRole('region', { name: 'Robin (you)' })).toContainText(
+        'No days away planned.',
+      );
+      if (javaScriptEnabled) await expectAccessible(page, 'household away');
+
+      await days.getByRole('button', { name: 'Remove' }).click();
+      await expect(household.getByRole('status')).toHaveText('The days away are removed.');
+      await expect(household).toContainText('No time away together planned.');
+      if (javaScriptEnabled) await expect(household.getByRole('heading')).toBeFocused();
+    });
+
     test('says when the days won’t do, and keeps them', async ({ page, accounts, account }) => {
       const id = await accounts.addHousehold(account.email, 'Ash Lane');
       await signIn(page, account, `/households/${id}`);
@@ -110,6 +142,7 @@ for (const javaScriptEnabled of [true, false]) {
       await openAvailability(page, id);
       const regions = page.getByRole('region');
       await expect(regions.getByRole('heading', { level: 2 })).toHaveText([
+        'The whole household',
         'Robin (you)',
         'Alex',
         'Sam',
@@ -125,6 +158,13 @@ for (const javaScriptEnabled of [true, false]) {
       await sam.getByRole('button', { name: 'Add' }).click();
       await expect(sam.getByRole('status')).toHaveText('The days away are added.');
       await expect(sam.getByRole('listitem')).toHaveText([shown(first, last)]);
+      // And the whole household is away for a weekend (ADR-0005 §5).
+      const household = page.getByRole('region', { name: 'The whole household' });
+      const [together, back] = [fromToday(20), fromToday(22)];
+      await household.getByLabel('First day').fill(together);
+      await household.getByLabel('Last day').fill(back);
+      await household.getByRole('button', { name: 'Add' }).click();
+      await expect(household.getByRole('status')).toHaveText('The days away are added.');
 
       // Alex, on a device of their own, sees that Sam is away, and when: nothing more.
       const { viewport, colorScheme, deviceScaleFactor, isMobile, hasTouch, userAgent } =
@@ -149,6 +189,11 @@ for (const javaScriptEnabled of [true, false]) {
         await expect(samForAlex.getByRole('listitem')).toHaveText([shown(first, last)]);
         await expect(samForAlex.getByRole('button')).toHaveCount(0);
         await expect(samForAlex.getByRole('group')).toHaveCount(0);
+        // The household's time away too, which only heads plan.
+        const householdForAlex = other.getByRole('region', { name: 'The whole household' });
+        await expect(householdForAlex.getByRole('listitem')).toHaveText([shown(together, back)]);
+        await expect(householdForAlex.getByRole('button')).toHaveCount(0);
+        await expect(householdForAlex.getByRole('group')).toHaveCount(0);
         await expect(other.getByRole('region', { name: 'Robin' }).getByRole('group')).toHaveCount(
           0,
         );

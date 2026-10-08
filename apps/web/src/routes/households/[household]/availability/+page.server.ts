@@ -1,4 +1,10 @@
-import { addAbsence, removeAbsence, viewAvailability } from '@householdr/application';
+import {
+  addAbsence,
+  addAwayPeriod,
+  removeAbsence,
+  removeAwayPeriod,
+  viewAvailability,
+} from '@householdr/application';
 import { error, fail } from '@sveltejs/kit';
 import { authContext } from '#lib/server/auth.js';
 import type { Actions, PageServerLoad } from './$types';
@@ -13,6 +19,9 @@ async function householdContext(locals: App.Locals) {
   return { db, clock, ...locals.membership };
 }
 
+/** What the household's own form answers to, where a member's form has their id. */
+const household = 'household';
+
 /** A form field's text, or nothing. */
 const text = (value: FormDataEntryValue | null) => (typeof value === 'string' ? value : '');
 
@@ -21,14 +30,27 @@ export const load = (async ({ locals }) => {
   const context = await householdContext(locals);
   const result = await viewAvailability(context);
   if (!result.ok) error(403);
+  const days = ({
+    id,
+    from,
+    to,
+  }: {
+    id: string;
+    from: Temporal.PlainDate;
+    to: Temporal.PlainDate;
+  }) => ({
+    id,
+    from: from.toString(),
+    to: to.toString(),
+  });
   return {
+    household: {
+      periods: result.household.periods.map(days),
+      mayManage: result.household.mayManage,
+    },
     members: result.members.map(({ absences, ...member }) => ({
       ...member,
-      absences: absences.map(({ id, from, to }) => ({
-        id,
-        from: from.toString(),
-        to: to.toString(),
-      })),
+      absences: absences.map(days),
     })),
     plannable: { from: result.plannable.from.toString(), to: result.plannable.to.toString() },
     you: context.member.id,
@@ -62,5 +84,25 @@ export const actions = {
     if (result.error === 'not-allowed') error(403);
     // Removed a moment ago by someone else: the page then shows what is left.
     return { done: 'already-removed' as const, member };
+  },
+  // Marks the whole household away (ADR-0005 §5); `member` is the household's own form.
+  addAway: async ({ locals, request }) => {
+    const context = await householdContext(locals);
+    const form = await request.formData();
+    const input = { firstDay: text(form.get('firstDay')), lastDay: text(form.get('lastDay')) };
+    const result = await addAwayPeriod(context, input);
+    if (result.ok) return { done: 'added' as const, member: household };
+    if (result.error === 'not-allowed') error(403);
+    // The days stay in the form (UI-10).
+    return fail(400, { ...input, member: household, invalid: result.fields });
+  },
+  removeAway: async ({ locals, request }) => {
+    const context = await householdContext(locals);
+    const result = await removeAwayPeriod(context, {
+      period: (await request.formData()).get('period'),
+    });
+    if (result.ok) return { done: 'removed' as const, member: household };
+    if (result.error === 'not-allowed') error(403);
+    return { done: 'already-removed' as const, member: household };
   },
 } satisfies Actions;

@@ -5,7 +5,13 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createHousehold } from '../households/create-household';
 import { membership, type HouseholdContext } from '../households/membership';
 import { settableClock } from '../testing';
-import { addAbsence, removeAbsence, viewAvailability } from './absences';
+import {
+  addAbsence,
+  addAwayPeriod,
+  removeAbsence,
+  removeAwayPeriod,
+  viewAvailability,
+} from './absences';
 
 // Planned absences (ADR-0005 §2), who may manage them (ADR-0018 §3–§4, ADR-0010 §7) and what the
 // household sees of them, on a real database (TEST-11) with a clock the tests set (TEST-2).
@@ -410,5 +416,104 @@ describe('viewAvailability (ADR-0018 §3)', () => {
       ok: false,
       error: 'not-allowed',
     });
+  });
+});
+
+describe('addAwayPeriod and removeAwayPeriod (ADR-0005 §5)', () => {
+  /** What `context` sees of the household's periods away, as `from/to`, and whether they manage them. */
+  const together = async (context: HouseholdContext) => {
+    const view = await viewAvailability(context);
+    if (!view.ok) return view;
+    return {
+      periods: view.household.periods.map((p) => `${p.from.toString()}/${p.to.toString()}`),
+      mayManage: view.household.mayManage,
+    };
+  };
+
+  it('lets a head mark the household away, which every member sees, and remove it', async () => {
+    const household = await founded();
+    const alex = signedIn(await household.add('Alex', 'adult', true));
+    const kim = signedIn(await household.add('Kim', 'child', true));
+    const added = await addAwayPeriod(household.head, {
+      firstDay: '2026-12-24',
+      lastDay: '2027-01-02',
+    });
+    expect(added).toEqual({ ok: true, periodId: expect.any(String) as unknown });
+    await addAwayPeriod(household.head, { firstDay: '2026-10-08', lastDay: '2026-10-08' });
+    expect(await together(household.head)).toEqual({
+      periods: ['2026-10-08/2026-10-08', '2026-12-24/2027-01-02'],
+      mayManage: true,
+    });
+    for (const member of [alex, kim]) {
+      expect(await together(member)).toEqual({
+        periods: ['2026-10-08/2026-10-08', '2026-12-24/2027-01-02'],
+        mayManage: false,
+      });
+    }
+    if (!added.ok) throw new Error('Not added');
+    expect(await removeAwayPeriod(household.head, { period: added.periodId })).toEqual({
+      ok: true,
+    });
+    expect(await removeAwayPeriod(household.head, { period: added.periodId })).toEqual({
+      ok: false,
+      error: 'not-found',
+    });
+    expect(await together(alex)).toMatchObject({ periods: ['2026-10-08/2026-10-08'] });
+  });
+
+  it('is for heads with two factors only', async () => {
+    const household = await founded();
+    const alex = signedIn(await household.add('Alex', 'adult', true));
+    const withoutTwoFactor = {
+      ...household.head,
+      member: { ...household.head.member, twoFactor: false },
+    };
+    const period = { firstDay: '2026-12-24', lastDay: '2027-01-02' };
+    for (const someone of [alex, withoutTwoFactor]) {
+      expect(await addAwayPeriod(someone, period)).toEqual({ ok: false, error: 'not-allowed' });
+    }
+    const added = await addAwayPeriod(household.head, period);
+    if (!added.ok) throw new Error('Not added');
+    expect(await removeAwayPeriod(alex, { period: added.periodId })).toEqual({
+      ok: false,
+      error: 'not-allowed',
+    });
+    expect(await together(household.head)).toMatchObject({ periods: ['2026-12-24/2027-01-02'] });
+  });
+
+  it('plans its days like an absence’s: from today up to a year ahead, the last not before the first', async () => {
+    const { head } = await founded();
+    for (const [period, fields] of [
+      [{ firstDay: '2026-10-07', lastDay: '2026-10-09' }, ['firstDay']],
+      [{ firstDay: '2026-10-12', lastDay: '2026-10-11' }, ['lastDay']],
+      [{ firstDay: '2026-10-12', lastDay: '2027-10-09' }, ['lastDay']],
+      [{ firstDay: '2026-02-30', lastDay: 'soon' }, ['firstDay', 'lastDay']],
+      [{}, ['firstDay', 'lastDay']],
+    ] as const) {
+      expect(await addAwayPeriod(head, period)).toEqual({ ok: false, error: 'invalid', fields });
+    }
+    expect(await together(head)).toMatchObject({ periods: [] });
+  });
+
+  it('shows and removes only current and upcoming periods, of its own household', async () => {
+    const household = await founded();
+    const other = await founded();
+    await addAwayPeriod(household.head, { firstDay: '2026-10-08', lastDay: '2026-10-09' });
+    const theirs = await addAwayPeriod(other.head, {
+      firstDay: '2026-10-12',
+      lastDay: '2026-10-13',
+    });
+    if (!theirs.ok) throw new Error('Not added');
+    expect(await removeAwayPeriod(household.head, { period: theirs.periodId })).toEqual({
+      ok: false,
+      error: 'not-found',
+    });
+    expect(await removeAwayPeriod(household.head, { period: 'x' })).toEqual({
+      ok: false,
+      error: 'not-found',
+    });
+    household.clock.advance({ hours: 48 });
+    expect(await together(household.head)).toMatchObject({ periods: [] });
+    expect(await together(other.head)).toMatchObject({ periods: ['2026-10-12/2026-10-13'] });
   });
 });

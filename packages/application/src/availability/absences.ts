@@ -1,4 +1,11 @@
-import { absences, households, inHousehold, members, type Transaction } from '@householdr/db';
+import {
+  absences,
+  awayPeriods,
+  households,
+  inHousehold,
+  members,
+  type Transaction,
+} from '@householdr/db';
 import {
   can,
   householdDate,
@@ -184,9 +191,18 @@ export interface MemberAvailability {
   mayManage: boolean;
 }
 
+/** When the whole household is away together, which every member sees (ADR-0005 §5). */
+export interface HouseholdAway {
+  /** Its current and upcoming periods away, by first day. */
+  periods: AbsenceView[];
+  /** Whether the member viewing may add and remove them: heads only. */
+  mayManage: boolean;
+}
+
 type ViewAvailabilityResult =
   | {
       ok: true;
+      household: HouseholdAway;
       members: MemberAvailability[];
       /** The days a new absence can fall on, for the form's hints (CODE-12). */
       plannable: Absence;
@@ -219,8 +235,21 @@ export async function viewAvailability(context: HouseholdContext): Promise<ViewA
       .from(absences)
       .where(notOver(date))
       .orderBy(asc(absences.firstDay), asc(absences.lastDay), asc(absences.id));
+    const together = await tx
+      .select({ id: awayPeriods.id, firstDay: awayPeriods.firstDay, lastDay: awayPeriods.lastDay })
+      .from(awayPeriods)
+      .where(gte(awayPeriods.lastDay, date.toString()))
+      .orderBy(asc(awayPeriods.firstDay), asc(awayPeriods.lastDay), asc(awayPeriods.id));
     return {
       ok: true as const,
+      household: {
+        periods: together.map((period) => ({
+          id: period.id,
+          from: Temporal.PlainDate.from(period.firstDay),
+          to: Temporal.PlainDate.from(period.lastDay),
+        })),
+        mayManage: can(context.member, { action: 'household.away' }),
+      },
       plannable: plannableDays(date),
       members: list.map((row) => ({
         id: row.id,
@@ -236,5 +265,73 @@ export async function viewAvailability(context: HouseholdContext): Promise<ViewA
         mayManage: can(context.member, { action: 'availability.manage', member: asMember(row) }),
       })),
     };
+  });
+}
+
+type AddAwayPeriodResult =
+  | { ok: true; periodId: string }
+  /** Only heads mark the household away (ADR-0005 §5), once signed in with two factors. */
+  | { ok: false; error: 'not-allowed' }
+  /** The days that can't be planned, by the same rule as a member's absence. */
+  | { ok: false; error: 'invalid'; fields: AbsenceField[] };
+
+/**
+ * Marks a period when the whole household is away together, by a head (ADR-0005 §5). Its days are
+ * planned like an absence's: from today up to a year ahead. It may overlap another: plans take
+ * their union.
+ */
+export async function addAwayPeriod(
+  context: HouseholdContext,
+  input: unknown,
+): Promise<AddAwayPeriodResult> {
+  if (!can(context.member, { action: 'household.away' })) {
+    return { ok: false, error: 'not-allowed' };
+  }
+  return inHousehold(context.db, context.householdId, async (tx): Promise<AddAwayPeriodResult> => {
+    const { firstDay, lastDay } = v.parse(days, input);
+    const ends = unplannableEnds({ from: firstDay, to: lastDay }, await today(tx, context));
+    // With no end refused, both are days; the last two checks only tell TypeScript so.
+    if (ends.length > 0 || !firstDay || !lastDay) {
+      return { ok: false, error: 'invalid', fields: ends.map((end) => fieldOf[end]) };
+    }
+    const [added] = await tx
+      .insert(awayPeriods)
+      .values({
+        householdId: context.householdId,
+        firstDay: firstDay.toString(),
+        lastDay: lastDay.toString(),
+      })
+      .returning({ id: awayPeriods.id });
+    if (!added) throw new Error('No period away was added.');
+    return { ok: true, periodId: added.id };
+  });
+}
+
+type RemoveAwayPeriodResult =
+  | { ok: true }
+  | { ok: false; error: 'not-allowed' }
+  /** No current or upcoming period away with that id in the household: it may be removed already. */
+  | { ok: false; error: 'not-found' };
+
+/** Removes a current or upcoming period when the household is away, by a head (ADR-0005 §5). */
+export async function removeAwayPeriod(
+  context: HouseholdContext,
+  input: unknown,
+): Promise<RemoveAwayPeriodResult> {
+  if (!can(context.member, { action: 'household.away' })) {
+    return { ok: false, error: 'not-allowed' };
+  }
+  const parsed = v.safeParse(v.object({ period: id }), input);
+  if (!parsed.success) return { ok: false, error: 'not-found' };
+  const { period } = parsed.output;
+  return inHousehold(context.db, context.householdId, async (tx) => {
+    const date = await today(tx, context);
+    const removed = await tx
+      .delete(awayPeriods)
+      .where(and(eq(awayPeriods.id, period), gte(awayPeriods.lastDay, date.toString())))
+      .returning({ id: awayPeriods.id });
+    return removed.length > 0
+      ? { ok: true as const }
+      : { ok: false as const, error: 'not-found' as const };
   });
 }

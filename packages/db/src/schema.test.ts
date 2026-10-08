@@ -3,7 +3,7 @@ import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { inHousehold, type Database } from './connection';
 import { accountEmails, accounts, sessions } from './auth-schema';
-import { absences, households, members } from './schema';
+import { absences, awayPeriods, households, members } from './schema';
 import { refusal, testDatabase } from './testing';
 
 // The database keeps to the domain's rules as a second line of defence (ADR-0006 §1, ADR-0012 §2).
@@ -209,6 +209,34 @@ describe('absences (ADR-0005 §2)', () => {
     const other = await away({ firstDay: '2026-10-12', lastDay: '2026-10-16' });
     await inHousehold(db, other, (tx) => tx.delete(households));
     expect(await daysOf(other)).toEqual([]);
+  });
+});
+
+describe('away periods (ADR-0005 §5)', () => {
+  /** A household with `days` as its periods away. Returns its id. */
+  const awayTogether = async (...days: { firstDay: string; lastDay: string }[]) => {
+    const id = newId();
+    await inHousehold(db, id, async (tx) => {
+      await tx.insert(households).values(household(id));
+      for (const each of days) await tx.insert(awayPeriods).values({ householdId: id, ...each });
+    });
+    return id;
+  };
+
+  it('are whole days, the last not before the first, both included, and go with the household', async () => {
+    const id = await awayTogether({ firstDay: '2026-10-12', lastDay: '2026-10-12' });
+    expect(
+      await inHousehold(db, id, (tx) =>
+        tx
+          .select({ firstDay: awayPeriods.firstDay, lastDay: awayPeriods.lastDay })
+          .from(awayPeriods),
+      ),
+    ).toEqual([{ firstDay: '2026-10-12', lastDay: '2026-10-12' }]);
+    expect(await refusal(awayTogether({ firstDay: '2026-10-16', lastDay: '2026-10-15' }))).toBe(
+      'away_periods_days',
+    );
+    await inHousehold(db, id, (tx) => tx.delete(households));
+    expect(await inHousehold(db, id, (tx) => tx.select().from(awayPeriods))).toEqual([]);
   });
 });
 

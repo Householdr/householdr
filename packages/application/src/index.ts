@@ -3,10 +3,13 @@ export type { Clock, Flags, LogFields, Logger, Mail, Mailer } from './ports';
 export { flags, type FlagKey } from './flags/registry';
 export {
   addAbsence,
+  addAwayPeriod,
   removeAbsence,
+  removeAwayPeriod,
   viewAvailability,
   type AbsenceField,
   type AbsenceView,
+  type HouseholdAway,
   type MemberAvailability,
 } from './availability/absences';
 export { addAdult } from './households/add-adult';
