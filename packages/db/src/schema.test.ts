@@ -1,6 +1,7 @@
 import type { HouseholdCalendar } from '@householdr/domain';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { inHousehold, type Database } from './connection';
+import { accounts, sessions } from './auth-schema';
 import { households, members } from './schema';
 import { refusal, testDatabase } from './testing';
 
@@ -118,5 +119,40 @@ describe('members', () => {
       return tx.select().from(members);
     });
     expect(left).toEqual([]);
+  });
+});
+
+describe('accounts and sessions (ADR-0010)', () => {
+  const addAccount = (fields: Partial<typeof accounts.$inferInsert> = {}) =>
+    db
+      .insert(accounts)
+      .values({ name: 'Robin', email: `robin-${String(++next)}@example.org`, ...fields })
+      .returning();
+
+  it('stores no profile picture (ADR-0012 §1)', async () => {
+    expect(await refusal(addAccount())).toBeUndefined();
+    expect(await refusal(addAccount({ image: 'https://example.org/robin.png' }))).toBe(
+      'accounts_no_image',
+    );
+  });
+
+  it('keeps one account per e-mail address (ADR-0010 §1)', async () => {
+    expect(await refusal(addAccount({ email: 'kim@example.org' }))).toBeUndefined();
+    expect(await refusal(addAccount({ email: 'kim@example.org' }))).toBe('accounts_email_unique');
+  });
+
+  it('stores no address on a session (ADR-0012 §2, clarification)', async () => {
+    const [account] = await addAccount();
+    if (!account) throw new Error('No account');
+    const session = (fields: Partial<typeof sessions.$inferInsert>) =>
+      db.insert(sessions).values({
+        token: `token-${String(++next)}`,
+        userId: account.id,
+        expiresAt: new Date('2026-11-07T00:00:00Z'),
+        ...fields,
+      });
+    expect(await refusal(session({}))).toBeUndefined();
+    expect(await refusal(session({ ipAddress: '' }))).toBe('sessions_no_ip_address');
+    expect(await refusal(session({ ipAddress: '203.0.113.9' }))).toBe('sessions_no_ip_address');
   });
 });
