@@ -14,7 +14,14 @@ import {
 } from './passkeys';
 import { currentSession, type Session } from './sessions';
 import { signInWithPassword } from './sign-in';
-import { addTestPasskey, createTestAccount, testAuthenticator, testSignInContext } from './testing';
+import { householdPasskeyOptions } from './household-sign-up';
+import {
+  addTestPasskey,
+  createTestAccount,
+  signUpLinkTo,
+  testAuthenticator,
+  testSignInContext,
+} from './testing';
 
 // Adding and removing passkeys on the security page (ADR-0010 §2, §6), on a real database
 // (TEST-11).
@@ -169,6 +176,63 @@ describe('adding a passkey (ADR-0010 §2)', () => {
       ok: false,
       error: 'confirm',
     });
+  });
+
+  it('asks again when the sign-in turned 10 minutes old after the challenge (ADR-0010 §6)', async () => {
+    const person = await signedIn();
+    const options = await passkeyOptions(context, person.session, headersWith(person.cookie));
+    if (!options.ok) throw new Error('No options');
+    await signedInLongAgo(person.session.id);
+    const response = testAuthenticator().register(
+      options.options as Parameters<ReturnType<typeof testAuthenticator>['register']>[0],
+      origin,
+    );
+    const headers = headersWith(person.cookie, ...options.cookies);
+    expect(await addPasskey(context, person.session, headers, { response }, client)).toEqual({
+      ok: false,
+      error: 'confirm',
+    });
+    expect(await accountPasskeys(context, person.session)).toEqual([]);
+  });
+
+  it('is only for the account signed in, outside signing up (ADR-0010 §1, §2)', async () => {
+    // Without a session, the library makes no challenge.
+    await expect(
+      context.auth.api.generatePasskeyRegistrationOptions({ headers: new Headers() }),
+    ).rejects.toMatchObject({ status: 'UNAUTHORIZED' });
+    // A challenge made for signing up adds nothing outside it: not without a session...
+    const token = await signUpLinkTo(test.context, `person-${String(++next)}@example.org`);
+    const fields = {
+      name: 'Ash Lane',
+      headName: 'Robin',
+      country: 'BE',
+      timeZone: 'Europe/Brussels',
+      language: 'en',
+      headLanguage: 'en',
+      weekStartDay: 1,
+      adult: true,
+    };
+    const forSignUp = await householdPasskeyOptions({ ...context, terms: null }, token, fields);
+    if (!forSignUp.ok) throw new Error('No options');
+    const options = forSignUp.options as Parameters<
+      ReturnType<typeof testAuthenticator>['register']
+    >[0];
+    const before = await test.context.db.select({ id: passkeys.id }).from(passkeys);
+    await expect(
+      context.auth.api.verifyPasskeyRegistration({
+        headers: headersWith(...forSignUp.cookies),
+        body: { response: testAuthenticator().register(options, origin) },
+      }),
+    ).rejects.toMatchObject({ status: 'UNAUTHORIZED' });
+    // ...nor to the account signed in.
+    const person = await signedIn();
+    const headers = headersWith(person.cookie, ...forSignUp.cookies);
+    const response = testAuthenticator().register(options, origin);
+    expect(await addPasskey(context, person.session, headers, { response }, client)).toEqual({
+      ok: false,
+      error: 'failed',
+    });
+    expect(await test.context.db.select({ id: passkeys.id }).from(passkeys)).toEqual(before);
   });
 });
 

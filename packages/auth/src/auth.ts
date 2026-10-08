@@ -6,15 +6,18 @@ import {
   sessions,
   verifications,
   type Database,
+  type Transaction,
 } from '@householdr/db';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { APIError, getSessionFromCtx } from 'better-auth/api';
 import { and, eq } from 'drizzle-orm';
 import { deviceOf } from './device';
-import { linkInTheMaking, passwordResetInTheMaking } from './links';
+import { accountInTheMaking, linkInTheMaking, passwordResetInTheMaking } from './links';
 
 export interface AuthSettings {
-  db: Database;
+  /** The database, or a transaction that everything the library writes joins. */
+  db: Database | Transaction;
   /** The public URL people reach the app at, such as `https://householdr.example.org`. */
   baseUrl: string;
   /** Signs session cookies: at least 32 random bytes. */
@@ -70,6 +73,10 @@ export function createAuth({ db, baseUrl, secret }: AuthSettings) {
         if (reset) reset.account = { id: user.id, email: user.email };
         return Promise.resolve();
       },
+    },
+    user: {
+      // Every account has a culture (ADR-0008 §6), also those the library makes.
+      additionalFields: { culture: { type: 'string', required: true, input: false } },
     },
     session: {
       // A session lasts 30 days and is extended while used (ADR-0010 §6).
@@ -141,6 +148,30 @@ export function createAuth({ db, baseUrl, secret }: AuthSettings) {
         rpID: new URL(baseUrl).hostname,
         rpName: 'Householdr',
         origin: new URL(baseUrl).origin,
+        // Signing up makes the account's first passkey before the account exists (ADR-0010 §1, §3,
+        // clarification). Anywhere else a passkey needs the session of its account; how recent
+        // that sign-in must be, `passkeys.ts` checks (§6).
+        registration: {
+          requireSession: false,
+          resolveUser: () => {
+            const account = accountInTheMaking.getStore();
+            if (!account) throw new APIError('UNAUTHORIZED');
+            // The account's id, chosen now, and its address, which password managers show.
+            return { id: crypto.randomUUID(), name: account.email, displayName: account.email };
+          },
+          afterVerification: async ({ ctx, user }) => {
+            const account = accountInTheMaking.getStore();
+            if (!account) {
+              const session = await getSessionFromCtx(ctx);
+              if (session?.user.id !== user.id) throw new APIError('UNAUTHORIZED');
+              return;
+            }
+            // Made for this address, and written before the passkey and the session that need it.
+            if (user.name !== account.email || !account.write || !(await account.write(user.id))) {
+              throw new APIError('BAD_REQUEST');
+            }
+          },
+        },
       }),
     ],
     // Nothing leaves the server, on our hosting or a self-hosted one (SEC-13).

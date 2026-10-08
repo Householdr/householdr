@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { expect, expectAccessible, forceFlags, signIn, test } from './fixtures';
+import { expect, expectAccessible, forceFlags, signIn, test, withAuthenticator } from './fixtures';
 import { forgetMail, mailTo } from './mail';
 import { proxyHeaders } from './proxy';
 
@@ -8,25 +8,6 @@ import { proxyHeaders } from './proxy';
 
 const flags = { 'sign-in': true, passkeys: true };
 const firefoxOnLinux = 'Mozilla/5.0 (X11; Linux x86_64; rv:143.0) Gecko/20100101 Firefox/143.0';
-
-/**
- * Gives `page` a built-in authenticator, like a phone's or a laptop's, that says yes to every
- * fingerprint: Chromium's own WebAuthn emulation.
- */
-async function withAuthenticator(page: Page) {
-  const cdp = await page.context().newCDPSession(page);
-  await cdp.send('WebAuthn.enable');
-  await cdp.send('WebAuthn.addVirtualAuthenticator', {
-    options: {
-      protocol: 'ctap2',
-      transport: 'internal',
-      hasResidentKey: true,
-      hasUserVerification: true,
-      isUserVerified: true,
-      automaticPresenceSimulation: true,
-    },
-  });
-}
 
 test('the passkeys aren’t on the security page while their flag is off', async ({
   page,
