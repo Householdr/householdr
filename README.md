@@ -72,6 +72,22 @@ The name "Householdr" and its logo are not covered by the licence.
 You need Node.js 26 and pnpm (`corepack enable` picks up the version the repository pins). Then
 `pnpm install`, and `pnpm verify` runs the same lint, format, type and unit checks as CI.
 
+The database tests need a PostgreSQL server, on which each test file creates and drops its own
+database. Point `TEST_DATABASE_URL` at a superuser there, for example in a throwaway container
+reachable only from your machine (the tests themselves run as a role without superuser rights):
+
+```sh
+docker run --rm -d -p 127.0.0.1:5432:5432 -e POSTGRES_HOST_AUTH_METHOD=trust postgres:18
+export TEST_DATABASE_URL=postgres://postgres@localhost:5432/postgres
+```
+
+After changing `packages/db/src/schema.ts`, generate the migration with
+`pnpm --filter @householdr/db generate --name <what-changed>`, and review the SQL it writes. A new
+household-owned table forces row-level security in the same migration (CODE-17). Row-level security
+also binds migrations, so a data migration across households first runs
+`ALTER TABLE … NO FORCE ROW LEVEL SECURITY` and ends with `FORCE` again, in the same transaction;
+otherwise its updates quietly touch no rows.
+
 Every feature starts with an accepted ADR (PROC-1); bug fixes, refactors, tests and copy fixes don't
 need one. Pull requests follow the [template](.github/pull_request_template.md) and the
 [process standard](docs/standards/process.md).
