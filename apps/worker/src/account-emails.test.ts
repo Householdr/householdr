@@ -69,6 +69,19 @@ describe('the password-changed e-mail (ADR-0010 §8)', () => {
   });
 });
 
+describe('the passkey e-mails (ADR-0010 §2, ADR-0014 §2)', () => {
+  it('say a passkey was added or removed, and what to do if it wasn’t you, with no link', () => {
+    const added = written({ kind: 'passkey-added', to: 'robin@example.org' });
+    expect(added.subject).toBe('A passkey was added to your Householdr account');
+    expect(added.text).toContain('remove the passkey and sign out all other devices');
+    expect(added.html).not.toContain('<a ');
+    const removed = written({ kind: 'passkey-removed', to: 'robin@example.org' });
+    expect(removed.subject).toBe('A passkey was removed from your Householdr account');
+    expect(removed.text).toContain('It no longer signs in.');
+    expect(removed.html).not.toContain('<a ');
+  });
+});
+
 describe('delivering an account e-mail (ADR-0014 §7, clarification)', () => {
   it('sends it with a fresh link and deletes its row', async () => {
     const account = await newAccount();

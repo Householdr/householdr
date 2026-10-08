@@ -18,6 +18,12 @@ export const flags = {
     owner: 'Jens',
     expires: '2027-03-31',
   },
+  passkeys: {
+    kind: 'release',
+    description: 'Adding and removing passkeys on the security page (ADR-0010 §2).',
+    owner: 'Jens',
+    expires: '2027-03-31',
+  },
 } as const satisfies Record<string, Flag>;
 
 export type FlagKey = keyof typeof flags;

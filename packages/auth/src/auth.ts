@@ -1,4 +1,12 @@
-import { accounts, credentials, sessions, verifications, type Database } from '@householdr/db';
+import { passkey } from '@better-auth/passkey';
+import {
+  accounts,
+  credentials,
+  passkeys,
+  sessions,
+  verifications,
+  type Database,
+} from '@householdr/db';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { and, eq } from 'drizzle-orm';
@@ -17,6 +25,12 @@ export interface AuthSettings {
 const day = 24 * 60 * 60;
 
 /**
+ * How recent a sign-in must be to change a way of signing in; an older one confirms it is still
+ * the same person by signing in again (ADR-0010 §6).
+ */
+export const recentSignIn = Temporal.Duration.from({ minutes: 10 });
+
+/**
  * The authentication library over the `auth` tables (ADR-0008 §9 and ADR-0023 §2,
  * clarifications). Sign-in methods are added by the features that offer them (ADR-0010 §2).
  */
@@ -32,6 +46,7 @@ export function createAuth({ db, baseUrl, secret }: AuthSettings) {
         account: credentials,
         session: sessions,
         verification: verifications,
+        passkey: passkeys,
       },
     }),
     emailAndPassword: {
@@ -60,6 +75,7 @@ export function createAuth({ db, baseUrl, secret }: AuthSettings) {
       // A session lasts 30 days and is extended while used (ADR-0010 §6).
       expiresIn: 30 * day,
       updateAge: day,
+      freshAge: recentSignIn.total('seconds'),
       // The device it was started on, for the security page (ADR-0010 §6).
       additionalFields: {
         browser: { type: 'string', required: false, input: false },
@@ -118,6 +134,15 @@ export function createAuth({ db, baseUrl, secret }: AuthSettings) {
       storeIdentifier: 'hashed',
       additionalFields: { purpose: { type: 'string', required: false, input: false } },
     },
+    plugins: [
+      // Passkeys for this site only, checked against its own address rather than the one a request
+      // says it comes from (ADR-0010 §2).
+      passkey({
+        rpID: new URL(baseUrl).hostname,
+        rpName: 'Householdr',
+        origin: new URL(baseUrl).origin,
+      }),
+    ],
     // Nothing leaves the server, on our hosting or a self-hosted one (SEC-13).
     telemetry: { enabled: false },
     // At `info`, the library logs e-mail addresses (SEC-3).
