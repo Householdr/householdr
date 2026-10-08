@@ -9,6 +9,7 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@flipt-io/flipt-client-js": "catalog:",
     "@householdr/application": "workspace:*",
     "nodemailer": "catalog:"
   },

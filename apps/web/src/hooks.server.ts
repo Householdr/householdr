@@ -1,5 +1,7 @@
+import { flagValues, type Flags } from '@householdr/application';
 import { sequence, type Handle } from '@sveltejs/kit/hooks';
 import { paraglideMiddleware } from './lib/paraglide/server.js';
+import { flagSource } from './lib/server/flags';
 import { securityHeaders } from './security';
 
 /** Every response carries the browser hardening of ADR-0017 §4. */
@@ -17,5 +19,14 @@ export const localise: Handle = ({ event, resolve }) =>
     }),
   );
 
+let flags: Flags | undefined;
+
+/** Every flag is evaluated once per request, on the server (ADR-0015 §3). */
+export const flag: Handle = ({ event, resolve }) => {
+  flags ??= flagSource();
+  event.locals.flags = flagValues(flags);
+  return resolve(event);
+};
+
 // Hardening comes first, so it also covers any response the localisation returns itself.
-export const handle = sequence(harden, localise);
+export const handle = sequence(harden, localise, flag);

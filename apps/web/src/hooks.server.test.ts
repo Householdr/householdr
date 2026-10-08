@@ -1,17 +1,17 @@
 import type { RequestEvent } from '@sveltejs/kit';
 import type { Handle, ResolveOptions } from '@sveltejs/kit/hooks';
 import { describe, expect, it } from 'vitest';
-import { harden, localise } from './hooks.server';
+import { flag, harden, localise } from './hooks.server';
 
 const page = '<html lang="%paraglide.lang%"></html>';
 
 // The hooks run one by one: SvelteKit's `sequence` needs the store of a running server.
 
 /** Runs `hook` on a request for a page, rendering `page` the way SvelteKit would. */
-const respond = (hook: Handle, headers: Record<string, string> = {}) => {
+const respond = (hook: Handle, headers: Record<string, string> = {}, locals = {}) => {
   const request = new Request('https://householdr.example.org/', { headers });
   return hook({
-    event: { request, url: new URL(request.url) } as RequestEvent,
+    event: { request, url: new URL(request.url), locals } as RequestEvent,
     resolve: async (_event, options?: ResolveOptions) => {
       const html = (await options?.transformPageChunk?.({ html: page, done: true })) ?? page;
       return new Response(html, { headers: { 'content-type': 'text/html' } });
@@ -47,5 +47,13 @@ describe('the security headers (ADR-0017 §4)', () => {
     expect(features).not.toHaveProperty('publickey-credentials-get');
     expect(features).not.toHaveProperty('publickey-credentials-create');
     expect(features).not.toHaveProperty('web-share');
+  });
+});
+
+describe('the flags of a request (ADR-0015 §3)', () => {
+  it('are evaluated once, at their defaults on an instance without Flipt', async () => {
+    const locals = {} as App.Locals;
+    await respond(flag, {}, locals);
+    expect(locals.flags).toEqual({ 'sign-in': false });
   });
 });
