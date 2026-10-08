@@ -14,8 +14,11 @@ async function householdContext(locals: App.Locals) {
   return { db, clock, ...locals.membership };
 }
 
-/** The household's tasks, and what the member opening them may do there. */
-export const load = (async ({ locals }) => {
+/**
+ * The household's tasks, and what the member opening them may do there; whether a task was just
+ * removed, as its page says when it leads back here.
+ */
+export const load = (async ({ locals, url }) => {
   const context = await householdContext(locals);
   const result = await listTasks(context);
   if (!result.ok) error(403);
@@ -23,8 +26,9 @@ export const load = (async ({ locals }) => {
   return {
     household: result.household,
     tasks: result.tasks,
-    mayAddTasks: result.mayAddTasks,
+    mayChangeTasks: result.mayChangeTasks,
     starts: { earliest: earliest.toString(), latest: latest.toString() },
+    removed: url.searchParams.get('task') === 'removed',
   };
 }) satisfies PageServerLoad;
 

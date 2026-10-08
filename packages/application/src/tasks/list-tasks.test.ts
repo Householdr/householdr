@@ -85,7 +85,7 @@ describe('listTasks (ADR-0001 §1)', () => {
           onMiss: 'lapse',
         },
       ],
-      mayAddTasks: true,
+      mayChangeTasks: true,
       starts: expect.anything() as unknown,
     });
   });
@@ -97,17 +97,20 @@ describe('listTasks (ADR-0001 §1)', () => {
     expect(await listTasks(birch)).toMatchObject({ household: 'Birch Court', tasks: [] });
   });
 
-  it('shows the tasks to every member with an account, and lets heads with two factors add', async () => {
+  it('shows the tasks to every member with an account, and lets heads with two factors change them', async () => {
     const head = await founded();
     await add(head, 'Vacuum', 'weekly');
     const seen = { tasks: [{ name: 'Vacuum', frequency: 'weekly' }] };
-    expect(await listTasks(head)).toMatchObject({ ...seen, mayAddTasks: true });
+    expect(await listTasks(head)).toMatchObject({ ...seen, mayChangeTasks: true });
     for (const member of [
       { ...head.member, twoFactor: false },
       { ...head.member, role: 'adult' as const },
       { ...head.member, role: 'child' as const },
     ]) {
-      expect(await listTasks({ ...head, member })).toMatchObject({ ...seen, mayAddTasks: false });
+      expect(await listTasks({ ...head, member })).toMatchObject({
+        ...seen,
+        mayChangeTasks: false,
+      });
     }
   });
 

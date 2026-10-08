@@ -43,7 +43,7 @@ for (const javaScriptEnabled of [true, false]) {
 
       await expect(page.getByRole('status')).toHaveText('Put the bins out is added.');
       await expect(page.getByRole('list', { name: 'Tasks' }).getByRole('listitem')).toHaveText([
-        /^\s*Put the bins out\s*How often\s*Every two weeks\s*How long\s*5 minutes\s*If not done\s*It’s dropped: the moment has passed\s*$/,
+        /^\s*Put the bins out\s*How often\s*Every two weeks\s*How long\s*5 minutes\s*If not done\s*It’s dropped: the moment has passed\s*Edit\s*$/,
       ]);
       await expect(page.getByLabel('What needs doing')).toHaveValue('');
       await expect(page.getByLabel('How often')).toHaveValue('weekly');

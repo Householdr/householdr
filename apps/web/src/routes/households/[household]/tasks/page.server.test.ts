@@ -48,9 +48,9 @@ const founded = async () => {
 type Membership = Awaited<ReturnType<typeof founded>>;
 const on = { flags: { tasks: true } };
 
-const opened = async (locals: object) => {
+const opened = async (locals: object, url = new URL('https://householdr.example.org/')) => {
   try {
-    return await load({ locals } as unknown as Parameters<typeof load>[0]);
+    return await load({ locals, url } as unknown as Parameters<typeof load>[0]);
   } catch (thrown) {
     if (isHttpError(thrown)) return thrown.status;
     throw thrown;
@@ -89,9 +89,16 @@ describe('a household’s tasks page (ADR-0001 §1)', () => {
     expect(await opened({ ...on, membership })).toEqual({
       household: 'Ash Lane',
       tasks: [],
-      mayAddTasks: true,
+      mayChangeTasks: true,
       starts: { earliest: '2026-10-08', latest: '2027-10-08' },
+      removed: false,
     });
+  });
+
+  it('says a task is removed when the task’s own page leads back after removing it', async () => {
+    const membership = await founded();
+    const back = new URL('https://householdr.example.org/?task=removed');
+    expect(await opened({ ...on, membership }, back)).toMatchObject({ removed: true });
   });
 
   it('adds tasks that roll over or lapse, says so, and lists them (ADR-0002 §2, ADR-0004 §3)', async () => {
@@ -140,7 +147,7 @@ describe('a household’s tasks page (ADR-0001 §1)', () => {
     const adult = asAdult(head);
     expect(await opened({ ...on, membership: adult })).toMatchObject({
       tasks: [{ name: 'Vacuum' }],
-      mayAddTasks: false,
+      mayChangeTasks: false,
     });
     expect(await add({ ...on, membership: adult }, vacuum)).toBe(403);
   });

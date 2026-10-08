@@ -21,8 +21,8 @@ type ListTasksResult =
       /** The household's name. */
       household: string;
       tasks: TaskSummary[];
-      /** Whether the member may add tasks: a head with two factors (ADR-0001 §2). */
-      mayAddTasks: boolean;
+      /** Whether the member may add, change and remove tasks: a head with two factors (ADR-0001 §2). */
+      mayChangeTasks: boolean;
       /** The days a new task can start on, from today in the household's time zone. */
       starts: { earliest: Temporal.PlainDate; latest: Temporal.PlainDate };
     }
@@ -65,7 +65,7 @@ export async function listTasks(context: HouseholdContext): Promise<ListTasksRes
       ok: true as const,
       household: household.name,
       tasks: list,
-      mayAddTasks: can(context.member, { action: 'household.tasks' }),
+      mayChangeTasks: can(context.member, { action: 'household.tasks' }),
       starts: startRange(today),
     };
   });
