@@ -64,6 +64,14 @@ touches it, and how people exercise their rights.
 | **Newsletter consent** | Opted in or not, when, the text shown | Sending product news and offers to those who asked ([ADR-0014](0014-notifications-and-reminders.md) §8) | Consent (a) |
 | **Product events and experiment assignments** | Which variant a household is in; a fixed list of product events ("comparison round finished"), without content | Measuring experiments and feature use ([ADR-0015](0015-feature-flags-and-experiments.md)) | Legitimate interest (f), with an opt-out |
 
+> **Clarification (2026-10-07):** every **member profile** has a name or nickname, whatever its role:
+> heads create profiles without an account for adults too
+> ([ADR-0010](0010-identity-invitations-and-childrens-accounts.md) §1). It is membership data, on the
+> same basis as the rest of the membership, and visible like a member's name (§3). The **household**
+> has a name and its settings (country, language, time zone, week start day), which heads can change
+> ([ADR-0018](0018-household-safety.md) §5); they are chore records of the household and are kept
+> while it exists (§5).
+
 What is deliberately **not** stored:
 
 - **No reasons**: not for a reduced share, not for an absence, not for sudden unavailability. "I can't
