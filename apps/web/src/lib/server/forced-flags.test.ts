@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { withForcedFlags } from './forced-flags';
 
 describe('withForcedFlags (ADR-0015 §10)', () => {
-  const values = { 'sign-in': false };
+  const values = { 'sign-in': false, 'password-reset': false };
 
   it('turns the flags a test names on or off, and leaves the rest', () => {
-    expect(withForcedFlags(values, 'sign-in=on')).toEqual({ 'sign-in': true });
-    expect(withForcedFlags({ 'sign-in': true }, 'sign-in=off')).toEqual({ 'sign-in': false });
+    expect(withForcedFlags(values, 'sign-in=on')).toEqual({ ...values, 'sign-in': true });
+    expect(withForcedFlags({ ...values, 'sign-in': true }, 'sign-in=off')).toEqual(values);
     expect(withForcedFlags(values, undefined)).toEqual(values);
   });
 

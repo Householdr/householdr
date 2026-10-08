@@ -2,7 +2,13 @@ import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { rateLimits } from './auth-schema';
 import type { Database } from './connection';
-import { countAttempt, forgetCount, withdrawAttempt, type Limit } from './rate-limits';
+import {
+  countAllowed,
+  countAttempt,
+  forgetCount,
+  withdrawAttempt,
+  type Limit,
+} from './rate-limits';
 import { testDatabase } from './testing';
 
 // The counts behind the sign-in waits (ADR-0010 §2 and ADR-0017 §5, clarifications), on a real
@@ -137,5 +143,63 @@ describe('the counts table', () => {
     const { rows } = await db.execute<{ persistence: string }>(sql`
       select relpersistence as persistence from pg_class where oid = 'auth.rate_limits'::regclass`);
     expect(rows).toEqual([{ persistence: 'u' }]);
+  });
+});
+
+describe('countAllowed (ADR-0017 §5, clarification)', () => {
+  const hour = Temporal.Duration.from({ hours: 1 });
+  /** Three an hour and five a day under `key`. */
+  const allowances = (key: string) => [
+    { key: `${key}:hour`, max: 3, window: hour },
+    { key: `${key}:day`, max: 5, window: day },
+  ];
+  const count = (key: string, seconds: number) =>
+    db.transaction((tx) => countAllowed(tx, allowances(key), at(seconds)));
+
+  it('allows up to the most a window holds, then none until it ends', async () => {
+    const key = newKey();
+    expect([await count(key, 0), await count(key, 60), await count(key, 120)]).toEqual([
+      true,
+      true,
+      true,
+    ]);
+    expect(await count(key, 600)).toBe(false);
+    // The hour started with the first count.
+    expect(await count(key, 3_600)).toBe(true);
+    expect(await row(`${key}:hour`)).toEqual({
+      count: 1,
+      changedAt: date(3_600),
+      expiresAt: date(7_200),
+    });
+  });
+
+  it('counts nothing when any window is full', async () => {
+    const key = newKey();
+    for (const seconds of [0, 1, 2, 3_600, 3_601]) expect(await count(key, seconds)).toBe(true);
+    // A new hour, but the day is full: the hour's old window is left as it was.
+    expect(await count(key, 7_200)).toBe(false);
+    expect(await row(`${key}:hour`)).toEqual({
+      count: 2,
+      changedAt: date(3_601),
+      expiresAt: date(7_200),
+    });
+    expect(await row(`${key}:day`)).toMatchObject({ count: 5 });
+  });
+
+  it('counts nothing when the transaction it is part of rolls back', async () => {
+    const key = newKey();
+    await db
+      .transaction(async (tx) => {
+        await countAllowed(tx, allowances(key), at(0));
+        throw new Error('The rest fails.');
+      })
+      .catch(() => undefined);
+    expect(await row(`${key}:hour`)).toBeUndefined();
+  });
+
+  it('lets no burst past the most a window holds', async () => {
+    const key = newKey();
+    const answers = await Promise.all(Array.from({ length: 10 }, () => count(key, 0)));
+    expect(answers.filter(Boolean)).toHaveLength(3);
   });
 });

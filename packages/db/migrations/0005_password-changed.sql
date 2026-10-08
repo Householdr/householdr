@@ -1,0 +1,2 @@
+ALTER TABLE "auth"."account_emails" DROP CONSTRAINT "account_emails_kind";--> statement-breakpoint
+ALTER TABLE "auth"."account_emails" ADD CONSTRAINT "account_emails_kind" CHECK ("auth"."account_emails"."kind" in ('password-reset', 'password-changed'));

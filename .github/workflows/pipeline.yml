@@ -155,6 +155,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     # The test server's database, as for the unit tests: throwaway, and reachable only from this job.
+    # And the mail server the worker sends to, whose API the tests read the e-mails from.
     services:
       postgres:
         image: postgres:18@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336 # 18
@@ -164,6 +165,16 @@ jobs:
           - 5432:5432
         options: >-
           --health-cmd "pg_isready --username postgres"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 15
+      mailpit:
+        image: axllent/mailpit:v1.31.4@sha256:b68349e3a014b90c5610bfb26b2ae36f3892d7b8cf25ee140c6c71c98d2fcf48 # v1.31.4
+        ports:
+          - 1025:1025
+          - 8025:8025
+        options: >-
+          --health-cmd "/mailpit readyz"
           --health-interval 2s
           --health-timeout 5s
           --health-retries 15

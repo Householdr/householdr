@@ -12,6 +12,12 @@ export const flags = {
     owner: 'Jens',
     expires: '2027-03-31',
   },
+  'password-reset': {
+    kind: 'release',
+    description: 'Choosing a new password with a link by e-mail (ADR-0010 §8).',
+    owner: 'Jens',
+    expires: '2027-03-31',
+  },
 } as const satisfies Record<string, Flag>;
 
 export type FlagKey = keyof typeof flags;

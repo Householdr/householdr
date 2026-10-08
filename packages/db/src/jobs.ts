@@ -31,9 +31,12 @@ export function jobQueue(db: Database, { worker = false } = {}) {
   return new PgBoss({ db: overPool(db), migrate: false, supervise: worker, schedule: false });
 }
 
+/** The job queue, as `jobQueue` makes it. */
+export type JobQueue = PgBoss;
+
 /** Queues a job inside `tx`, the transaction of the change that causes it (ADR-0008 §10). */
 export async function queueJob<Q extends QueueName>(
-  queue: PgBoss,
+  queue: JobQueue,
   tx: Transaction,
   name: Q,
   data: Jobs[Q],

@@ -1,6 +1,6 @@
 import { and, eq, gt, inArray, lte, sql } from 'drizzle-orm';
 import { rateLimits } from './auth-schema';
-import type { Database } from './connection';
+import type { Database, Transaction } from './connection';
 
 /** One count an attempt goes under, and how long a number of failures makes the next one wait. */
 export interface Limit {
@@ -124,4 +124,51 @@ async function deleteForgotten(db: Database, now: Temporal.Instant) {
     .where(lte(rateLimits.expiresAt, asDate(now)))
     .for('update', { skipLocked: true });
   await db.delete(rateLimits).where(inArray(rateLimits.key, forgotten));
+}
+
+/** At most `max` in every `window`, counted from the first. */
+export interface Allowance {
+  key: string;
+  max: number;
+  window: Temporal.Duration;
+}
+
+/**
+ * Counts one more under every allowance at `now`, inside `tx`, unless one of them is used up:
+ * then nothing is counted and the answer is false (ADR-0017 §5, clarification). A window starts
+ * with its first count and is forgotten when it ends. Concurrent counts queue on the rows.
+ */
+export async function countAllowed(
+  tx: Database | Transaction,
+  allowances: readonly Allowance[],
+  now: Temporal.Instant,
+): Promise<boolean> {
+  const keys = [...new Set(allowances.map((allowance) => allowance.key))].sort();
+  const ended = { count: 0, changedAt: asDate(now), expiresAt: asDate(now) };
+  await tx
+    .insert(rateLimits)
+    .values(keys.map((key) => ({ key, ...ended })))
+    .onConflictDoNothing();
+  const rows = await tx
+    .select()
+    .from(rateLimits)
+    .where(inArray(rateLimits.key, keys))
+    .orderBy(rateLimits.key)
+    .for('update');
+  const open = new Map(
+    rows.filter((row) => isAfter(asInstant(row.expiresAt), now)).map((row) => [row.key, row]),
+  );
+  if (allowances.some((allowance) => (open.get(allowance.key)?.count ?? 0) >= allowance.max)) {
+    return false;
+  }
+  for (const allowance of allowances) {
+    const row = open.get(allowance.key);
+    const next = {
+      count: (row?.count ?? 0) + 1,
+      changedAt: asDate(now),
+      expiresAt: row?.expiresAt ?? asDate(now.add(allowance.window)),
+    };
+    await tx.update(rateLimits).set(next).where(eq(rateLimits.key, allowance.key));
+  }
+  return true;
 }
