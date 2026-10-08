@@ -49,24 +49,41 @@ const founded = async (name = 'Ash Lane', timeZone = 'Europe/Brussels', country 
   return { db, clock, householdId: result.householdId, member };
 };
 
-const add = async (head: Awaited<ReturnType<typeof founded>>, name: string, frequency: string) => {
-  const result = await addTask(head, { name, duration: 20, frequency });
+const add = async (
+  head: Awaited<ReturnType<typeof founded>>,
+  name: string,
+  frequency: string,
+  onMiss = 'roll over',
+) => {
+  const result = await addTask(head, { name, duration: 20, frequency, onMiss });
   if (!result.ok) throw new Error(`Not added: ${result.error}`);
   return result.taskId;
 };
 
 describe('listTasks (ADR-0001 §1)', () => {
-  it('lists the household’s tasks by name, with their frequencies (ADR-0004 §3)', async () => {
+  it('lists the household’s tasks by name, with their frequencies and on-miss policies', async () => {
     const head = await founded();
-    const water = await add(head, 'Water the plants', 'biweekly');
+    const water = await add(head, 'Water the plants', 'biweekly', 'lapse');
     const fridge = await add(head, 'Clean the fridge', 'monthly');
     const result = await listTasks(head);
     expect(result).toEqual({
       ok: true,
       household: 'Ash Lane',
       tasks: [
-        { id: fridge, name: 'Clean the fridge', duration: 20, frequency: 'monthly' },
-        { id: water, name: 'Water the plants', duration: 20, frequency: 'biweekly' },
+        {
+          id: fridge,
+          name: 'Clean the fridge',
+          duration: 20,
+          frequency: 'monthly',
+          onMiss: 'roll over',
+        },
+        {
+          id: water,
+          name: 'Water the plants',
+          duration: 20,
+          frequency: 'biweekly',
+          onMiss: 'lapse',
+        },
       ],
       mayAddTasks: true,
       starts: expect.anything() as unknown,

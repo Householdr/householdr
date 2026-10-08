@@ -22,8 +22,7 @@ export function startRange(today: Temporal.PlainDate) {
 }
 
 /**
- * What happens to an occurrence of a new custom task that isn't done (ADR-0001 §1, ADR-0002 §2): it
- * rolls over, as the form for a one-off task starts on (ADR-0002 §2, clarification), since a chore
- * that still needs doing is the safer guess.
+ * The on-miss policy a task's form starts on, before whoever adds the task picks: roll over, since
+ * a chore that still needs doing is the safer guess (ADR-0002 §2, clarification).
  */
-export const customTaskOnMiss: PlanTask['onMiss'] = 'roll over';
+export const defaultOnMiss: PlanTask['onMiss'] = 'roll over';

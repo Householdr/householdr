@@ -78,7 +78,12 @@ const stored = (householdId: string) =>
       .innerJoin(schedules, eq(schedules.id, tasks.scheduleId)),
   );
 
-const vacuum = { name: 'Vacuum the living room', duration: 30, frequency: 'weekly' };
+const vacuum = {
+  name: 'Vacuum the living room',
+  duration: 30,
+  frequency: 'weekly',
+  onMiss: 'roll over',
+};
 
 describe('addTask (ADR-0001 §1, ADR-0004 §3)', () => {
   it('adds a task on a schedule of its own, from the day given', async () => {
@@ -190,13 +195,39 @@ describe('addTask (ADR-0001 §1, ADR-0004 §3)', () => {
     }
   });
 
+  it('rolls over or lapses when it isn’t done, as chosen (ADR-0002 §2)', async () => {
+    for (const onMiss of ['roll over', 'lapse']) {
+      const head = await founded();
+      expect(await addTask(head, { ...vacuum, onMiss })).toMatchObject({ ok: true });
+      expect(await stored(head.householdId)).toMatchObject([{ onMiss }]);
+    }
+  });
+
+  it('needs to know what happens when it isn’t done', async () => {
+    const head = await founded();
+    for (const onMiss of ['', 'skip', 'rollover', 'Roll over', undefined]) {
+      expect(await addTask(head, { ...vacuum, onMiss })).toEqual({
+        ok: false,
+        error: 'invalid',
+        fields: ['onMiss'],
+      });
+    }
+    expect(await stored(head.householdId)).toEqual([]);
+  });
+
   it('names every field that isn’t valid, in the form’s order, and adds nothing', async () => {
     const head = await founded();
-    const input = { start: '2020-01-01', frequency: 'often', duration: 0, name: '' };
+    const input = {
+      onMiss: 'never',
+      start: '2020-01-01',
+      frequency: 'often',
+      duration: 0,
+      name: '',
+    };
     expect(await addTask(head, input)).toEqual({
       ok: false,
       error: 'invalid',
-      fields: ['name', 'duration', 'frequency', 'start'],
+      fields: ['name', 'duration', 'frequency', 'start', 'onMiss'],
     });
     expect(await addTask(head, 'Vacuum')).toEqual({ ok: false, error: 'invalid', fields: [] });
     expect(await stored(head.householdId)).toEqual([]);

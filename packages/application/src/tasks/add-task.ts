@@ -1,7 +1,6 @@
 import { households, inHousehold, schedules, tasks } from '@householdr/db';
 import {
   can,
-  customTaskOnMiss,
   defaultTiming,
   frequencies,
   frequencyRule,
@@ -29,8 +28,9 @@ const day = v.pipe(
 );
 
 /**
- * What adding a task sends (CODE-12): its name, the minutes it takes, a simple frequency, and the
- * day it starts on, from `today` up to a year on (ADR-0004 §3); without one, it starts today.
+ * What adding a task sends (CODE-12): its name, the minutes it takes, a simple frequency, the day
+ * it starts on, from `today` up to a year on (ADR-0004 §3), or today without one, and what happens
+ * to an occurrence that isn't done (ADR-0002 §2).
  */
 const fields = (today: Temporal.PlainDate) => {
   const { earliest, latest } = startRange(today);
@@ -42,6 +42,7 @@ const fields = (today: Temporal.PlainDate) => {
     duration: v.pipe(v.number(), v.check(isTaskDuration)),
     frequency: v.picklist(frequencies),
     start: v.optional(v.pipe(day, v.check(within))),
+    onMiss: v.picklist(['roll over', 'lapse']),
   };
 };
 
@@ -49,7 +50,7 @@ const fields = (today: Temporal.PlainDate) => {
 export type NewTaskField = keyof ReturnType<typeof fields>;
 
 /** The fields in the order the form shows them, which its error summary follows. */
-const order: NewTaskField[] = ['name', 'duration', 'frequency', 'start'];
+const order: NewTaskField[] = ['name', 'duration', 'frequency', 'start', 'onMiss'];
 
 type AddTaskResult =
   | { ok: true; taskId: string; name: string }
@@ -61,8 +62,8 @@ type AddTaskResult =
 /**
  * Adds a custom task on a simple frequency (ADR-0001 §1, ADR-0004 §3, ADR-0007 §2 step 4): on a
  * schedule of its own, whose one rule starts on the day given or today in the household's time
- * zone; flexible, or floating when it recurs monthly or less often (ADR-0004 §4); and rolling over
- * when it isn't done.
+ * zone; flexible, or floating when it recurs monthly or less often (ADR-0004 §4); rolling over or
+ * lapsing when it isn't done, as chosen (ADR-0002 §2).
  */
 export async function addTask(context: HouseholdContext, input: unknown): Promise<AddTaskResult> {
   if (!can(context.member, { action: 'household.tasks' })) {
@@ -78,7 +79,7 @@ export async function addTask(context: HouseholdContext, input: unknown): Promis
       const keys = new Set(parsed.issues.map(({ path }) => path?.[0]?.key));
       return { ok: false, error: 'invalid', fields: order.filter((field) => keys.has(field)) };
     }
-    const { duration, frequency, start = today } = parsed.output;
+    const { duration, frequency, start = today, onMiss } = parsed.output;
     const [schedule] = await tx
       .insert(schedules)
       .values({ householdId, rules: storedRules([frequencyRule(frequency, start)]) })
@@ -92,7 +93,7 @@ export async function addTask(context: HouseholdContext, input: unknown): Promis
         duration,
         scheduleId: schedule.id,
         timing: defaultTiming(frequency).kind,
-        onMiss: customTaskOnMiss,
+        onMiss,
       })
       .returning({ id: tasks.id });
     if (!task) throw new Error('No task was written.');

@@ -1286,6 +1286,10 @@
     "note": "Label of how long one time of a task takes, in the list. The value next to it is a number of minutes.",
     "needsReview": ["nl"]
   },
+  "tasks.if-not-done": {
+    "note": "Label, in the task list, of what happens to a time of the task that isn't done (ADR-0002 §2). The value next to it is tasks.roll-over or tasks.lapse.",
+    "needsReview": ["nl"]
+  },
   "tasks.daily": {
     "note": "A task's frequency, in the list and as a choice when adding a task (ADR-0004 §3).",
     "needsReview": ["nl"]
@@ -1334,6 +1338,18 @@
     "note": "Hint under the first-time date field: later times are counted from it, by the chosen frequency.",
     "needsReview": ["nl"]
   },
+  "tasks.on-miss": {
+    "note": "Heading (legend) of the two choices for what happens to a time of the new task that isn't done in its week or window (ADR-0002 §2).",
+    "needsReview": ["nl"]
+  },
+  "tasks.roll-over": {
+    "note": "Choice, and its value in the task list: a time that isn't done stays open and goes into the next week's work, like cleaning the bathroom (ADR-0002 §2). The form starts on it. Calm: nobody is blamed.",
+    "needsReview": ["nl"]
+  },
+  "tasks.lapse": {
+    "note": "Choice, and its value in the task list: a time that isn't done closes, since doing it later makes no sense, like putting the bins out (ADR-0002 §2). Calm: nobody is blamed.",
+    "needsReview": ["nl"]
+  },
   "tasks.submit": {
     "note": "Button that adds the task.",
     "needsReview": ["nl"]
@@ -1364,6 +1380,10 @@
   },
   "tasks.invalid-start": {
     "note": "Why adding didn't work: the first time is not a day from today up to a year from today.",
+    "needsReview": ["nl"]
+  },
+  "tasks.invalid-on-miss": {
+    "note": "Why adding didn't work: neither choice for what happens to a time that isn't done was picked.",
     "needsReview": ["nl"]
   }
 }

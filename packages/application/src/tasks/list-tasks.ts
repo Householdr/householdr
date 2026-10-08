@@ -1,5 +1,5 @@
 import { households, inHousehold, schedules, tasks } from '@householdr/db';
-import { can, frequencyOf, startRange, type Frequency } from '@householdr/domain';
+import { can, frequencyOf, startRange, type Frequency, type PlanTask } from '@householdr/domain';
 import { eq } from 'drizzle-orm';
 import type { HouseholdContext } from '../households/membership';
 import { scheduleOf } from './stored-schedule';
@@ -11,6 +11,8 @@ export interface TaskSummary {
   /** In minutes. */
   duration: number;
   frequency: Frequency;
+  /** What happens to an occurrence that isn't done (ADR-0002 §2). */
+  onMiss: PlanTask['onMiss'];
 }
 
 type ListTasksResult =
@@ -27,8 +29,8 @@ type ListTasksResult =
   | { ok: false; error: 'not-allowed' };
 
 /**
- * The household's tasks by name, each with its frequency, which every member sees (ADR-0012 §3),
- * and what adding one needs.
+ * The household's tasks by name, each with its frequency and on-miss policy, which every member
+ * sees (ADR-0012 §3), and what adding one needs.
  */
 export async function listTasks(context: HouseholdContext): Promise<ListTasksResult> {
   if (!can(context.member, { action: 'household.view' })) {
@@ -44,17 +46,18 @@ export async function listTasks(context: HouseholdContext): Promise<ListTasksRes
         id: tasks.id,
         name: tasks.name,
         duration: tasks.duration,
+        onMiss: tasks.onMiss,
         rules: schedules.rules,
         extraDates: schedules.extraDates,
         exceptionDates: schedules.exceptionDates,
       })
       .from(tasks)
       .innerJoin(schedules, eq(schedules.id, tasks.scheduleId));
-    const list = rows.map(({ id, name, duration, ...schedule }): TaskSummary => {
+    const list = rows.map(({ id, name, duration, onMiss, ...schedule }): TaskSummary => {
       const frequency = frequencyOf(scheduleOf(schedule));
       // Only simple frequencies are written until the advanced editor comes (ADR-0004 §3).
       if (!frequency) throw new Error(`Task ${id} isn't on a simple frequency.`);
-      return { id, name, duration, frequency };
+      return { id, name, duration, frequency, onMiss };
     });
     list.sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
     const today = context.clock.now().toZonedDateTimeISO(household.timeZone).toPlainDate();

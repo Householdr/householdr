@@ -70,7 +70,13 @@ const add = async (locals: object, fields: Record<string, string>) => {
   }
 };
 
-const vacuum = { name: 'Vacuum', duration: '30', frequency: 'weekly', start: '2026-10-08' };
+const vacuum = {
+  name: 'Vacuum',
+  duration: '30',
+  frequency: 'weekly',
+  start: '2026-10-08',
+  onMiss: 'roll over',
+};
 const asAdult = ({ householdId, member }: Membership) => ({
   householdId,
   member: { ...member, role: 'adult' },
@@ -88,13 +94,19 @@ describe('a household’s tasks page (ADR-0001 §1)', () => {
     });
   });
 
-  it('adds a task, says so, and lists it (ADR-0004 §3)', async () => {
+  it('adds tasks that roll over or lapse, says so, and lists them (ADR-0002 §2, ADR-0004 §3)', async () => {
     const membership = await founded();
     expect(await add({ ...on, membership }, { ...vacuum, name: ' Vacuum ' })).toEqual({
       added: 'Vacuum',
     });
+    expect(
+      await add({ ...on, membership }, { ...vacuum, name: 'Bins out', onMiss: 'lapse' }),
+    ).toEqual({ added: 'Bins out' });
     expect(await opened({ ...on, membership })).toMatchObject({
-      tasks: [{ name: 'Vacuum', duration: 30, frequency: 'weekly' }],
+      tasks: [
+        { name: 'Bins out', duration: 30, frequency: 'weekly', onMiss: 'lapse' },
+        { name: 'Vacuum', duration: 30, frequency: 'weekly', onMiss: 'roll over' },
+      ],
     });
   });
 
@@ -107,11 +119,17 @@ describe('a household’s tasks page (ADR-0001 §1)', () => {
 
   it('keeps what was typed in the form, and names the fields that won’t do (UI-10)', async () => {
     const membership = await founded();
-    const typed = { name: '   ', duration: '0', frequency: 'hourly', start: '2026-10-07' };
+    const typed = {
+      name: '   ',
+      duration: '0',
+      frequency: 'hourly',
+      start: '2026-10-07',
+      onMiss: 'never',
+    };
     const refused = await add({ ...on, membership }, typed);
     expect(isActionFailure(refused) && refused).toMatchObject({
       status: 400,
-      data: { invalid: ['name', 'duration', 'frequency', 'start'], values: typed },
+      data: { invalid: ['name', 'duration', 'frequency', 'start', 'onMiss'], values: typed },
     });
     expect(await opened({ ...on, membership })).toMatchObject({ tasks: [] });
   });
