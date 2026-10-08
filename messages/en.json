@@ -193,6 +193,7 @@
   "tasks.none": "There are no tasks yet.",
   "tasks.how-often": "How often",
   "tasks.how-long": "How long",
+  "tasks.if-not-done": "If not done",
   "tasks.daily": "Every day",
   "tasks.weekly": "Every week",
   "tasks.biweekly": "Every two weeks",
@@ -205,6 +206,9 @@
   "tasks.duration": "How long it takes, in minutes",
   "tasks.start": "First time",
   "tasks.start-hint": "The next times follow from this day.",
+  "tasks.on-miss": "If it isn’t done in time",
+  "tasks.roll-over": "It moves on to the next week",
+  "tasks.lapse": "It’s dropped: the moment has passed",
   "tasks.submit": "Add task",
   "tasks.added": "{name} is added.",
   "tasks.add-failed": "Adding the task didn’t work",
@@ -212,5 +216,6 @@
   "tasks.invalid-name": "Enter what needs doing, up to 100 characters.",
   "tasks.invalid-duration": "Enter the minutes it takes, a whole number from {min} to {max}.",
   "tasks.invalid-frequency": "Choose how often it’s done.",
-  "tasks.invalid-start": "Choose a day from today up to a year from now."
+  "tasks.invalid-start": "Choose a day from today up to a year from now.",
+  "tasks.invalid-on-miss": "Choose what happens if it isn’t done in time."
 }

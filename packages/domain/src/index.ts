@@ -103,4 +103,4 @@ export {
   type ShareSettings,
   type TemporaryShare,
 } from './shares/share';
-export { customTaskOnMiss, isTaskDuration, startRange, taskDuration } from './tasks/task';
+export { defaultOnMiss, isTaskDuration, startRange, taskDuration } from './tasks/task';

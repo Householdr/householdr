@@ -44,6 +44,7 @@ export const actions = {
       duration: text(form, 'duration'),
       frequency: text(form, 'frequency'),
       start: text(form, 'start'),
+      onMiss: text(form, 'onMiss'),
     };
     const result = await addTask(context, {
       ...values,

@@ -11,7 +11,13 @@
   import { m } from '#lib/paraglide/messages.js';
   import { getLocale } from '#lib/paraglide/runtime.js';
   import type { NewTaskField } from '@householdr/application';
-  import { frequencies, taskDuration, type Frequency } from '@householdr/domain';
+  import {
+    defaultOnMiss,
+    frequencies,
+    taskDuration,
+    type Frequency,
+    type PlanTask,
+  } from '@householdr/domain';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
@@ -27,12 +33,20 @@
     yearly: m['tasks.yearly'],
   };
 
+  /** What happens to an occurrence that isn't done, in words (ADR-0002 §2). */
+  const onMiss: Record<PlanTask['onMiss'], () => string> = {
+    'roll over': m['tasks.roll-over'],
+    lapse: m['tasks.lapse'],
+  };
+  const onMissChoices: PlanTask['onMiss'][] = ['roll over', 'lapse'];
+
   /** Why the server refused a field, in words (CODE-13). */
   const problems: Record<NewTaskField, () => string> = {
     name: m['tasks.invalid-name'],
     duration: () => m['tasks.invalid-duration'](taskDuration),
     frequency: m['tasks.invalid-frequency'],
     start: m['tasks.invalid-start'],
+    onMiss: m['tasks.invalid-on-miss'],
   };
   const invalid = $derived(form?.invalid ?? []);
   const refused = $derived(invalid.map((id) => ({ id, problem: problems[id]() })));
@@ -51,7 +65,13 @@
 
   /** What the form shows: what was sent when it was refused, the defaults otherwise. */
   const values = $derived(
-    form?.values ?? { name: '', duration: '', frequency: 'weekly', start: data.starts.earliest },
+    form?.values ?? {
+      name: '',
+      duration: '',
+      frequency: 'weekly',
+      start: data.starts.earliest,
+      onMiss: defaultOnMiss,
+    },
   );
 </script>
 
@@ -72,6 +92,8 @@
             <dd>{often[task.frequency]()}</dd>
             <dt class="text-muted-foreground">{m['tasks.how-long']()}</dt>
             <dd>{minutesText(task.duration, locale)}</dd>
+            <dt class="text-muted-foreground">{m['tasks.if-not-done']()}</dt>
+            <dd>{onMiss[task.onMiss]()}</dd>
           </dl>
         </li>
       {/each}
@@ -163,6 +185,33 @@
           <p id="start-hint" class="text-sm text-muted-foreground">{m['tasks.start-hint']()}</p>
           <FieldProblem id="start-problem" problem={problemOf('start')} />
         </div>
+        <!-- Radios can't be marked invalid (ARIA 1.2); the group is described by its problem
+             (UI-10). -->
+        <fieldset
+          class="flex min-w-0 flex-col gap-1"
+          aria-describedby={problemOf('onMiss') ? 'onMiss-problem' : undefined}
+        >
+          <legend class="mb-1 text-sm font-medium">{m['tasks.on-miss']()}</legend>
+          {#each onMissChoices as choice, i (choice)}
+            <!-- The label around the radio makes the whole line its target (UI-8). The summary's
+                 link leads to the first one. After a task is added, the form resets to the
+                 starting choice. -->
+            <label class="flex min-h-11 items-center gap-3">
+              <input
+                id={i === 0 ? 'onMiss' : undefined}
+                type="radio"
+                name="onMiss"
+                value={choice}
+                required
+                checked={values.onMiss === choice}
+                defaultChecked={choice === defaultOnMiss}
+                class="size-5 shrink-0 accent-primary"
+              />
+              {onMiss[choice]()}
+            </label>
+          {/each}
+          <FieldProblem id="onMiss-problem" problem={problemOf('onMiss')} />
+        </fieldset>
         <Button type="submit" class="w-full">{m['tasks.submit']()}</Button>
       </form>
     </section>
