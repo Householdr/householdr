@@ -7,6 +7,7 @@ import {
   invitations,
   members,
   type Database,
+  type Transaction,
 } from '@householdr/db';
 import { can } from '@householdr/domain';
 import { and, eq, isNull, sql } from 'drizzle-orm';
@@ -17,9 +18,12 @@ import type { HouseholdContext } from './membership';
 /** How long an invitation link works (ADR-0010 §5). */
 const linkLifetime = { hours: 7 * 24 } as const;
 
-/** What opening or accepting an invitation needs, before any household is known. */
+/**
+ * What opening or accepting an invitation needs, before any household is known: the database, or
+ * the transaction that creates the account accepting it.
+ */
 export interface InvitationContext {
-  db: Database;
+  db: Database | Transaction;
   clock: Clock;
 }
 
@@ -103,6 +107,8 @@ export interface OpenInvitation {
   household: string;
   /** The name of the profile the link joins. */
   profile: string;
+  /** The household's country, which with a new account's language makes its culture (ADR-0016 §2). */
+  country: string;
 }
 
 /** The household of a link's `token` and the token's hash, if the token has an invitation. */
@@ -130,6 +136,7 @@ export async function openInvitation(
       .select({
         household: households.name,
         profile: members.name,
+        country: households.country,
         expiresAt: invitations.expiresAt,
       })
       .from(invitations)
@@ -137,7 +144,7 @@ export async function openInvitation(
       .innerJoin(households, eq(households.id, invitations.householdId))
       .where(eq(invitations.tokenHash, found.tokenHash));
     if (!row || row.expiresAt <= now) return null;
-    return { household: row.household, profile: row.profile };
+    return { household: row.household, profile: row.profile, country: row.country };
   });
 }
 

@@ -663,7 +663,7 @@
     "needsReview": ["nl"]
   },
   "invitation.sign-in-first": {
-    "note": "Asks someone not signed in to sign in before accepting.",
+    "note": "On the invitation page, for someone not signed in: they can sign in, or create an account (after confirming their e-mail address).",
     "needsReview": ["nl"]
   },
   "invitation.sign-in": {
@@ -688,6 +688,70 @@
   },
   "invitation.expired": {
     "note": "Shown when the link has expired, was used, revoked or replaced.",
+    "needsReview": ["nl"]
+  },
+  "invitation.create-account": {
+    "note": "Link to the sign-up page, for someone invited who has no account yet.",
+    "needsReview": ["nl"]
+  },
+  "invitation.confirmed": {
+    "note": "Shown once the person confirmed their address with a sign-up link and came back to the invitation. {email} is that address.",
+    "needsReview": ["nl"]
+  },
+  "invitation.your-name": {
+    "note": "Label of the new account's name; it starts as the name the head gave the profile.",
+    "needsReview": ["nl"]
+  },
+  "invitation.your-language": {
+    "note": "Label of the new account's own language.",
+    "needsReview": ["nl"]
+  },
+  "invitation.terms": {
+    "note": "Checkbox: accepting the instance's terms, where it has them.",
+    "needsReview": ["nl"]
+  },
+  "invitation.read-terms": {
+    "note": "Link to the instance's terms, opening in a new tab so the form isn't lost.",
+    "needsReview": ["nl"]
+  },
+  "invitation.passkey": {
+    "note": "Explains that the account signs in with a passkey.",
+    "needsReview": ["nl"]
+  },
+  "invitation.join-with-passkey": {
+    "note": "Button that creates the account with a passkey and joins the household.",
+    "needsReview": ["nl"]
+  },
+  "invitation.unsupported": {
+    "note": "Shown instead of the button where the browser can't make a passkey or JavaScript is off.",
+    "needsReview": ["nl"]
+  },
+  "invitation.check": {
+    "note": "Error summary message when fields need changing; the fields follow as links.",
+    "needsReview": ["nl"]
+  },
+  "invitation.not-created": {
+    "note": "Error summary message when the passkey wasn't made or was refused.",
+    "needsReview": ["nl"]
+  },
+  "invitation.sign-up-expired": {
+    "note": "Error when the sign-up link stopped working while the form was filled in.",
+    "needsReview": ["nl"]
+  },
+  "invitation.ask-again": {
+    "note": "Link to ask for a new sign-up link.",
+    "needsReview": ["nl"]
+  },
+  "invitation.invalid-name": {
+    "note": "Why the name was refused.",
+    "needsReview": ["nl"]
+  },
+  "invitation.invalid-language": {
+    "note": "Why the language was refused.",
+    "needsReview": ["nl"]
+  },
+  "invitation.invalid-terms": {
+    "note": "Why the form was refused: the terms weren't accepted.",
     "needsReview": ["nl"]
   }
 }

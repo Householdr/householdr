@@ -102,6 +102,7 @@ describe('invite (ADR-0010 §5)', () => {
     expect(await openInvitation(context, second.token)).toEqual({
       household: 'Ash Lane',
       profile: 'Kim',
+      country: 'BE',
     });
   });
 
@@ -141,7 +142,11 @@ describe('openInvitation (ADR-0010 §5)', () => {
     const { token } = await linkFor(head, kim);
     const context = { db, clock };
     clock.advance({ seconds: 168 * 3600 - 1 });
-    expect(await openInvitation(context, token)).toEqual({ household: 'Ash Lane', profile: 'Kim' });
+    expect(await openInvitation(context, token)).toEqual({
+      household: 'Ash Lane',
+      profile: 'Kim',
+      country: 'BE',
+    });
     clock.advance({ seconds: 1 });
     expect(await openInvitation(context, token)).toBeNull();
   });
