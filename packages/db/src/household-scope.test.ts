@@ -419,6 +419,7 @@ describe('every household-owned table (CODE-17)', () => {
     expect(rows.map((r) => r.table)).toEqual([
       'absences',
       'activity_log',
+      'away_periods',
       'comparisons',
       'households',
       'invitations',

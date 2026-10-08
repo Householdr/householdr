@@ -457,5 +457,9 @@
   "availability.add-failed": "Adding the days away didn’t work",
   "availability.check": "Check these and try again:",
   "availability.invalid-first-day": "Choose a first day from today up to a year from now.",
-  "availability.invalid-last-day": "Choose a last day on or after the first day, up to a year from now."
+  "availability.invalid-last-day": "Choose a last day on or after the first day, up to a year from now.",
+  "availability.household": "The whole household",
+  "availability.household-intro": "For when everyone is away together, such as a family holiday. Weeks spent entirely away get no plan, chores that fall while you’re all away are skipped, balances don’t change and nobody gets reminders. Only heads plan this.",
+  "availability.household-none": "No time away together planned.",
+  "availability.household-plan": "Plan time away together"
 }

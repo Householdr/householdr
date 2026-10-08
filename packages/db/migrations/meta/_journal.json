@@ -148,6 +148,13 @@
       "when": 1791551863678,
       "tag": "0020_absences",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1791551906580,
+      "tag": "0021_away-periods",
+      "breakpoints": true
     }
   ]
 }

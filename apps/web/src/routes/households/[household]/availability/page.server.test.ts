@@ -88,6 +88,7 @@ describe('the page of who is away (ADR-0005 §2, ADR-0018 §3)', () => {
     expect(await send('add', locals, days)).toEqual({ done: 'added', member: sam });
     const page = await opened(locals);
     expect(page).toEqual({
+      household: { periods: [], mayManage: true },
       members: [
         { id: head.member.id, name: 'Robin', role: 'head', absences: [], mayManage: true },
         {
@@ -188,5 +189,55 @@ describe('removing days away', () => {
     expect(await opened({ flags: on, membership: household.head })).toMatchObject({
       members: [{}, { absences: [{ id: absence }] }],
     });
+  });
+});
+
+describe('the household away together (ADR-0005 §5)', () => {
+  it('adds and removes a period for a head, and says so', async () => {
+    const { head } = await founded();
+    const locals = { flags: on, membership: head };
+    const days = { member: 'household', firstDay: '2026-12-24', lastDay: '2027-01-02' };
+    expect(await send('addAway', locals, days)).toEqual({ done: 'added', member: 'household' });
+    const page = await opened(locals);
+    const periods = typeof page === 'object' ? page.household.periods : [];
+    expect(periods).toEqual([
+      { id: expect.any(String) as string, from: '2026-12-24', to: '2027-01-02' },
+    ]);
+    const period = periods[0]?.id ?? '';
+    expect(await send('removeAway', locals, { period, member: 'household' })).toEqual({
+      done: 'removed',
+      member: 'household',
+    });
+    expect(await send('removeAway', locals, { period, member: 'household' })).toEqual({
+      done: 'already-removed',
+      member: 'household',
+    });
+  });
+
+  it('keeps days that won’t do in the form, and names the fields (UI-10)', async () => {
+    const { head } = await founded();
+    const days = { member: 'household', firstDay: '2026-10-01', lastDay: '2026-09-30' };
+    const refused = await send('addAway', { flags: on, membership: head }, days);
+    expect(isActionFailure(refused) && refused).toMatchObject({
+      status: 400,
+      data: {
+        member: 'household',
+        firstDay: '2026-10-01',
+        lastDay: '2026-09-30',
+        invalid: ['firstDay', 'lastDay'],
+      },
+    });
+  });
+
+  it('is forbidden to anyone but a head (ADR-0005 §5)', async () => {
+    const { head } = await founded();
+    const adult = { ...head, member: { ...head.member, role: 'adult' } };
+    const locals = { flags: on, membership: adult };
+    const days = { member: 'household', firstDay: '2026-12-24', lastDay: '2027-01-02' };
+    expect(await send('addAway', locals, days)).toBe(403);
+    expect(await opened(locals)).toMatchObject({ household: { mayManage: false } });
+    expect(
+      await send('removeAway', locals, { period: crypto.randomUUID(), member: 'household' }),
+    ).toBe(403);
   });
 });

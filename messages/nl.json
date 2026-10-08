@@ -457,5 +457,9 @@
   "availability.add-failed": "De dagen weg toevoegen is niet gelukt",
   "availability.check": "Kijk deze na en probeer het opnieuw:",
   "availability.invalid-first-day": "Kies een eerste dag vanaf vandaag tot een jaar vanaf nu.",
-  "availability.invalid-last-day": "Kies een laatste dag op of na de eerste dag, tot een jaar vanaf nu."
+  "availability.invalid-last-day": "Kies een laatste dag op of na de eerste dag, tot een jaar vanaf nu.",
+  "availability.household": "Het hele huishouden",
+  "availability.household-intro": "Voor als iedereen samen weg is, zoals op gezinsvakantie. Weken waarin jullie helemaal weg zijn, krijgen geen planning, taken die vallen terwijl jullie allemaal weg zijn, vervallen, saldo's veranderen niet en niemand krijgt herinneringen. Alleen hoofden plannen dit.",
+  "availability.household-none": "Geen tijd samen weg gepland.",
+  "availability.household-plan": "Tijd samen weg plannen"
 }

@@ -1577,5 +1577,21 @@
   "availability.invalid-last-day": {
     "note": "Why the last day wasn't accepted: not a date, before the first day, or more than a year ahead.",
     "needsReview": ["nl"]
+  },
+  "availability.household": {
+    "note": "Heading of the household's time away together (ADR-0005 §5).",
+    "needsReview": ["nl"]
+  },
+  "availability.household-intro": {
+    "note": "Explains what time away together does (ADR-0005 §5).",
+    "needsReview": ["nl"]
+  },
+  "availability.household-none": {
+    "note": "Shown when the household has no time away together planned.",
+    "needsReview": ["nl"]
+  },
+  "availability.household-plan": {
+    "note": "Legend of the form where a head plans time when the whole household is away.",
+    "needsReview": ["nl"]
   }
 }
