@@ -24,6 +24,7 @@ export {
   type Availability,
   type AvailabilityPattern,
 } from './availability/availability';
+export { plannableDays, unplannableEnds, type AbsenceEnd } from './availability/planned-absence';
 export {
   estimateBurdens,
   type BurdenEstimate,
@@ -46,6 +47,7 @@ export {
   timeZonesOf,
   type Country,
 } from './households/countries';
+export { householdDate } from './households/date';
 export {
   canForAccount,
   type Account,

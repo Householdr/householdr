@@ -105,3 +105,31 @@ export const members = pgTable(
     check('members_birth_date', sql`(${t.role} = 'child') = (${t.birthDate} is not null)`),
   ],
 );
+
+/**
+ * A member's planned absence (ADR-0005 §2): the domain's `Absence`, from `firstDay` to `lastDay`,
+ * whole days in the household's time zone, both included. No reason, place or detail is asked or
+ * stored (ADR-0012 §2, ADR-0018 §3). It goes with the member's profile.
+ */
+export const absences = pgTable(
+  'absences',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    memberId: uuid()
+      .notNull()
+      .references(() => members.id, { onDelete: 'cascade' }),
+    firstDay: date().notNull(),
+    lastDay: date().notNull(),
+  },
+  (t) => [
+    householdOnly(t.householdId),
+    // Who is away in a range of days: those whose last day is in or after it (ADR-0001 §6).
+    index('absences_household_days').on(t.householdId, t.lastDay, t.firstDay),
+    // For a member's absences to go with their profile without reading the whole table.
+    index('absences_member').on(t.memberId),
+    check('absences_days', sql`${t.lastDay} >= ${t.firstDay}`),
+  ],
+);

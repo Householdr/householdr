@@ -1,6 +1,14 @@
 // Use cases: authorise, validate, transact, emit events, return a result (ADR-0023).
 export type { Clock, Flags, LogFields, Logger, Mail, Mailer } from './ports';
 export { flags, type FlagKey } from './flags/registry';
+export {
+  addAbsence,
+  removeAbsence,
+  viewAvailability,
+  type AbsenceField,
+  type AbsenceView,
+  type MemberAvailability,
+} from './availability/absences';
 export { addAdult } from './households/add-adult';
 export {
   createHousehold,

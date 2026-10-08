@@ -85,6 +85,13 @@
       "when": 1791484913803,
       "tag": "0011_account-culture-and-terms",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791497150212,
+      "tag": "0012_absences",
+      "breakpoints": true
     }
   ]
 }
