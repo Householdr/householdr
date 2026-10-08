@@ -108,6 +108,11 @@ Rules for the patterns this product relies on:
 | **Sign-in** | No cognitive tests (3.3.8): passkeys first, paste and password managers allowed in every field (`autocomplete` set correctly, including `one-time-code` for TOTP), and the device code can be typed instead of scanned |
 | **Notifications** | Reminders and plan changes are also visible in the app, so nothing depends on push alone |
 
+> **Clarification (2026-10-08):** passwords, two-factor codes and recovery codes are the exception
+> to keeping what was typed: the server never sends them back into a page, where a cache or a saved
+> copy could keep them. A form that doesn't reload keeps them in their fields; after a reload, as
+> without JavaScript, they come back empty, and the summary still says what went wrong.
+
 ### 7. Performance is part of responsive-first
 
 Households use whatever phone they have, often old and on mobile data:

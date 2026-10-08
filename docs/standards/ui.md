@@ -23,7 +23,9 @@
 - **UI-9 — Colour is never the only signal.** States have text or an icon too; contrast comes from the
   checked tokens only, never ad-hoc colours.
 - **UI-10 — Every form control has a visible label**; errors appear next to the field and in a
-  summary that receives focus; input is never lost on an error.
+  summary that receives focus; input is never lost on an error, except passwords and codes, which
+  the server never sends back ([ADR-0011](../adr/0011-accessibility-and-responsive-baseline.md) §6,
+  clarification).
 - **UI-11 — Gestures have alternatives.** Drag and drop has a *Move to…* menu; swipes have buttons.
 - **UI-12 — Status messages are announced** through the polite live region; live updates never move
   focus, scroll or a form being edited ([ADR-0019](../adr/0019-live-updates-and-concurrent-edits.md)
