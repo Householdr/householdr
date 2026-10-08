@@ -82,6 +82,10 @@ touches it, and how people exercise their rights.
 > changed, never the address itself. They protect accounts and keep our e-mail from being abused,
 > on the basis of legitimate interest (f), and are forgotten when their window ends (§5).
 
+> **Clarification (2026-10-08):** the **account** also keeps which version of the instance's terms
+> its holder accepted, and when ([ADR-0007](0007-onboarding.md) §2, clarification): proof of the
+> contract, on its basis (b), kept while the account exists (§5).
+
 What is deliberately **not** stored:
 
 - **No reasons**: not for a reduced share, not for an absence, not for sudden unavailability. "I can't

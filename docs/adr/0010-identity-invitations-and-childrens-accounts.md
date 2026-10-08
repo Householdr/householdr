@@ -61,6 +61,12 @@ set no lower age. Below that age, a person with parental responsibility has to c
 > the household it creates or the membership it accepts; until then, nothing is stored but the
 > pending verification ([ADR-0012](0012-privacy-and-data-protection.md) §5, clarification).
 
+> **Clarification (2026-10-08):** the sign-up page answers the same whatever address is typed (§2).
+> An address that already has an account gets **no e-mail**. Any other address gets the link, which
+> works for **30 minutes** and is used up when the account is created, so the first step of
+> onboarding is filled in within that time too ([ADR-0007](0007-onboarding.md) §2). After that, the
+> person asks for a new link.
+
 > **Clarification (2026-10-08):** in a household, a member is shown by their **profile's name**,
 > which linking an account doesn't change; the person can correct it there
 > ([ADR-0012](0012-privacy-and-data-protection.md) §6). The account's name is shown on the person's
