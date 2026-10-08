@@ -19,7 +19,7 @@ let next = 0;
 const newAccount = async () => {
   const [row] = await db
     .insert(accounts)
-    .values({ name: 'Robin', email: `robin-${String(++next)}@example.org` })
+    .values({ name: 'Robin', email: `robin-${String(++next)}@example.org`, culture: 'en-BE' })
     .returning({ id: accounts.id });
   if (!row) throw new Error('No account');
   return row.id;
