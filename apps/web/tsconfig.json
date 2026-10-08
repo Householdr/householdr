@@ -1,4 +1,11 @@
 {
   "extends": ["../../tsconfig.base.json", "$app/tsconfig"],
-  "include": ["src", "e2e", "vite.config.ts", "playwright.config.ts"]
+  "include": [
+    "src",
+    "e2e",
+    "vite.config.ts",
+    "playwright.config.ts",
+    "pseudo-locale.ts",
+    "pseudo-locale.test.ts"
+  ]
 }

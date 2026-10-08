@@ -30,6 +30,19 @@ jobs:
       - name: '🛠️ Bundle: Build'
         run: pnpm build
 
+      # The web app once more, with what only tests may use; the E2E job runs it (ADR-0009 §5,
+      # clarification).
+      - name: '🛠️ Bundle: Test build'
+        run: pnpm --filter @householdr/web build:test
+
+      # The pseudo-locale is for development and tests only (ADR-0016 §5).
+      - name: '🧹 Lint: Pseudo-locale'
+        run: |
+          if grep -rqF 'en-XA' apps/web/build; then
+            echo "::error title=Pseudo-locale::The production build contains the pseudo-locale."
+            exit 1
+          fi
+
       # One archive keeps pnpm's symlinks and file modes intact.
       - name: '🗃️ Artifact: Pack'
         run: tar --zstd --exclude=.git -cf "$RUNNER_TEMP/build.tar.zst" .
