@@ -111,6 +111,28 @@ export const boundaries = defineConfig(
     },
   },
   {
+    files: ['packages/auth/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                '@householdr/*',
+                '!@householdr/db',
+                '!@householdr/application',
+                '!@householdr/adapters',
+              ],
+              message:
+                'Sign-in sits between the application and the web app, over db (CODE-4, ADR-0023 §2).',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['apps/worker/**'],
     rules: {
       'no-restricted-imports': [
@@ -139,6 +161,7 @@ export const boundaries = defineConfig(
                 '@householdr/*',
                 '!@householdr/application',
                 '!@householdr/adapters',
+                '!@householdr/auth',
                 '!@householdr/domain',
               ],
               message:
