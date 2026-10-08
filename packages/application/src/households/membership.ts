@@ -91,7 +91,14 @@ export interface HouseholdMember {
 }
 
 type ViewHouseholdResult =
-  { ok: true; name: string; members: HouseholdMember[] } | { ok: false; error: 'not-allowed' };
+  | {
+      ok: true;
+      name: string;
+      members: HouseholdMember[];
+      /** Whether the member viewing it may add members: a head with two factors (ADR-0001 §2). */
+      mayAddMembers: boolean;
+    }
+  | { ok: false; error: 'not-allowed' };
 
 const roleOrder: Record<Role, number> = { head: 0, adult: 1, child: 2 };
 
@@ -109,6 +116,7 @@ export async function viewHousehold(context: HouseholdContext): Promise<ViewHous
       .select({ id: members.id, name: members.name, role: members.role })
       .from(members);
     list.sort((a, b) => roleOrder[a.role] - roleOrder[b.role] || a.name.localeCompare(b.name));
-    return { ok: true as const, name: household.name, members: list };
+    const mayAddMembers = can(context.member, { action: 'household.invite' });
+    return { ok: true as const, name: household.name, members: list, mayAddMembers };
   });
 }

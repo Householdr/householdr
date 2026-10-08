@@ -149,5 +149,12 @@
   "household.you": "{name} (you)",
   "household.head": "Head",
   "household.adult": "Adult",
-  "household.child": "Child"
+  "household.child": "Child",
+  "household.add-adult": "Add an adult",
+  "household.add-adult-intro": "Add the other adults who live here, so they share the chores too. Each of them can join with an account of their own later.",
+  "household.name": "Name",
+  "household.add": "Add",
+  "household.added": "{name} is added. Let them know: once they join with an account of their own, they can see everything recorded about them.",
+  "household.add-failed": "Adding didn’t work",
+  "household.invalid-name": "Enter their name, up to 100 characters."
 }

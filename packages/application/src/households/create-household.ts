@@ -7,12 +7,10 @@ import {
   type SignedIn,
 } from '@householdr/domain';
 import * as v from 'valibot';
+import { name } from './name';
 
 /** The languages a household can have: English, until Dutch is offered (ADR-0016 §1, §2). */
 export const offeredLanguages = ['en'] as const;
-
-/** A name: a household's or a member's, as plain text (ADR-0017 §3). */
-const name = v.pipe(v.string(), v.trim(), v.nonEmpty(), v.maxLength(100));
 
 /**
  * What the first step of onboarding sends to create a household (ADR-0007 §2, clarifications;
