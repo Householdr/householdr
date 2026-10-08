@@ -4,6 +4,14 @@ export { flags, type FlagKey } from './flags/registry';
 export { householdActivity, type ActivityEntry } from './households/activity';
 export { answerComparison } from './burdens/answer-comparison';
 export { comparisonGame, type ComparedTask } from './burdens/comparison-game';
+export {
+  addAbsence,
+  removeAbsence,
+  viewAvailability,
+  type AbsenceField,
+  type AbsenceView,
+  type MemberAvailability,
+} from './availability/absences';
 export { addAdult } from './households/add-adult';
 export { addChild, type NewChildProblem } from './households/add-child';
 export { name as nameField } from './households/name';

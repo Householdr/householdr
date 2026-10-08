@@ -4,6 +4,7 @@ import pg from 'pg';
 import { connect, inHousehold, refuseBypass, type Database } from './connection';
 import { accounts } from './auth-schema';
 import {
+  absences,
   comparisons,
   households,
   members,
@@ -312,6 +313,59 @@ describe('comparisons (ADR-0008 §9, CODE-17)', () => {
   });
 });
 
+describe('absences (ADR-0005 §2, ADR-0018 §3)', () => {
+  /** The id of the head of household `id`, as that household sees it. */
+  const headOf = async (id: string) => {
+    const [head] = await inHousehold(db, id, (tx) => tx.select({ id: members.id }).from(members));
+    if (!head) throw new Error('No head');
+    return head.id;
+  };
+  const days = { firstDay: '2026-10-12', lastDay: '2026-10-16' };
+
+  it('are seen and written in their own household only', async () => {
+    const robin = await headOf(ash);
+    await inHousehold(db, ash, (tx) =>
+      tx.insert(absences).values({ householdId: ash, memberId: robin, ...days }),
+    );
+    const seen = (id: string) =>
+      inHousehold(db, id, (tx) =>
+        tx.select({ firstDay: absences.firstDay, lastDay: absences.lastDay }).from(absences),
+      );
+    expect(await seen(ash)).toEqual([days]);
+    expect(await seen(birch)).toEqual([]);
+    expect(await db.select().from(absences)).toEqual([]);
+  });
+
+  it('cannot be added to another household, or moved there', async () => {
+    const sam = await headOf(birch);
+    expect(
+      await refusal(
+        inHousehold(db, ash, (tx) =>
+          tx.insert(absences).values({ householdId: birch, memberId: sam, ...days }),
+        ),
+      ),
+    ).toBe(refusedByRowSecurity);
+    expect(
+      await refusal(inHousehold(db, ash, (tx) => tx.update(absences).set({ householdId: birch }))),
+    ).toBe(refusedByRowSecurity);
+  });
+
+  it('cannot be removed by another household', async () => {
+    const sam = await headOf(birch);
+    await inHousehold(db, birch, (tx) =>
+      tx.insert(absences).values({ householdId: birch, memberId: sam, ...days }),
+    );
+    const removed = await inHousehold(db, ash, (tx) =>
+      tx.delete(absences).where(eq(absences.memberId, sam)).returning(),
+    );
+    expect(removed).toEqual([]);
+    const left = await inHousehold(db, birch, (tx) =>
+      tx.select({ memberId: absences.memberId }).from(absences),
+    );
+    expect(left).toEqual([{ memberId: sam }]);
+  });
+});
+
 describe('connect (ADR-0008 §9)', () => {
   it('refuses a superuser, whom row-level security does not bind', async () => {
     await expect(connect(testServerUrl())).rejects.toThrow('bypasses row-level security');
@@ -363,6 +417,7 @@ describe('every household-owned table (CODE-17)', () => {
       where n.nspname = 'public' and c.relkind = 'r'
       order by c.relname`);
     expect(rows.map((r) => r.table)).toEqual([
+      'absences',
       'activity_log',
       'comparisons',
       'households',
