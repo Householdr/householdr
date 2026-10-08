@@ -601,5 +601,69 @@
   "household.invalid-name": {
     "note": "Why adding didn't work: no name, or one over 100 characters. 'Their' is gender-neutral.",
     "needsReview": ["nl"]
+  },
+  "availability.page-title": {
+    "note": "Browser tab title of the page that shows who in the household is away when. Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "availability.title": {
+    "note": "Heading of the page that shows who in the household is away when, and the household page's link to it.",
+    "needsReview": ["nl"]
+  },
+  "availability.intro": {
+    "note": "Introduces the page. Others see only that someone is away, as dates; no reason or place is ever asked (ADR-0018 §3).",
+    "needsReview": ["nl"]
+  },
+  "availability.none": {
+    "note": "Under a member's name, when they have no days away coming up.",
+    "needsReview": ["nl"]
+  },
+  "availability.first-day": {
+    "note": "The first day someone is away: the label of the date field, and next to that date in the list. That day is included.",
+    "needsReview": ["nl"]
+  },
+  "availability.last-day": {
+    "note": "The last day someone is away: the label of the date field, and next to that date in the list. That day is included too.",
+    "needsReview": ["nl"]
+  },
+  "availability.plan": {
+    "note": "Heading of the form, under a member's name, that adds days away for them: for yourself, or as a head for a child or a member without an account.",
+    "needsReview": ["nl"]
+  },
+  "availability.add": {
+    "note": "The button that adds the days away.",
+    "needsReview": ["nl"]
+  },
+  "availability.remove": {
+    "note": "The button next to days away that removes them.",
+    "needsReview": ["nl"]
+  },
+  "availability.added": {
+    "note": "Status message once days away are added.",
+    "needsReview": ["nl"]
+  },
+  "availability.removed": {
+    "note": "Status message once days away are removed.",
+    "needsReview": ["nl"]
+  },
+  "availability.already-removed": {
+    "note": "Status message when someone else removed the days away a moment earlier.",
+    "needsReview": ["nl"]
+  },
+  "availability.add-failed": {
+    "note": "Heading of the error summary when the days away weren't added.",
+    "needsReview": ["nl"]
+  },
+  "availability.check": {
+    "note": "Introduces the list of fields to change in the error summary.",
+    "needsReview": ["nl"]
+  },
+  "availability.invalid-first-day": {
+    "note": "Why the first day wasn't accepted: not a date, in the past, or more than a year ahead.",
+    "needsReview": ["nl"]
+  },
+  "availability.invalid-last-day": {
+    "note": "Why the last day wasn't accepted: not a date, before the first day, or more than a year ahead.",
+    "needsReview": ["nl"]
   }
 }

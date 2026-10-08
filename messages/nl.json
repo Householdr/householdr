@@ -186,5 +186,21 @@
   "household.add": "Toevoegen",
   "household.added": "{name} is toegevoegd. Laat het hen weten: zodra ze aansluiten met een eigen account, zien ze alles wat over hen is vastgelegd.",
   "household.add-failed": "Toevoegen is niet gelukt",
-  "household.invalid-name": "Vul hun naam in, tot 100 tekens."
+  "household.invalid-name": "Vul hun naam in, tot 100 tekens.",
+  "availability.page-title": "Wie is er weg · Householdr",
+  "availability.title": "Wie is er weg",
+  "availability.intro": "Plan de dagen dat je weg bent, zodat de klusjes verdeeld worden onder wie thuis is. Iedereen in het huishouden ziet deze data, nooit een reden of een plaats.",
+  "availability.none": "Geen dagen weg gepland.",
+  "availability.first-day": "Eerste dag",
+  "availability.last-day": "Laatste dag",
+  "availability.plan": "Dagen weg plannen",
+  "availability.add": "Toevoegen",
+  "availability.remove": "Verwijderen",
+  "availability.added": "De dagen weg zijn toegevoegd.",
+  "availability.removed": "De dagen weg zijn verwijderd.",
+  "availability.already-removed": "Die dagen weg waren al verwijderd.",
+  "availability.add-failed": "De dagen weg toevoegen is niet gelukt",
+  "availability.check": "Kijk deze na en probeer het opnieuw:",
+  "availability.invalid-first-day": "Kies een eerste dag vanaf vandaag tot een jaar vanaf nu.",
+  "availability.invalid-last-day": "Kies een laatste dag op of na de eerste dag, tot een jaar vanaf nu."
 }

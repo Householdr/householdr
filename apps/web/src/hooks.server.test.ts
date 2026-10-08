@@ -101,6 +101,7 @@ describe('the flags of a request (ADR-0015 §3)', () => {
       'password-reset': false,
       onboarding: false,
       passkeys: false,
+      availability: false,
     });
   });
 
@@ -112,6 +113,7 @@ describe('the flags of a request (ADR-0015 §3)', () => {
       'password-reset': false,
       onboarding: false,
       passkeys: false,
+      availability: false,
     });
   });
 });

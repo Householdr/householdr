@@ -186,5 +186,21 @@
   "household.add": "Add",
   "household.added": "{name} is added. Let them know: once they join with an account of their own, they can see everything recorded about them.",
   "household.add-failed": "Adding didn’t work",
-  "household.invalid-name": "Enter their name, up to 100 characters."
+  "household.invalid-name": "Enter their name, up to 100 characters.",
+  "availability.page-title": "Who’s away · Householdr",
+  "availability.title": "Who’s away",
+  "availability.intro": "Plan the days you’re away, so the chores are shared among those at home. Everyone in the household sees these dates, never a reason or a place.",
+  "availability.none": "No days away planned.",
+  "availability.first-day": "First day",
+  "availability.last-day": "Last day",
+  "availability.plan": "Plan days away",
+  "availability.add": "Add",
+  "availability.remove": "Remove",
+  "availability.added": "The days away are added.",
+  "availability.removed": "The days away are removed.",
+  "availability.already-removed": "Those days away were already removed.",
+  "availability.add-failed": "Adding the days away didn’t work",
+  "availability.check": "Check these and try again:",
+  "availability.invalid-first-day": "Choose a first day from today up to a year from now.",
+  "availability.invalid-last-day": "Choose a last day on or after the first day, up to a year from now."
 }

@@ -6,6 +6,16 @@ export function countryName(code: string, locale: string) {
   return new Intl.DisplayNames([locale], { type: 'region' }).of(code) ?? code;
 }
 
+/**
+ * The calendar day `date` (`YYYY-MM-DD`) in `locale`, such as “Thursday, October 8, 2026”. It is
+ * already a day in the household's time zone, such as a planned absence's, so no zone shifts it.
+ */
+export function calendarDay(date: string, locale: string) {
+  const [year = 0, month = 1, day = 1] = date.split('-').map(Number);
+  const format = new Intl.DateTimeFormat(locale, { dateStyle: 'full', timeZone: 'UTC' });
+  return format.format(Date.UTC(year, month - 1, day));
+}
+
 /** The language `code` in its own name, such as “Nederlands” (ADR-0016 §2). */
 export function languageName(code: string) {
   const name = new Intl.DisplayNames([code], { type: 'language' }).of(code) ?? code;

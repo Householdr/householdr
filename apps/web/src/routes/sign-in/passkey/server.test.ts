@@ -39,7 +39,13 @@ const site = 'https://householdr.example.org';
 const password = 'correct horse battery staple';
 const firefox = 'Mozilla/5.0 (X11; Linux x86_64; rv:143.0) Gecko/20100101 Firefox/143.0';
 const client = { address: '192.0.2.1', userAgent: firefox };
-const on = { 'sign-in': true, 'password-reset': false, onboarding: false, passkeys: true };
+const on = {
+  'sign-in': true,
+  'password-reset': false,
+  onboarding: false,
+  passkeys: true,
+  availability: false,
+};
 let next = 0;
 
 type Options = Parameters<TestAuthenticator['authenticate']>[0];

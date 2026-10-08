@@ -1,5 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
+  import { page } from '$app/state';
   import ErrorSummary from '#lib/components/ErrorSummary.svelte';
   import { Button } from '#lib/components/ui/button/index.js';
   import { Input } from '#lib/components/ui/input/index.js';
@@ -77,5 +78,10 @@
     </section>
   {/if}
 
+  {#if data.flags.availability}
+    <a href="/households/{page.params.household}/availability" class="underline underline-offset-4">
+      {m['availability.title']()}
+    </a>
+  {/if}
   <a href="/security" class="underline underline-offset-4">{m['security.title']()}</a>
 </main>
