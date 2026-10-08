@@ -160,7 +160,7 @@ describe('every household-owned table (CODE-17)', () => {
 });
 
 describe('tables outside a household (ADR-0008 §9, clarification)', () => {
-  it('are the account tables in auth, and no others', async () => {
+  it('are the account tables and the rate-limit counts in auth, and no others', async () => {
     // `drizzle` holds the list of migrations that have run.
     const { rows } = await db.execute<{ name: string }>(sql`
       select n.nspname || '.' || c.relname as name
@@ -172,6 +172,7 @@ describe('tables outside a household (ADR-0008 §9, clarification)', () => {
     expect(rows.map((r) => r.name)).toEqual([
       'auth.accounts',
       'auth.credentials',
+      'auth.rate_limits',
       'auth.sessions',
       'auth.verifications',
     ]);

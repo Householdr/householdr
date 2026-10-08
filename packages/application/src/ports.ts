@@ -26,3 +26,8 @@ export interface Logger {
   warn: (event: string, fields?: LogFields) => void;
   error: (event: string, fields?: LogFields, error?: unknown) => void;
 }
+
+/** Tells the time: the system's clock in the app, one tests set (ADR-0023 §3). */
+export interface Clock {
+  now: () => Temporal.Instant;
+}

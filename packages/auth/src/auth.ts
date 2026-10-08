@@ -10,6 +10,9 @@ export interface AuthSettings {
   secret: string;
 }
 
+/** A day in seconds, the unit the library takes session lifetimes in. */
+const day = 24 * 60 * 60;
+
 /**
  * The authentication library over the `auth` tables (ADR-0008 §9 and ADR-0023 §2,
  * clarifications). Sign-in methods are added by the features that offer them (ADR-0010 §2).
@@ -28,10 +31,24 @@ export function createAuth({ db, baseUrl, secret }: AuthSettings) {
         verification: verifications,
       },
     }),
+    emailAndPassword: {
+      enabled: true,
+      // At least 12 characters, and no rules about what they are (ADR-0010 §2).
+      minPasswordLength: 12,
+      // Accounts are made from a confirmed address; one that isn't confirmed can't sign in.
+      requireEmailVerification: true,
+    },
+    // A session lasts 30 days and is extended while used (ADR-0010 §6).
+    session: { expiresIn: 30 * day, updateAge: day },
     advanced: {
       // Random UUID keys, like every other table (CODE-17).
       database: { generateId: 'uuid' },
       ipAddress: { disableIpTracking: true },
+      // `__Host-` cookies (ADR-0017 §4). The library's own secure setting would name them
+      // `__Secure-`, so the prefix and attributes are set here instead.
+      useSecureCookies: false,
+      cookiePrefix: '__Host-householdr',
+      defaultCookieAttributes: { secure: true, httpOnly: true, sameSite: 'lax', path: '/' },
     },
     databaseHooks: {
       // Without tracking the library still writes an empty address; a session keeps none, and the
