@@ -21,7 +21,7 @@ const newId = () => `00000000-0000-4000-8000-${String(++next).padStart(12, '0')}
 const newAccount = async () => {
   const [row] = await db
     .insert(accounts)
-    .values({ name: 'Robin', email: `robin-${String(++next)}@example.org` })
+    .values({ name: 'Robin', email: `robin-${String(++next)}@example.org`, culture: 'en-BE' })
     .returning({ id: accounts.id });
   if (!row) throw new Error('No account');
   return row.id;

@@ -32,10 +32,30 @@ export const accounts = auth.table(
     emailVerified: boolean().notNull().default(false),
     /** The library's profile picture, which we never store (ADR-0012 §1). */
     image: text(),
+    /**
+     * The language the person reads the app in and the country whose conventions they see, as a
+     * BCP 47 tag such as `nl-BE` (ADR-0008 §6).
+     */
+    culture: text().notNull(),
+    /**
+     * The version of the instance's terms the person accepted, and when; neither on an instance
+     * without terms (ADR-0012 §2, clarification).
+     */
+    termsVersion: text(),
+    termsAcceptedAt: timestamp({ withTimezone: true }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (t) => [check('accounts_no_image', sql`${t.image} is null`)],
+  (t) => [
+    check('accounts_no_image', sql`${t.image} is null`),
+    check('accounts_culture', sql`${t.culture} ~ '^[a-z]{2,3}-[A-Z]{2}$'`),
+    // Both or neither. Both sides are true or false, never null, which a check would let through.
+    check(
+      'accounts_terms',
+      sql`(${t.termsVersion} is null and ${t.termsAcceptedAt} is null)
+        or (${t.termsVersion} is not null and ${t.termsAcceptedAt} is not null)`,
+    ),
+  ],
 );
 
 /** A way to sign in to an account, such as a password (ADR-0010 §2): the library's `account`. */

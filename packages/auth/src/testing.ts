@@ -12,7 +12,12 @@ import {
 } from '@householdr/db';
 import { testDatabase } from '@householdr/db/testing';
 import { eq, inArray } from 'drizzle-orm';
-import { queueAccountEmail } from './account-emails';
+import {
+  accountEmailSent,
+  prepareAccountEmail,
+  queueAccountEmail,
+  type AccountEmailContext,
+} from './account-emails';
 import { createAuth, type Auth } from './auth';
 import type { Cookie } from './cookies';
 import { counterKeys } from './counter-keys';
@@ -26,7 +31,10 @@ export interface TestAccount {
   password: string;
 }
 
-/** Adds an account with a password, its address confirmed unless said otherwise, and returns its ID. */
+/**
+ * Adds an account with a password, its address confirmed unless said otherwise, reading English
+ * with Belgian conventions, and returns its ID.
+ */
 export async function createTestAccount(
   auth: Auth,
   { email, password }: TestAccount,
@@ -34,7 +42,7 @@ export async function createTestAccount(
 ) {
   const internal = await auth.$context;
   const user = await internal.internalAdapter.createUser(
-    { name: 'Robin', email, emailVerified },
+    { name: 'Robin', email, emailVerified, culture: 'en-BE' },
     { method: 'email-password' },
   );
   await internal.internalAdapter.linkAccount({
@@ -152,6 +160,22 @@ export async function waitingAccountEmail(db: Database, accountId: string, queue
     .returning({ id: accountEmails.id });
   if (!row) throw new Error('No row');
   return row.id;
+}
+
+/**
+ * The token of a link to sign up as `email`, made as the worker makes it for its e-mail
+ * (ADR-0010 §1, clarification).
+ */
+export async function signUpLinkTo(context: AccountEmailContext, email: string) {
+  const [row] = await context.db
+    .insert(accountEmails)
+    .values({ kind: 'sign-up', email })
+    .returning({ id: accountEmails.id });
+  if (!row) throw new Error('No row');
+  const prepared = await prepareAccountEmail(context, row.id);
+  if (prepared?.kind !== 'sign-up') throw new Error('No link');
+  await accountEmailSent(context, row.id);
+  return prepared.link.split('/').at(-1) ?? '';
 }
 
 /** The few CBOR types WebAuthn's structures use: integers, byte strings, text and maps. */

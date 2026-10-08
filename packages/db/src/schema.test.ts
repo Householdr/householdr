@@ -114,7 +114,7 @@ describe('members', () => {
   it('link an account to one profile per household, kept when the account goes (ADR-0010 §5, §10)', async () => {
     const [account] = await db
       .insert(accounts)
-      .values({ name: 'Robin', email: `robin-${String(++next)}@example.org` })
+      .values({ name: 'Robin', email: `robin-${String(++next)}@example.org`, culture: 'en-BE' })
       .returning();
     if (!account) throw new Error('No account');
     const id = newId();
@@ -157,7 +157,12 @@ describe('accounts and sessions (ADR-0010)', () => {
   const addAccount = (fields: Partial<typeof accounts.$inferInsert> = {}) =>
     db
       .insert(accounts)
-      .values({ name: 'Robin', email: `robin-${String(++next)}@example.org`, ...fields })
+      .values({
+        name: 'Robin',
+        email: `robin-${String(++next)}@example.org`,
+        culture: 'en-BE',
+        ...fields,
+      })
       .returning();
 
   it('stores no profile picture (ADR-0012 §1)', async () => {
@@ -165,6 +170,30 @@ describe('accounts and sessions (ADR-0010)', () => {
     expect(await refusal(addAccount({ image: 'https://example.org/robin.png' }))).toBe(
       'accounts_no_image',
     );
+  });
+
+  it('keeps a culture: a language and a country (ADR-0008 §6)', async () => {
+    for (const culture of ['nl-BE', 'en-IE', 'fil-PH']) {
+      expect(await refusal(addAccount({ culture }))).toBeUndefined();
+    }
+    for (const culture of ['', 'nl', 'BE', 'nl-be', 'NL-BE', 'nl_BE', 'nl-BEL', 'nl-BE-x']) {
+      expect(await refusal(addAccount({ culture }))).toBe('accounts_culture');
+    }
+    const without = db.$client.query('insert into auth.accounts (name, email) values ($1, $2)', [
+      'Robin',
+      `robin-${String(++next)}@example.org`,
+    ]);
+    await expect(without).rejects.toMatchObject({ code: '23502', column: 'culture' });
+  });
+
+  it('keeps the version of the terms accepted together with when (ADR-0012 §2)', async () => {
+    const at = new Date('2026-10-08T08:00:00Z');
+    expect(await refusal(addAccount())).toBeUndefined();
+    expect(
+      await refusal(addAccount({ termsVersion: '2026-10-01', termsAcceptedAt: at })),
+    ).toBeUndefined();
+    expect(await refusal(addAccount({ termsVersion: '2026-10-01' }))).toBe('accounts_terms');
+    expect(await refusal(addAccount({ termsAcceptedAt: at }))).toBe('accounts_terms');
   });
 
   it('keeps one account per e-mail address (ADR-0010 §1)', async () => {

@@ -7,6 +7,9 @@ import type { FullConfig } from '@playwright/test';
 import { expectMailServer, mailServer } from './mail';
 import { addressHeader, protocolHeader } from './proxy';
 
+/** The test server's terms (ADR-0021 §5, clarification), invented like all test data (TEST-8). */
+export const termsUrl = 'https://householdr.example.org/terms';
+
 /**
  * Starts the test build (`pnpm build:test`) and the built worker on a fresh database, and returns
  * what stops them all after the run. Playwright's own web server would start before the database
@@ -34,6 +37,10 @@ export default async function startServer(config: FullConfig) {
       XFF_DEPTH: '1',
       // The tests never reach out to Have I Been Pwned; its answers are unit-tested (TEST-2).
       BREACHED_PASSWORD_CHECK: 'false',
+      // Terms of its own, as our hosted service has, so the step that creates a household asks to
+      // accept them (ADR-0007 §2, clarification); an instance without is unit-tested.
+      TERMS_URL: termsUrl,
+      TERMS_VERSION: '2026-10-01',
     },
     stdio: ['ignore', 'ignore', 'inherit'],
   });

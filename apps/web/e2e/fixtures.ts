@@ -122,3 +122,26 @@ export async function otherDevice(
   await forceFlags(context, url, flags);
   return context;
 }
+
+/**
+ * Gives `page` a built-in authenticator, like a phone's or a laptop's, that says yes to every
+ * fingerprint: Chromium's own WebAuthn emulation. Returns what lists the passkeys it holds.
+ */
+export async function withAuthenticator(page: Page) {
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('WebAuthn.enable');
+  const { authenticatorId } = await cdp.send('WebAuthn.addVirtualAuthenticator', {
+    options: {
+      protocol: 'ctap2',
+      transport: 'internal',
+      hasResidentKey: true,
+      hasUserVerification: true,
+      isUserVerified: true,
+      automaticPresenceSimulation: true,
+    },
+  });
+  return {
+    passkeys: async () =>
+      (await cdp.send('WebAuthn.getCredentials', { authenticatorId })).credentials,
+  };
+}

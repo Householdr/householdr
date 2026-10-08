@@ -20,6 +20,27 @@ export const linkInTheMaking = new AsyncLocalStorage<Link>();
 export const signUpLinkId = (token: string) => `sign-up:${token}`;
 
 /**
+ * The account that signing up with a passkey creates, with the household it creates (ADR-0010 §1,
+ * clarification). The library asks a callback of its configuration whom a passkey is for, and
+ * hands the verified passkey to another before writing it, so both wait for the account here.
+ */
+export interface AccountInTheMaking {
+  /** The confirmed address of the sign-up link the account is created from. */
+  email: string;
+  /**
+   * Writes the account, with `id`, in the transaction that creates it; false if the address has an
+   * account by now. Absent while only the passkey's options are made.
+   */
+  write?: (id: string) => Promise<boolean>;
+}
+
+/**
+ * The account in the making in the current call, if any: outside signing up, a passkey is only
+ * ever added to the account signed in.
+ */
+export const accountInTheMaking = new AsyncLocalStorage<AccountInTheMaking>();
+
+/**
  * The account whose password the current call reset. The library reports it to a callback of its
  * configuration rather than to whoever asked, so the asker waits for it here.
  */

@@ -2,6 +2,15 @@ import { refreshAll } from '$app/navigation';
 import { onMount } from 'svelte';
 
 /**
+ * Whether the browser makes and uses passkeys through WebAuthn's JSON form, which the app's
+ * passkey steps need. Only a browser can tell.
+ */
+export const passkeysSupported = () =>
+  typeof PublicKeyCredential !== 'undefined' &&
+  typeof PublicKeyCredential.parseCreationOptionsFromJSON === 'function' &&
+  typeof PublicKeyCredential.parseRequestOptionsFromJSON === 'function';
+
+/**
  * Adds passkeys and signs in with them, with the browser's own WebAuthn where the browser can
  * (ADR-0010 §2, PRIN-4); elsewhere nothing is offered, and the password stays (PRIN-5).
  */
@@ -14,10 +23,7 @@ export function usePasskeys() {
 
   // Only a browser can tell, so the buttons appear once the page runs there.
   onMount(() => {
-    supported =
-      typeof PublicKeyCredential !== 'undefined' &&
-      typeof PublicKeyCredential.parseCreationOptionsFromJSON === 'function' &&
-      typeof PublicKeyCredential.parseRequestOptionsFromJSON === 'function';
+    supported = passkeysSupported();
   });
 
   /** Posts `body` to one of the security page's passkey endpoints. */
