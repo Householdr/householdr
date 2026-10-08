@@ -25,7 +25,14 @@ afterAll(() => test.close());
 
 const site = 'https://householdr.example.org';
 const firefox = 'Mozilla/5.0 (X11; Linux x86_64; rv:143.0) Gecko/20100101 Firefox/143.0';
-const on = { 'sign-in': true, 'password-reset': false, onboarding: true, passkeys: true };
+const on = {
+  'sign-in': true,
+  'password-reset': false,
+  onboarding: true,
+  passkeys: true,
+  'household-settings': false,
+  'activity-log': false,
+};
 const signUpCookie = '__Host-householdr.sign-up';
 let next = 0;
 

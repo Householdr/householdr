@@ -45,6 +45,7 @@ export const load = (async ({ locals }) => {
       invitationDaysLeft: invitationExpiresAt ? daysUntil(now, invitationExpiresAt) : null,
     })),
     mayAddMembers: result.mayAddMembers,
+    mayChangeSettings: result.mayChangeSettings,
     you: context.member.id,
   };
 }) satisfies PageServerLoad;

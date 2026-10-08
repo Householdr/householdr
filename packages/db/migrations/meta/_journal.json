@@ -99,6 +99,13 @@
       "when": 1791530606271,
       "tag": "0013_guardians-and-consents",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1791538389929,
+      "tag": "0014_activity-log",
+      "breakpoints": true
     }
   ]
 }

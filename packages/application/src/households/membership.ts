@@ -113,6 +113,8 @@ type ViewHouseholdResult =
       members: HouseholdMember[];
       /** Whether the member viewing it may add members: a head with two factors (ADR-0001 §2). */
       mayAddMembers: boolean;
+      /** Whether they may change the household's settings, which only heads do (ADR-0007 §2). */
+      mayChangeSettings: boolean;
     }
   | { ok: false; error: 'not-allowed' };
 
@@ -169,6 +171,13 @@ export async function viewHousehold(context: HouseholdContext): Promise<ViewHous
       };
     });
     list.sort((a, b) => roleOrder[a.role] - roleOrder[b.role] || a.name.localeCompare(b.name));
-    return { ok: true as const, name: household.name, members: list, mayAddMembers: mayInvite };
+    const mayChangeSettings = can(context.member, { action: 'household.settings' });
+    return {
+      ok: true as const,
+      name: household.name,
+      members: list,
+      mayAddMembers: mayInvite,
+      mayChangeSettings,
+    };
   });
 }
