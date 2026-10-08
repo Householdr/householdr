@@ -5,6 +5,8 @@ import {
   accountEmails,
   accounts,
   connect,
+  inHousehold,
+  members,
   passkeys,
   sessions,
   type Database,
@@ -120,6 +122,20 @@ export async function testAccounts(url: string) {
       );
       if (!result.ok) throw new Error(`No household: ${result.error}`);
       return result.householdId;
+    },
+    /**
+     * Makes the account at `email` an adult member of household `householdId`, named `name`, as
+     * joining through an invitation will (ADR-0010 §5).
+     */
+    addMember: async (householdId: string, email: string, name: string) => {
+      const [account] = await db
+        .select({ id: accounts.id })
+        .from(accounts)
+        .where(eq(accounts.email, email));
+      if (!account) throw new Error('No such account');
+      await inHousehold(db, householdId, (tx) =>
+        tx.insert(members).values({ householdId, name, role: 'adult', accountId: account.id }),
+      );
     },
     /** Makes every sign-in of the account at `email` 11 minutes old (ADR-0010 §6). */
     signedInLongAgo: async (email: string) => {

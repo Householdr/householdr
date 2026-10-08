@@ -89,22 +89,8 @@
     {
       "idx": 12,
       "version": "7",
-      "when": 1791493881267,
-      "tag": "0012_activity-log",
-      "breakpoints": true
-    },
-    {
-      "idx": 13,
-      "version": "7",
-      "when": 1791496902475,
-      "tag": "0013_shares",
-      "breakpoints": true
-    },
-    {
-      "idx": 14,
-      "version": "7",
-      "when": 1791498106106,
-      "tag": "0014_temporary-shares",
+      "when": 1791500375265,
+      "tag": "0012_integration",
       "breakpoints": true
     }
   ]

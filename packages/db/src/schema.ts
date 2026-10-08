@@ -172,3 +172,54 @@ export const activityLog = pgTable(
     ),
   ],
 );
+
+/**
+ * A member's planned absence (ADR-0005 §2): the domain's `Absence`, from `firstDay` to `lastDay`,
+ * whole days in the household's time zone, both included. No reason, place or detail is asked or
+ * stored (ADR-0012 §2, ADR-0018 §3). It goes with the member's profile.
+ */
+export const absences = pgTable(
+  'absences',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    memberId: uuid()
+      .notNull()
+      .references(() => members.id, { onDelete: 'cascade' }),
+    firstDay: date().notNull(),
+    lastDay: date().notNull(),
+  },
+  (t) => [
+    householdOnly(t.householdId),
+    // Who is away in a range of days: those whose last day is in or after it (ADR-0001 §6).
+    index('absences_household_days').on(t.householdId, t.lastDay, t.firstDay),
+    // For a member's absences to go with their profile without reading the whole table.
+    index('absences_member').on(t.memberId),
+    check('absences_days', sql`${t.lastDay} >= ${t.firstDay}`),
+  ],
+);
+
+/**
+ * A period when the whole household is away together, such as a family holiday (ADR-0005 §5): whole
+ * days in the household's time zone, both included. Weeks entirely inside it get no plan, and
+ * occurrences whose whole window falls inside it are skipped.
+ */
+export const awayPeriods = pgTable(
+  'away_periods',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    firstDay: date().notNull(),
+    lastDay: date().notNull(),
+  },
+  (t) => [
+    householdOnly(t.householdId),
+    // The periods that touch a range of days: those whose last day is in or after it.
+    index('away_periods_household_days').on(t.householdId, t.lastDay, t.firstDay),
+    check('away_periods_days', sql`${t.lastDay} >= ${t.firstDay}`),
+  ],
+);
