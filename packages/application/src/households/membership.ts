@@ -9,14 +9,19 @@ import {
 import { can, type Member, type Role } from '@householdr/domain';
 import { eq } from 'drizzle-orm';
 import * as v from 'valibot';
+import type { Clock } from '../ports';
 
 /** What reading households needs: the database. */
 export interface HouseholdsContext {
   db: Database;
 }
 
-/** What a use case in a household needs: the household, and the member acting in it (ADR-0023 §4). */
+/**
+ * What a use case in a household needs: the household, the member acting in it, and the time
+ * (ADR-0023 §4).
+ */
 export interface HouseholdContext extends HouseholdsContext {
+  clock: Clock;
   householdId: string;
   member: Member;
 }

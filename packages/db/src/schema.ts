@@ -1,14 +1,17 @@
-import type { HouseholdCalendar, Role } from '@householdr/domain';
+import type { HouseholdCalendar, PlanTask, Role, Timing } from '@householdr/domain';
 import { sql, type AnyColumn } from 'drizzle-orm';
 import {
   check,
   date,
+  foreignKey,
   index,
   integer,
+  jsonb,
   pgPolicy,
   pgTable,
   smallint,
   text,
+  unique,
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
@@ -103,5 +106,106 @@ export const members = pgTable(
     check('members_name', sql`${t.name} <> ''`),
     check('members_role', sql`${t.role} in ('head', 'adult', 'child')`),
     check('members_birth_date', sql`(${t.role} = 'child') = (${t.birthDate} is not null)`),
+  ],
+);
+
+/**
+ * A rule of a schedule as stored: the domain's `Rule`, with its dates as ISO strings (ADR-0004 §2).
+ */
+export interface StoredRule {
+  /** An RFC 5545 `RRULE` without `DTSTART`, such as `FREQ=WEEKLY;INTERVAL=2`. */
+  rrule: string;
+  /** `YYYY-MM-DD`. */
+  start: string;
+  /** A yearly range from `MM-DD` to `MM-DD`, both included, which may wrap around new year. */
+  season?: { from: string; to: string };
+}
+
+// Every rule is an object with an RRULE and a start date, and a season has both its ends.
+const wellFormedRules = `$[*] ? (
+  @.type() != "object"
+  || !exists(@.rrule ? (@.type() == "string" && @ != ""))
+  || !exists(@.start ? (@ like_regex "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"))
+  || (exists(@.season) && !(exists(@.season.from ? (@ like_regex "^[0-9]{2}-[0-9]{2}$"))
+    && exists(@.season.to ? (@ like_regex "^[0-9]{2}-[0-9]{2}$"))))
+)`;
+
+/**
+ * What produces the dates of tasks, and can be shared by several (ADR-0004 §1, §2): its rules, each
+ * within its season, plus extra dates, minus exception dates. A task on a simple frequency has one
+ * of its own, with a single rule (§3).
+ */
+export const schedules = pgTable(
+  'schedules',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    rules: jsonb().$type<StoredRule[]>().notNull(),
+    extraDates: date()
+      .array()
+      .notNull()
+      .default(sql`'{}'`),
+    exceptionDates: date()
+      .array()
+      .notNull()
+      .default(sql`'{}'`),
+    /** For versioned updates (CODE-14, ADR-0019 §5). */
+    version: integer().notNull().default(1),
+  },
+  (t) => [
+    householdOnly(t.householdId),
+    // Tasks refer to a schedule together with their household, so never to another's.
+    unique('schedules_household_id').on(t.householdId, t.id),
+    check(
+      'schedules_rules',
+      sql`jsonb_typeof(${t.rules}) = 'array'
+        and not jsonb_path_exists(${t.rules}, ${sql.raw(`'${wellFormedRules}'`)})`,
+    ),
+    // A schedule produces dates: from a rule, or from extra dates only, as an imported calendar
+    // would (ADR-0004, Future).
+    check('schedules_dates', sql`${t.rules} <> '[]'::jsonb or cardinality(${t.extraDates}) > 0`),
+  ],
+);
+
+/**
+ * A chore of the household (ADR-0001 §1): its name, how long one occurrence takes, the schedule its
+ * dates come from, how a date becomes an occurrence window, and what happens to an occurrence that
+ * isn't done. Fixed windows, "since last done" intervals, one-off dates, areas, minimum ages and
+ * same-person links come with the slices that use them, as columns of their own.
+ */
+export const tasks = pgTable(
+  'tasks',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    /** As typed: household content is never translated (ADR-0016 §6). */
+    name: text().notNull(),
+    /** Whole minutes for one occurrence, within the domain's `taskDuration` (ADR-0001 §5). */
+    duration: integer().notNull(),
+    scheduleId: uuid().notNull(),
+    /** ADR-0004 §4. */
+    timing: text().$type<Exclude<Timing['kind'], 'fixed'>>().notNull(),
+    /** ADR-0002 §2. */
+    onMiss: text().$type<PlanTask['onMiss']>().notNull(),
+    /** For versioned updates (CODE-14, ADR-0019 §5). */
+    version: integer().notNull().default(1),
+  },
+  (t) => [
+    householdOnly(t.householdId),
+    // A schedule of the task's own household, kept while a task uses it.
+    foreignKey({
+      name: 'tasks_schedule',
+      columns: [t.householdId, t.scheduleId],
+      foreignColumns: [schedules.householdId, schedules.id],
+    }),
+    index('tasks_household_schedule').on(t.householdId, t.scheduleId),
+    check('tasks_name', sql`${t.name} <> ''`),
+    check('tasks_duration', sql`${t.duration} between 1 and 1440`),
+    check('tasks_timing', sql`${t.timing} in ('flexible', 'floating')`),
+    check('tasks_on_miss', sql`${t.onMiss} in ('roll over', 'lapse')`),
   ],
 );

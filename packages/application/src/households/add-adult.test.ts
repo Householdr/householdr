@@ -2,6 +2,7 @@ import { accounts, inHousehold, members, passkeys, type Database } from '@househ
 import { testDatabase } from '@householdr/db/testing';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { settableClock } from '../testing';
 import { addAdult } from './add-adult';
 import { createHousehold } from './create-household';
 import { membership, viewHousehold } from './membership';
@@ -59,7 +60,8 @@ const founded = async (twoFactor = true) => {
   if (!result.ok) throw new Error(`Not created: ${result.error}`);
   const member = await membership({ db }, account, result.householdId);
   if (!member) throw new Error('Not a member');
-  return { db, householdId: result.householdId, member };
+  const clock = settableClock(Temporal.Instant.from('2026-10-08T08:00:00Z'));
+  return { db, clock, householdId: result.householdId, member };
 };
 
 const profilesOf = (householdId: string) =>
