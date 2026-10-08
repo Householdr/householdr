@@ -233,6 +233,9 @@ catalogs:
     typescript-eslint:
       specifier: ^8.71.0
       version: 8.71.0
+    valibot:
+      specifier: ^1.5.0
+      version: 1.5.0
     vite:
       specifier: ^8.3.2
       version: 8.3.2
@@ -340,6 +343,9 @@ importers:
 
   packages/auth:
     dependencies:
+      '@householdr/application':
+        specifier: workspace:*
+        version: link:../application
       '@householdr/db':
         specifier: workspace:*
         version: link:../db
@@ -349,10 +355,16 @@ importers:
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.3(@types/pg@8.23.1)(kysely@0.29.6)(pg@8.23.1)
+      valibot:
+        specifier: 'catalog:'
+        version: 1.5.0(typescript@6.0.3)
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.4
+      fast-check:
+        specifier: 'catalog:'
+        version: 4.10.2
 
   packages/db:
     dependencies:
