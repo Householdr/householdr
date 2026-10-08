@@ -289,6 +289,19 @@ Vite ecosystem:
 | Format | **Prettier** with the Svelte and Tailwind plugins |
 | Type check | `svelte-check` and `tsc` |
 
+> **Clarification (2026-10-08):** two more checks keep the code and its dependencies lean (§1). Both
+> run in `pnpm verify` and in CI's Verify job
+> ([ADR-0009](0009-development-workflow-and-releases.md) §5):
+>
+> | Job | Tool |
+> |---|---|
+> | Unused code and dependencies | **Knip**: files nothing imports, exports nothing uses, dependencies nothing imports, and imports of packages a workspace doesn't declare |
+> | Lighter alternatives | **e18e's ESLint plugin** with its recommended rules: dependencies that have a lighter or native replacement, in code and in every `package.json`, and older patterns that a newer language or platform API replaces |
+>
+> Their findings block like any other check. What is unused is deleted, not kept for later; a
+> flagged dependency is replaced, or kept with the reason next to where the check is turned off for
+> it (CODE-24).
+
 ### 13. Containers: one image per service
 
 One multi-stage `Dockerfile` with a **target per service**, so each is its own image and can be

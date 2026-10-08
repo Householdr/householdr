@@ -84,7 +84,9 @@
   components (CODE-8).
 - **CODE-22 — Dependencies are decisions.** A new runtime dependency is justified in the pull request
   (what it replaces, its size, its maintenance); one that shapes the architecture needs an ADR
-  ([PROC-2](process.md)). No dependency for what a few lines or the platform already do.
+  ([PROC-2](process.md)). No dependency for what a few lines or the platform already do. Knip fails
+  on code and dependencies nothing uses, and e18e's ESLint plugin on a dependency with a lighter or
+  native replacement ([ADR-0008](../adr/0008-tech-stack.md) §12, clarification).
 
 ## Comments and formatting
 
