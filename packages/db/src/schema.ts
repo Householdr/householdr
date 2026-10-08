@@ -9,8 +9,10 @@ import {
   pgTable,
   smallint,
   text,
+  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { accounts } from './auth-schema';
 
 /**
  * The household a transaction works in: set by `inHousehold`, empty otherwise, so that without it
@@ -85,12 +87,19 @@ export const members = pgTable(
     name: text().notNull(),
     role: text().$type<Role>().notNull(),
     birthDate: date(),
+    /**
+     * The account the profile is linked to, if any (ADR-0010 §5). Deleting the account keeps the
+     * profile, without it (§10).
+     */
+    accountId: uuid().references(() => accounts.id, { onDelete: 'set null' }),
     /** For versioned updates (CODE-14, ADR-0023 §1). */
     version: integer().notNull().default(1),
   },
   (t) => [
     householdOnly(t.householdId),
     index('members_household').on(t.householdId),
+    // One profile per household for an account (ADR-0010 §5).
+    uniqueIndex('members_account').on(t.householdId, t.accountId),
     check('members_name', sql`${t.name} <> ''`),
     check('members_role', sql`${t.role} in ('head', 'adult', 'child')`),
     check('members_birth_date', sql`(${t.role} = 'child') = (${t.birthDate} is not null)`),
