@@ -56,6 +56,19 @@ set no lower age. Below that age, a person with parental responsibility has to c
 - **Sign-up is passkey-first**: where the device supports it, the first sign-in method offered is a
   passkey (one fingerprint or face scan, nothing to remember); a password is the alternative.
 
+> **Clarification (2026-10-08):** sign-up starts by **verifying the e-mail address** with a link
+> that works once. Only then are a passkey or password set, and the account is created together with
+> the household it creates or the membership it accepts; until then, nothing is stored but the
+> pending verification ([ADR-0012](0012-privacy-and-data-protection.md) §5, clarification).
+
+> **Clarification (2026-10-08):** in a household, a member is shown by their **profile's name**,
+> which linking an account doesn't change; the person can correct it there
+> ([ADR-0012](0012-privacy-and-data-protection.md) §6). The account's name is shown on the person's
+> own pages, and to the heads, who see who accepted an invitation (§5). A child's **birth date** is
+> the account's once they have one: a profile linked to it uses the account's date instead of its
+> own, so every household has the same consent age and 18th birthday, and the guardians keep it
+> ([ADR-0012](0012-privacy-and-data-protection.md) §6, clarification).
+
 ### 2. Signing in
 
 | Method | Rules |
@@ -64,6 +77,10 @@ set no lower age. Below that age, a person with parental responsibility has to c
 | **Password** | At least 12 characters, no composition rules (no forced digits or symbols). Checked when set against Have I Been Pwned's breached-password list: only the first 5 characters of the password's SHA-1 hash are sent, never the password and never whose it is. Stored with a modern slow hash. |
 | **Two-factor (TOTP)** | Authenticator app plus ten single-use recovery codes. Asked for after a password sign-in. A passkey sign-in never asks for it, since a passkey is already two factors. Recommended to every adult; **required for heads** (§3). |
 | **Device sign-in** | A new device signs in by being approved from a device that is already signed in (§4). |
+
+> **Clarification (2026-10-08):** when Have I Been Pwned can't be reached, a password that meets the
+> length rule is accepted, and the missed check is logged without the account or anything about the
+> password. An outage never blocks signing up or a reset.
 
 - Error messages never reveal whether an e-mail address has an account ("e-mail or password is
   incorrect"; "if an account exists, we've sent a link").
@@ -176,6 +193,13 @@ A child can take part in three ways, in increasing independence:
 - The account has **no password**, so there is nothing for the child to forget or for anyone to
   guess, and nothing to phish. The only ways in are a guardian's approval and passkeys on devices a
   guardian approved.
+
+  > **Clarification (2026-10-08):** the authentication library needs an e-mail address on every
+  > account, so a managed account carries a generated one at a reserved domain that can't receive
+  > mail (`.invalid`). It is not the child's, is never verified, mailed or shown, and a database
+  > check keeps it unverified. Taking the account over (below) replaces it with the child's own
+  > address.
+
 - A **family device** (a shared tablet) can hold the sessions of several children; switching between
   them is a tap. By approving a shared device, the guardian accepts that the children on it can open
   each other's view; completions still record who logged them.
@@ -240,6 +264,20 @@ A child can take part in three ways, in increasing independence:
   confirms that they hold parental responsibility and consent to the child's use of the service. The
   confirmation is stored with who, when and the text shown. A managed account cannot be created
   without it.
+
+  > **Clarification (2026-10-08):** most young children only have a **profile**. Until the child has
+  > an account, the guardianship and the consent record belong to that profile; when a managed
+  > account is set up from it (§7), or the child links their own account to it (§5), they move to
+  > the account. Consent records of a child with only a profile are kept as long as the profile
+  > exists, plus one year ([ADR-0012](0012-privacy-and-data-protection.md) §5, clarification).
+
+  > **Clarification (2026-10-08):** a child's account that already has guardians joins a profile in
+  > **another household** through a co-guardian. A guardian of the account invites the other parent
+  > as co-guardian (above); a guardian who is also a head of the other household then links the
+  > account to that household's profile. The profile's own guardianship ends there: whoever held it
+  > and doesn't guard the account can be invited as a co-guardian. The profile's consent record
+  > stays with it.
+
 - The **consent age** is that of the household's **country** (13 in Belgium, 15 in France, 16 in the
   Netherlands, 16 where no lower age applies). This adds a **country** to the household, set in
   onboarding step 1 and detected from the time zone

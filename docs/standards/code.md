@@ -12,10 +12,11 @@
 
 ## Structure ([ADR-0008](../adr/0008-tech-stack.md) §3)
 
-- **CODE-4 — Dependency direction.** `domain` ← `db` ← `application` ← `web`, `worker`. Nothing
-  imports "upwards"; `web` and `worker` don't import `db`; `application` doesn't import SvelteKit; the
-  core never imports anything from `householdr-cloud`
-  ([ADR-0021](../adr/0021-self-hosted-edition.md) §1, [ADR-0023](../adr/0023-application-layer.md) §2).
+- **CODE-4 — Dependency direction.** `domain` ← `db` ← `application` ← `auth` ← `web`, and
+  `application` ← `worker`. Nothing imports "upwards"; `web` and `worker` don't import `db`;
+  `application` doesn't import SvelteKit or `auth`; the core never imports anything from
+  `householdr-cloud` ([ADR-0021](../adr/0021-self-hosted-edition.md) §1,
+  [ADR-0023](../adr/0023-application-layer.md) §2, clarification).
 - **CODE-27 — No import cycles.** No module imports, directly or through others, a module that
   imports it, within a package or across packages, type-only imports included. A piece both sides
   need moves to a module they can both import. A dependency check in CI fails on any cycle.
@@ -36,8 +37,10 @@
 - **CODE-9 — Logic in hooks.** Stateful UI logic lives in `use-*.svelte.ts` functions that return
   reactive state and actions; they may call the domain package, never render.
 - **CODE-10 — Thin routes and jobs.** `+page.svelte` wires hooks to components; `+page.server.ts`
-  builds the context, calls one use case and maps its result to a page, a redirect or form errors.
-  Worker jobs do the same. SvelteKit's `hooks.server.ts` handles requests, sessions and the context only.
+  builds the context, calls one use case and maps its result to a page, a redirect or form errors;
+  sign-in and account security call one `auth` function instead
+  ([ADR-0023](../adr/0023-application-layer.md) §2, clarification). Worker jobs do the same.
+  SvelteKit's `hooks.server.ts` handles requests, sessions and the context only.
 
 ## Use cases and the server ([ADR-0023](../adr/0023-application-layer.md))
 
@@ -53,7 +56,8 @@
 - **CODE-12 — Validate every input** in the use case, with its Valibot schema; forms reuse the schema
   for hints ([ADR-0017](../adr/0017-security-baseline.md) §3).
 - **CODE-13 — Mutations are form actions** on real forms, enhanced with `use:enhance`, each calling
-  one use case; they work without JavaScript. Error codes become translated messages in the UI.
+  one use case (or one `auth` function, CODE-10); they work without JavaScript. Error codes become
+  translated messages in the UI.
 - **CODE-14 — Versioned updates.** Use cases update editable records through the versioned-update
   helper;
   a conflict returns the current values and keeps the user's input

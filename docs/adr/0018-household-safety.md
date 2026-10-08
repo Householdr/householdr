@@ -60,6 +60,11 @@ is closed (and deleted as in [ADR-0012](0012-privacy-and-data-protection.md) §6
 and guardianships are unaffected. The last such adult is warned before leaving that the household
 will then be closed.
 
+> **Clarification (2026-10-08):** time in the household counts from when the member's **profile**
+> was created, however much later an account was linked to it ([ADR-0007](0007-onboarding.md) §1).
+> Profiles created at the same moment are ordered by a fixed rule (their id), so the same household
+> always gets the same successor.
+
 ### 3. Whereabouts: no more than the plan needs
 
 | Information | What others in the household see |

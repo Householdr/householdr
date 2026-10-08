@@ -72,6 +72,11 @@ touches it, and how people exercise their rights.
 > ([ADR-0018](0018-household-safety.md) §5); they are chore records of the household and are kept
 > while it exists (§5).
 
+> **Clarification (2026-10-08):** a **session** stores no IP address: the device it was started on
+> and when it was last used are enough for the security page
+> ([ADR-0010](0010-identity-invitations-and-childrens-accounts.md) §6). The IP address of a sign-in
+> is kept only in the security records, for their 90 days (§5).
+
 What is deliberately **not** stored:
 
 - **No reasons**: not for a reduced share, not for an absence, not for sudden unavailability. "I can't
@@ -137,6 +142,12 @@ by the fewest people possible, and every such access is logged with its reason.
 | **Inactive accounts** | No sign-in for **24 months**: warned by e-mail, deleted 30 days later unless they sign in |
 | **Inactive households** | No activity for **24 months**: heads warned, deleted 30 days later |
 
+> **Clarification (2026-10-08):** a **pending e-mail verification** of a sign-up
+> ([ADR-0010](0010-identity-invitations-and-childrens-accounts.md) §1, clarification) is kept like a
+> pending invitation: deleted 7 days after it expires or is used. **Consent records** of a child
+> with only a profile are kept as long as the profile exists, plus one year
+> ([ADR-0010](0010-identity-invitations-and-childrens-accounts.md) §9, clarification).
+
 Deletion jobs run in the worker like any other scheduled job ([ADR-0008](0008-tech-stack.md) §10).
 
 ### 6. People's rights, built into the product
@@ -163,6 +174,12 @@ Self-service wherever possible, so exercising a right never needs an e-mail to u
   themselves: they correct their own name, while heads keep a child's birth date and role (the switch
   to adult at 18 stays automatic, [ADR-0010](0010-identity-invitations-and-childrens-accounts.md)
   §7). Nobody can turn an adult with an account into a child.
+
+  > **Clarification (2026-10-08):** once a child has an account, the birth date is the account's,
+  > and the child's **guardians** keep it instead of the heads of each household, so all of the
+  > child's households share one consent age and one 18th birthday
+  > ([ADR-0010](0010-identity-invitations-and-childrens-accounts.md) §1, clarification). Heads keep
+  > the birth date of a profile without an account, and the role as before.
 
 ### 7. Children
 
