@@ -30,12 +30,22 @@ const daysAhead = (first: number, last: number) => {
   const from = today.add({ days: first });
   const to = today.add({ days: last });
   const utc = (day: Temporal.PlainDate) => day.toZonedDateTime('UTC').epochMilliseconds;
-  const format = new Intl.DateTimeFormat('en', { dateStyle: 'long', timeZone: 'UTC' });
+  // An English page for an en-BE account, as the test accounts are (ADR-0008 §6, clarification).
+  const format = new Intl.DateTimeFormat('en-BE', { dateStyle: 'long', timeZone: 'UTC' });
   return {
     firstDay: from.toString(),
     lastDay: to.toString(),
     said: format.formatRange(utc(from), utc(to)),
   };
+};
+
+/**
+ * `text` as a pattern that takes any spaces where it has some: the page's Intl and the test's can
+ * space a range of days differently, such as with a thin space around the dash.
+ */
+const loosely = (text: string, { whole = false } = {}) => {
+  const pattern = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s*');
+  return new RegExp(whole ? `^${pattern}$` : pattern);
 };
 
 /** Sam's form for a temporary share, which every member has one of. */
@@ -159,12 +169,12 @@ for (const javaScriptEnabled of [true, false]) {
       await addTemporary(page, nextWeek, '50');
       await expect(page.getByRole('status')).toHaveText('Sam’s temporary share is added.');
       const planned = page.getByRole('list', { name: 'Temporary shares for Sam' });
-      await expect(planned.getByRole('listitem')).toHaveText([
-        new RegExp(`^50% for ${nextWeek.said}`),
-      ]);
+      await expect(planned.getByRole('listitem')).toHaveText([loosely(`50% for ${nextWeek.said}`)]);
       if (javaScriptEnabled) await expectAccessible(page, 'temporary');
 
-      await page.getByRole('button', { name: `Remove Sam’s 50% for ${nextWeek.said}` }).click();
+      await page
+        .getByRole('button', { name: loosely(`Remove Sam’s 50% for ${nextWeek.said}`) })
+        .click();
       await expect(page.getByRole('status')).toHaveText('Sam’s temporary share is removed.');
       await expect(planned).toHaveCount(0);
     });
@@ -199,9 +209,11 @@ for (const javaScriptEnabled of [true, false]) {
       await addTemporary(page, daysAhead(13, 15), '20');
       await expect(summary).toBeFocused();
       await expect(summary).toContainText(
-        `Sam already has a temporary share of 50% for ${nextWeek.said}`,
+        loosely(`Sam already has a temporary share of 50% for ${nextWeek.said}`),
       );
-      await expect(summary.getByRole('link')).toHaveText([`Choose days outside ${nextWeek.said}.`]);
+      await expect(summary.getByRole('link')).toHaveText([
+        loosely(`Choose days outside ${nextWeek.said}.`, { whole: true }),
+      ]);
       await expect(form.getByLabel('Share on those days (%)')).toHaveValue('20');
     });
   });
