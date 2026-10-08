@@ -329,5 +329,89 @@
   "reset.ask-again": {
     "note": "Link to the forgotten-password page, after an expired link.",
     "needsReview": ["nl"]
+  },
+  "sign-in.create-household": {
+    "note": "Link from the sign-in page to signing up, which creates a household (ADR-0010 §1).",
+    "needsReview": ["nl"]
+  },
+  "sign-up.page-title": {
+    "note": "Browser tab title of the sign-up page. Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "sign-up.title": {
+    "note": "Heading of the sign-up page: signing up creates a household; the other way in is an invitation (ADR-0010 §1).",
+    "needsReview": ["nl"]
+  },
+  "sign-up.intro": {
+    "note": "Under the heading: signing up starts by confirming the e-mail address with a link (ADR-0010 §1, clarification).",
+    "needsReview": ["nl"]
+  },
+  "sign-up.email": {
+    "note": "Label of the e-mail address field.",
+    "needsReview": ["nl"]
+  },
+  "sign-up.submit": {
+    "note": "Button that asks for the link.",
+    "needsReview": ["nl"]
+  },
+  "sign-up.sent": {
+    "note": "Status after asking for a link. The same for every address, so it never shows whether one has an account (ADR-0010 §2); an address with an account gets no e-mail (§1, clarification).",
+    "needsReview": ["nl"]
+  },
+  "sign-up.failed": {
+    "note": "Heading of the error summary when asking for a link failed.",
+    "needsReview": ["nl"]
+  },
+  "sign-up.invalid": {
+    "note": "When what was typed isn't an e-mail address.",
+    "needsReview": ["nl"]
+  },
+  "sign-up.wait": {
+    "note": "When 10 sign-ups came from the same network within an hour (ADR-0017 §5, clarification). Calm: no blame, nothing about any address.",
+    "needsReview": ["nl"]
+  },
+  "sign-up.have-account": {
+    "note": "Link to the sign-in page, for someone who already has an account.",
+    "needsReview": ["nl"]
+  },
+  "household-setup.page-title": {
+    "note": "Browser tab title of the first step of setting up a household (ADR-0007 §2). Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "household-setup.title": {
+    "note": "Heading of the first step of setting up a household, reached through the sign-up link (ADR-0007 §2).",
+    "needsReview": ["nl"]
+  },
+  "household-setup.confirmed": {
+    "note": "Says that the address the link was sent to is confirmed. {email} is that address.",
+    "needsReview": ["nl"]
+  },
+  "household-setup.expired": {
+    "note": "When the sign-up link was used already, is older than 30 minutes, or isn't one.",
+    "needsReview": ["nl"]
+  },
+  "household-setup.ask-again": {
+    "note": "Link to the sign-up page, after an expired link.",
+    "needsReview": ["nl"]
+  },
+  "email.sign-up.subject": {
+    "note": "Subject of the e-mail with a link to sign up (ADR-0010 §1). Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "email.sign-up.request": {
+    "note": "First line of the sign-up e-mail. It doesn't say who asked: anyone can type any address.",
+    "needsReview": ["nl"]
+  },
+  "email.sign-up.action": {
+    "note": "Text of the link in the sign-up e-mail, and the label before the link in its plain-text part.",
+    "needsReview": ["nl"]
+  },
+  "email.sign-up.expiry": {
+    "note": "Says how long the sign-up link works (ADR-0010 §1, clarification: 30 minutes).",
+    "needsReview": ["nl"]
+  },
+  "email.sign-up.not-you": {
+    "note": "Last line of the sign-up e-mail, for someone who didn't ask. Calm: nothing happens unless the link is used.",
+    "needsReview": ["nl"]
   }
 }

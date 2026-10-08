@@ -9,7 +9,7 @@ import {
   type Page,
 } from '@playwright/test';
 import { testFlagsCookie } from '../src/lib/server/forced-flags';
-import { proxyHeaders } from './proxy';
+import { ownNetwork, proxyHeaders } from './proxy';
 
 /** WCAG 2.2 AA, which is the target (ADR-0011 §1). */
 const wcag = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
@@ -42,6 +42,11 @@ export const test = base.extend<
     };
     await accounts.add(account);
     await use(account);
+  },
+  // Every test comes from a network of its own (`proxy.ts`).
+  // eslint-disable-next-line no-empty-pattern -- Playwright reads a fixture's dependencies from this pattern, and this one has none.
+  extraHTTPHeaders: async ({}, use, testInfo) => {
+    await use(ownNetwork(testInfo.testId));
   },
   cspViolations: [
     async ({ page }, use) => {

@@ -14,6 +14,12 @@ export interface Link {
 export const linkInTheMaking = new AsyncLocalStorage<Link>();
 
 /**
+ * How the library's table knows a link to sign up by its token: by this, hashed (SEC-7), apart from
+ * the reset links it makes itself.
+ */
+export const signUpLinkId = (token: string) => `sign-up:${token}`;
+
+/**
  * The account whose password the current call reset. The library reports it to a callback of its
  * configuration rather than to whoever asked, so the asker waits for it here.
  */

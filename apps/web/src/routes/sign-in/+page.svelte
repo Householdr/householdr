@@ -91,4 +91,7 @@
   {#if data.flags['password-reset']}
     <p><a href="/forgot-password" class="underline">{m['sign-in.forgot-password']()}</a></p>
   {/if}
+  {#if data.flags.onboarding}
+    <p><a href="/sign-up" class="underline">{m['sign-in.create-household']()}</a></p>
+  {/if}
 </main>

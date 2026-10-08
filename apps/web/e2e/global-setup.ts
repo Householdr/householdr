@@ -5,7 +5,7 @@ import { createInterface } from 'node:readline';
 import { serverDatabase } from '@householdr/auth/testing';
 import type { FullConfig } from '@playwright/test';
 import { expectMailServer, mailServer } from './mail';
-import { protocolHeader } from './proxy';
+import { addressHeader, protocolHeader } from './proxy';
 
 /**
  * Starts the test build (`pnpm build:test`) and the built worker on a fresh database, and returns
@@ -30,6 +30,8 @@ export default async function startServer(config: FullConfig) {
       ...settings,
       PORT: origin.port,
       PROTOCOL_HEADER: protocolHeader,
+      ADDRESS_HEADER: addressHeader,
+      XFF_DEPTH: '1',
       // The tests never reach out to Have I Been Pwned; its answers are unit-tested (TEST-2).
       BREACHED_PASSWORD_CHECK: 'false',
     },

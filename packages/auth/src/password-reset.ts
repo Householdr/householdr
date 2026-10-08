@@ -4,8 +4,7 @@ import { accounts, countAllowed, forgetCount, type JobQueue } from '@householdr/
 import { isAPIError } from 'better-auth/api';
 import { eq } from 'drizzle-orm';
 import * as v from 'valibot';
-import { queueAccountEmail } from './account-emails';
-import type { CounterKey } from './counter-keys';
+import { emailAllowances, queueAccountEmail } from './account-emails';
 import { passwordResetInTheMaking } from './links';
 import type { SignInContext } from './sign-in';
 
@@ -21,15 +20,6 @@ export interface PasswordResetContext extends SignInContext {
 export const passwordResetRequest = v.object({
   email: v.pipe(v.string(), v.trim(), v.toLowerCase(), v.email(), v.maxLength(254)),
 });
-
-/**
- * E-mails to one address: 3 an hour and 12 a day, verification, reset and invitation e-mails
- * counted together (ADR-0017 §5, clarification).
- */
-const emailAllowances = (counterKey: CounterKey, email: string) => [
-  { key: counterKey('emails:hour', email), max: 3, window: Temporal.Duration.from({ hours: 1 }) },
-  { key: counterKey('emails:day', email), max: 12, window: Temporal.Duration.from({ hours: 24 }) },
-];
 
 /**
  * Asks for a link to choose a new password (ADR-0010 §8). Only an address with an account, within

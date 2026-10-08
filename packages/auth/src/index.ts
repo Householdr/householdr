@@ -34,6 +34,13 @@ export {
   type SignInResult,
 } from './sign-in';
 export {
+  deleteExpiredSignUpLinks,
+  requestSignUp,
+  signUpLinkAddress,
+  signUpRequest,
+  type SignUpContext,
+} from './sign-up';
+export {
   currentSession,
   deviceToSignOut,
   sessionCookie,

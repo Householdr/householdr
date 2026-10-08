@@ -50,6 +50,13 @@
       "when": 1791467211308,
       "tag": "0006_passkeys",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791477405900,
+      "tag": "0007_sign-up-emails",
+      "breakpoints": true
     }
   ]
 }

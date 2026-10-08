@@ -136,35 +136,42 @@ export const verifications = auth.table(
   (t) => [
     index('verifications_identifier').on(t.identifier),
     index('verifications_purpose').on(t.purpose, t.value),
-    check('verifications_purpose', sql`${t.purpose} in ('password-reset')`),
+    check('verifications_purpose', sql`${t.purpose} in ('password-reset', 'sign-up')`),
   ],
 );
 
 /** The account e-mails there are (ADR-0014 §2). */
 export type AccountEmailKind =
-  'password-reset' | 'password-changed' | 'passkey-added' | 'passkey-removed';
+  'sign-up' | 'password-reset' | 'password-changed' | 'passkey-added' | 'passkey-removed';
 
 /** The account e-mails with a token link, which `auth.verifications` marks by purpose. */
-export type LinkKind = Extract<AccountEmailKind, 'password-reset'>;
+export type LinkKind = Extract<AccountEmailKind, 'sign-up' | 'password-reset'>;
 
 /**
  * An account e-mail waiting to be sent: deleted once it is, and holding nothing the e-mail can't
- * be made from again (ADR-0014 §7, clarification).
+ * be made from again (ADR-0014 §7, clarification). It goes to an account, or for a sign-up, to
+ * the address typed, which has none yet (ADR-0010 §1, clarification).
  */
 export const accountEmails = auth.table(
   'account_emails',
   {
     id: key(),
     kind: text().$type<AccountEmailKind>().notNull(),
-    accountId: uuid()
-      .notNull()
-      .references(() => accounts.id, { onDelete: 'cascade' }),
+    accountId: uuid().references(() => accounts.id, { onDelete: 'cascade' }),
+    email: text(),
     createdAt: createdAt(),
   },
   (t) => [
     check(
       'account_emails_kind',
-      sql`${t.kind} in ('password-reset', 'password-changed', 'passkey-added', 'passkey-removed')`,
+      sql`${t.kind} in ('sign-up', 'password-reset', 'password-changed', 'passkey-added', 'passkey-removed')`,
+    ),
+    // A sign-up's goes to an address, every other one to an account. Both sides are true or false,
+    // never null, which a check would let through.
+    check(
+      'account_emails_recipient',
+      sql`(${t.kind} = 'sign-up' and ${t.accountId} is null and ${t.email} is not null)
+        or (${t.kind} <> 'sign-up' and ${t.accountId} is not null and ${t.email} is null)`,
     ),
   ],
 );

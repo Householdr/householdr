@@ -20,7 +20,7 @@
   tabindex="-1"
   autofocus
   {@attach focus}
-  class="rounded-lg border-2 border-destructive p-4"
+  class="rounded-lg border-2 border-destructive p-4 wrap-break-word"
 >
   <h2 {id} class="font-semibold text-destructive">{heading}</h2>
   <p class="mt-1">{message}</p>
