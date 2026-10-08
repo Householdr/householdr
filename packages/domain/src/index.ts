@@ -76,7 +76,13 @@ export {
   type WeekOccurrences,
 } from './plans/week-occurrences';
 export { expand } from './schedules/expand';
-export { frequencyRule, type Frequency } from './schedules/frequency';
+export {
+  defaultTiming,
+  frequencies,
+  frequencyOf,
+  frequencyRule,
+  type Frequency,
+} from './schedules/frequency';
 export {
   occurrences,
   oneOffOccurrence,
@@ -108,3 +114,4 @@ export {
   type ShareSettings,
   type TemporaryShare,
 } from './shares/share';
+export { customTaskOnMiss, isTaskDuration, startRange, taskDuration } from './tasks/task';

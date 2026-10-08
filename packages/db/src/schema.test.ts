@@ -3,7 +3,16 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { inHousehold, type Database } from './connection';
 import { accountEmails, accounts, sessions, twoFactors } from './auth-schema';
-import { households, members, parentalConsents, profileGuardians, temporaryShares } from './schema';
+import {
+  households,
+  members,
+  parentalConsents,
+  profileGuardians,
+  schedules,
+  tasks,
+  temporaryShares,
+  type StoredRule,
+} from './schema';
 import { refusal, testDatabase } from './testing';
 
 // The database keeps to the domain's rules as a second line of defence (ADR-0006 §1, ADR-0012 §2).
@@ -266,6 +275,127 @@ describe('guardians and consents of a child’s profile (ADR-0010 §9)', () => {
     );
     expect(await refusal(db.delete(accounts).where(eq(accounts.id, child.accountId)))).toBe(
       'parental_consents_given_by_accounts_id_fk',
+    );
+  });
+});
+
+describe('schedules and tasks (ADR-0001 §1, ADR-0004)', () => {
+  type NewSchedule = Omit<typeof schedules.$inferInsert, 'householdId'>;
+  type NewTask = Omit<typeof tasks.$inferInsert, 'householdId' | 'scheduleId'>;
+  const weekly: StoredRule = { rrule: 'FREQ=WEEKLY', start: '2026-10-08' };
+  const vacuum = { name: 'Vacuum', duration: 30, timing: 'flexible', onMiss: 'roll over' } as const;
+  /** A schedule in a household of its own. */
+  const addSchedule = (fields: NewSchedule) => {
+    const id = newId();
+    return inHousehold(db, id, async (tx) => {
+      await tx.insert(households).values(household(id));
+      return tx
+        .insert(schedules)
+        .values({ householdId: id, ...fields })
+        .returning();
+    });
+  };
+  /** A task on a weekly schedule, in a household of its own. */
+  const addTask = (fields: Partial<NewTask> = {}) => {
+    const id = newId();
+    return inHousehold(db, id, async (tx) => {
+      await tx.insert(households).values(household(id));
+      const [schedule] = await tx
+        .insert(schedules)
+        .values({ householdId: id, rules: [weekly] })
+        .returning();
+      if (!schedule) throw new Error('No schedule');
+      return tx
+        .insert(tasks)
+        .values({ householdId: id, scheduleId: schedule.id, ...vacuum, ...fields })
+        .returning();
+    });
+  };
+
+  it('stores a schedule with its rules and dates, at version 1 (ADR-0004 §2)', async () => {
+    const pmd: StoredRule = {
+      rrule: 'FREQ=MONTHLY;BYDAY=2TU,4TU',
+      start: '2026-01-01',
+      season: { from: '09-01', to: '06-30' },
+    };
+    const [row] = await addSchedule({
+      rules: [pmd, weekly],
+      extraDates: ['2026-12-24'],
+      exceptionDates: ['2026-12-22'],
+    });
+    expect(row).toMatchObject({
+      rules: [pmd, weekly],
+      extraDates: ['2026-12-24'],
+      exceptionDates: ['2026-12-22'],
+      version: 1,
+    });
+  });
+
+  it('keeps rules well formed: an RRULE, a start date and both ends of a season', async () => {
+    const broken = 'schedules_rules';
+    const rules = (value: unknown) => ({ rules: value as StoredRule[] });
+    for (const value of [
+      { rrule: 'FREQ=WEEKLY', start: '2026-10-08' },
+      ['FREQ=WEEKLY'],
+      [{ start: '2026-10-08' }],
+      [{ rrule: '', start: '2026-10-08' }],
+      [{ rrule: 42, start: '2026-10-08' }],
+      [{ rrule: 'FREQ=WEEKLY' }],
+      [{ rrule: 'FREQ=WEEKLY', start: '8 October 2026' }],
+      [{ ...weekly, season: { from: '07-01' } }],
+      [{ ...weekly, season: { from: '07-01', to: 'August' } }],
+      [weekly, { rrule: 'FREQ=DAILY' }],
+    ]) {
+      expect(await refusal(addSchedule(rules(value)))).toBe(broken);
+    }
+  });
+
+  it('produces dates: from a rule, or from extra dates only', async () => {
+    expect(await refusal(addSchedule({ rules: [] }))).toBe('schedules_dates');
+    expect(await refusal(addSchedule({ rules: [], exceptionDates: ['2026-12-22'] }))).toBe(
+      'schedules_dates',
+    );
+    expect(await refusal(addSchedule({ rules: [], extraDates: ['2026-12-24'] }))).toBeUndefined();
+  });
+
+  it('stores a task on its schedule, at version 1', async () => {
+    const [row] = await addTask();
+    expect(row).toMatchObject({ ...vacuum, version: 1 });
+  });
+
+  it('needs a name, a duration from a minute to a day, a timing and an on-miss policy', async () => {
+    expect(await refusal(addTask({ name: '' }))).toBe('tasks_name');
+    for (const duration of [1, 1440]) expect(await refusal(addTask({ duration }))).toBeUndefined();
+    for (const duration of [0, -30, 1441]) {
+      expect(await refusal(addTask({ duration }))).toBe('tasks_duration');
+    }
+    expect(await refusal(addTask({ timing: 'floating' }))).toBeUndefined();
+    // Fixed windows come with the columns for their times (ADR-0004 §4).
+    for (const timing of ['fixed', 'sometimes']) {
+      expect(await refusal(addTask({ timing: timing as 'flexible' }))).toBe('tasks_timing');
+    }
+    expect(await refusal(addTask({ onMiss: 'lapse' }))).toBeUndefined();
+    expect(await refusal(addTask({ onMiss: 'skip' as 'lapse' }))).toBe('tasks_on_miss');
+  });
+
+  it('keeps a schedule while a task uses it, and both go with their household', async () => {
+    const id = newId();
+    const left = await inHousehold(db, id, async (tx) => {
+      await tx.insert(households).values(household(id));
+      const [schedule] = await tx
+        .insert(schedules)
+        .values({ householdId: id, rules: [weekly] })
+        .returning();
+      if (!schedule) throw new Error('No schedule');
+      await tx.insert(tasks).values({ householdId: id, scheduleId: schedule.id, ...vacuum });
+      await tx.delete(households);
+      return { schedules: await tx.select().from(schedules), tasks: await tx.select().from(tasks) };
+    });
+    expect(left).toEqual({ schedules: [], tasks: [] });
+    const [task] = await addTask();
+    if (!task) throw new Error('No task');
+    expect(await refusal(inHousehold(db, task.householdId, (tx) => tx.delete(schedules)))).toBe(
+      'tasks_schedule',
     );
   });
 });
