@@ -68,6 +68,14 @@ The target is a first plan in **under five minutes** when the head accepts the d
 > ([ADR-0016](0016-localisation.md) §2), which they can change later like anyone. It is asked
 > separately from the household's language, because the two can differ.
 
+> **Clarification (2026-10-08):** the **terms** step 1 asks the head to accept are the instance's
+> own: its operator sets a link to them and their version
+> ([ADR-0021](0021-self-hosted-edition.md) §5, clarification), and an instance without a link asks
+> nothing about terms. Accepting keeps the version and when on the account
+> ([ADR-0012](0012-privacy-and-data-protection.md) §2, clarification). How a newer version is
+> accepted is decided when there is one. The newsletter checkbox belongs to our hosted service
+> ([ADR-0014](0014-notifications-and-reminders.md) §8), so a self-hosted instance has none.
+
 **Members (step 2):**
 
 - Creating a **child's profile** is for someone with parental responsibility: they confirm it and

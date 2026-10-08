@@ -113,6 +113,12 @@ repositories, from the first commit:
 - **What the self-hoster provides**: a server, a domain with TLS, SMTP credentials for e-mail, and
   VAPID keys for push (a command in the documentation generates them). The breached-password check
   calls Have I Been Pwned by default and can be switched off for instances without outbound access.
+
+  > **Clarification (2026-10-08):** an operator can also set a **link to their terms** and the
+  > terms' version, which onboarding then asks a new head to accept
+  > ([ADR-0007](0007-onboarding.md) §2, clarification). Without one, it asks nothing about terms. Our
+  > hosted service sets both for its own terms.
+
 - **Nothing goes back to us**: no telemetry, no product events, no update checks, no licence server.
   Product events ([ADR-0015](0015-feature-flags-and-experiments.md) §8) are off in a self-hosted
   instance unless its operator turns them on for their own use.
