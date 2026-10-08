@@ -75,6 +75,7 @@ export {
   dueDate,
   dueness,
   sinceLastDoneOccurrence,
+  spreadFirstDueDates,
   type AwayPeriod,
   type Dueness,
   type Interval,
