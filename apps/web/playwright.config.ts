@@ -4,8 +4,9 @@ const port = 4173;
 const origin = `http://localhost:${String(port)}`;
 const ci = Boolean(process.env.CI);
 
-// End-to-end and accessibility tests against the built app, in Chromium only (ADR-0009 §4). Every
-// test runs at a phone and a desktop size, in light and dark (TEST-5, ADR-0011 §8).
+// End-to-end and accessibility tests against the test build (`pnpm build:test`), in Chromium only
+// (ADR-0009 §4, §5 and clarification). Every test runs at a phone and a desktop size, in light and
+// dark (TEST-5, ADR-0011 §8).
 export default defineConfig({
   testDir: 'e2e',
   testMatch: '**/*.e2e.ts',
@@ -25,7 +26,7 @@ export default defineConfig({
     { name: 'desktop, dark', use: { ...devices['Desktop Chrome'], colorScheme: 'dark' } },
   ],
   webServer: {
-    command: 'node build',
+    command: 'node build-test',
     url: `${origin}/health`,
     env: { PORT: String(port), ORIGIN: origin },
     reuseExistingServer: !ci,
