@@ -231,6 +231,13 @@ subject.
   > checked by row-level security. The schema test pins the list of these functions, so a new one
   > can't be added without review.
 
+  > **Clarification (2026-10-08):** that takes **two database roles**. The **owner** runs the
+  > migrations and owns the tables and those functions, which run with its rights. The app and the
+  > worker connect as another role, which can only read and write data and which row-level security
+  > always binds; they refuse to start as the owner, a superuser or a role with `BYPASSRLS`. The
+  > owner isn't bound by row-level security, so a data migration across households needs no
+  > exception.
+
 - Times are stored as `timestamptz` together with the household's zone where the local time matters
   ([ADR-0004](0004-recurrence-schedules.md) §6).
 
