@@ -7,7 +7,7 @@ import {
   type Cookie,
   type PasskeysContext,
 } from '@householdr/auth';
-import { createTestAccount, testPasskey, testSignInContext } from '@householdr/auth/testing';
+import { createTestAccount, testAuthenticator, testSignInContext } from '@householdr/auth/testing';
 import { isHttpError } from '@sveltejs/kit';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { POST as add } from './+server';
@@ -108,13 +108,15 @@ describe('adding a passkey through the endpoints', () => {
     const started = await call(start, person, headersWith(site, person.cookie));
     if (!started.response) throw new Error('No response');
     expect(started.response.status).toBe(200);
-    const options = (await started.response.json()) as Parameters<typeof testPasskey>[0];
+    const options = (await started.response.json()) as Parameters<
+      ReturnType<typeof testAuthenticator>['register']
+    >[0];
     expect(options).toMatchObject({ rp: { id: 'householdr.example.org', name: 'Householdr' } });
     const [[name, value, attributes]] = started.set.mock.calls as [[string, string, unknown]];
     expect(attributes).toMatchObject({ path: '/', secure: true, httpOnly: true, sameSite: 'lax' });
     const challenge = { name, value, options: { path: '/' } };
 
-    const response = testPasskey(options, site);
+    const response = testAuthenticator().register(options, site);
     const headers = headersWith(site, person.cookie, challenge);
     const added = await call(add, person, headers, { response });
     expect(added.response?.status).toBe(200);

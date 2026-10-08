@@ -27,7 +27,7 @@ for (const javaScriptEnabled of [true, false]) {
       if (javaScriptEnabled) await expectAccessible(page);
       await page.getByLabel('E-mail address').fill(account.email);
       await page.getByLabel('Password').fill(account.password);
-      await page.getByRole('button', { name: 'Sign in' }).click();
+      await page.getByRole('button', { name: 'Sign in', exact: true }).click();
       await expect(page).toHaveURL('/security');
       const session = (await context.cookies()).find(
         (cookie) => cookie.name === '__Host-householdr.session_token',
@@ -42,7 +42,7 @@ for (const javaScriptEnabled of [true, false]) {
       await page.goto('/sign-in');
       await page.getByLabel('E-mail address').fill(email);
       await page.getByLabel('Password').fill('not the password');
-      await page.getByRole('button', { name: 'Sign in' }).click();
+      await page.getByRole('button', { name: 'Sign in', exact: true }).click();
       const summary = page.getByRole('region', { name: 'Signing in didn’t work' });
       await expect(summary).toHaveText(/The e-mail address or the password is incorrect\./);
       await expect(summary).toBeFocused();

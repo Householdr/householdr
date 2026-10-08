@@ -6,6 +6,18 @@
     "note": "The sign-in page's heading and browser tab title. Householdr is the product name, not translated.",
     "needsReview": ["nl"]
   },
+  "sign-in.passkey": {
+    "note": "Button that signs in with a passkey, shown first where the browser supports passkeys (ADR-0011 §6).",
+    "needsReview": ["nl"]
+  },
+  "sign-in.or-password": {
+    "note": "Leads from the passkey button to the e-mail and password form below it.",
+    "needsReview": ["nl"]
+  },
+  "sign-in.passkey-failed": {
+    "note": "When signing in with a passkey was cancelled or refused. Calm: the password still works.",
+    "needsReview": ["nl"]
+  },
   "sign-in.email": {
     "note": "Label of the e-mail address field on the sign-in page.",
     "needsReview": ["nl"]
@@ -147,7 +159,15 @@
     "needsReview": ["nl"]
   },
   "security.confirm-intro": {
-    "note": "Why the password is asked again: the sign-in is over 10 minutes old.",
+    "note": "Why it's asked again: the sign-in is over 10 minutes old. The person confirms with a passkey or the password.",
+    "needsReview": ["nl"]
+  },
+  "security.confirm-passkey": {
+    "note": "Button that confirms it's you with one of the account's passkeys, instead of the password (ADR-0010 §6).",
+    "needsReview": ["nl"]
+  },
+  "security.passkey-confirm-failed": {
+    "note": "When confirming with a passkey was cancelled or refused.",
     "needsReview": ["nl"]
   },
   "security.confirm-password": {

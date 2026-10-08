@@ -3,8 +3,8 @@ import { expect, expectAccessible, forceFlags, signIn, test } from './fixtures';
 import { forgetMail, mailTo } from './mail';
 import { proxyHeaders } from './proxy';
 
-// Adding and removing passkeys on the security page (ADR-0010 §2, §6), behind their release flag
-// (CODE-20).
+// Adding and removing passkeys on the security page, signing in with them, and confirming it's you
+// with them (ADR-0010 §2, §6), behind their release flag (CODE-20).
 
 const flags = { 'sign-in': true, passkeys: true };
 const firefoxOnLinux = 'Mozilla/5.0 (X11; Linux x86_64; rv:143.0) Gecko/20100101 Firefox/143.0';
@@ -61,6 +61,107 @@ test('adds a passkey, named after the device, and e-mails the member', async ({
   await expect(passkeys).toContainText('Added in the last 24 hours');
   await expectAccessible(page, 'passkey added');
   await mailTo(account.email, 'A passkey was added to your Householdr account');
+});
+
+/** Adds a passkey on the security page `page` shows, and signs out of this device. */
+async function addPasskeyAndSignOut(page: Page) {
+  await page.getByRole('button', { name: 'Add a passkey' }).click();
+  await expect(page.getByText('The passkey is added.')).toBeVisible();
+  await page
+    .getByRole('list', { name: 'Signed-in devices' })
+    .getByRole('button', { name: 'Sign out' })
+    .click();
+  await expect(page).toHaveURL('/sign-in');
+}
+
+test('the sign-in page offers no passkey while their flag is off', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await forceFlags(context, baseURL, { 'sign-in': true });
+  await page.goto('/sign-in');
+  await expect(page.getByLabel('E-mail address')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Sign in with a passkey' })).toHaveCount(0);
+});
+
+test('signs in with a passkey, first on the sign-in page', async ({
+  page,
+  context,
+  baseURL,
+  account,
+}) => {
+  await forceFlags(context, baseURL, flags);
+  await withAuthenticator(page);
+  await signIn(page, account);
+  await addPasskeyAndSignOut(page);
+
+  const passkey = page.getByRole('button', { name: 'Sign in with a passkey' });
+  await expect(passkey).toBeVisible();
+  // Before the e-mail address and password (ADR-0011 §6).
+  await expect(page.getByRole('button').first()).toHaveAccessibleName('Sign in with a passkey');
+  await expectAccessible(page, 'sign-in with a passkey');
+  await passkey.click();
+  await expect(page).toHaveURL('/security');
+  await expect(
+    page.getByRole('list', { name: 'Signed-in devices' }).getByRole('listitem'),
+  ).toContainText('This device');
+});
+
+test('says when a passkey doesn’t sign in, and keeps the password', async ({
+  page,
+  context,
+  baseURL,
+  account,
+}) => {
+  await forceFlags(context, baseURL, flags);
+  await withAuthenticator(page);
+  await signIn(page, account);
+  await page.getByRole('button', { name: 'Add a passkey' }).click();
+  await expect(page.getByText('The passkey is added.')).toBeVisible();
+  // Removed from the account, though the device still has it.
+  await page
+    .getByRole('list', { name: 'Passkeys' })
+    .getByRole('button', { name: 'Remove' })
+    .click();
+  await expect(page.getByText('The passkey is removed.')).toBeVisible();
+  await page
+    .getByRole('list', { name: 'Signed-in devices' })
+    .getByRole('button', { name: 'Sign out' })
+    .click();
+
+  await page.getByRole('button', { name: 'Sign in with a passkey' }).click();
+  const summary = page.getByRole('region', { name: 'Signing in didn’t work' });
+  await expect(summary).toHaveText(/Signing in with a passkey didn’t work\./);
+  await expect(summary).toBeFocused();
+  await expectAccessible(page, 'passkey refused');
+  await page.getByLabel('E-mail address').fill(account.email);
+  await page.getByLabel('Password').fill(account.password);
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(page).toHaveURL('/security');
+});
+
+test('confirms it’s you with a passkey once the sign-in is 10 minutes old', async ({
+  page,
+  context,
+  baseURL,
+  accounts,
+  account,
+}) => {
+  await forceFlags(context, baseURL, flags);
+  await withAuthenticator(page);
+  await signIn(page, account);
+  await page.getByRole('button', { name: 'Add a passkey' }).click();
+  await expect(page.getByText('The passkey is added.')).toBeVisible();
+  await accounts.signedInLongAgo(account.email);
+  await page.reload();
+  const section = page.getByRole('region', { name: 'Passkeys' });
+  await section.getByRole('button', { name: 'Confirm with a passkey' }).click();
+  await expect(page).toHaveURL('/security?passkeys=confirmed');
+  await expect(section.getByRole('status')).toHaveText(
+    'Confirmed. For the next 10 minutes, you can add and remove passkeys.',
+  );
+  await expect(section.getByRole('button', { name: 'Add a passkey' })).toBeVisible();
 });
 
 for (const javaScriptEnabled of [true, false]) {

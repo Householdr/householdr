@@ -139,9 +139,13 @@ describe('the guard (ADR-0017 §2)', () => {
   };
 
   it('sends a request without a session to the sign-in page, on every route but the open ones', async () => {
-    expect(await outcome(signedOut, '/security')).toBe('→ /sign-in');
+    for (const route of ['/security', '/security/passkeys', '/security/passkeys/confirm']) {
+      expect(await outcome(signedOut, route)).toBe('→ /sign-in');
+    }
     for (const route of [
       '/sign-in',
+      '/sign-in/passkey/options',
+      '/sign-in/passkey',
       '/forgot-password',
       '/reset-password',
       '/reset-password/[token]',

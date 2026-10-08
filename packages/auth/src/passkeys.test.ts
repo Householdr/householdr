@@ -14,7 +14,7 @@ import {
 } from './passkeys';
 import { currentSession, type Session } from './sessions';
 import { signInWithPassword } from './sign-in';
-import { addTestPasskey, createTestAccount, testPasskey, testSignInContext } from './testing';
+import { addTestPasskey, createTestAccount, testAuthenticator, testSignInContext } from './testing';
 
 // Adding and removing passkeys on the security page (ADR-0010 §2, §6), on a real database
 // (TEST-11).
@@ -109,7 +109,7 @@ describe('adding a passkey (ADR-0010 §2)', () => {
     const person = await signedIn();
     const options = await passkeyOptions(context, person.session, headersWith(person.cookie));
     if (!options.ok) throw new Error('No options');
-    const forged = testPasskey(
+    const forged = testAuthenticator().register(
       { challenge: 'not-the-challenge', rp: { id: 'householdr.example.org' } },
       origin,
     );
@@ -123,7 +123,10 @@ describe('adding a passkey (ADR-0010 §2)', () => {
       ),
     ).toEqual({ ok: false, error: 'failed' });
     // Without the cookie that keeps the challenge.
-    const made = testPasskey(options.options as Parameters<typeof testPasskey>[0], origin);
+    const made = testAuthenticator().register(
+      options.options as Parameters<ReturnType<typeof testAuthenticator>['register']>[0],
+      origin,
+    );
     expect(
       await addPasskey(
         context,
@@ -145,8 +148,8 @@ describe('adding a passkey (ADR-0010 §2)', () => {
     const options = await passkeyOptions(context, person.session, headersWith(person.cookie));
     if (!options.ok) throw new Error('No options');
     const fromElsewhere = 'https://elsewhere.example.org';
-    const response = testPasskey(
-      options.options as Parameters<typeof testPasskey>[0],
+    const response = testAuthenticator().register(
+      options.options as Parameters<ReturnType<typeof testAuthenticator>['register']>[0],
       fromElsewhere,
     );
     const headers = headersWith(person.cookie, ...options.cookies);

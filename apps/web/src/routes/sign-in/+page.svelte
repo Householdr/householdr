@@ -1,16 +1,30 @@
 <script lang="ts">
-  import { enhance } from '$app/forms';
+  import { enhance, type SubmitFunction } from '$app/forms';
+  import { goto } from '$app/navigation';
   import ErrorSummary from '#lib/components/ErrorSummary.svelte';
   import { Button } from '#lib/components/ui/button/index.js';
   import { Input } from '#lib/components/ui/input/index.js';
   import { Label } from '#lib/components/ui/label/index.js';
+  import { usePasskeys } from '#lib/hooks/use-passkeys.svelte.js';
   import { m } from '#lib/paraglide/messages.js';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
+  const passkeys = usePasskeys();
+
+  /** Signs in with a passkey, then goes where a password sign-in goes. */
+  async function signInWithPasskey() {
+    if (await passkeys.sign('/sign-in/passkey')) await goto('/security');
+  }
+
+  /** A password sign-in replaces what a passkey's failure said. */
+  const signInWithPassword: SubmitFunction = () => {
+    passkeys.clear();
+  };
 
   /** The error code of a failed sign-in, in words (CODE-13). */
   const problem = $derived.by(() => {
+    if (passkeys.outcome === 'not-signed') return m['sign-in.passkey-failed']();
     if (!form) return undefined;
     if (form.error === 'incorrect') return m['sign-in.incorrect']();
     if (form.error === 'unverified') return m['sign-in.unverified']();
@@ -34,12 +48,22 @@
 
   <!-- A new summary for every attempt, so it takes the focus again. -->
   {#key form}
-    {#if problem}
-      <ErrorSummary heading={m['sign-in.failed']()} message={problem} />
-    {/if}
+    {#key passkeys.attempts}
+      {#if problem}
+        <ErrorSummary heading={m['sign-in.failed']()} message={problem} />
+      {/if}
+    {/key}
   {/key}
 
-  <form method="POST" use:enhance class="flex flex-col gap-4">
+  <!-- Passkeys first, where the browser has them (ADR-0010 §1, ADR-0011 §6). -->
+  {#if data.flags.passkeys && passkeys.supported}
+    <Button type="button" class="w-full" onclick={signInWithPasskey}>
+      {m['sign-in.passkey']()}
+    </Button>
+    <p class="text-center text-sm text-muted-foreground">{m['sign-in.or-password']()}</p>
+  {/if}
+
+  <form method="POST" use:enhance={signInWithPassword} class="flex flex-col gap-4">
     <div class="flex flex-col gap-2">
       <Label for="email">{m['sign-in.email']()}</Label>
       <Input
