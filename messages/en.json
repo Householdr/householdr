@@ -139,5 +139,15 @@
   "email.sign-up.request": "Someone asked to create a household on Householdr with this e-mail address.",
   "email.sign-up.action": "Confirm and continue",
   "email.sign-up.expiry": "The link works for 30 minutes.",
-  "email.sign-up.not-you": "Wasn’t it you? Then ignore this e-mail: nothing is created without the link."
+  "email.sign-up.not-you": "Wasn’t it you? Then ignore this e-mail: nothing is created without the link.",
+  "home.page-title": "Your households · Householdr",
+  "home.title": "Your households",
+  "home.none": "You’re not in a household yet.",
+  "home.invitation": "When someone invites you to their household, open the link they send you to join it.",
+  "household.page-title": "{name} · Householdr",
+  "household.members": "Members",
+  "household.you": "{name} (you)",
+  "household.head": "Head",
+  "household.adult": "Adult",
+  "household.child": "Child"
 }

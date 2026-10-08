@@ -14,7 +14,7 @@
 
   /** Signs in with a passkey, then goes where a password sign-in goes. */
   async function signInWithPasskey() {
-    if (await passkeys.sign('/sign-in/passkey')) await goto('/security');
+    if (await passkeys.sign('/sign-in/passkey')) await goto('/');
   }
 
   /** A password sign-in replaces what a passkey's failure said. */

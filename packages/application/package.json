@@ -12,6 +12,7 @@
   "dependencies": {
     "@householdr/db": "workspace:*",
     "@householdr/domain": "workspace:*",
+    "drizzle-orm": "catalog:",
     "valibot": "catalog:"
   }
 }

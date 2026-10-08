@@ -24,5 +24,6 @@ export async function migrate(db: Database, appRole: string) {
       sql`grant select, insert, update, delete on all tables in schema ${schema} to ${app}`,
     );
     await db.execute(sql`grant usage, select on all sequences in schema ${schema} to ${app}`);
+    await db.execute(sql`grant execute on all functions in schema ${schema} to ${app}`);
   }
 }

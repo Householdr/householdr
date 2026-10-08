@@ -28,8 +28,8 @@ export const actions = {
     );
     if (result.ok) {
       for (const cookie of result.cookies) cookies.set(cookie.name, cookie.value, cookie.options);
-      // The security page, until the household's pages exist.
-      redirect(303, '/security');
+      // The account's household, or the list of them (ADR-0005 §1).
+      redirect(303, '/');
     }
     // The e-mail address stays in the form; the password never comes back (UI-10).
     const typed = typeof email === 'string' ? email : '';

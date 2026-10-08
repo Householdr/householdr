@@ -1,4 +1,5 @@
 import { createHash, generateKeyPairSync, randomBytes, sign, type KeyObject } from 'node:crypto';
+import { createHousehold } from '@householdr/application';
 import { settableClock } from '@householdr/application/testing';
 import {
   accountEmails,
@@ -63,6 +64,35 @@ export async function testAccounts(url: string) {
   const auth = createAuth({ db, baseUrl: 'http://localhost', secret });
   return {
     add: (account: TestAccount) => createTestAccount(auth, account),
+    /**
+     * A household named `name`, founded by the account at `email` as its head (ADR-0007 §2).
+     * Returns its ID.
+     */
+    addHousehold: async (email: string, name: string) => {
+      const [account] = await db
+        .select({ id: accounts.id })
+        .from(accounts)
+        .where(eq(accounts.email, email));
+      if (!account) throw new Error('No such account');
+      const result = await createHousehold(
+        {
+          db,
+          actor: { account: account.id, twoFactor: true },
+          account: { id: account.id, managed: false, guardians: [] },
+        },
+        {
+          name,
+          headName: 'Robin',
+          country: 'BE',
+          timeZone: 'Europe/Brussels',
+          language: 'en',
+          weekStartDay: 1,
+          adult: true,
+        },
+      );
+      if (!result.ok) throw new Error(`No household: ${result.error}`);
+      return result.householdId;
+    },
     /** Makes every sign-in of the account at `email` 11 minutes old (ADR-0010 §6). */
     signedInLongAgo: async (email: string) => {
       const at = new Date(Temporal.Now.instant().subtract({ minutes: 11 }).epochMilliseconds);

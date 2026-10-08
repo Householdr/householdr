@@ -64,10 +64,10 @@ describe('the sign-in page (ADR-0010 §2)', () => {
     expect(opened('https://householdr.example.org/sign-in')).toEqual({ passwordChanged: false });
   });
 
-  it('sets the session’s cookie and goes to the security page', async () => {
+  it('sets the session’s cookie and goes to the account’s households', async () => {
     const email = await newAccount();
     const { thrown, set } = await submit({ email, password });
-    expect(isRedirect(thrown) && thrown).toMatchObject({ status: 303, location: '/security' });
+    expect(isRedirect(thrown) && thrown).toMatchObject({ status: 303, location: '/' });
     expect(set).toHaveBeenCalledExactlyOnceWith(
       '__Host-householdr.session_token',
       expect.any(String),
