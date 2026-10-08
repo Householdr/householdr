@@ -61,6 +61,13 @@ The target is a first plan in **under five minutes** when the head accepts the d
 > separate from accepting the terms ([ADR-0014](0014-notifications-and-reminders.md) §8). Leaving it
 > unticked is the default and asks nothing more.
 
+> **Clarification (2026-10-08):** step 1 also asks for the **head's name** and **their own
+> language**. The name becomes the account's name and the head's profile name, which the head can
+> correct later ([ADR-0010](0010-identity-invitations-and-childrens-accounts.md) §1, clarification).
+> Their language, with the household's country, becomes their culture
+> ([ADR-0016](0016-localisation.md) §2), which they can change later like anyone. It is asked
+> separately from the household's language, because the two can differ.
+
 **Members (step 2):**
 
 - Creating a **child's profile** is for someone with parental responsibility: they confirm it and
