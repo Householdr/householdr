@@ -50,6 +50,8 @@ export function useActivity(data: () => { timeZone: string; entries: ActivityEnt
         return m['activity.completion-logged']({ actor, subject: subjectOf(entry) });
       case 'completion.undone':
         return m['activity.completion-undone']({ actor, subject: subjectOf(entry) });
+      case 'completion.picked-up':
+        return m['activity.completion-picked-up']({ actor, subject: subjectOf(entry) });
     }
   };
 

@@ -197,10 +197,15 @@ export type ActivityAction =
    */
   | 'completion.logged'
   /** A member undid a completion that credited another, its subject (ADR-0006 §4, clarification). */
-  | 'completion.undone';
+  | 'completion.undone'
+  /**
+   * A member did an occurrence assigned to another, its subject, so it became their own work: a
+   * pick-up (ADR-0006 §3, ADR-0018 §5, clarification). One entry per member credited.
+   */
+  | 'completion.picked-up';
 
 /** The actions whose entries name whom they were done to (ADR-0018 §5). */
-const toWhom = sql.raw(`'completion.logged', 'completion.undone'`);
+const toWhom = sql.raw(`'completion.logged', 'completion.undone', 'completion.picked-up'`);
 
 /**
  * What was set before the household started, which its start entry lists
@@ -252,7 +257,8 @@ export const activityLog = pgTable(
     check(
       'activity_log_action',
       sql`${t.action} in ('household.name', 'household.timeZone', 'household.language',
-        'household.country', 'household.started', 'completion.logged', 'completion.undone')`,
+        'household.country', 'household.started', 'completion.logged', 'completion.undone',
+        'completion.picked-up')`,
     ),
     // Only the actions done to someone name them. One way only: a subject whose profile goes
     // leaves the entry without them.

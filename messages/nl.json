@@ -221,6 +221,7 @@
   "activity.a-former-member": "een voormalig lid",
   "activity.completion-logged": "{actor} heeft een taak afgevinkt voor {subject}.",
   "activity.completion-undone": "{actor} heeft een taak die voor {subject} was afgevinkt ongedaan gemaakt.",
+  "activity.completion-picked-up": "{actor} nam een taak van {subject} over.",
   "household.shares": "Aandelen",
   "shares.page-title": "Aandelen · Householdr",
   "shares.title": "Aandelen",

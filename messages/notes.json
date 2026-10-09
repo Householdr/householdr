@@ -738,6 +738,10 @@
     "note": "An entry of the activity log: someone undid a task that {subject} was credited for (ADR-0006 §4, ADR-0018 §5). {subject} is a name or 'a former member'.",
     "needsReview": ["nl"]
   },
+  "activity.completion-picked-up": {
+    "note": "Activity log entry: {actor} did a task the plan gave to {subject}, so it became their work (a pick-up). {actor} and {subject} are names, or “a former member”; the task and its points are never shown.",
+    "needsReview": ["nl"]
+  },
   "household.shares": {
     "note": "Link from the household page to its shares page.",
     "needsReview": ["nl"]

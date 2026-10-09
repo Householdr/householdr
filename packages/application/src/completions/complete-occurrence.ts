@@ -51,7 +51,8 @@ type CompleteOccurrenceResult =
  * who logged it. Those who did it together are each credited at their own cost (ADR-0002 §1); one
  * who isn't its assignee picks it up, and the weekly settlement credits them, not the assignee
  * (§4). Logging it for someone else is written to the activity log, once per member credited
- * besides whoever logs it (ADR-0018 §5). An occurrence is done once: the same completion sent again
+ * besides whoever logs it (ADR-0018 §5), and so is picking it up, once per member credited, as done
+ * to its assignee (§5, clarification). An occurrence is done once: the same completion sent again
  * changes nothing, and any other finds it done, with who did it (ADR-0019 §6).
  */
 export async function completeOccurrence(
@@ -85,7 +86,7 @@ export async function completeOccurrence(
     const now = context.clock.now();
     const week = await thisPlanWeek(tx, now);
     const [planned] = await tx
-      .select({ planId: plans.id })
+      .select({ planId: plans.id, assignee: assignments.memberId })
       .from(assignments)
       .innerJoin(plans, eq(plans.id, assignments.planId))
       .where(
@@ -127,16 +128,24 @@ export async function completeOccurrence(
       .set({ status: 'done' })
       .where(eq(occurrences.id, parsed.output.occurrence));
     const others = doerIds.filter((doer) => doer !== actor.id);
-    if (others.length > 0) {
-      await tx.insert(activityLog).values(
-        others.map((subjectId) => ({
-          householdId,
-          at,
-          actorId: actor.id,
-          action: 'completion.logged' as const,
-          subjectId,
-        })),
-      );
+    // Done by others than its assignee, it was picked up: their work now, which the assignee sees
+    // in the log, once per member credited (ADR-0006 §3, ADR-0018 §5, clarification).
+    const { assignee } = planned;
+    const pickers = assignee === null || doerIds.includes(assignee) ? [] : doerIds;
+    const entries = [
+      ...others.map((subjectId) => ({
+        actorId: actor.id,
+        action: 'completion.logged' as const,
+        subjectId,
+      })),
+      ...pickers.map((picker) => ({
+        actorId: picker,
+        action: 'completion.picked-up' as const,
+        subjectId: assignee,
+      })),
+    ];
+    if (entries.length > 0) {
+      await tx.insert(activityLog).values(entries.map((entry) => ({ householdId, at, ...entry })));
     }
     return { ok: true, completionId: completion.id };
   });

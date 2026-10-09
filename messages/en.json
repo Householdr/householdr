@@ -221,6 +221,7 @@
   "activity.a-former-member": "a former member",
   "activity.completion-logged": "{actor} marked a task done for {subject}.",
   "activity.completion-undone": "{actor} undid a task marked done for {subject}.",
+  "activity.completion-picked-up": "{actor} picked up a task of {subject}’s.",
   "household.shares": "Shares",
   "shares.page-title": "Shares · Householdr",
   "shares.title": "Shares",
