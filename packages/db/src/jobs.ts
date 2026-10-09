@@ -17,6 +17,11 @@ export interface Jobs {
   'plan-draft': PlanJob;
   /** Publishes a household's draft: its id, and the first day of the plan week (ADR-0006 §2). */
   'plan-publish': PlanJob;
+  /**
+   * Closes what a household's plan week closes as missed, once it has begun: its id, and the first
+   * day of the week (ADR-0002 §2).
+   */
+  'plan-close': PlanJob;
 }
 
 /** A step for one household's plan week: the household's id, and the week's first day. */
@@ -38,6 +43,7 @@ const queues: Record<QueueName, Parameters<PgBoss['createQueue']>[1]> = {
   // again by the next tick while it is still due.
   'plan-draft': { policy: 'exclusive', retryLimit: 0 },
   'plan-publish': { policy: 'exclusive', retryLimit: 0 },
+  'plan-close': { policy: 'exclusive', retryLimit: 0 },
 };
 
 /**
@@ -47,6 +53,7 @@ const queues: Record<QueueName, Parameters<PgBoss['createQueue']>[1]> = {
 const keys: { [Q in QueueName]?: (data: Jobs[Q]) => string } = {
   'plan-draft': ({ household, week }) => `${household}/${week}`,
   'plan-publish': ({ household, week }) => `${household}/${week}`,
+  'plan-close': ({ household, week }) => `${household}/${week}`,
 };
 
 /**

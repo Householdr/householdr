@@ -1,4 +1,5 @@
 import {
+  closeDueOccurrences,
   draftPlan,
   publishPlan,
   queueDuePlanSteps,
@@ -35,6 +36,15 @@ export async function draftScheduledPlan(context: PlansContext, job: Jobs['plan-
 export async function publishScheduledPlan(context: PlansContext, job: Jobs['plan-publish']) {
   if (!context.flags.isOn('plans')) return;
   await publishPlan(scheduler(context, job.household), { week: job.week });
+}
+
+/**
+ * Closes as missed what a household's plan week doesn't carry over, once it has begun (ADR-0002 §2,
+ * clarifications).
+ */
+export async function closeScheduledOccurrences(context: PlansContext, job: Jobs['plan-close']) {
+  if (!context.flags.isOn('plans')) return;
+  await closeDueOccurrences(scheduler(context, job.household));
 }
 
 const scheduler = ({ db, clock }: PlansContext, householdId: string) => ({

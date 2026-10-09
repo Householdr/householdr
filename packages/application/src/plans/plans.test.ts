@@ -293,7 +293,7 @@ describe('the weeks after (ADR-0002 §2, ADR-0004 §4)', () => {
     return drafted(h.scheduler, week2);
   };
 
-  it('rolls an open occurrence over into the next week, unless a new one replaces it', async () => {
+  it('rolls an open occurrence over into the next week, or marks it to close if a new one replaces it', async () => {
     const h = await household();
     await h.task('Vacuum', 30, 'weekly', '2026-10-14');
     await h.task('Windows', 15, 'biweekly', '2026-10-14');
@@ -306,31 +306,41 @@ describe('the weeks after (ADR-0002 §2, ADR-0004 §4)', () => {
     ]);
     const week1Windows = (await h.plan(week1))?.rows.find((row) => row.task === 'Windows');
     expect(rows?.[0]?.occurrence).toBe(week1Windows?.occurrence);
+    // Still week 1's work until week 2 begins, which closes it if nobody did it (`closing.test.ts`).
     expect(await h.occurrences()).toEqual([
-      expect.objectContaining({ task: 'Vacuum', date: '2026-10-14', status: 'missed' }),
-      expect.objectContaining({ task: 'Windows', date: '2026-10-14', status: 'open' }),
+      expect.objectContaining({
+        task: 'Vacuum',
+        date: '2026-10-14',
+        status: 'open',
+        closedByPlan: week2Plan,
+      }),
+      expect.objectContaining({
+        task: 'Windows',
+        date: '2026-10-14',
+        status: 'open',
+        closedByPlan: null,
+      }),
       expect.objectContaining({ task: 'Vacuum', date: '2026-10-21', status: 'open' }),
     ]);
-    const closed = (await h.occurrences()).find((o) => o.status === 'missed');
-    expect(closed?.closedByPlan).toBe(week2Plan);
   });
 
-  it('lets a lapsing occurrence close as missed once its window has ended', async () => {
+  it('marks a lapsing occurrence whose window ends with its week to close as the next begins', async () => {
     const h = await household();
     await h.task('Bins', 5, 'weekly', '2026-10-14', 'lapse');
     await h.task('Plants', 10, 'biweekly', '2026-10-14', 'lapse');
-    await twoWeeks(h);
+    const week2Plan = await twoWeeks(h);
     expect((await h.plan(week2))?.rows.map((row) => [row.task, row.date])).toEqual([
       ['Bins', '2026-10-21'],
     ]);
+    const marked = { status: 'open', closedByPlan: week2Plan };
     expect(await h.occurrences()).toEqual([
-      expect.objectContaining({ task: 'Bins', date: '2026-10-14', status: 'missed' }),
-      expect.objectContaining({ task: 'Plants', date: '2026-10-14', status: 'missed' }),
+      expect.objectContaining({ task: 'Bins', date: '2026-10-14', ...marked }),
+      expect.objectContaining({ task: 'Plants', date: '2026-10-14', ...marked }),
       expect.objectContaining({ task: 'Bins', date: '2026-10-21', status: 'open' }),
     ]);
   });
 
-  it('closes the same occurrences when a head drafts the next week again', async () => {
+  it('marks the same occurrences when a head drafts the next week again', async () => {
     const h = await household();
     await h.task('Vacuum', 30, 'weekly', '2026-10-14');
     await h.task('Windows', 15, 'biweekly', '2026-10-14');

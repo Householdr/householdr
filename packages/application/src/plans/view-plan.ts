@@ -74,7 +74,8 @@ interface PlanItem {
 export interface PlannedAssignment extends PlanItem {
   /**
    * The points it costs the member viewing it, for their own only: another's cost would tell how
-   * hard they find the task, which only they see (ADR-0003 §5).
+   * hard they find the task, which only they see (ADR-0003 §5). None for one carried over that
+   * was done in its own week after all, which is no longer this week's work (ADR-0002 §2).
    */
   cost: number | null;
   reason: Reason;
@@ -263,6 +264,14 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
       if (!plan) return null;
       const own = items.filter((row) => row.planId === plan.id);
       const end = Temporal.PlainDate.from(plan.weekEnd);
+      // Carried over from an earlier week, and done there before this one began: it shows as done,
+      // but isn't this week's work (ADR-0002 §2, clarifications).
+      const doneBefore = (row: (typeof items)[number]) => {
+        const done = completed.get(row.occurrence);
+        if (!done) return false;
+        const doneIn = Temporal.PlainDate.from(done.weekStart);
+        return Temporal.PlainDate.compare(doneIn, Temporal.PlainDate.from(plan.weekStart)) < 0;
+      };
       return {
         start,
         end,
@@ -282,7 +291,7 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
               if (row.reason === null) throw new Error('An assignment without a reason.');
               return {
                 ...item(row, plan),
-                cost: id === context.member.id ? row.cost : null,
+                cost: id === context.member.id && !doneBefore(row) ? row.cost : null,
                 reason: row.reason,
               };
             })
