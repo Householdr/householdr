@@ -1279,39 +1279,39 @@
     "needsReview": ["nl"]
   },
   "tasks.how-often": {
-    "note": "Label of a task's frequency in the list, and of the field that chooses it when adding a task.",
+    "note": "Label of a task's frequency in the list, and of the field that chooses it when adding or changing a task.",
     "needsReview": ["nl"]
   },
   "tasks.how-long": {
-    "note": "Label of how long one time of a task takes, in the list. The value next to it is a number of minutes.",
+    "note": "Label of how long one time of a task takes, in the list and where a task is shown as it is now. The value next to it is a number of minutes.",
     "needsReview": ["nl"]
   },
   "tasks.if-not-done": {
-    "note": "Label, in the task list, of what happens to a time of the task that isn't done (ADR-0002 §2). The value next to it is tasks.roll-over or tasks.lapse.",
+    "note": "Label, in the task list and where a task is shown as it is now, of what happens to a time of the task that isn't done (ADR-0002 §2). The value next to it is tasks.roll-over or tasks.lapse.",
     "needsReview": ["nl"]
   },
   "tasks.daily": {
-    "note": "A task's frequency, in the list and as a choice when adding a task (ADR-0004 §3).",
+    "note": "A task's frequency, in the list and as a choice when adding or changing a task (ADR-0004 §3).",
     "needsReview": ["nl"]
   },
   "tasks.weekly": {
-    "note": "A task's frequency, in the list and as a choice when adding a task (ADR-0004 §3).",
+    "note": "A task's frequency, in the list and as a choice when adding or changing a task (ADR-0004 §3).",
     "needsReview": ["nl"]
   },
   "tasks.biweekly": {
-    "note": "A task's frequency, in the list and as a choice when adding a task (ADR-0004 §3).",
+    "note": "A task's frequency, in the list and as a choice when adding or changing a task (ADR-0004 §3).",
     "needsReview": ["nl"]
   },
   "tasks.monthly": {
-    "note": "A task's frequency, in the list and as a choice when adding a task (ADR-0004 §3).",
+    "note": "A task's frequency, in the list and as a choice when adding or changing a task (ADR-0004 §3).",
     "needsReview": ["nl"]
   },
   "tasks.tri-monthly": {
-    "note": "A task's frequency, in the list and as a choice when adding a task (ADR-0004 §3).",
+    "note": "A task's frequency, in the list and as a choice when adding or changing a task (ADR-0004 §3).",
     "needsReview": ["nl"]
   },
   "tasks.yearly": {
-    "note": "A task's frequency, in the list and as a choice when adding a task (ADR-0004 §3).",
+    "note": "A task's frequency, in the list and as a choice when adding or changing a task (ADR-0004 §3).",
     "needsReview": ["nl"]
   },
   "tasks.add": {
@@ -1319,11 +1319,11 @@
     "needsReview": ["nl"]
   },
   "tasks.name": {
-    "note": "Label of the new task's name field.",
+    "note": "Label of the task's name field, when adding or changing a task, and of its name where it is shown as it is now.",
     "needsReview": ["nl"]
   },
   "tasks.name-hint": {
-    "note": "Hint under the new task's name field, with an example of a task name.",
+    "note": "Hint under the task's name field, with an example of a task name.",
     "needsReview": ["nl"]
   },
   "tasks.duration": {
@@ -1331,7 +1331,7 @@
     "needsReview": ["nl"]
   },
   "tasks.start": {
-    "note": "Label of the date field for the first day the new task is due.",
+    "note": "Label of the date field for the first day the task is due, when adding or changing it, and of that day where a task is shown as it is now.",
     "needsReview": ["nl"]
   },
   "tasks.start-hint": {
@@ -1339,7 +1339,7 @@
     "needsReview": ["nl"]
   },
   "tasks.on-miss": {
-    "note": "Heading (legend) of the two choices for what happens to a time of the new task that isn't done in its week or window (ADR-0002 §2).",
+    "note": "Heading (legend) of the two choices for what happens to a time of the task that isn't done in its week or window (ADR-0002 §2), when adding or changing it.",
     "needsReview": ["nl"]
   },
   "tasks.roll-over": {
@@ -1363,19 +1363,19 @@
     "needsReview": ["nl"]
   },
   "tasks.check": {
-    "note": "Leads to the list of fields that need changing, each a link to its field.",
+    "note": "Leads to the list of fields that need changing when adding or saving a task, each a link to its field.",
     "needsReview": ["nl"]
   },
   "tasks.invalid-name": {
-    "note": "Why adding didn't work: no name, or one over 100 characters.",
+    "note": "Why adding or saving a task didn't work: no name, or one over 100 characters.",
     "needsReview": ["nl"]
   },
   "tasks.invalid-duration": {
-    "note": "Why adding didn't work: the minutes aren't a whole number in range. {min} and {max} are the fewest and most minutes allowed (1 and 1440, a day).",
+    "note": "Why adding or saving a task didn't work: the minutes aren't a whole number in range. {min} and {max} are the fewest and most minutes allowed (1 and 1440, a day).",
     "needsReview": ["nl"]
   },
   "tasks.invalid-frequency": {
-    "note": "Why adding didn't work: no frequency chosen.",
+    "note": "Why adding or saving a task didn't work: no frequency chosen.",
     "needsReview": ["nl"]
   },
   "tasks.invalid-start": {
@@ -1383,7 +1383,83 @@
     "needsReview": ["nl"]
   },
   "tasks.invalid-on-miss": {
-    "note": "Why adding didn't work: neither choice for what happens to a time that isn't done was picked.",
+    "note": "Why adding or saving a task didn't work: neither choice for what happens to a time that isn't done was picked.",
+    "needsReview": ["nl"]
+  },
+  "tasks.edit": {
+    "note": "Link next to each task in the list, for heads, to the page that changes or removes it. Screen readers read it with the task's name after it.",
+    "needsReview": ["nl"]
+  },
+  "tasks.removed": {
+    "note": "Shown on the task list after a head removed a task on its own page.",
+    "needsReview": ["nl"]
+  },
+  "task.page-title": {
+    "note": "Browser tab title of the page that changes a task. {task} is the task's name, {household} the household's; Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "task.title": {
+    "note": "Heading of the page where a head changes a task: its name, minutes, frequency, first time and what happens if it isn't done.",
+    "needsReview": ["nl"]
+  },
+  "task.save": {
+    "note": "Button that saves the changes to the task.",
+    "needsReview": ["nl"]
+  },
+  "task.saved": {
+    "note": "Shown once the changes to a task are saved.",
+    "needsReview": ["nl"]
+  },
+  "task.failed": {
+    "note": "Heading of the error summary when saving a task didn't work: a field was refused, or someone changed the task in the meantime.",
+    "needsReview": ["nl"]
+  },
+  "task.conflict": {
+    "note": "Why saving didn't work: another head (or the same one in another tab) saved the task after this form was opened (ADR-0019 §5). Nothing is lost: the form keeps what was typed. Calm, nobody is blamed.",
+    "needsReview": ["nl"]
+  },
+  "task.current": {
+    "note": "Heading above the task as it is saved now, shown when it changed since the form was opened, to compare with the form.",
+    "needsReview": ["nl"]
+  },
+  "task.invalid-start": {
+    "note": "Why saving didn't work: the first time is a day in the past other than the one the task already has, or more than a year away. A task that has started keeps its first time.",
+    "needsReview": ["nl"]
+  },
+  "task.remove": {
+    "note": "Link from the page that changes a task to the page that asks to confirm removing it.",
+    "needsReview": ["nl"]
+  },
+  "task.back": {
+    "note": "Link from a task's page back to the household's task list.",
+    "needsReview": ["nl"]
+  },
+  "task.remove-page-title": {
+    "note": "Browser tab title of the page that asks to confirm removing a task. {task} is the task's name, {household} the household's; Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "task.remove-title": {
+    "note": "Heading of the page that asks a head to confirm removing a task. {task} is the task's name, as typed.",
+    "needsReview": ["nl"]
+  },
+  "task.remove-intro": {
+    "note": "Under the question whether to remove a task: removing can't be undone.",
+    "needsReview": ["nl"]
+  },
+  "task.remove-confirm": {
+    "note": "Button that removes the task, after the head was asked to confirm.",
+    "needsReview": ["nl"]
+  },
+  "task.keep": {
+    "note": "Link that goes back to the task's page without removing it.",
+    "needsReview": ["nl"]
+  },
+  "task.remove-failed": {
+    "note": "Heading of the error summary when removing a task didn't work, as someone changed it in the meantime.",
+    "needsReview": ["nl"]
+  },
+  "task.remove-conflict": {
+    "note": "Why removing didn't work: someone saved the task after this page was opened (ADR-0019 §5), so the head confirms again with what it is now. Calm, nobody is blamed.",
     "needsReview": ["nl"]
   },
   "comparisons.title": {

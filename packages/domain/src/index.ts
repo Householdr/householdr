@@ -115,4 +115,11 @@ export {
   type ShareSettings,
   type TemporaryShare,
 } from './shares/share';
-export { defaultOnMiss, isTaskDuration, startRange, taskDuration } from './tasks/task';
+export {
+  changedStartRange,
+  defaultOnMiss,
+  isStartDay,
+  isTaskDuration,
+  startRange,
+  taskDuration,
+} from './tasks/task';

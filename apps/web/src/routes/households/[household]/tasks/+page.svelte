@@ -2,66 +2,18 @@
   import { enhance } from '$app/forms';
   import { page } from '$app/state';
   import ErrorSummary from '#lib/components/ErrorSummary.svelte';
-  import FieldProblem from '#lib/components/FieldProblem.svelte';
+  import TaskDetails from '#lib/components/TaskDetails.svelte';
+  import TaskFields from '#lib/components/TaskFields.svelte';
   import { Button } from '#lib/components/ui/button/index.js';
-  import { Input } from '#lib/components/ui/input/index.js';
-  import { Label } from '#lib/components/ui/label/index.js';
-  import { NativeSelect, NativeSelectOption } from '#lib/components/ui/native-select/index.js';
-  import { minutesText } from '#lib/intl.js';
   import { m } from '#lib/paraglide/messages.js';
-  import { getLocale } from '#lib/paraglide/runtime.js';
-  import type { NewTaskField } from '@householdr/application';
-  import {
-    defaultOnMiss,
-    frequencies,
-    taskDuration,
-    type Frequency,
-    type PlanTask,
-  } from '@householdr/domain';
+  import { taskProblems } from '#lib/task-words.js';
+  import { defaultOnMiss } from '@householdr/domain';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
-  const locale = getLocale();
 
-  /** A frequency in words, never as its rule (ADR-0004 §3). */
-  const often: Record<Frequency, () => string> = {
-    daily: m['tasks.daily'],
-    weekly: m['tasks.weekly'],
-    biweekly: m['tasks.biweekly'],
-    monthly: m['tasks.monthly'],
-    'tri-monthly': m['tasks.tri-monthly'],
-    yearly: m['tasks.yearly'],
-  };
-
-  /** What happens to an occurrence that isn't done, in words (ADR-0002 §2). */
-  const onMiss: Record<PlanTask['onMiss'], () => string> = {
-    'roll over': m['tasks.roll-over'],
-    lapse: m['tasks.lapse'],
-  };
-  const onMissChoices: PlanTask['onMiss'][] = ['roll over', 'lapse'];
-
-  /** Why the server refused a field, in words (CODE-13). */
-  const problems: Record<NewTaskField, () => string> = {
-    name: m['tasks.invalid-name'],
-    duration: () => m['tasks.invalid-duration'](taskDuration),
-    frequency: m['tasks.invalid-frequency'],
-    start: m['tasks.invalid-start'],
-    onMiss: m['tasks.invalid-on-miss'],
-  };
   const invalid = $derived(form?.invalid ?? []);
-  const refused = $derived(invalid.map((id) => ({ id, problem: problems[id]() })));
-  const problemOf = (field: NewTaskField) =>
-    invalid.includes(field) ? problems[field]() : undefined;
-
-  /** A field's own attributes for its hint and its problem, if the server refused it (UI-10). */
-  const described = (field: NewTaskField, hint?: string) => {
-    const refusedHere = invalid.includes(field);
-    const describedBy = [hint, refusedHere ? `${field}-problem` : undefined].filter(Boolean);
-    return {
-      'aria-invalid': refusedHere || undefined,
-      'aria-describedby': describedBy.length > 0 ? describedBy.join(' ') : undefined,
-    };
-  };
+  const refused = $derived(invalid.map((id) => ({ id, problem: taskProblems[id]() })));
 
   /** What the form shows: what was sent when it was refused, the defaults otherwise. */
   const values = $derived(
@@ -82,19 +34,29 @@
 <main class="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-12">
   <h1 id="tasks" class="text-2xl font-semibold">{m['tasks.title']()}</h1>
 
+  <!-- After a task is removed on its own page, which leads back here. -->
+  {#if data.removed && !form}
+    <p role="status">{m['tasks.removed']()}</p>
+  {/if}
+
   {#if data.tasks.length > 0}
     <ul aria-labelledby="tasks" class="flex flex-col divide-y rounded-lg border">
       {#each data.tasks as task (task.id)}
         <li class="flex flex-col gap-2 p-4">
-          <span class="font-medium wrap-break-word">{task.name}</span>
-          <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
-            <dt class="text-muted-foreground">{m['tasks.how-often']()}</dt>
-            <dd>{often[task.frequency]()}</dd>
-            <dt class="text-muted-foreground">{m['tasks.how-long']()}</dt>
-            <dd>{minutesText(task.duration, locale)}</dd>
-            <dt class="text-muted-foreground">{m['tasks.if-not-done']()}</dt>
-            <dd>{onMiss[task.onMiss]()}</dd>
-          </dl>
+          <span id="task-{task.id}" class="font-medium wrap-break-word">{task.name}</span>
+          <TaskDetails {task} />
+          {#if data.mayChangeTasks}
+            <!-- Named with its task, as one of many such links (WCAG 2.4.4). -->
+            <Button
+              id="edit-{task.id}"
+              href="/households/{page.params.household}/tasks/{task.id}"
+              variant="outline"
+              class="self-start"
+              aria-labelledby="edit-{task.id} task-{task.id}"
+            >
+              {m['tasks.edit']()}
+            </Button>
+          {/if}
         </li>
       {/each}
     </ul>
@@ -102,7 +64,7 @@
     <p>{m['tasks.none']()}</p>
   {/if}
 
-  {#if data.mayAddTasks}
+  {#if data.mayChangeTasks}
     <section aria-labelledby="add-task" class="flex flex-col gap-4">
       <h2 id="add-task" class="text-lg font-semibold">{m['tasks.add']()}</h2>
 
@@ -122,96 +84,13 @@
       </p>
 
       <form method="POST" action="?/add" use:enhance class="flex flex-col gap-4">
-        <div class="flex flex-col gap-2">
-          <Label for="name">{m['tasks.name']()}</Label>
-          <Input
-            id="name"
-            name="name"
-            autocomplete="off"
-            required
-            maxlength={100}
-            value={values.name}
-            {...described('name', 'name-hint')}
-          />
-          <p id="name-hint" class="text-sm text-muted-foreground">{m['tasks.name-hint']()}</p>
-          <FieldProblem id="name-problem" problem={problemOf('name')} />
-        </div>
-        <div class="flex flex-col gap-2">
-          <Label for="duration">{m['tasks.duration']()}</Label>
-          <Input
-            id="duration"
-            name="duration"
-            type="number"
-            inputmode="numeric"
-            required
-            min={taskDuration.min}
-            max={taskDuration.max}
-            step={1}
-            class="w-32"
-            value={values.duration}
-            {...described('duration')}
-          />
-          <FieldProblem id="duration-problem" problem={problemOf('duration')} />
-        </div>
-        <div class="flex flex-col gap-2">
-          <Label for="frequency">{m['tasks.how-often']()}</Label>
-          <NativeSelect
-            id="frequency"
-            name="frequency"
-            class="w-full"
-            required
-            value={values.frequency}
-            {...described('frequency')}
-          >
-            {#each frequencies as frequency (frequency)}
-              <NativeSelectOption value={frequency}>{often[frequency]()}</NativeSelectOption>
-            {/each}
-          </NativeSelect>
-          <FieldProblem id="frequency-problem" problem={problemOf('frequency')} />
-        </div>
-        <div class="flex flex-col gap-2">
-          <Label for="start">{m['tasks.start']()}</Label>
-          <Input
-            id="start"
-            name="start"
-            type="date"
-            required
-            min={data.starts.earliest}
-            max={data.starts.latest}
-            class="w-fit"
-            value={values.start}
-            {...described('start', 'start-hint')}
-          />
-          <p id="start-hint" class="text-sm text-muted-foreground">{m['tasks.start-hint']()}</p>
-          <FieldProblem id="start-problem" problem={problemOf('start')} />
-        </div>
-        <!-- Radios can't be marked invalid (ARIA 1.2); the group is described by its problem
-             (UI-10). -->
-        <fieldset
-          class="flex min-w-0 flex-col gap-1"
-          aria-describedby={problemOf('onMiss') ? 'onMiss-problem' : undefined}
-        >
-          <legend class="mb-1 text-sm font-medium">{m['tasks.on-miss']()}</legend>
-          {#each onMissChoices as choice, i (choice)}
-            <!-- The label around the radio makes the whole line its target (UI-8). The summary's
-                 link leads to the first one. After a task is added, the form resets to the
-                 starting choice. -->
-            <label class="flex min-h-11 items-center gap-3">
-              <input
-                id={i === 0 ? 'onMiss' : undefined}
-                type="radio"
-                name="onMiss"
-                value={choice}
-                required
-                checked={values.onMiss === choice}
-                defaultChecked={choice === defaultOnMiss}
-                class="size-5 shrink-0 accent-primary"
-              />
-              {onMiss[choice]()}
-            </label>
-          {/each}
-          <FieldProblem id="onMiss-problem" problem={problemOf('onMiss')} />
-        </fieldset>
+        <TaskFields
+          {values}
+          {invalid}
+          problems={taskProblems}
+          starts={data.starts}
+          startingOnMiss={defaultOnMiss}
+        />
         <Button type="submit" class="w-full">{m['tasks.submit']()}</Button>
       </form>
     </section>

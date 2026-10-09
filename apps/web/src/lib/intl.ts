@@ -92,3 +92,12 @@ export function minutesText(minutes: number, locale: string) {
     unitDisplay: 'long',
   }).format(minutes);
 }
+
+/** A day of the calendar, `YYYY-MM-DD`, in words in `locale`, such as “12 October 2026”. */
+export function dayText(day: string, locale: string) {
+  const [year = Number.NaN, month = Number.NaN, date = Number.NaN] = day.split('-').map(Number);
+  // A day has no time zone; UTC keeps it the same day wherever it is read.
+  return new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' }).format(
+    Date.UTC(year, month - 1, date),
+  );
+}
