@@ -1,7 +1,9 @@
 import {
   accountHouseholds,
+  accounts,
   households,
   inHousehold,
+  invitations,
   members,
   passkeys,
   type Database,
@@ -9,14 +11,19 @@ import {
 import { can, type Member, type Role } from '@householdr/domain';
 import { eq } from 'drizzle-orm';
 import * as v from 'valibot';
+import type { Clock } from '../ports';
 
 /** What reading households needs: the database. */
 export interface HouseholdsContext {
   db: Database;
 }
 
-/** What a use case in a household needs: the household, and the member acting in it (ADR-0023 §4). */
+/**
+ * What a use case in a household needs: the household, the member acting in it, and the time
+ * (ADR-0023 §4).
+ */
 export interface HouseholdContext extends HouseholdsContext {
+  clock: Clock;
   householdId: string;
   member: Member;
 }
@@ -83,11 +90,20 @@ export async function accountHouseholdList(
   return list.sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
 }
 
-/** A member of the household, as the other members see them (ADR-0018 §3). */
+/** A member of the household, as the member viewing it sees them (ADR-0018 §3). */
 export interface HouseholdMember {
   id: string;
   name: string;
   role: Role;
+  /**
+   * The account that accepted the profile's invitation, which heads see (ADR-0010 §1, §5,
+   * clarification; ADR-0012 §3); null for the viewer themselves and for everyone else.
+   */
+  account: { name: string; email: string } | null;
+  /** Whether the viewer may invite the profile: a head, for an adult without an account (§5). */
+  invitable: boolean;
+  /** When the profile's invitation link stops working, if it has one the viewer may see. */
+  invitationExpiresAt: Temporal.Instant | null;
 }
 
 type ViewHouseholdResult =
@@ -112,11 +128,47 @@ export async function viewHousehold(context: HouseholdContext): Promise<ViewHous
   return inHousehold(context.db, context.householdId, async (tx) => {
     const [household] = await tx.select({ name: households.name }).from(households);
     if (!household) throw new Error('The household of a member is gone.');
-    const list = await tx
-      .select({ id: members.id, name: members.name, role: members.role })
-      .from(members);
+    const rows = await tx
+      .select({
+        id: members.id,
+        name: members.name,
+        role: members.role,
+        accountName: accounts.name,
+        email: accounts.email,
+        invitationExpiresAt: invitations.expiresAt,
+      })
+      .from(members)
+      .leftJoin(accounts, eq(accounts.id, members.accountId))
+      .leftJoin(invitations, eq(invitations.memberId, members.id));
+    const mayInvite = can(context.member, { action: 'household.invite' });
+    const now = context.clock.now();
+    const list = rows.map((row): HouseholdMember => {
+      const hasAccount = row.email !== null;
+      const seen = { id: row.id, role: row.role, hasAccount, twoFactor: false };
+      const others = row.id !== context.member.id;
+      const account =
+        others && row.accountName !== null && row.email !== null
+          ? can(context.member, { action: 'email.view', member: seen })
+            ? { name: row.accountName, email: row.email }
+            : null
+          : null;
+      const invitable = mayInvite && row.role === 'adult' && !hasAccount;
+      const expiresAt =
+        invitable && row.invitationExpiresAt
+          ? Temporal.Instant.fromEpochMilliseconds(row.invitationExpiresAt.getTime())
+          : null;
+      return {
+        id: row.id,
+        name: row.name,
+        role: row.role,
+        account,
+        invitable,
+        // A link that has expired is as good as none.
+        invitationExpiresAt:
+          expiresAt && Temporal.Instant.compare(expiresAt, now) > 0 ? expiresAt : null,
+      };
+    });
     list.sort((a, b) => roleOrder[a.role] - roleOrder[b.role] || a.name.localeCompare(b.name));
-    const mayAddMembers = can(context.member, { action: 'household.invite' });
-    return { ok: true as const, name: household.name, members: list, mayAddMembers };
+    return { ok: true as const, name: household.name, members: list, mayAddMembers: mayInvite };
   });
 }

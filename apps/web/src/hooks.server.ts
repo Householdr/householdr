@@ -16,6 +16,8 @@ const tokenLinkPages = new Set([
   '/sign-up/household',
   '/sign-up/household/passkey/options',
   '/sign-up/household/passkey',
+  '/invitations/[token]',
+  '/invitation',
 ]);
 
 /**
@@ -84,6 +86,8 @@ const open = new Set([
   '/sign-up/household',
   '/sign-up/household/passkey/options',
   '/sign-up/household/passkey',
+  '/invitations/[token]',
+  '/invitation',
   '/health',
 ]);
 

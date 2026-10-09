@@ -81,6 +81,8 @@ describe('the security headers (ADR-0017 §4)', () => {
       '/sign-up/household',
       '/sign-up/household/passkey/options',
       '/sign-up/household/passkey',
+      '/invitations/[token]',
+      '/invitation',
     ]) {
       const headers = (await respond(harden, {}, {}, {}, route)).headers;
       expect(headers.get('referrer-policy')).toBe('same-origin');
@@ -181,6 +183,8 @@ describe('the guard (ADR-0017 §2)', () => {
       '/sign-up/household',
       '/sign-up/household/passkey/options',
       '/sign-up/household/passkey',
+      '/invitations/[token]',
+      '/invitation',
       '/health',
     ]) {
       expect(await outcome(signedOut, route)).toBe(200);

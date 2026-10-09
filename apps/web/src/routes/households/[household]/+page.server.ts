@@ -1,4 +1,4 @@
-import { addAdult, viewHousehold } from '@householdr/application';
+import { addAdult, invite, revokeInvitation, viewHousehold } from '@householdr/application';
 import { error, fail } from '@sveltejs/kit';
 import { authContext } from '#lib/server/auth.js';
 import type { Actions, PageServerLoad } from './$types';
@@ -9,18 +9,32 @@ import type { Actions, PageServerLoad } from './$types';
  */
 async function householdContext(locals: App.Locals) {
   if (!locals.flags.onboarding || !locals.membership) error(404);
-  const { db } = await authContext();
-  return { db, ...locals.membership };
+  const { db, clock } = await authContext();
+  return { db, clock, ...locals.membership };
 }
+
+/** The profile a form is about, as sent. */
+const memberIn = async (request: Request) => {
+  const member = (await request.formData()).get('member');
+  return typeof member === 'string' ? member : '';
+};
+
+/** Whole days, rounded up, until `then`, so the page needs no time zone. */
+const daysUntil = (now: Temporal.Instant, then: Temporal.Instant) =>
+  Math.ceil(then.since(now).total('hours') / 24);
 
 /** The household's name and its members, and what the member opening it may do there. */
 export const load = (async ({ locals }) => {
   const context = await householdContext(locals);
   const result = await viewHousehold(context);
   if (!result.ok) error(403);
+  const now = context.clock.now();
   return {
     name: result.name,
-    members: result.members,
+    members: result.members.map(({ invitationExpiresAt, ...member }) => ({
+      ...member,
+      invitationDaysLeft: invitationExpiresAt ? daysUntil(now, invitationExpiresAt) : null,
+    })),
     mayAddMembers: result.mayAddMembers,
     you: context.member.id,
   };
@@ -36,5 +50,24 @@ export const actions = {
     if (result.error === 'not-allowed') error(403);
     // The name stays in the form (UI-10).
     return fail(400, { invalid: true, name: typeof name === 'string' ? name : '' });
+  },
+  // Makes a profile's invitation link, shown this once (ADR-0010 §5).
+  invite: async ({ locals, request, url }) => {
+    const context = await householdContext(locals);
+    const member = await memberIn(request);
+    const result = await invite(context, { member });
+    if (result.ok) {
+      return { invited: member, link: new URL(`/invitations/${result.token}`, url).href };
+    }
+    if (result.error === 'not-allowed') error(403);
+    return fail(404, { notInvitable: true });
+  },
+  // Revokes a profile's invitation link (ADR-0010 §5).
+  revokeInvitation: async ({ locals, request }) => {
+    const context = await householdContext(locals);
+    const member = await memberIn(request);
+    const result = await revokeInvitation(context, { member });
+    if (!result.ok) error(403);
+    return { revoked: member };
   },
 } satisfies Actions;

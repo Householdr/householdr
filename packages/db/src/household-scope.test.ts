@@ -151,7 +151,7 @@ describe('every household-owned table (CODE-17)', () => {
       from pg_class c join pg_namespace n on n.oid = c.relnamespace
       where n.nspname = 'public' and c.relkind = 'r'
       order by c.relname`);
-    expect(rows.map((r) => r.table)).toEqual(['households', 'members']);
+    expect(rows.map((r) => r.table)).toEqual(['households', 'invitations', 'members']);
     for (const row of rows) {
       // Not forced: it binds the app's role, not the owner (ADR-0008 §9, clarification).
       expect(row).toEqual({
