@@ -33,6 +33,8 @@ export interface ShownItem {
   task: string;
   date: string;
   day: string;
+  /** Whether `day` says "any day" of the week rather than naming one. */
+  anyDay: boolean;
   points: string | null;
   why: string;
 }
@@ -94,10 +96,20 @@ export function usePlan(
 ) {
   const locale = getLocale();
 
-  const shown = (week: WeekData, id: string, heading: (days: string) => string): ShownWeek => {
+  const shown = (
+    week: WeekData,
+    id: string,
+    heading: (days: string) => string,
+    anyDay: () => string,
+  ): ShownWeek => {
     const { timeZone, you, mayPublish } = data();
     const draft = week.status === 'draft';
-    const item = ({ id, task, date }: ItemData) => ({ id, task, date, day: weekDay(date, locale) });
+    // A task from an earlier week, carried over or floating on, can be done any day of this one:
+    // its own date, in a week gone by, would only confuse (ADR-0002 §2, ADR-0004 §4).
+    const item = ({ id, task, date }: ItemData) => {
+      const earlier = date < week.start;
+      return { id, task, date, anyDay: earlier, day: earlier ? anyDay() : weekDay(date, locale) };
+    };
     return {
       id,
       start: week.start,
@@ -130,8 +142,20 @@ export function usePlan(
   const weeks = $derived.by(() => {
     const { thisWeek, nextWeek } = data();
     return [
-      thisWeek && shown(thisWeek, 'this-week', (days) => m['plan.this-week']({ days })),
-      nextWeek && shown(nextWeek, 'next-week', (days) => m['plan.next-week']({ days })),
+      thisWeek &&
+        shown(
+          thisWeek,
+          'this-week',
+          (days) => m['plan.this-week']({ days }),
+          m['plan.any-day-this-week'],
+        ),
+      nextWeek &&
+        shown(
+          nextWeek,
+          'next-week',
+          (days) => m['plan.next-week']({ days }),
+          m['plan.any-day-next-week'],
+        ),
     ].filter((week) => week !== null);
   });
 

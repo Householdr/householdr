@@ -135,6 +135,25 @@ test('shows heads what nobody could take, and why', async ({ page, accounts, acc
   await expectAccessible(page, 'unassigned');
 });
 
+test('a task from an earlier week can be done any day of the week it is in (ADR-0004 §4)', async ({
+  page,
+  accounts,
+  account,
+}) => {
+  await accounts.addSecondFactor(account.email);
+  const id = await accounts.addHousehold(account.email, 'Ash Lane');
+  // A monthly task floats: its first time, dated today, goes into the first plan, next week's.
+  await accounts.addTask(id, { name: 'Clean the windows', duration: 60, frequency: 'monthly' });
+  await accounts.draftNextWeek(id);
+  await signIn(page, account, `/households/${id}`);
+  await openPlan(page, id);
+  const week = page.getByRole('region', { name: /^Next week: / });
+  const task = week.getByRole('listitem').filter({ hasText: 'Clean the windows' });
+  await expect(task).toContainText(/Day\s*Any day next week/);
+  await expect(task.locator('time')).toHaveCount(0);
+  await expectAccessible(page, 'any day');
+});
+
 test('a head publishes only the draft they saw (ADR-0019 §5)', async ({
   page,
   accounts,
