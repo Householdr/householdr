@@ -470,6 +470,30 @@
     "note": "Link to the forgotten-password page, after an expired link.",
     "needsReview": ["nl"]
   },
+  "reset.code": {
+    "note": "Label of the one field for a code on the new-password page, shown when the account has two-factor authentication on (ADR-0010 §8). It takes a code from the app or a recovery code. Same words as sign-in-code.code and sign-in-code.recovery-code.",
+    "needsReview": ["nl"]
+  },
+  "reset.recovery-code-hint": {
+    "note": "Hint below the code field on the new-password page, after sign-in-code.intro. Keep the example code as it is. Same words as sign-in-code.recovery-code-hint.",
+    "needsReview": ["nl"]
+  },
+  "reset.needs-code": {
+    "note": "When the account has two-factor on and the code field was left empty.",
+    "needsReview": ["nl"]
+  },
+  "reset.incorrect-code": {
+    "note": "When the code from the app or the recovery code is wrong, or was used already. Calm: it never blames.",
+    "needsReview": ["nl"]
+  },
+  "reset.wait-seconds": {
+    "note": "After repeated wrong codes, the next attempt has to wait (ADR-0010 §2). \"This\" is saving the new password with a code. {count} is the number of seconds. Calm and factual: it never blames.",
+    "needsReview": ["nl"]
+  },
+  "reset.wait-minutes": {
+    "note": "As reset.wait-seconds, for waits of a minute or more. {count} is the number of minutes, rounded up.",
+    "needsReview": ["nl"]
+  },
   "sign-in.create-household": {
     "note": "Link from the sign-in page to signing up, which creates a household (ADR-0010 §1).",
     "needsReview": ["nl"]

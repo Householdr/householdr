@@ -154,6 +154,30 @@
   "reset.breached": "This password appeared in a data breach elsewhere, so others may try it. Choose another one.",
   "reset.expired": "This link has expired or was used already.",
   "reset.ask-again": "Ask for a new link",
+  "reset.code": "Code from your authenticator app, or a recovery code",
+  "reset.recovery-code-hint": "Without the app, enter one of the recovery codes you saved when you turned on two-factor authentication, such as abcde-12345. Each works once.",
+  "reset.needs-code": "Enter the code from your authenticator app, or a recovery code.",
+  "reset.incorrect-code": "The code is incorrect, or it was used already. Enter the newest code your app shows, or another recovery code.",
+  "reset.wait-seconds": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "After several wrong codes, this pauses for a moment. You can try again in {count} second.",
+        "countPlural=other": "After several wrong codes, this pauses for a moment. You can try again in {count} seconds."
+      }
+    }
+  ],
+  "reset.wait-minutes": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "After several wrong codes, this pauses for a moment. You can try again in {count} minute.",
+        "countPlural=other": "After several wrong codes, this pauses for a moment. You can try again in {count} minutes."
+      }
+    }
+  ],
   "sign-in.create-household": "New here? Create a household",
   "sign-in-code.page-title": "Two-factor authentication · Householdr",
   "sign-in-code.title": "Two-factor authentication",

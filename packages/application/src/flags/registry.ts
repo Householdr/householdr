@@ -52,7 +52,7 @@ export const flags = {
   'two-factor': {
     kind: 'release',
     description:
-      'Two-factor codes from an authenticator app, with recovery codes, for accounts with a password: turning them on and off on the security page, and asking for a code after the password (ADR-0010 §2, §3).',
+      'Two-factor codes from an authenticator app, with recovery codes, for accounts with a password: turning them on and off on the security page, and asking for a code after the password and with a new password from a reset link (ADR-0010 §2, §3, §8).',
     owner: 'Jens',
     expires: '2027-03-31',
   },

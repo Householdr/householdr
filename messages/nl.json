@@ -154,6 +154,30 @@
   "reset.breached": "Dit wachtwoord dook elders op in een datalek, dus anderen kunnen het proberen. Kies een ander.",
   "reset.expired": "Deze link is verlopen of al gebruikt.",
   "reset.ask-again": "Vraag een nieuwe link",
+  "reset.code": "Code uit je authenticator-app, of een herstelcode",
+  "reset.recovery-code-hint": "Zonder de app vul je een van de herstelcodes in die je bewaarde toen je tweestapsverificatie aanzette, zoals abcde-12345. Elke code werkt één keer.",
+  "reset.needs-code": "Vul de code uit je authenticator-app in, of een herstelcode.",
+  "reset.incorrect-code": "De code klopt niet, of is al gebruikt. Vul de nieuwste code in die je app toont, of een andere herstelcode.",
+  "reset.wait-seconds": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Na een paar foute codes pauzeert dit even. Over {count} seconde kun je het opnieuw proberen.",
+        "countPlural=other": "Na een paar foute codes pauzeert dit even. Over {count} seconden kun je het opnieuw proberen."
+      }
+    }
+  ],
+  "reset.wait-minutes": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Na een paar foute codes pauzeert dit even. Over {count} minuut kun je het opnieuw proberen.",
+        "countPlural=other": "Na een paar foute codes pauzeert dit even. Over {count} minuten kun je het opnieuw proberen."
+      }
+    }
+  ],
   "sign-in.create-household": "Nieuw hier? Maak een huishouden aan",
   "sign-in-code.page-title": "Tweestapsverificatie · Householdr",
   "sign-in-code.title": "Tweestapsverificatie",

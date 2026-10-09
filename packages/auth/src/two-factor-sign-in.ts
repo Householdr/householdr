@@ -40,6 +40,21 @@ const recoveryCode = v.pipe(
 const codeInput = v.union([v.object({ code: appCode }), v.object({ recoveryCode })]);
 
 /**
+ * A code typed in a field that takes either kind, told apart by their shapes: six digits from the
+ * app, or ten letters and digits of a recovery code.
+ */
+export const eitherCode = v.union([
+  v.pipe(
+    appCode,
+    v.transform((code) => ({ code })),
+  ),
+  v.pipe(
+    recoveryCode,
+    v.transform((code) => ({ recoveryCode: code })),
+  ),
+]);
+
+/**
  * How long a code from the app is refused after it was used: the library takes the codes of the
  * step before and after the current one too, so a code works for at most 90 seconds.
  */
@@ -54,6 +69,39 @@ export type CodeResult =
   | { ok: false; error: 'expired' }
   /** Turned away unchecked, after repeated wrong codes (ADR-0010 §2, clarification). */
   | { ok: false; error: 'wait'; until: Temporal.Instant };
+
+/**
+ * Counts an attempt at a code for the account as a failure, until it turns out not to be one, under
+ * the same waits as passwords but with 15 minutes as the longest (ADR-0010 §2, clarification):
+ * with the key it is counted under, or until when it waits, unchecked and uncounted.
+ */
+export async function countCodeAttempt(
+  context: Pick<SignInContext, 'db' | 'clock' | 'counterKey'>,
+  accountId: string,
+) {
+  const key = context.counterKey('sign-in:account', accountId);
+  const attempt = await countAttempt(
+    context.db,
+    [{ key, waitAfter: (failures) => waitAfter(signInWaits.account, failures) }],
+    context.clock.now(),
+    forgetFailuresAfter,
+  );
+  return { key, attempt };
+}
+
+/**
+ * Marks a code from the account's app as used before it is checked, so two requests can't both
+ * get in with it: the key to unmark it by if it turns out wrong, or null if it was used already.
+ */
+export async function useAppCode(
+  context: Pick<SignInContext, 'db' | 'clock' | 'counterKey'>,
+  accountId: string,
+  code: string,
+) {
+  const used = context.counterKey('two-factor:code', `${accountId}\n${code}`);
+  const fresh = [{ key: used, max: 1, window: usedCodeRemembered }];
+  return (await countAllowed(context.db, fresh, context.clock.now())) ? used : null;
+}
 
 /** Whether the account has two-factor on, so a password alone doesn't sign in to it. */
 export async function twoFactorOn(context: Pick<SignInContext, 'db'>, accountId: string) {
@@ -107,25 +155,17 @@ export async function signInWithCode(
   if (!parsed.success) return { ok: false, error: 'incorrect' };
   const accountId = await stepAccount(context, headers);
   if (!accountId) return { ok: false, error: 'expired' };
-  const accountKey = context.counterKey('sign-in:account', accountId);
-  const now = context.clock.now();
-  const attempt = await countAttempt(
-    context.db,
-    [{ key: accountKey, waitAfter: (failures) => waitAfter(signInWaits.account, failures) }],
-    now,
-    forgetFailuresAfter,
-  );
+  const { key: accountKey, attempt } = await countCodeAttempt(context, accountId);
   if ('waitUntil' in attempt) return { ok: false, error: 'wait', until: attempt.waitUntil };
   const step = new Headers({ cookie: `${stepCookie}=${encodeURIComponent(stepOf(headers))}` });
   const userAgent = headers.get('user-agent');
   if (userAgent) step.set('user-agent', userAgent);
-  // A code from the app works once: it is marked used before it is checked, so two requests can't
-  // both sign in with it, and unmarked if it turns out wrong.
+  // A code from the app works once, and is unmarked if it turns out wrong.
   let used: string | undefined;
   if ('code' in parsed.output) {
-    used = context.counterKey('two-factor:code', `${accountId}\n${parsed.output.code}`);
-    const fresh = [{ key: used, max: 1, window: usedCodeRemembered }];
-    if (!(await countAllowed(context.db, fresh, now))) return { ok: false, error: 'incorrect' };
+    const marked = await useAppCode(context, accountId, parsed.output.code);
+    if (!marked) return { ok: false, error: 'incorrect' };
+    used = marked;
   }
   try {
     const { headers: set, response } =
