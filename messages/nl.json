@@ -194,6 +194,7 @@
   "household.more": "Meer over het huishouden",
   "household.settings": "Instellingen",
   "household.activity": "Activiteit",
+  "household.balances": "Saldo’s",
   "settings.page-title": "Instellingen van het huishouden · Householdr",
   "settings.title": "Instellingen van het huishouden",
   "settings.country-hint": "Het land bepaalt vanaf welke leeftijd een kind een eigen account kan hebben.",
@@ -378,6 +379,27 @@
   "plan.undone-already": "{task} is niet meer gedaan: het werd al ongedaan gemaakt.",
   "plan.completed": "{task} is afgevinkt.",
   "plan.reopened": "{task} staat weer open.",
+  "balances.page-title": "Saldo’s · Householdr",
+  "balances.title": "Saldo’s",
+  "balances.intro": "Een saldo vergelijkt wat iemand gedaan heeft met het eigen eerlijke deel van het werk in het huishouden, in punten. Positief betekent voor op dat deel, negatief betekent achter.",
+  "balances.evening-out": "De plannen van de volgende weken trekken de saldo’s gelijk: wie achter staat, krijgt wat meer te doen, wie voor staat wat minder.",
+  "balances.rate-fast": "Dit huishouden trekt ze snel gelijk: binnen twee à drie weken.",
+  "balances.rate-normal": "Dit huishouden trekt ze in een gewoon tempo gelijk: in ongeveer een maand.",
+  "balances.rate-slow": "Dit huishouden trekt ze langzaam gelijk: in een seizoen.",
+  "balances.points": [
+    {
+      "declarations": ["input count", "input points", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{points} punt",
+        "countPlural=other": "{points} punten"
+      }
+    }
+  ],
+  "balances.history": "Week per week",
+  "balances.week": "Week",
+  "balances.change": "Verschil",
+  "balances.no-history": "Nog niets: een week telt mee zodra ze voorbij is.",
   "start.page-title": "Starten · Householdr",
   "start.title": "Start je huishouden",
   "start.intro": "Zodra je huishouden start, krijgt het elke week een planning die de taken eerlijk verdeelt. Kies voor wanneer de eerste is.",

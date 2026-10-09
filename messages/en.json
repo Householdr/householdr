@@ -194,6 +194,7 @@
   "household.more": "More about the household",
   "household.settings": "Settings",
   "household.activity": "Activity",
+  "household.balances": "Balances",
   "settings.page-title": "Household settings · Householdr",
   "settings.title": "Household settings",
   "settings.country-hint": "The country sets the age from which a child can have an account of their own.",
@@ -378,6 +379,27 @@
   "plan.undone-already": "{task} isn’t done any more: it was undone already.",
   "plan.completed": "{task} is marked done.",
   "plan.reopened": "{task} is open again.",
+  "balances.page-title": "Balances · Householdr",
+  "balances.title": "Balances",
+  "balances.intro": "A balance compares what someone did with their fair portion of the household’s work, in points. Positive means ahead of their fair portion, negative means behind.",
+  "balances.evening-out": "The next weeks’ plans even balances out: whoever is behind gets a little more to do, whoever is ahead a little less.",
+  "balances.rate-fast": "This household evens them out fast: within two or three weeks.",
+  "balances.rate-normal": "This household evens them out at a normal pace: over about a month.",
+  "balances.rate-slow": "This household evens them out slowly: over a season.",
+  "balances.points": [
+    {
+      "declarations": ["input count", "input points", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{points} point",
+        "countPlural=other": "{points} points"
+      }
+    }
+  ],
+  "balances.history": "Week by week",
+  "balances.week": "Week",
+  "balances.change": "Change",
+  "balances.no-history": "Nothing yet: a week counts once it’s over.",
   "start.page-title": "Start · Householdr",
   "start.title": "Start your household",
   "start.intro": "Once your household starts, it gets a plan every week that shares the tasks fairly. Choose when the first one is for.",

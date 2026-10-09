@@ -126,6 +126,14 @@
         {m['household.activity']()}
       </a>
     {/if}
+    {#if data.flags.balances}
+      <a
+        href="/households/{page.params.household}/balances"
+        class="flex min-h-11 items-center self-start underline underline-offset-4"
+      >
+        {m['household.balances']()}
+      </a>
+    {/if}
     {#if data.flags.shares}
       <a href="/households/{page.params.household}/shares" class="underline underline-offset-4">
         {m['household.shares']()}

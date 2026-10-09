@@ -630,6 +630,10 @@
     "note": "Link to the household's activity log, for every member.",
     "needsReview": ["nl"]
   },
+  "household.balances": {
+    "note": "Link from the household page to the balances page, for every member.",
+    "needsReview": ["nl"]
+  },
   "settings.page-title": {
     "note": "Browser tab title of the household settings page.",
     "needsReview": ["nl"]
@@ -1328,6 +1332,54 @@
   },
   "plan.reopened": {
     "note": "Read out after the reader undid a task that was done: it is to be done again (UI-12).",
+    "needsReview": ["nl"]
+  },
+  "balances.page-title": {
+    "note": "Browser tab title of the balances page. Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "balances.title": {
+    "note": "Heading of the page with every member's balance (ADR-0002 §6): how far ahead of or behind their fair portion of the work each member is, in points.",
+    "needsReview": ["nl"]
+  },
+  "balances.intro": {
+    "note": "Explains a balance (ADR-0002 §1): what someone did compared with their fair portion of the work. Neutral words: being behind is never a fault (UI-24).",
+    "needsReview": ["nl"]
+  },
+  "balances.evening-out": {
+    "note": "Explains catching up (ADR-0002 §3): the coming plans give a bit more to whoever is behind and a bit less to whoever is ahead.",
+    "needsReview": ["nl"]
+  },
+  "balances.rate-fast": {
+    "note": "The household's rebalance rate, set by a head (ADR-0002 §3): fast. 'Them' are the balances.",
+    "needsReview": ["nl"]
+  },
+  "balances.rate-normal": {
+    "note": "The household's rebalance rate, set by a head (ADR-0002 §3): normal, the default. 'Them' are the balances.",
+    "needsReview": ["nl"]
+  },
+  "balances.rate-slow": {
+    "note": "The household's rebalance rate, set by a head (ADR-0002 §3): slow. 'Them' are the balances.",
+    "needsReview": ["nl"]
+  },
+  "balances.points": {
+    "note": "A balance, or what one week changed it by, in whole points (ADR-0001 §5). {points} is the number with its sign, such as “+12”, “-30” or “0”; {count} picks the plural.",
+    "needsReview": ["nl"]
+  },
+  "balances.history": {
+    "note": "Caption of a member's table of weeks, newest first, each with what it changed their balance by.",
+    "needsReview": ["nl"]
+  },
+  "balances.week": {
+    "note": "Column heading: the plan week, such as “12–18 October 2026”.",
+    "needsReview": ["nl"]
+  },
+  "balances.change": {
+    "note": "Column heading: what that week changed the balance by, in points.",
+    "needsReview": ["nl"]
+  },
+  "balances.no-history": {
+    "note": "Shown instead of the table of weeks until the household's first week is over and counted.",
     "needsReview": ["nl"]
   },
   "start.page-title": {

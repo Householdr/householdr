@@ -1,21 +1,30 @@
 import { createHash, generateKeyPairSync, randomBytes, sign, type KeyObject } from 'node:crypto';
-import { addTask, createHousehold, draftPlan, publishPlan } from '@householdr/application';
+import {
+  addTask,
+  completeOccurrence,
+  createHousehold,
+  draftPlan,
+  publishPlan,
+  settlePlanWeek,
+} from '@householdr/application';
 import { settableClock } from '@householdr/application/testing';
 import {
   absences,
   accountEmails,
   accounts,
+  assignments,
   connect,
   households,
   inHousehold,
   members,
   passkeys,
+  plans,
   sessions,
   type Database,
   type JobQueue,
 } from '@householdr/db';
 import { testDatabase } from '@householdr/db/testing';
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import {
   accountEmailSent,
   prepareAccountEmail,
@@ -265,6 +274,72 @@ export async function testAccounts(url: string) {
       if (!drafted.ok) throw new Error(`No draft: ${drafted.error}`);
       const published = await publishPlan(scheduler, { week });
       if (!published.ok) throw new Error(`Not published: ${published.error}`);
+    },
+    /**
+     * Takes household `householdId` out of setup from last plan week on, gives it `tasks` and
+     * plans that week as the scheduler did before it began, has the accounts at `doneBy` do every
+     * task it gave them, and settles it, now that it is over (ADR-0002 §1, §7). Returns the
+     * week's first day.
+     */
+    settleLastWeek: async (
+      householdId: string,
+      {
+        tasks,
+        doneBy,
+      }: { tasks: { name: string; duration: number; frequency: string }[]; doneBy: string[] },
+    ) => {
+      const timeZone = 'Europe/Brussels';
+      const today = Temporal.Now.plainDateISO(timeZone);
+      // Weeks start on Mondays in Brussels, as `addHousehold` makes them.
+      const week = today.subtract({ days: today.dayOfWeek - 1 + 7 });
+      const at = (day: Temporal.PlainDate) => ({
+        now: () => day.toZonedDateTime(timeZone).toInstant(),
+      });
+      await startTestHousehold(db, householdId, week.toString());
+      const rows = await inHousehold(db, householdId, (tx) =>
+        tx
+          .select({ id: members.id, role: members.role, email: accounts.email })
+          .from(members)
+          .innerJoin(accounts, eq(accounts.id, members.accountId)),
+      );
+      const memberAt = (email: string) => {
+        const row = rows.find((r) => r.email === email);
+        if (!row) throw new Error('Not a member');
+        return { id: row.id, role: row.role, hasAccount: true, twoFactor: row.role === 'head' };
+      };
+      const head = rows.find((r) => r.role === 'head');
+      if (!head) throw new Error('No head');
+      // The Saturday before the week, its draft time.
+      const before = at(week.subtract({ days: 2 }));
+      for (const task of tasks) {
+        const context = { db, clock: before, householdId, member: memberAt(head.email) };
+        const result = await addTask(context, { onMiss: 'roll over', ...task });
+        if (!result.ok) throw new Error(`No task: ${result.error}`);
+      }
+      const scheduler = { db, clock: before, householdId, member: 'scheduler' as const };
+      const drafted = await draftPlan(scheduler, { week: week.toString() });
+      if (!drafted.ok || !drafted.planned) throw new Error('No draft');
+      await publishPlan(scheduler, { week: week.toString() });
+      for (const email of doneBy) {
+        const member = memberAt(email);
+        const theirs = await inHousehold(db, householdId, (tx) =>
+          tx
+            .select({ occurrence: assignments.occurrenceId })
+            .from(assignments)
+            .innerJoin(plans, eq(plans.id, assignments.planId))
+            .where(and(eq(plans.weekStart, week.toString()), eq(assignments.memberId, member.id))),
+        );
+        // On the Sunday that ends it.
+        const context = { db, clock: at(week.add({ days: 6 })), householdId, member };
+        for (const { occurrence } of theirs) {
+          const result = await completeOccurrence(context, { occurrence });
+          if (!result.ok) throw new Error(`Not done: ${result.error}`);
+        }
+      }
+      const now = { now: () => Temporal.Now.instant() };
+      const settled = await settlePlanWeek({ ...scheduler, clock: now }, { week: week.toString() });
+      if (!settled.ok || !settled.settled) throw new Error('Not settled');
+      return week.toString();
     },
     /** Makes every sign-in of the account at `email` 11 minutes old (ADR-0010 §6). */
     signedInLongAgo: async (email: string) => {

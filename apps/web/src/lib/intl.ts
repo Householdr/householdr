@@ -94,3 +94,11 @@ export function listOf(items: readonly string[], locale: string) {
 export function timeOf(at: number, timeZone: string, locale: string) {
   return new Intl.DateTimeFormat(locale, { timeStyle: 'short', timeZone }).format(at);
 }
+
+/** A whole number with its sign in `locale`, such as “+12”, “-30” or “0”. */
+export function signed(value: number, locale: string) {
+  return new Intl.NumberFormat(locale, {
+    signDisplay: 'exceptZero',
+    maximumFractionDigits: 0,
+  }).format(value);
+}
