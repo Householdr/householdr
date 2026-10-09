@@ -279,7 +279,7 @@
   "shares.default": "{share} this week, the default",
   "shares.by-age": "{share} this week, by age",
   "shares.set": "{share} this week, set by a head",
-  "shares.hint": "A whole number from {min} to {max}: the percentage of a full share. Someone with 0 gets no tasks.",
+  "shares.hint": "A whole number from {min} to {max}. 100 is a full adult share, not all the work: shares are compared with each other, so two members at 100 do the same amount. Someone with 0 gets no tasks.",
   "shares.field": "Share for {name} (%)",
   "shares.save": "Save {name}’s share",
   "shares.use-default": "Use the default for {name}",

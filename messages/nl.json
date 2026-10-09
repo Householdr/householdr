@@ -279,7 +279,7 @@
   "shares.default": "{share} deze week, de standaard",
   "shares.by-age": "{share} deze week, volgens leeftijd",
   "shares.set": "{share} deze week, ingesteld door een hoofd",
-  "shares.hint": "Een geheel getal van {min} tot {max}: het percentage van een volledig aandeel. Wie 0 heeft, krijgt geen taken.",
+  "shares.hint": "Een geheel getal van {min} tot {max}. 100 is een volledig aandeel van een volwassene, niet al het werk: aandelen worden met elkaar vergeleken, dus twee leden met 100 doen evenveel. Wie 0 heeft, krijgt geen taken.",
   "shares.field": "Aandeel van {name} (%)",
   "shares.save": "Aandeel van {name} opslaan",
   "shares.use-default": "Standaard gebruiken voor {name}",
