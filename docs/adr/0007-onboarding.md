@@ -103,6 +103,10 @@ The target is a first plan in **under five minutes** when the head accepts the d
 - Onboarding sits behind one **release flag** that is evaluated before the household exists
   ([ADR-0015](0015-feature-flags-and-experiments.md) §3, clarification).
 
+> **Clarification (2026-10-09):** the entry at Start also lists the starting head's **own share**, if
+> they set it before Start, because a head changing their own share is logged like any other
+> ([ADR-0018](0018-household-safety.md) §4).
+
 ### 3. Starting now: the partial first week
 
 Week start may be days away. At step 7 the head chooses:
@@ -115,6 +119,13 @@ Week start may be days away. At step 7 the head chooses:
   ([ADR-0006](0006-plan-lifecycle-and-completion.md) §2). The regular draft/publish cycle takes over
   from the next week.
 - **Start on the week start day**: the first regular draft is generated on schedule.
+
+> **Clarification (2026-10-09):** with **Start now**, a schedule's dates **before today** are not
+> planned in the start week, even when an occurrence's window would reach into the days left
+> ([ADR-0005](0005-membership-and-availability.md) §5): those days are gone, not only away. A
+> schedule's next date in the days left is planned as usual. Unlike household-away days, the days
+> before today don't pause a "since last done" schedule
+> ([ADR-0004](0004-recurrence-schedules.md) §8).
 
 ### 4. Cold start for burden
 
