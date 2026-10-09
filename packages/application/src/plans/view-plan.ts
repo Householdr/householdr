@@ -1,4 +1,12 @@
-import { assignments, inHousehold, members, occurrences, plans, tasks } from '@householdr/db';
+import {
+  assignments,
+  households,
+  inHousehold,
+  members,
+  occurrences,
+  plans,
+  tasks,
+} from '@householdr/db';
 import {
   can,
   planTimes,
@@ -67,6 +75,9 @@ export interface WeekPlan {
 type ViewPlanResult =
   | {
       ok: true;
+      /** The household's name, and the time zone its times are in. */
+      household: string;
+      timeZone: string;
       /** The plans of this plan week and the next that the member viewing may see. */
       thisWeek: WeekPlan | null;
       nextWeek: WeekPlan | null;
@@ -90,6 +101,8 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
   return inHousehold(context.db, context.householdId, async (tx) => {
     const { calendar, timings } = await planningOf(tx);
     const { timeZone } = calendar;
+    const [household] = await tx.select({ name: households.name }).from(households);
+    if (!household) throw new Error('The household of a member is gone.');
     const today = context.clock.now().toZonedDateTimeISO(timeZone).toPlainDate();
     const current = planWeek(today, calendar);
     const next = planWeek(current.end, calendar);
@@ -136,7 +149,7 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
             );
     const zoned = (at: Date) =>
       Temporal.Instant.fromEpochMilliseconds(at.getTime()).toZonedDateTimeISO(timeZone);
-    const itemOf = (row: (typeof items)[number]): PlanItem => ({
+    const item = (row: (typeof items)[number]): PlanItem => ({
       id: row.id,
       task: row.task,
       date: Temporal.PlainDate.from(row.date),
@@ -169,7 +182,7 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
             .map((row) => {
               if (row.reason === null) throw new Error('An assignment without a reason.');
               return {
-                ...itemOf(row),
+                ...item(row),
                 cost: person.id === context.member.id ? row.cost : null,
                 reason: row.reason,
               };
@@ -178,13 +191,15 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
         })),
         unassigned: mayPublish
           ? own
-              .flatMap((row) => (row.cause === null ? [] : [{ ...itemOf(row), cause: row.cause }]))
+              .flatMap((row) => (row.cause === null ? [] : [{ ...item(row), cause: row.cause }]))
               .sort(inOrder)
           : [],
       };
     };
     return {
       ok: true as const,
+      household: household.name,
+      timeZone,
       thisWeek: weekPlan(current.start),
       nextWeek: weekPlan(next.start),
       mayPublish,
