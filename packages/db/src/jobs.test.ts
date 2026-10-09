@@ -72,7 +72,9 @@ describe('the job queue', () => {
       queueJob(queue, tx, 'plan-draft', { household: crypto.randomUUID(), week: '2026-10-12' }),
     );
     const jobs = await queue.fetch<Jobs['plan-draft']>('plan-draft', { batchSize: 100 });
-    expect(jobs.filter((job) => job.data.household === household).map((job) => job.data)).toEqual([
+    // The queue hands out jobs of the same priority in no fixed order.
+    const weeks = jobs.filter((job) => job.data.household === household).map((job) => job.data);
+    expect(weeks.sort((a, b) => a.week.localeCompare(b.week))).toEqual([
       { household, week: '2026-10-12' },
       { household, week: '2026-10-19' },
     ]);
