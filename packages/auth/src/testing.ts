@@ -2,6 +2,7 @@ import { createHash, generateKeyPairSync, randomBytes, sign, type KeyObject } fr
 import { addTask, createHousehold, draftPlan } from '@householdr/application';
 import { settableClock } from '@householdr/application/testing';
 import {
+  absences,
   accountEmails,
   accounts,
   connect,
@@ -165,6 +166,25 @@ export async function testAccounts(url: string) {
       const context = { db, clock, householdId, member: head };
       const result = await addTask(context, { onMiss: 'roll over', ...task });
       if (!result.ok) throw new Error(`No task: ${result.error}`);
+    },
+    /**
+     * Plans an absence for the account at `email` in household `householdId`, both days included,
+     * as `YYYY-MM-DD` (ADR-0005 §2).
+     */
+    absent: async (householdId: string, email: string, firstDay: string, lastDay: string) => {
+      const [account] = await db
+        .select({ id: accounts.id })
+        .from(accounts)
+        .where(eq(accounts.email, email));
+      if (!account) throw new Error('No such account');
+      await inHousehold(db, householdId, async (tx) => {
+        const [member] = await tx
+          .select({ id: members.id })
+          .from(members)
+          .where(eq(members.accountId, account.id));
+        if (!member) throw new Error('Not a member');
+        await tx.insert(absences).values({ householdId, memberId: member.id, firstDay, lastDay });
+      });
     },
     /**
      * Takes household `householdId` out of setup from this plan week on, and drafts next week's

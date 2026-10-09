@@ -295,5 +295,49 @@
   "tasks.invalid-duration": "Enter the minutes it takes, a whole number from {min} to {max}.",
   "tasks.invalid-frequency": "Choose how often it’s done.",
   "tasks.invalid-start": "Choose a day from today up to a year from now.",
-  "tasks.invalid-on-miss": "Choose what happens if it isn’t done in time."
+  "tasks.invalid-on-miss": "Choose what happens if it isn’t done in time.",
+  "plan.title": "Plan",
+  "plan.page-title": "Plan · {household} · Householdr",
+  "plan.intro": "Who does what, week by week. Each task says why it went to whoever has it.",
+  "plan.none": "There’s no plan to show yet.",
+  "plan.this-week": "This week: {days}",
+  "plan.next-week": "Next week: {days}",
+  "plan.draft": "This is a draft. Only heads see it until it’s published on {when}.",
+  "plan.publish": "Publish now",
+  "plan.published": "The plan is published: everyone in the household sees it now.",
+  "plan.changed": "The draft changed since you opened it. Check it, then publish again.",
+  "plan.gone": "There’s no draft to publish any more.",
+  "plan.any-time": "Each task can be done any day of its week.",
+  "plan.day": "Day",
+  "plan.points-label": "Points",
+  "plan.why": "Why",
+  "plan.nothing": "Nothing this week.",
+  "plan.unassigned": "Not given to anyone",
+  "plan.unassigned-intro": "If one is still not given to anyone when the plan is published, it moves on to the next week or is dropped, as its task says. Nobody’s balance is charged for it.",
+  "plan.reason.lowest-relative-load": "{name} had the least to do so far, for their share.",
+  "plan.reason.lowest-relative-load-you": "You had the least to do so far, for your share.",
+  "plan.reason.only-eligible": "{name} was the only one who could do it then.",
+  "plan.reason.only-eligible-you": "You were the only one who could do it then.",
+  "plan.reason.catching-up": "It evens out the weeks before.",
+  "plan.reason.bound": "It’s always {name}’s task.",
+  "plan.reason.bound-you": "It’s always your task.",
+  "plan.reason.assigned-by-head": "A head gave it to {name}.",
+  "plan.reason.assigned-by-head-you": "A head gave it to you.",
+  "plan.reason.linked": "It goes with a task {name} had just before.",
+  "plan.reason.linked-you": "It goes with a task you had just before.",
+  "plan.cause.nobody-eligible": "Nobody can do it then: everyone is away, or not allowed to do it.",
+  "plan.cause.bound-member-not-eligible": "The person it always goes to can’t do it then.",
+  "plan.cause.linked-member-not-eligible": "Whoever had the task it goes with can’t do it then.",
+  "plan.back": "Back to {household}",
+  "plan.points": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} point",
+        "countPlural=other": "{count} points"
+      }
+    }
+  ],
+  "plan.publish-failed": "Publishing didn’t work"
 }

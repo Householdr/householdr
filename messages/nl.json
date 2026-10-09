@@ -295,5 +295,49 @@
   "tasks.invalid-duration": "Vul in hoeveel minuten het duurt, een heel getal van {min} tot {max}.",
   "tasks.invalid-frequency": "Kies hoe vaak het moet gebeuren.",
   "tasks.invalid-start": "Kies een dag vanaf vandaag tot een jaar van nu.",
-  "tasks.invalid-on-miss": "Kies wat er gebeurt als het niet op tijd gedaan is."
+  "tasks.invalid-on-miss": "Kies wat er gebeurt als het niet op tijd gedaan is.",
+  "plan.title": "Planning",
+  "plan.page-title": "Planning · {household} · Householdr",
+  "plan.intro": "Wie doet wat, week na week. Bij elke taak staat waarom ze bij die persoon terechtkwam.",
+  "plan.none": "Er is nog geen planning om te tonen.",
+  "plan.this-week": "Deze week: {days}",
+  "plan.next-week": "Volgende week: {days}",
+  "plan.draft": "Dit is een ontwerp. Alleen hoofden zien het tot het gepubliceerd wordt op {when}.",
+  "plan.publish": "Nu publiceren",
+  "plan.published": "De planning is gepubliceerd: iedereen in het huishouden ziet ze nu.",
+  "plan.changed": "Het ontwerp is veranderd sinds je het opende. Bekijk het en publiceer opnieuw.",
+  "plan.gone": "Er is geen ontwerp meer om te publiceren.",
+  "plan.any-time": "Elke taak kan op elke dag van haar week.",
+  "plan.day": "Dag",
+  "plan.points-label": "Punten",
+  "plan.why": "Waarom",
+  "plan.nothing": "Niets deze week.",
+  "plan.unassigned": "Bij niemand",
+  "plan.unassigned-intro": "Staat er bij het publiceren nog een bij niemand, dan schuift ze door naar de volgende week of vervalt ze, zoals de taak zegt. Niemands saldo wordt ervoor aangerekend.",
+  "plan.reason.lowest-relative-load": "{name} had tot nu toe het minst te doen, naar verhouding.",
+  "plan.reason.lowest-relative-load-you": "Jij had tot nu toe het minst te doen, naar verhouding.",
+  "plan.reason.only-eligible": "{name} was de enige die het toen kon doen.",
+  "plan.reason.only-eligible-you": "Jij was de enige die het toen kon doen.",
+  "plan.reason.catching-up": "Het maakt de weken ervoor weer gelijk.",
+  "plan.reason.bound": "Het is altijd de taak van {name}.",
+  "plan.reason.bound-you": "Het is altijd jouw taak.",
+  "plan.reason.assigned-by-head": "Een hoofd gaf het aan {name}.",
+  "plan.reason.assigned-by-head-you": "Een hoofd gaf het aan jou.",
+  "plan.reason.linked": "Het hoort bij een taak die {name} net daarvoor had.",
+  "plan.reason.linked-you": "Het hoort bij een taak die jij net daarvoor had.",
+  "plan.cause.nobody-eligible": "Niemand kan het dan doen: iedereen is weg of mag het niet doen.",
+  "plan.cause.bound-member-not-eligible": "Wie het altijd krijgt, kan het dan niet doen.",
+  "plan.cause.linked-member-not-eligible": "Wie de taak had waar het bij hoort, kan het dan niet doen.",
+  "plan.back": "Terug naar {household}",
+  "plan.points": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} punt",
+        "countPlural=other": "{count} punten"
+      }
+    }
+  ],
+  "plan.publish-failed": "Publiceren is niet gelukt"
 }

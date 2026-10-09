@@ -1037,5 +1037,145 @@
   "tasks.invalid-on-miss": {
     "note": "Why adding didn't work: neither choice for what happens to a time that isn't done was picked.",
     "needsReview": ["nl"]
+  },
+  "plan.title": {
+    "note": "Heading of the page with the week's plan, and the link to it on the household's page (ADR-0006).",
+    "needsReview": ["nl"]
+  },
+  "plan.page-title": {
+    "note": "Browser tab title of the plan's page. {household} is the household's name.",
+    "needsReview": ["nl"]
+  },
+  "plan.intro": {
+    "note": "Introduces the plan's page (ADR-0007 §5: each assignment says why it went to them).",
+    "needsReview": ["nl"]
+  },
+  "plan.none": {
+    "note": "Shown instead of a plan when there is none this week or next that the reader may see.",
+    "needsReview": ["nl"]
+  },
+  "plan.this-week": {
+    "note": "Heading of this week's plan. {days} is the week's first and last day, such as “12–18 October 2026”.",
+    "needsReview": ["nl"]
+  },
+  "plan.next-week": {
+    "note": "Heading of next week's plan. {days} is the week's first and last day, such as “19–25 October 2026”.",
+    "needsReview": ["nl"]
+  },
+  "plan.draft": {
+    "note": "Shown to heads above a draft plan (ADR-0006 §2). {when} is a day and time, such as “Sunday 11 October 2026 at 12:00”.",
+    "needsReview": ["nl"]
+  },
+  "plan.publish": {
+    "note": "Button with which a head publishes the draft early, so everyone sees it (ADR-0006 §2).",
+    "needsReview": ["nl"]
+  },
+  "plan.published": {
+    "note": "Status message after a head published the draft.",
+    "needsReview": ["nl"]
+  },
+  "plan.changed": {
+    "note": "When a head publishes a draft that was drafted again in the meantime: nothing was published (ADR-0019 §5).",
+    "needsReview": ["nl"]
+  },
+  "plan.gone": {
+    "note": "When a head publishes a draft that is gone, as for a week the household is now away all of.",
+    "needsReview": ["nl"]
+  },
+  "plan.any-time": {
+    "note": "Explains once, above the plan, that a task can be done any day of the week it is in (ADR-0004 §4).",
+    "needsReview": ["nl"]
+  },
+  "plan.day": {
+    "note": "Label, in a task of the plan, of the day it is planned for.",
+    "needsReview": ["nl"]
+  },
+  "plan.points-label": {
+    "note": "Label, in the reader's own tasks, of the points the task costs them (ADR-0001 §5).",
+    "needsReview": ["nl"]
+  },
+  "plan.why": {
+    "note": "Label, in a task of the plan, of why it went to whoever has it (ADR-0007 §5).",
+    "needsReview": ["nl"]
+  },
+  "plan.nothing": {
+    "note": "Under a member's name when they have no task in the week's plan.",
+    "needsReview": ["nl"]
+  },
+  "plan.unassigned": {
+    "note": "Heading, for heads, of the tasks nobody could take this week (ADR-0001 §7).",
+    "needsReview": ["nl"]
+  },
+  "plan.unassigned-intro": {
+    "note": "Explains to heads what happens to a task nobody could take (ADR-0001 §7, clarification). Calm, never blaming anyone.",
+    "needsReview": ["nl"]
+  },
+  "plan.reason.lowest-relative-load": {
+    "note": "Why a task went to {name}, another member: the least work so far for their share (ADR-0001 §7). Never names the share itself, which others don't see (ADR-0018 §4).",
+    "needsReview": ["nl"]
+  },
+  "plan.reason.lowest-relative-load-you": {
+    "note": "Why a task went to the reader: the least work so far for their share (ADR-0001 §7).",
+    "needsReview": ["nl"]
+  },
+  "plan.reason.only-eligible": {
+    "note": "Why a task went to {name}: nobody else was available or allowed (ADR-0001 §7).",
+    "needsReview": ["nl"]
+  },
+  "plan.reason.only-eligible-you": {
+    "note": "Why a task went to the reader: nobody else was available or allowed (ADR-0001 §7).",
+    "needsReview": ["nl"]
+  },
+  "plan.reason.catching-up": {
+    "note": "Why a task went to whoever has it: it evens out the balances of earlier weeks (ADR-0001 §7, ADR-0002 §3). Never blaming: catching up isn't a punishment.",
+    "needsReview": ["nl"]
+  },
+  "plan.reason.bound": {
+    "note": "Why a task went to {name}: it is always theirs (ADR-0001 §7, bound).",
+    "needsReview": ["nl"]
+  },
+  "plan.reason.bound-you": {
+    "note": "Why a task went to the reader: it is always theirs (ADR-0001 §7, bound).",
+    "needsReview": ["nl"]
+  },
+  "plan.reason.assigned-by-head": {
+    "note": "Why a task went to {name}: a head of the household chose them (ADR-0001 §7).",
+    "needsReview": ["nl"]
+  },
+  "plan.reason.assigned-by-head-you": {
+    "note": "Why a task went to the reader: a head of the household chose them (ADR-0001 §7).",
+    "needsReview": ["nl"]
+  },
+  "plan.reason.linked": {
+    "note": "Why a task went to {name}: it goes with a task they had before, such as bringing a bin in after putting it out (ADR-0001 §7).",
+    "needsReview": ["nl"]
+  },
+  "plan.reason.linked-you": {
+    "note": "Why a task went to the reader: it goes with a task they had before (ADR-0001 §7).",
+    "needsReview": ["nl"]
+  },
+  "plan.cause.nobody-eligible": {
+    "note": "Why nobody has a task, for heads (ADR-0001 §7, clarification).",
+    "needsReview": ["nl"]
+  },
+  "plan.cause.bound-member-not-eligible": {
+    "note": "Why nobody has a task, for heads: whoever it always goes to isn't available (ADR-0001 §7, clarification).",
+    "needsReview": ["nl"]
+  },
+  "plan.cause.linked-member-not-eligible": {
+    "note": "Why nobody has a task, for heads: whoever had the task it goes with isn't available (ADR-0001 §7, clarification).",
+    "needsReview": ["nl"]
+  },
+  "plan.back": {
+    "note": "Link from the plan back to the household's page. {household} is the household's name.",
+    "needsReview": ["nl"]
+  },
+  "plan.points": {
+    "note": "The points a task costs the reader (ADR-0001 §5): roughly a minute of average work each.",
+    "needsReview": ["nl"]
+  },
+  "plan.publish-failed": {
+    "note": "Heading of the summary when a head's publishing didn't go through; plan.changed or plan.gone says why.",
+    "needsReview": ["nl"]
   }
 }

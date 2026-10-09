@@ -61,3 +61,26 @@ export function minutesText(minutes: number, locale: string) {
     unitDisplay: 'long',
   }).format(minutes);
 }
+
+/** The calendar day `date` (`YYYY-MM-DD`) in `locale`, with its weekday, such as “Wednesday 14 October”. */
+export function weekDay(date: string, locale: string) {
+  const format = new Intl.DateTimeFormat(locale, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    timeZone: 'UTC',
+  });
+  return format.format(utc(date));
+}
+
+/**
+ * The moment `at` (epoch milliseconds) in `timeZone`, in `locale`, such as “Sunday 11 October 2026
+ * at 12:00”.
+ */
+export function dayAndTime(at: number, timeZone: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: 'full',
+    timeStyle: 'short',
+    timeZone,
+  }).format(at);
+}

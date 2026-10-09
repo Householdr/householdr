@@ -433,7 +433,13 @@ describe('viewPlan (ADR-0006 §2, ADR-0007 §5)', () => {
     // Sunday 11 October 12:00 in Brussels.
     const result = await viewPlan(h.head);
     if (!result.ok) throw new Error('Not shown');
-    expect(result).toMatchObject({ ok: true, thisWeek: null, mayPublish: true });
+    expect(result).toMatchObject({
+      ok: true,
+      household: 'Ash Lane',
+      timeZone: 'Europe/Brussels',
+      thisWeek: null,
+      mayPublish: true,
+    });
     const plan = result.nextWeek;
     expect(plan).toMatchObject({ status: 'draft', version: 1, unassigned: [] });
     expect(plan?.start.toString()).toBe(week1);
@@ -456,7 +462,7 @@ describe('viewPlan (ADR-0006 §2, ADR-0007 §5)', () => {
     const h = await household();
     await chores(h);
     await drafted(h.scheduler);
-    expect(await viewPlan(h.adult)).toEqual({
+    expect(await viewPlan(h.adult)).toMatchObject({
       ok: true,
       thisWeek: null,
       nextWeek: null,
@@ -507,7 +513,7 @@ describe('viewPlan (ADR-0006 §2, ADR-0007 §5)', () => {
     await chores(ash);
     await drafted(ash.scheduler);
     await publishPlan(ash.scheduler, { week: week1 });
-    expect(await viewPlan(birch.head)).toEqual({
+    expect(await viewPlan(birch.head)).toMatchObject({
       ok: true,
       thisWeek: null,
       nextWeek: null,

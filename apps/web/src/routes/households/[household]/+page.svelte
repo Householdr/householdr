@@ -79,6 +79,14 @@
   {/if}
 
   <nav aria-label={m['household.more']()} class="flex flex-wrap gap-x-6 gap-y-2">
+    {#if data.flags.plans}
+      <a
+        href="/households/{page.params.household}/plan"
+        class="flex min-h-11 items-center self-start underline underline-offset-4"
+      >
+        {m['plan.title']()}
+      </a>
+    {/if}
     {#if data.flags['household-settings'] && data.mayChangeSettings}
       <a href="/households/{page.params.household}/settings" class="underline underline-offset-4">
         {m['household.settings']()}

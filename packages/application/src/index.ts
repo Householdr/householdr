@@ -57,8 +57,9 @@ export {
 } from './shares/temporary-shares';
 export { addTask, type NewTaskField } from './tasks/add-task';
 export { listTasks, type TaskSummary } from './tasks/list-tasks';
-// The household member as permissions see them, which the web app's guard keeps per request.
-export type { Member, Role } from '@householdr/domain';
+// The household member as permissions see them, which the web app's guard keeps per request, and
+// why an occurrence went where it did, which the plan's page puts in words.
+export type { Member, Reason, Role, UnassignedCause } from '@householdr/domain';
 export { defaultFlags, flagValues } from './flags/values';
 // The apps open the database and the job queue here, to put them into their contexts (ADR-0023 §4);
 // only use cases and `auth` query the one and queue jobs on the other.
