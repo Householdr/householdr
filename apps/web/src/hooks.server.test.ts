@@ -108,6 +108,7 @@ describe('the flags of a request (ADR-0015 §3)', () => {
       tasks: false,
       plans: false,
       completions: false,
+      balances: false,
     });
   });
 
@@ -126,6 +127,7 @@ describe('the flags of a request (ADR-0015 §3)', () => {
       tasks: false,
       plans: false,
       completions: false,
+      balances: false,
     });
   });
 });

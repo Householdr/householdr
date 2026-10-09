@@ -43,6 +43,8 @@ export {
 } from './households/membership';
 export { completeOccurrence } from './completions/complete-occurrence';
 export { undoCompletion } from './completions/undo-completion';
+export { householdBalances, type MemberBalance, type SettledWeek } from './ledger/balances';
+export { settlePlanWeek } from './ledger/settle-plan-week';
 export { closeDueOccurrences } from './plans/closing';
 export { draftPlan } from './plans/draft-plan';
 export { queueDuePlanSteps, type ScheduleContext } from './plans/plan-schedule';
@@ -66,9 +68,17 @@ export {
 } from './shares/temporary-shares';
 export { addTask, type NewTaskField } from './tasks/add-task';
 export { listTasks, type TaskSummary } from './tasks/list-tasks';
-// The household member as permissions see them, which the web app's guard keeps per request, and
-// why an occurrence went where it did, which the plan's page puts in words.
-export type { Member, Reason, Role, StartChoice, UnassignedCause } from '@householdr/domain';
+// The household member as permissions see them, which the web app's guard keeps per request; why an
+// occurrence went where it did, which the plan's page puts in words; and how fast balances even
+// out, which the balances page does.
+export type {
+  Member,
+  Reason,
+  RebalancePreset,
+  Role,
+  StartChoice,
+  UnassignedCause,
+} from '@householdr/domain';
 export { defaultFlags, flagValues } from './flags/values';
 // The apps open the database and the job queue here, to put them into their contexts (ADR-0023 §4);
 // only use cases and `auth` query the one and queue jobs on the other.

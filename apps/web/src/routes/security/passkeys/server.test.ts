@@ -45,6 +45,7 @@ const on = {
   tasks: false,
   plans: false,
   completions: false,
+  balances: false,
 };
 let next = 0;
 

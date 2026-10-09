@@ -14,7 +14,7 @@ import { queueDuePlanSteps } from '../plans/plan-schedule';
 import { publishPlan } from '../plans/publish-plan';
 import { plannedHousehold, type PlannedHousehold } from '../plans/testing';
 import { viewPlan } from '../plans/view-plan';
-import { settableClock } from '../testing';
+import { settableClock, settableFlags } from '../testing';
 import { householdActivity } from './activity';
 import { viewHousehold } from './membership';
 import { startHousehold, startOptions } from './start-household';
@@ -197,7 +197,8 @@ describe('startHousehold on the week start day (ADR-0007 §3)', () => {
     // The scheduler drafts it at its draft time, Saturday 10 October 00:00 in Brussels, for the
     // whole week (ADR-0006 §2).
     const tick = async (at: string) => {
-      await queueDuePlanSteps({ db, clock: settableClock(Temporal.Instant.from(at)), queue });
+      const clock = settableClock(Temporal.Instant.from(at));
+      await queueDuePlanSteps({ db, clock, queue, flags: settableFlags() });
       const jobs = await queue.fetch<{ household: string; week: string }>('plan-draft', {
         batchSize: 100,
       });

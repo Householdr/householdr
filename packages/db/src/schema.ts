@@ -677,3 +677,58 @@ export const completionCredits = pgTable(
     check('completion_credits_points', sql`${t.points} >= 0`),
   ],
 );
+
+/**
+ * What a ledger entry records (ADR-0002 §7). For now only a plan week's settlement; a head's
+ * correction and a child's completion approved after its week was settled (ADR-0002 §1, ADR-0006
+ * §4) come with the slices that build them.
+ */
+export type LedgerKind = 'settlement';
+
+/**
+ * A change to a member's balance, in points (ADR-0002 §7): the balance is the sum of the member's
+ * entries, and their history is the list of them. A settlement is one plan week's done − owed for a
+ * member (§1), posted once the week is over: one per member and week. Neither what they owed nor
+ * what they did is kept, as both would tell their share and how hard they find their tasks
+ * (ADR-0018 §4, ADR-0003 §5). An entry never changes and is never deleted while the household
+ * exists: the app's role may only add and read them (`migrate.ts`).
+ */
+export const ledgerEntries = pgTable(
+  'ledger_entries',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    memberId: uuid().notNull(),
+    kind: text().$type<LedgerKind>().notNull(),
+    /** The first day of the plan week it settles. */
+    week: date().notNull(),
+    /** What the balance changes by, in points: positive is ahead of the fair portion (§1). */
+    change: doublePrecision().notNull(),
+    /** When it was posted. */
+    at: timestamp({ withTimezone: true }).notNull(),
+  },
+  (t) => [
+    householdOnly(t.householdId),
+    // A member of the entry's own household, and a plan week of it: foreign keys are checked past
+    // row-level security, so each includes the household.
+    foreignKey({
+      name: 'ledger_entries_member',
+      columns: [t.householdId, t.memberId],
+      foreignColumns: [members.householdId, members.id],
+    }),
+    foreignKey({
+      name: 'ledger_entries_week',
+      columns: [t.householdId, t.week],
+      foreignColumns: [plans.householdId, plans.weekStart],
+    }),
+    // A plan week is settled once for each member, so settling it again changes nothing (CODE-19).
+    uniqueIndex('ledger_entries_settled_once')
+      .on(t.householdId, t.week, t.memberId)
+      .where(sql`${t.kind} = 'settlement'`),
+    // The household's balances and their history, whatever the kind of entry.
+    index('ledger_entries_member_week').on(t.householdId, t.memberId, t.week),
+    check('ledger_entries_kind', sql`${t.kind} in ('settlement')`),
+  ],
+);

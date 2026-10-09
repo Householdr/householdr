@@ -77,6 +77,13 @@ export const flags = {
     owner: 'Jens',
     expires: '2027-03-31',
   },
+  balances: {
+    kind: 'release',
+    description:
+      'Settling each plan week into every member’s balance once it is over, which the next drafts catch up on, and the balances page every member sees (ADR-0002 §1, §3, §6–§7). Turn it on with completions, or every week settles as if nothing was done.',
+    owner: 'Jens',
+    expires: '2027-03-31',
+  },
 } as const satisfies Record<string, Flag>;
 
 export type FlagKey = keyof typeof flags;

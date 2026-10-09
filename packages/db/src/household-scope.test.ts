@@ -562,6 +562,7 @@ describe('every household-owned table (CODE-17)', () => {
       'completion_credits',
       'completions',
       'households',
+      'ledger_entries',
       'members',
       'occurrences',
       'plans',
