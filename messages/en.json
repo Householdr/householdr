@@ -592,5 +592,10 @@
   "plan.redraft": "Draft it again",
   "plan.redrafted": "The draft is made again, with everyone in the household.",
   "plan.redraft-failed": "Drafting it again didn’t work",
-  "plan.redraft-gone": "This draft can’t be made again any more: it was published in the meantime."
+  "plan.redraft-gone": "This draft can’t be made again any more: it was published in the meantime.",
+  "activity.share-changed": "{actor} changed {subject}’s share.",
+  "activity.temporary-share-added": "{actor} planned a temporary share for {subject}.",
+  "activity.temporary-share-removed": "{actor} removed a temporary share of {subject}’s.",
+  "activity.absence-added": "{actor} planned days away for {subject}.",
+  "activity.absence-removed": "{actor} removed days away of {subject}’s."
 }

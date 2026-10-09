@@ -592,5 +592,10 @@
   "plan.redraft": "Opnieuw maken",
   "plan.redrafted": "Het ontwerp is opnieuw gemaakt, met iedereen in het huishouden.",
   "plan.redraft-failed": "Opnieuw maken is niet gelukt",
-  "plan.redraft-gone": "Dit ontwerp kan niet meer opnieuw gemaakt worden: het is intussen gepubliceerd."
+  "plan.redraft-gone": "Dit ontwerp kan niet meer opnieuw gemaakt worden: het is intussen gepubliceerd.",
+  "activity.share-changed": "{actor} heeft het aandeel van {subject} gewijzigd.",
+  "activity.temporary-share-added": "{actor} heeft een tijdelijk aandeel gepland voor {subject}.",
+  "activity.temporary-share-removed": "{actor} heeft een tijdelijk aandeel van {subject} verwijderd.",
+  "activity.absence-added": "{actor} heeft dagen weg gepland voor {subject}.",
+  "activity.absence-removed": "{actor} heeft dagen weg van {subject} verwijderd."
 }
