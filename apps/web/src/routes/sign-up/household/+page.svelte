@@ -126,10 +126,8 @@
             bind:value={fields.timeZone}
             {...problemAttributes('timeZone')}
           >
-            {#each setup.timeZones as timeZone (timeZone)}
-              <NativeSelectOption value={timeZone}
-                >{timeZone.replaceAll('_', ' ')}</NativeSelectOption
-              >
+            {#each setup.timeZones as option (option.timeZone)}
+              <NativeSelectOption value={option.timeZone}>{option.name}</NativeSelectOption>
             {/each}
           </NativeSelect>
           <FieldProblem id="timeZone-problem" problem={problemOf('timeZone')} />

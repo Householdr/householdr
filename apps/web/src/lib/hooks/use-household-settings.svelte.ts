@@ -1,6 +1,5 @@
 import { countries, isCountry, timeZonesOf } from '@householdr/domain';
-import { countryName, languageName } from '#lib/intl.js';
-import { getLocale } from '#lib/paraglide/runtime.js';
+import { countryName, languageName, timeZoneName } from '#lib/intl.js';
 
 /** The settings the form shows: the saved ones, or what was entered (UI-10). */
 interface Shown {
@@ -10,11 +9,15 @@ interface Shown {
 
 /**
  * The choices of the household's settings (ADR-0007 §2): every country by its name, the chosen
- * country's time zones, and the offered languages. Choosing another country chooses its main time
- * zone; without JavaScript, the server asks for one of the new country's instead.
+ * country's time zones, its main one first, and the offered languages. Names are written in
+ * `locale`, the one the root layout gives the page (ADR-0008 §6). Choosing another country chooses
+ * its main time zone; without JavaScript, the server asks for one of the new country's instead.
  */
-export function useHouseholdSettings(shown: () => Shown, languages: readonly string[]) {
-  const locale = getLocale();
+export function useHouseholdSettings(
+  shown: () => Shown,
+  languages: readonly string[],
+  locale: string,
+) {
   const chosen = $state({ country: shown().country, timeZone: shown().timeZone });
   // When the page loads other values, such as after saving, the form shows them.
   $effect.pre(() => {
@@ -28,7 +31,12 @@ export function useHouseholdSettings(shown: () => Shown, languages: readonly str
     .map((code) => ({ code, name: countryName(code, locale) }))
     .sort((a, b) => collator.compare(a.name, b.name));
   const languageOptions = languages.map((code) => ({ code, name: languageName(code) }));
-  const timeZones = $derived(isCountry(chosen.country) ? timeZonesOf(chosen.country) : []);
+  const timeZones = $derived(
+    (isCountry(chosen.country) ? timeZonesOf(chosen.country) : []).map((timeZone) => ({
+      timeZone,
+      name: timeZoneName(timeZone, locale),
+    })),
+  );
 
   return {
     chosen,
@@ -44,5 +52,7 @@ export function useHouseholdSettings(shown: () => Shown, languages: readonly str
     },
     /** A country's name, in the reader's language. */
     countryName: (code: string) => countryName(code, locale),
+    /** A time zone's city and name, in the reader's language. */
+    timeZoneName: (timeZone: string) => timeZoneName(timeZone, locale),
   };
 }

@@ -2,11 +2,9 @@
   import { page } from '$app/state';
   import { dayOf } from '#lib/intl.js';
   import { m } from '#lib/paraglide/messages.js';
-  import { getLocale } from '#lib/paraglide/runtime.js';
   import type { PageProps } from './$types';
 
   let { data }: PageProps = $props();
-  const locale = getLocale();
 
   /** An entry in words: who did what (ADR-0018 §5), a former member without a name (ADR-0012 §6). */
   const said = (entry: PageProps['data']['entries'][number]) => {
@@ -38,7 +36,8 @@
         <li class="flex flex-col gap-1 p-4">
           <span class="wrap-break-word">{said(entry)}</span>
           <!-- The day only, never the time: when someone is active isn't shared (ADR-0018 §3). -->
-          <span class="text-sm text-muted-foreground">{dayOf(entry.at, data.timeZone, locale)}</span
+          <span class="text-sm text-muted-foreground"
+            >{dayOf(entry.at, data.timeZone, data.locale)}</span
           >
         </li>
       {/each}

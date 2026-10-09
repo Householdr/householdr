@@ -415,7 +415,7 @@
     "needsReview": ["nl"]
   },
   "household-setup.time-zone": {
-    "note": "Label of the household's time zone: one of the chosen country's, such as Europe/Brussels.",
+    "note": "Label of the household's time zone: one of the chosen country's, such as 'Brussels (Central European Time)'.",
     "needsReview": ["nl"]
   },
   "household-setup.language": {
@@ -892,6 +892,10 @@
   },
   "activity.household-language": {
     "note": "Log entry. {actor} is a member's name, or 'A former member'.",
+    "needsReview": ["nl"]
+  },
+  "time-zone.name": {
+    "note": "A time zone in a list or a summary, such as 'Brussels (Central European Time)'. {city} is the last part of the zone's IANA name, not translated; {zone} is the zone's name from the browser, already in the reader's language, or an offset such as 'GMT+03:00'.",
     "needsReview": ["nl"]
   }
 }

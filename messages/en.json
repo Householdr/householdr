@@ -268,5 +268,6 @@
   "activity.household-name": "{actor} changed the household’s name.",
   "activity.household-country": "{actor} changed the household’s country.",
   "activity.household-time-zone": "{actor} changed the household’s time zone.",
-  "activity.household-language": "{actor} changed the household’s language."
+  "activity.household-language": "{actor} changed the household’s language.",
+  "time-zone.name": "{city} ({zone})"
 }

@@ -16,9 +16,10 @@
   let { data, form }: PageProps = $props();
   /** What the form shows: what was entered when saving didn't work, the saved settings otherwise. */
   const values = $derived(form?.values ?? data.settings);
-  // The offered languages are the instance's, which don't change while the page is open.
+  // The offered languages are the instance's, and the locale the account's, which don't change
+  // while the page is open.
   // svelte-ignore state_referenced_locally
-  const settings = useHouseholdSettings(() => values, data.languages);
+  const settings = useHouseholdSettings(() => values, data.languages, data.locale);
 
   /** Why the server refused a field, in words (CODE-13). */
   const problems: Record<SettingsField, () => string> = {
@@ -66,7 +67,7 @@
           <dt>{m['household-setup.country']()}</dt>
           <dd>{settings.countryName(form.conflict.current.country)}</dd>
           <dt>{m['household-setup.time-zone']()}</dt>
-          <dd>{form.conflict.current.timeZone.replaceAll('_', ' ')}</dd>
+          <dd>{settings.timeZoneName(form.conflict.current.timeZone)}</dd>
           <dt>{m['household-setup.language']()}</dt>
           <dd lang={form.conflict.current.language}>
             {languageName(form.conflict.current.language)}
@@ -126,8 +127,8 @@
         bind:value={settings.chosen.timeZone}
         {...problemAttributes('timeZone')}
       >
-        {#each settings.timeZones as timeZone (timeZone)}
-          <NativeSelectOption value={timeZone}>{timeZone.replaceAll('_', ' ')}</NativeSelectOption>
+        {#each settings.timeZones as option (option.timeZone)}
+          <NativeSelectOption value={option.timeZone}>{option.name}</NativeSelectOption>
         {/each}
       </NativeSelect>
       <FieldProblem id="timeZone-problem" problem={problemOf('timeZone')} />

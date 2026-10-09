@@ -52,6 +52,9 @@ test.describe('with JavaScript and passkeys', () => {
     await expect(page.getByLabel('Country')).toHaveValue('BE');
     await expect(page.getByLabel('Country').locator('option:checked')).toHaveText('Belgium');
     await expect(page.getByLabel('Time zone')).toHaveValue('Europe/Brussels');
+    await expect(page.getByLabel('Time zone').locator('option:checked')).toHaveText(
+      'Brussels (Central European Time)',
+    );
     await expect(page.getByLabel('Household language')).toHaveValue('en');
     await expect(page.getByLabel('Your language')).toHaveValue('en');
     await expect(page.getByLabel('Weeks start on').locator('option:checked')).toHaveText('Monday');
@@ -136,10 +139,11 @@ test.describe('with JavaScript and passkeys', () => {
     // Another country brings its own time zones, its main one chosen.
     await page.getByLabel('Country').selectOption({ label: 'Spain' });
     await expect(page.getByLabel('Time zone')).toHaveValue('Europe/Madrid');
+    // By their cities and names, the main one first.
     await expect(page.getByLabel('Time zone').locator('option')).toHaveText([
-      'Europe/Madrid',
-      'Africa/Ceuta',
-      'Atlantic/Canary',
+      'Madrid (Central European Time)',
+      'Ceuta (Central European Time)',
+      'Canary (Western European Time)',
     ]);
 
     await fillIn(page);
