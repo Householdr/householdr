@@ -16,7 +16,10 @@ export interface Terms {
 
 /** What signing up with a passkey needs from the app. */
 export interface PasskeySignUpContext extends Pick<SignInContext, 'auth' | 'db' | 'clock'> {
-  /** Null on an instance without terms, which asks nothing about them (ADR-0007 §2, clarification). */
+  /**
+   * Null on an instance without terms, which asks nothing about them, neither of a founding head nor
+   * of someone accepting an invitation (ADR-0007 §2; ADR-0010 §1; clarifications).
+   */
   terms: Terms | null;
 }
 

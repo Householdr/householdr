@@ -131,7 +131,10 @@ describe('joining with a new account (ADR-0010 §1, §5)', () => {
       emailVerified: true,
       // Their language and the household's country (ADR-0016 §2).
       culture: 'en-BE',
+      // The terms they accepted, and when, as the founding head's account keeps them (ADR-0010
+      // §1, clarification of 2026-10-09).
       termsVersion: '2026-10-01',
+      termsAcceptedAt: new Date('2026-10-08T08:00:00Z'),
     });
     if (!account) throw new Error('No account');
     const [profile] = await inHousehold(test.context.db, heads.householdId, (tx) =>
@@ -170,7 +173,27 @@ describe('joining with a new account (ADR-0010 §1, §5)', () => {
     expect(await accountAt(email)).toBeNull();
   });
 
-  it('asks nothing about terms on an instance without them (ADR-0021 §5, clarification)', async () => {
+  it('creates nothing unless the terms are accepted, where the instance has them (ADR-0010 §1, clarification)', async () => {
+    const { invitation } = await household();
+    const email = newAddress();
+    const token = await signUpLinkTo(context, email);
+    const refused = { ok: false, error: 'invalid', fields: ['terms'] };
+    for (const terms of [undefined, false, 'yes']) {
+      const input = { name: 'Sam', language: 'en', terms };
+      // At both steps: the second checks again, since a client can skip the first.
+      expect(await invitationPasskeyOptions(context, token, invitation, input)).toEqual(refused);
+      expect(
+        await joinWithPasskey(context, token, invitation, headersWith(), input, client),
+      ).toEqual(refused);
+    }
+    expect(await accountAt(email)).toBeNull();
+    // Both links still work, for an attempt that accepts them.
+    expect(await signUpLinkAddress(context, token)).toBe(email);
+    expect(await join(token, invitation)).toMatchObject({ ok: true });
+    expect(await accountAt(email)).toMatchObject({ termsVersion: '2026-10-01' });
+  });
+
+  it('asks nothing about terms on an instance without them (ADR-0010 §1, ADR-0021 §5, clarifications)', async () => {
     const { invitation } = await household();
     const email = newAddress();
     const token = await signUpLinkTo(context, email);

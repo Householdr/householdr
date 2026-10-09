@@ -103,6 +103,7 @@
       <FieldProblem id="language-problem" problem={problemOf('language')} />
     </div>
     {#if terms}
+      <!-- The founding head's own box and link, in the same words (ADR-0010 §1, clarification). -->
       <div class="flex flex-col gap-1">
         <!-- The label around the box makes the whole line its target (UI-8). -->
         <label class="flex min-h-11 items-center gap-3">
@@ -114,10 +115,10 @@
             bind:checked={fields.terms}
             {...problemAttributes('terms')}
           />
-          {m['invitation.terms']()}
+          {m['household-setup.terms']()}
         </label>
         <a href={terms} target="_blank" rel="noopener noreferrer" class="underline">
-          {m['invitation.read-terms']()}
+          {m['household-setup.read-terms']()}
         </a>
         <FieldProblem id="terms-problem" problem={problemOf('terms')} />
       </div>

@@ -447,11 +447,11 @@
     "needsReview": ["nl"]
   },
   "household-setup.terms": {
-    "note": "Checkbox, only on an instance that has its own terms (ADR-0007 §2, clarification). The link below it opens them.",
+    "note": "Checkbox, only on an instance that has its own terms (ADR-0007 §2, clarification). The link below it opens them. Also on the form where someone invited creates their account (ADR-0010 §1, clarification).",
     "needsReview": ["nl"]
   },
   "household-setup.read-terms": {
-    "note": "Link under the terms checkbox to the instance's terms, which open in a new tab so the form stays as it is.",
+    "note": "Link under the terms checkbox to the instance's terms, which open in a new tab so the form stays as it is. Also on the form where someone invited creates their account.",
     "needsReview": ["nl"]
   },
   "household-setup.passkey": {
@@ -706,14 +706,6 @@
     "note": "Label of the new account's own language.",
     "needsReview": ["nl"]
   },
-  "invitation.terms": {
-    "note": "Checkbox: accepting the instance's terms, where it has them.",
-    "needsReview": ["nl"]
-  },
-  "invitation.read-terms": {
-    "note": "Link to the instance's terms, opening in a new tab so the form isn't lost.",
-    "needsReview": ["nl"]
-  },
   "invitation.passkey": {
     "note": "Explains that the account signs in with a passkey.",
     "needsReview": ["nl"]
@@ -751,7 +743,7 @@
     "needsReview": ["nl"]
   },
   "invitation.invalid-terms": {
-    "note": "Why the form was refused: the terms weren't accepted.",
+    "note": "Why the form was refused: the terms weren't accepted. Uses the same verb as the checkbox (household-setup.terms).",
     "needsReview": ["nl"]
   }
 }

@@ -25,7 +25,8 @@ export type InvitationSignUpField = 'name' | 'language' | 'terms';
 /**
  * The new account's fields (CODE-12): its holder's name, their language, which with the
  * household's country becomes their culture (ADR-0016 §2), and, where the instance has terms, that
- * they accept them.
+ * they accept them, as the founding head does; an instance without terms asks nothing (ADR-0010
+ * §1, clarification of 2026-10-09).
  */
 const fields = (terms: Terms | null) => {
   const own = { name: nameField, language: v.picklist(offeredLanguages) };
@@ -87,7 +88,9 @@ type JoinWithPasskeyResult =
  * Creates the account from the sign-up link of `signUpToken` with the passkey the browser made for
  * the challenge of `invitationPasskeyOptions`, and accepts the invitation of `invitationToken` with
  * it, in one transaction (ADR-0010 §1, clarification: the account is created together with the
- * membership it accepts). If the invitation stops working meanwhile, nothing is created.
+ * membership it accepts). The account keeps the version of the terms it accepted, and when, as the
+ * founding head's does (clarification of 2026-10-09). If the invitation stops working meanwhile,
+ * nothing is created.
  */
 export async function joinWithPasskey(
   context: InvitationSignUpContext,

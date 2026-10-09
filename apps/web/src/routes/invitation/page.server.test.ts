@@ -1,4 +1,5 @@
 import { addAdult, createHousehold, invite, membership } from '@householdr/application';
+import type { InvitationSignUpContext } from '@householdr/auth';
 import { createTestAccount, signUpLinkTo, testSignInContext } from '@householdr/auth/testing';
 import { isActionFailure, isHttpError, isRedirect } from '@sveltejs/kit';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -8,7 +9,10 @@ import { actions, load } from './+page.server';
 // (TEST-4), against a real database (TEST-11).
 
 let test: Awaited<ReturnType<typeof testSignInContext>>;
-vi.mock('#lib/server/auth.js', () => ({ authContext: () => Promise.resolve(test.context) }));
+let terms: InvitationSignUpContext['terms'] = null;
+vi.mock('#lib/server/auth.js', () => ({
+  authContext: () => Promise.resolve({ ...test.context, terms }),
+}));
 beforeAll(async () => {
   test = await testSignInContext();
 });
@@ -124,6 +128,19 @@ describe('the invitation page (ADR-0010 §5)', () => {
     // Signed in, the account accepts as it is.
     const signedIn = request(token, await newAccount(), true, signUpToken);
     expect(await opened(signedIn.event)).toMatchObject({ signUp: null });
+  });
+
+  it('links to the instance’s terms for the new account to accept, where it has them (ADR-0010 §1, clarification)', async () => {
+    const { token } = await invited();
+    const signUpToken = await signUpLinkTo(test.context, 'terms@example.org');
+    terms = { url: 'https://householdr.example.org/terms', version: '2026-10-01' };
+    expect(await opened(request(token, undefined, true, signUpToken).event)).toMatchObject({
+      signUp: { terms: 'https://householdr.example.org/terms' },
+    });
+    terms = null;
+    expect(await opened(request(token, undefined, true, signUpToken).event)).toMatchObject({
+      signUp: { terms: null },
+    });
   });
 
   it('forgets a link that doesn’t work', async () => {

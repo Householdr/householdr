@@ -1,5 +1,6 @@
 import type { Browser, Page } from '@playwright/test';
 import { expect, expectAccessible, forceFlags, signIn, test, withAuthenticator } from './fixtures';
+import { termsUrl } from './global-setup';
 import { forgetMail, signUpLink } from './mail';
 import { ownNetwork } from './proxy';
 
@@ -185,6 +186,11 @@ test('someone new creates an account with a passkey from the link, and joins', a
   // The profile's name to start with, which is theirs to change (ADR-0010 §1, clarification).
   await expect(invitee.getByLabel('Your name')).toHaveValue('Kim');
   await expect(invitee.getByLabel('Your name')).toHaveAttribute('autocomplete', 'name');
+  // The instance's terms, as the founding head accepts them, in a new tab so the form stays
+  // (ADR-0010 §1, clarification).
+  const terms = invitee.getByRole('link', { name: 'Read the terms (opens in a new tab)' });
+  await expect(terms).toHaveAttribute('href', termsUrl);
+  await expect(terms).toHaveAttribute('target', '_blank');
   await expectAccessible(invitee, 'creating an account');
   await invitee.getByLabel('Your name').fill('Sam');
   await invitee.getByRole('checkbox', { name: 'I accept the terms' }).check();
@@ -222,6 +228,9 @@ test('says what a new account needs before a passkey is made', async ({
     'Accept the terms to create an account.',
   ]);
   await expect(invitee.getByLabel('Your name')).toHaveAttribute('aria-invalid', 'true');
+  const terms = invitee.getByRole('checkbox', { name: 'I accept the terms' });
+  await expect(terms).toHaveAttribute('aria-invalid', 'true');
+  await expect(terms).toHaveAccessibleDescription('Accept the terms to create an account.');
   await expectAccessible(invitee, 'fields refused');
   expect(await authenticator.passkeys()).toEqual([]);
   await invitee.context().close();
