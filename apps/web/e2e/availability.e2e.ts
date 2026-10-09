@@ -136,8 +136,9 @@ for (const javaScriptEnabled of [true, false]) {
 
       // The head adds Sam, who has no account, and plans Sam's days away (ADR-0018 §4).
       await signIn(page, account, `/households/${id}`);
-      await page.getByLabel('Name').fill('Sam');
-      await page.getByRole('button', { name: 'Add', exact: true }).click();
+      const form = page.getByRole('region', { name: 'Add an adult' });
+      await form.getByLabel('Name').fill('Sam');
+      await form.getByRole('button', { name: 'Add', exact: true }).click();
       await expect(page.getByRole('status')).toContainText('Sam is added.');
       await openAvailability(page, id);
       const regions = page.getByRole('region');
