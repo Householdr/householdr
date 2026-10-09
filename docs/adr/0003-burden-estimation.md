@@ -56,6 +56,9 @@ The game picks pairs where the answer tells us the most: tasks with high uncerta
 estimates, and tasks the member has actually done recently. It is quick (a few swipes), works for
 children, and can be offered at idle moments rather than demanded.
 
+> **Clarification (2026-10-09):** the two tasks of a pair are shown in a **random order**, so the
+> side a task is on doesn't sway the answer.
+
 **b. Post-completion feedback (optional).** One tap on completion: *easier than usual / about right /
 harder than usual*, dismissable without answering. It nudges `θ(m,t)` relative to its own current
 estimate. To keep friction low:
@@ -111,6 +114,10 @@ household average gives the head what they need to tune the baseline.
 The average leaks when there are too few contributors: in a two-adult household, your own score plus the
 average gives away your partner's. So a task's average is shown only once **at least three** members
 have their own evidence for it; below that, the editor shows the baseline alone.
+
+> **Clarification (2026-10-09):** a member sees their own learned burdens as an **order**: their
+> tasks from hardest to easiest for them, **without figures**. The effect of their answers
+> (Consequences) shows as tasks moving in that order, not as a factor such as "1.6×".
 
 ### 6. Improving the global seed (later)
 

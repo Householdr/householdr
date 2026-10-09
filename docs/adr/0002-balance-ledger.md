@@ -72,6 +72,14 @@ completed.
 > once its own window has ended: for a one-off task, the end of its week, or of its deadline day
 > ([ADR-0004](0004-recurrence-schedules.md) §4). Until then it stays in the pool.
 
+> **Clarification (2026-10-09):** an occurrence is its own plan week's work until that week ends,
+> whatever the next week's draft says. The next week's draft, made before this week ends
+> ([ADR-0006](0006-plan-lifecycle-and-completion.md) §2), plans the rolling occurrences still open as
+> carried over. Those it doesn't carry over (a lapsing one whose window ends with this week, or a
+> rolling one that a new occurrence of its task replaces) stay open, and close as missed only when
+> the next week begins, if nobody did them by then. A rolling occurrence done before the next week
+> begins is done in its own week: the next week's plan shows it done, and it is no work of that week.
+
 ### 3. Catching up: the rebalance rate
 
 The allocator ([ADR-0001](0001-domain-model-and-weekly-allocation.md) §7) does not try to zero a

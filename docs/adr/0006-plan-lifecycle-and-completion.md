@@ -47,6 +47,18 @@ A head can publish early.
 
 > **Clarification (2026-10-07):** only heads see the draft until it is published.
 
+> **Clarification (2026-10-09):** drafting and publishing the next week change nothing about this
+> week: until it ends, every open occurrence of its plan can be done, including those the next
+> week's plan carries over. What the next week doesn't carry over closes when that week begins
+> ([ADR-0002](0002-balance-ledger.md) §2, clarification).
+
+> **Clarification (2026-10-09):** the draft and publish times are counted on the household's
+> **local clock**: with weeks starting on Monday, 48 and 12 hours before are Saturday 00:00 and
+> Sunday 12:00, also in a week when the clocks change. If the scheduler misses a time, for instance
+> while it is down, it **catches up** as soon as it runs again: it drafts a week that is due and not
+> yet drafted, and publishes a draft whose publish time has passed. A draft made by **Start now** is
+> the exception: it waits for a head to publish it ([ADR-0007](0007-onboarding.md) §3).
+
 ### 3. After publishing
 
 The published plan is **frozen**: re-running the allocator never reshuffles assignments already made.
@@ -82,6 +94,10 @@ current loads of the week as its starting point.
 > everything the child is credited for: their own tasks, pick-ups, extra work and "done together". A
 > completion can also be undone by any member credited with it; undoing someone else's completion is
 > logged ([ADR-0018](0018-household-safety.md) §5).
+
+> **Clarification (2026-10-09):** an occurrence is completed in the published plan of the week it is
+> done in: its own week's, or the week it was carried over into
+> ([ADR-0002](0002-balance-ledger.md) §2, clarification).
 
 ### 5. Notifications (business rules)
 

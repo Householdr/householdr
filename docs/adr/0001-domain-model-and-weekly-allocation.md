@@ -104,6 +104,12 @@ end date.
 > dates. A 29 February birthday counts from 1 March in other years, like a month end in a rule
 > ([ADR-0004](0004-recurrence-schedules.md) §3, clarification).
 
+> **Clarification (2026-10-09):** a temporary share can start in the **current** plan week, even
+> once its plan is published. It doesn't change who was assigned what in that plan
+> ([ADR-0006](0006-plan-lifecycle-and-completion.md) §3); it counts in the week's fair portions from
+> its first day ([ADR-0002](0002-balance-ledger.md) §1). A change to a share itself still applies
+> from the next unpublished plan.
+
 The reason for a reduced share (sickness, disability, pregnancy) is **not stored**. A free-text reason
 field would invite health data, a special category under GDPR article 9, and nothing in the algorithm
 needs it.

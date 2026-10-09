@@ -75,6 +75,12 @@ set no lower age. Below that age, a person with parental responsibility has to c
 > own, so every household has the same consent age and 18th birthday, and the guardians keep it
 > ([ADR-0012](0012-privacy-and-data-protection.md) §6, clarification).
 
+> **Clarification (2026-10-09):** someone who creates their account by **accepting an invitation**
+> accepts the instance's **terms** too, as the founding head does in onboarding step 1, and the
+> version and when are kept on the account in the same way
+> ([ADR-0007](0007-onboarding.md) §2, clarification). An instance without a link to terms asks
+> nothing.
+
 ### 2. Signing in
 
 | Method | Rules |
@@ -127,6 +133,11 @@ so a head's or a guardian's account must never depend on a password alone:
 - **Becoming a guardian** (§9) waits for the same rule.
 - A head or guardian who removes their last passkey or turns off TOTP while they still have a
   password is refused, with the reason.
+
+> **Clarification (2026-10-09):** the rule is met by **either** of the two: a passkey, or a password
+> with TOTP on. A head or guardian with a passkey may turn TOTP off while they keep a password; one
+> without a passkey may not. Removing a passkey or turning TOTP off is refused only when what is
+> left meets neither.
 
 ### 4. Device sign-in
 
