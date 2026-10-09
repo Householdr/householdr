@@ -15,6 +15,7 @@ describe('withForcedFlags (ADR-0015 §10)', () => {
     comparisons: false,
     availability: false,
     plans: false,
+    completions: false,
   };
 
   it('turns the flags a test names on or off, and leaves the rest', () => {

@@ -530,5 +530,7 @@
   "start.failed": "Starten is niet gelukt",
   "start.invalid": "Kies wanneer je wilt starten.",
   "start.already-started": "Iemand anders heeft het huishouden net gestart, dus er is niets veranderd.",
-  "start.started": "Je huishouden is gestart."
+  "start.started": "Je huishouden is gestart.",
+  "activity.completion-logged": "{actor} heeft een taak afgevinkt voor {subject}.",
+  "activity.completion-undone": "{actor} heeft een taak die voor {subject} was afgevinkt ongedaan gemaakt."
 }

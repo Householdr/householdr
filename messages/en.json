@@ -530,5 +530,7 @@
   "start.failed": "Starting didn’t work",
   "start.invalid": "Choose when to start.",
   "start.already-started": "Someone else started the household just now, so nothing changed.",
-  "start.started": "Your household has started."
+  "start.started": "Your household has started.",
+  "activity.completion-logged": "{actor} marked a task done for {subject}.",
+  "activity.completion-undone": "{actor} undid a task marked done for {subject}."
 }
