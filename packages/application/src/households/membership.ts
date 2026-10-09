@@ -1,30 +1,18 @@
+import { accountHouseholds, households, inHousehold, members, passkeys } from '@householdr/db';
 import {
-  accountHouseholds,
-  households,
-  inHousehold,
-  members,
-  passkeys,
-  type Database,
-} from '@householdr/db';
-import { can, type Member, type Role } from '@householdr/domain';
+  can,
+  comingPlanTimes,
+  householdDate,
+  planWeek,
+  type Member,
+  type Role,
+} from '@householdr/domain';
 import { eq } from 'drizzle-orm';
 import * as v from 'valibot';
-import type { Clock } from '../ports';
+import { planningOf, type Planning } from '../plans/planning';
+import type { HouseholdContext, HouseholdsContext } from './context';
 
-/** What reading households needs: the database. */
-export interface HouseholdsContext {
-  db: Database;
-}
-
-/**
- * What a use case in a household needs: the household, the member acting in it, and the time
- * (ADR-0023 §4).
- */
-export interface HouseholdContext extends HouseholdsContext {
-  clock: Clock;
-  householdId: string;
-  member: Member;
-}
+export type { HouseholdContext, HouseholdsContext } from './context';
 
 const householdId = v.pipe(v.string(), v.uuid());
 
@@ -104,6 +92,17 @@ type ViewHouseholdResult =
       mayAddMembers: boolean;
       /** Whether they may change the household's settings, which only heads do (ADR-0007 §2). */
       mayChangeSettings: boolean;
+      /** Whether they may start it: a head, while it is in setup (ADR-0007 §2 step 7). */
+      mayStart: boolean;
+      /**
+       * Once it started on the week start day, until that first plan week begins: the week, and
+       * when the heads see its draft and everyone its plan (ADR-0006 §2, ADR-0007 §3).
+       */
+      firstPlan: {
+        week: Temporal.PlainDate;
+        draftAt: Temporal.ZonedDateTime;
+        publishAt: Temporal.ZonedDateTime;
+      } | null;
     }
   | { ok: false; error: 'not-allowed' };
 
@@ -125,12 +124,33 @@ export async function viewHousehold(context: HouseholdContext): Promise<ViewHous
     list.sort((a, b) => roleOrder[a.role] - roleOrder[b.role] || a.name.localeCompare(b.name));
     const mayAddMembers = can(context.member, { action: 'household.invite' });
     const mayChangeSettings = can(context.member, { action: 'household.settings' });
+    const planning = await planningOf(tx);
     return {
       ok: true as const,
       name: household.name,
       members: list,
       mayAddMembers,
       mayChangeSettings,
+      // Starting is a setting of the household's, which only heads change (ADR-0007 §2).
+      mayStart: mayChangeSettings && !planning.firstWeek,
+      firstPlan: firstPlanOf(planning, context.clock.now()),
     };
   });
+}
+
+/**
+ * The household's first plan, while its week is still to come at `now`: that week, and when the
+ * scheduler drafts and publishes it (ADR-0006 §2, ADR-0007 §3). None in setup, nor once it began.
+ */
+function firstPlanOf({ calendar, timings, firstWeek }: Planning, now: Temporal.Instant) {
+  const { timeZone } = calendar;
+  if (!firstWeek || Temporal.PlainDate.compare(householdDate(now, timeZone), firstWeek) >= 0) {
+    return null;
+  }
+  const times = comingPlanTimes(now, planWeek(firstWeek, calendar), calendar, timings);
+  return {
+    week: firstWeek,
+    draftAt: times.draft.toZonedDateTimeISO(timeZone),
+    publishAt: times.publish.toZonedDateTimeISO(timeZone),
+  };
 }

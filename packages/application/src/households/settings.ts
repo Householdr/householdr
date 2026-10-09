@@ -8,7 +8,7 @@ import {
   type ActivityAction,
 } from '@householdr/db';
 import { can, countries, timeZonesOf } from '@householdr/domain';
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, inArray } from 'drizzle-orm';
 import * as v from 'valibot';
 import { offeredLanguages } from './create-household';
 import type { HouseholdContext } from './membership';
@@ -125,10 +125,12 @@ export async function changeHouseholdSettings(
       .for('update');
     if (!current) throw new Error('The household of a member is gone.');
     const conflict = async () => {
+      // The last change of a setting, not of anything else the log shows, such as the start.
       const [last] = await tx
         .select({ name: members.name })
         .from(activityLog)
         .leftJoin(members, eq(members.id, activityLog.actorId))
+        .where(inArray(activityLog.action, Object.values(logged)))
         .orderBy(desc(activityLog.at))
         .limit(1);
       return {

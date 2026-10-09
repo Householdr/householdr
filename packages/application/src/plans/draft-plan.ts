@@ -15,6 +15,8 @@ import {
   allocate,
   availabilityInWeek,
   fairFractions,
+  goneDays,
+  householdDate,
   occurrenceId,
   occurrences as occurrencesOf,
   planWeek,
@@ -66,7 +68,8 @@ type DraftPlanResult =
  * places, each given to a member or left unassigned for the heads. What the week closes as missed
  * by its task's on-miss policy, it closes (ADR-0002 §2). The scheduler drafts a week once; a head
  * drafting it again while it is a draft replaces it. A week the household is away for entirely gets
- * no plan (ADR-0005 §5).
+ * no plan (ADR-0005 §5); one drafted again once it has begun, such as the week a household started
+ * in, is planned for the days left (ADR-0007 §3).
  */
 export async function draftPlan(context: PlanContext, input: unknown): Promise<DraftPlanResult> {
   if (!mayDraft(context)) return { ok: false, error: 'not-allowed' };
@@ -90,12 +93,11 @@ export async function draftPlan(context: PlanContext, input: unknown): Promise<D
       return { ok: true, planned: true, planId: existing.id };
     }
     if (existing) await undoDraft(tx, existing.id);
-    const at = new Date(context.clock.now().epochMilliseconds);
     const planId = await draftWeek(tx, {
       householdId,
       planning,
       week,
-      at,
+      now: context.clock.now(),
       replacing: existing?.id,
     });
     if (planId === undefined) return { ok: true, planned: false };
@@ -115,11 +117,13 @@ async function undoDraft(tx: Transaction, planId: string) {
   await tx.delete(assignments).where(eq(assignments.planId, planId));
 }
 
+/** What drafting a week takes. */
 interface Draft {
   householdId: string;
   planning: Planning;
   week: PlanWeek;
-  at: Date;
+  /** When it is drafted. */
+  now: Temporal.Instant;
   /** The draft of the week being drafted again, if any. */
   replacing: string | undefined;
 }
@@ -127,11 +131,13 @@ interface Draft {
 /**
  * Gathers the week's tasks, members and occurrences, runs the domain over them, and stores the
  * plan; or, for a week the household is away for entirely, removes any draft of it. Returns the
- * plan's id, if it has one.
+ * plan's id, if it has one. A week drafted once it has begun, as when a household starts now, is
+ * planned for the days left: the days already gone count as days away (ADR-0007 §3).
  */
-async function draftWeek(tx: Transaction, draft: Draft): Promise<string | undefined> {
+export async function draftWeek(tx: Transaction, draft: Draft): Promise<string | undefined> {
   const { householdId, planning, week } = draft;
   const { calendar } = planning;
+  const today = householdDate(draft.now, calendar.timeZone);
   const away = await awayIn(tx, week);
   const household = await tasksOf(tx);
   const earlier = await earlierOccurrences(tx, week, calendar.timeZone);
@@ -142,13 +148,15 @@ async function draftWeek(tx: Transaction, draft: Draft): Promise<string | undefi
     open: earlier.open,
     placedEarlier: earlier.placed,
     away,
+    today,
   });
   if (!weekResult.planned) {
     if (draft.replacing) await tx.delete(plans).where(eq(plans.id, draft.replacing));
     await removeUnplanned(tx);
     return undefined;
   }
-  const people = await membersOf(tx, planning, week, away);
+  // Shares and availability count over the days at home still to come (ADR-0005 §5, ADR-0007 §3).
+  const people = await membersOf(tx, planning, week, [...away, ...goneDays(week, today)]);
   const allocation = allocate({
     week: week.start,
     calendar,
@@ -225,8 +233,9 @@ async function draftWeek(tx: Transaction, draft: Draft): Promise<string | undefi
 
 /** The plan's row: drafted now, as a new one or the same one again. */
 async function storePlan(tx: Transaction, draft: Draft) {
-  const { week, at } = draft;
-  const values = { weekStart: week.start.toString(), weekEnd: week.end.toString(), draftedAt: at };
+  const { week } = draft;
+  const draftedAt = new Date(draft.now.epochMilliseconds);
+  const values = { weekStart: week.start.toString(), weekEnd: week.end.toString(), draftedAt };
   if (draft.replacing) {
     await tx
       .update(plans)

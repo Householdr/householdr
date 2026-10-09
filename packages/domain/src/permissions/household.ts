@@ -59,7 +59,8 @@ export type MemberAction =
 export type Permission =
   /**
    * Name, time zone, language, country, week start, plan timings, rebalance rate (ADR-0001 §1–§2,
-   * ADR-0002 §3, ADR-0007 §2).
+   * ADR-0002 §3, ADR-0007 §2), and Start, which ends setting up and sets the first plan week
+   * (ADR-0007 §2 step 7).
    */
   | { action: 'household.settings' }
   /** ADR-0005 §5, ADR-0006 §2 clarification. */

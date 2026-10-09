@@ -48,6 +48,12 @@ export interface WeekInput {
   /** Floating occurrences an earlier plan already placed, by id. */
   placedEarlier: ReadonlySet<string>;
   away: readonly AwayPeriod[];
+  /**
+   * The day the plan is made, in the household's time zone. A week planned once it has begun, as
+   * when a household starts now (ADR-0007 §3), has days already gone (`goneDays`); a week still to
+   * come has none.
+   */
+  today?: Temporal.PlainDate;
 }
 
 export interface WeekOccurrences {
@@ -72,8 +78,14 @@ export interface WeekOccurrences {
 export function weekOccurrences(input: WeekInput): WeekOccurrences {
   const { calendar } = input;
   const { start, end } = planWeek(input.week, calendar);
+  // The days already gone count as days away (ADR-0007 §3): for whether the week gets a plan, and
+  // for how far floating occurrences fill it. A schedule's dates on them aren't planned: its next
+  // date is. They don't pause a "since last done" clock, which household-away days do.
+  const gone = input.today ? goneDays({ start, end }, input.today) : [];
+  const away = [...input.away, ...gone];
+  const firstDay = gone[0]?.to.add({ days: 1 }) ?? start;
   const awayThrough = (from: Temporal.PlainDate, until: Temporal.PlainDate) =>
-    awayThroughout({ start: from, end: until }, input.away);
+    awayThroughout({ start: from, end: until }, away);
   if (awayThrough(start, end)) return { planned: false, occurrences: [], missed: [], skipped: [] };
 
   const week = window(start, end, calendar);
@@ -117,7 +129,7 @@ export function weekOccurrences(input: WeekInput): WeekOccurrences {
       for (const o of occurrences(
         r.schedule,
         r.timing,
-        start,
+        firstDay,
         end.subtract({ days: 1 }),
         calendar,
       )) {
@@ -160,7 +172,7 @@ export function weekOccurrences(input: WeekInput): WeekOccurrences {
   let total = [...due, ...kept].reduce((sum, o) => sum + cost(o), 0);
   let daysHome = 0;
   for (let day = start; Temporal.PlainDate.compare(day, end) < 0; day = day.add({ days: 1 })) {
-    if (!isAway(day, input.away)) daysHome++;
+    if (!isAway(day, away)) daysHome++;
   }
   const target = (averageWeeklyMinutes(input.tasks, start) * daysHome) / 7;
   const laterPlan = (w: Window) => {
@@ -219,6 +231,18 @@ export function awayThroughout(days: PlanWeek, away: readonly AwayPeriod[]): boo
     if (!isAway(day, away)) return false;
   }
   return true;
+}
+
+/**
+ * The days of `week` already gone on `today`, when its plan is made once it has begun, as when a
+ * household starts now (ADR-0007 §3): the days before today, which count as household-away days,
+ * so fair portions and floating occurrences count only the days left. None for a week still to
+ * come; all of it for a week that is over.
+ */
+export function goneDays(week: PlanWeek, today: Temporal.PlainDate): AwayPeriod[] {
+  if (Temporal.PlainDate.compare(today, week.start) <= 0) return [];
+  const until = Temporal.PlainDate.compare(today, week.end) < 0 ? today : week.end;
+  return [{ from: week.start, to: until.subtract({ days: 1 }) }];
 }
 
 /**

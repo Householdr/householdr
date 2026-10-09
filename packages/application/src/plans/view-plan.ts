@@ -64,7 +64,11 @@ export interface WeekPlan {
   status: PlanStatus;
   /** What publishing it early is done from (ADR-0019 §5). */
   version: number;
-  /** When a draft is published, unless a head does it earlier (ADR-0006 §2); none once it is. */
+  /**
+   * When a draft is published, unless a head does it earlier (ADR-0006 §2); none once it is, nor
+   * for the draft of a week begun already, such as the one a household started in, which only a
+   * head publishes (ADR-0007 §3).
+   */
   publishAt: Temporal.ZonedDateTime | null;
   /** Every member, heads first, then adults and children, each by name. */
   members: MemberPlan[];
@@ -172,7 +176,7 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
         status: plan.status,
         version: plan.version,
         publishAt:
-          plan.status === 'draft'
+          plan.status === 'draft' && Temporal.PlainDate.compare(today, start) < 0
             ? planTimes({ start, end }, calendar, timings).publish.toZonedDateTimeISO(timeZone)
             : null,
         members: people.map((person) => ({

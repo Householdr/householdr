@@ -1,4 +1,9 @@
-import { changeHouseholdSettings, createHousehold, membership } from '@householdr/application';
+import {
+  changeHouseholdSettings,
+  createHousehold,
+  membership,
+  startHousehold,
+} from '@householdr/application';
 import { createTestAccount, testSignInContext } from '@householdr/auth/testing';
 import { isHttpError } from '@sveltejs/kit';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -67,7 +72,21 @@ describe('the activity page (ADR-0018 §5)', () => {
           at: test.context.clock.now().epochMilliseconds,
           actor: 'Robin',
           action: 'household.name',
+          setBeforeStart: null,
         },
+      ],
+    });
+    // Starting it lists what was set for others before, by name: nothing here (ADR-0007 §2).
+    test.context.clock.advance({ hours: 1 });
+    await startHousehold({ ...test.context, ...head }, { when: 'week start' });
+    expect(await opened({ flags: { 'activity-log': true }, membership: head })).toMatchObject({
+      entries: [
+        {
+          actor: 'Robin',
+          action: 'household.started',
+          setBeforeStart: { shares: [], daysAway: [] },
+        },
+        { action: 'household.name', setBeforeStart: null },
       ],
     });
     expect(await opened({ flags: { 'activity-log': false }, membership: head })).toBe(404);

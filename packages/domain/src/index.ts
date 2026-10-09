@@ -72,7 +72,15 @@ export {
   type PlanTimings,
 } from './plans/plan-times';
 export {
+  comingPlanTimes,
+  defaultStart,
+  firstPlanWeek,
+  startChoices,
+  type StartChoice,
+} from './plans/start';
+export {
   averageWeeklyMinutes,
+  goneDays,
   occurrenceId,
   weekOccurrences,
   type PlanTask,

@@ -4,6 +4,7 @@ import type { Timing } from '../schedules/occurrence';
 import type { HouseholdCalendar } from '../schedules/week';
 import {
   averageWeeklyMinutes,
+  goneDays,
   weekOccurrences,
   type PlanTask,
   type WeekInput,
@@ -247,6 +248,82 @@ describe('weekOccurrences, household away (ADR-0005 §5, clarification)', () => 
   it('still plans a bin put out the evening before the household leaves', () => {
     const result = plan({ tasks: [bins], away: [away('2026-10-13', '2026-10-14')] });
     expect(result.occurrences.map((o) => o.id)).toEqual(['bins@2026-10-13']);
+  });
+});
+
+describe('weekOccurrences, a week planned once it has begun (ADR-0007 §3)', () => {
+  // Thursday 15 October: Monday to Wednesday are gone, as for a household that starts now.
+  const today = date('2026-10-15');
+
+  it('plans none of a schedule’s dates already gone, unlike days the household is away', () => {
+    const result = plan({ tasks: [dishes, vacuum, bins], today });
+    expect(result.occurrences.map((o) => o.id)).toEqual([
+      'dishes@2026-10-15',
+      'dishes@2026-10-16',
+      'dishes@2026-10-17',
+      'dishes@2026-10-18',
+    ]);
+    expect(result).toMatchObject({ planned: true, missed: [], skipped: [] });
+    // Away instead, Wednesday's vacuuming is planned in the days at home (ADR-0005 §5).
+    expect(ids({ tasks: [vacuum], away: [away('2026-10-12', '2026-10-14')] })).toEqual([
+      'vacuum@2026-10-14',
+    ]);
+  });
+
+  it('fills the days left with floating work up to the average times the days left ÷ 7', () => {
+    // Four days of dishes, 120 minutes, against about 224 × 4 / 7 ≈ 128.
+    expect(ids({ tasks: [dishes, fridge], today })).toContain('fridge@2026-10-01');
+    // With an hour of painting it is 180, over the target, so the fridge waits for a later week.
+    expect(ids({ tasks: [dishes, fridge, oneOff('paint', '2026-10-16')], today })).not.toContain(
+      'fridge@2026-10-01',
+    );
+  });
+
+  it('keeps a one-off task, and a "since last done" chore whose clock gone days don’t pause', () => {
+    expect(ids({ tasks: [oneOff('shelf', '2026-10-13'), oven('2026-09-02')], today })).toEqual([
+      'oven@2026-10-14',
+      'shelf@2026-10-13',
+    ]);
+    // Days the household is away do move its due date on (ADR-0004 §8, ADR-0005 §5).
+    expect(
+      ids({ tasks: [oven('2026-09-02')], away: [away('2026-10-12', '2026-10-14')] }),
+    ).not.toContain('oven@2026-10-14');
+  });
+
+  it('plans a week as usual on its first day, or before it', () => {
+    const tasks = [dishes, vacuum, bins, fridge];
+    const usual = ids({ tasks });
+    expect(ids({ tasks, today: date('2026-10-12') })).toEqual(usual);
+    expect(ids({ tasks, today: date('2026-10-01') })).toEqual(usual);
+  });
+
+  it('plans nothing when the household is away for the days left, or the week is over', () => {
+    const awayLeft = [away('2026-10-15', '2026-10-20')];
+    expect(plan({ tasks: [dishes], today, away: awayLeft }).planned).toBe(false);
+    expect(plan({ tasks: [dishes], today: date('2026-10-19') }).planned).toBe(false);
+  });
+});
+
+describe('goneDays (ADR-0007 §3)', () => {
+  const thisWeek = { start: date('2026-10-12'), end: date('2026-10-19') };
+  const shownDays = (days: ReturnType<typeof goneDays>) =>
+    days.map((d) => [d.from.toString(), d.to.toString()]);
+
+  it('is the days of the week before today', () => {
+    expect(shownDays(goneDays(thisWeek, date('2026-10-15')))).toEqual([
+      ['2026-10-12', '2026-10-14'],
+    ]);
+    expect(shownDays(goneDays(thisWeek, date('2026-10-18')))).toEqual([
+      ['2026-10-12', '2026-10-17'],
+    ]);
+  });
+
+  it('is none on its first day or before, and all of it once it is over', () => {
+    expect(goneDays(thisWeek, date('2026-10-12'))).toEqual([]);
+    expect(goneDays(thisWeek, date('2026-10-02'))).toEqual([]);
+    expect(shownDays(goneDays(thisWeek, date('2026-10-25')))).toEqual([
+      ['2026-10-12', '2026-10-18'],
+    ]);
   });
 });
 

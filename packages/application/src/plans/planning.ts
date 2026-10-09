@@ -9,7 +9,7 @@ import {
 } from '@householdr/domain';
 import { and, gte, lt } from 'drizzle-orm';
 import * as v from 'valibot';
-import type { HouseholdsContext } from '../households/membership';
+import type { HouseholdsContext } from '../households/context';
 import type { Clock } from '../ports';
 import { calendarColumns, calendarOf } from '../shares/member-share';
 

@@ -66,7 +66,7 @@ export const flags = {
   plans: {
     kind: 'release',
     description:
-      'Drafting and publishing each week’s plan, by the scheduler and early by heads, and the plan’s page (ADR-0006 §1–§2, ADR-0001 §7).',
+      'Starting a household, which plans begin with (ADR-0007 §2 step 7, §3); drafting and publishing each week’s plan, by the scheduler and early by heads, and the plan’s page (ADR-0006 §1–§2, ADR-0001 §7).',
     owner: 'Jens',
     expires: '2027-03-31',
   },

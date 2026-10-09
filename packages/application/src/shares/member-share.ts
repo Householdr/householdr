@@ -10,7 +10,7 @@ import {
   type ShareBasis,
 } from '@householdr/domain';
 import { and, asc, gte, inArray } from 'drizzle-orm';
-import type { HouseholdContext } from '../households/membership';
+import type { HouseholdContext } from '../households/context';
 
 /** A temporary share, both days included, as `YYYY-MM-DD` (ADR-0001 §4, clarifications). */
 export interface PlannedShare {
