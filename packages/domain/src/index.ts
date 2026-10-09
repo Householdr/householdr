@@ -94,6 +94,7 @@ export { changeStartDay, planWeek, type HouseholdCalendar, type PlanWeek } from 
 export { intervalTimesPerYear, timesPerYear } from './schedules/yearly';
 export { fairFractions, type PortionBasis } from './shares/fair-portion';
 export {
+  setShares,
   weekShare,
   type ShareBasis,
   type ShareSettings,

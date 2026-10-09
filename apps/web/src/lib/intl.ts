@@ -56,3 +56,8 @@ export function timeZoneName(timeZone: string, locale: string, at = Date.now()) 
     .find((part) => part.type === 'timeZoneName')?.value;
   return zone === undefined ? city : m['time-zone.name']({ city, zone });
 }
+
+/** `percent` (such as 36) as a percentage in `locale`, such as “36%” or “36 %”. */
+export function percentage(percent: number, locale: string) {
+  return new Intl.NumberFormat(locale, { style: 'percent' }).format(percent / 100);
+}

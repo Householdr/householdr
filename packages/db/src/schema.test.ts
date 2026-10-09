@@ -104,6 +104,21 @@ describe('members', () => {
     );
   });
 
+  it('keeps a share a head set within none to a full one (ADR-0001 §4)', async () => {
+    expect(
+      await refusal(addMember({ name: 'Alex', role: 'adult', sharePercent: 0 })),
+    ).toBeUndefined();
+    expect(
+      await refusal(addMember({ name: 'Alex', role: 'adult', sharePercent: 100 })),
+    ).toBeUndefined();
+    expect(await refusal(addMember({ name: 'Alex', role: 'adult', sharePercent: 101 }))).toBe(
+      'members_share_percent',
+    );
+    expect(await refusal(addMember({ name: 'Alex', role: 'adult', sharePercent: -1 }))).toBe(
+      'members_share_percent',
+    );
+  });
+
   it('needs a name and a known role', async () => {
     expect(await refusal(addMember({ name: '', role: 'adult' }))).toBe('members_name');
     expect(await refusal(addMember({ name: 'Alex', role: 'owner' as 'adult' }))).toBe(

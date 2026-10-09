@@ -9,6 +9,7 @@ describe('withForcedFlags (ADR-0015 §10)', () => {
     passkeys: false,
     'household-settings': false,
     'activity-log': false,
+    shares: false,
   };
 
   it('turns the flags a test names on or off, and leaves the rest', () => {

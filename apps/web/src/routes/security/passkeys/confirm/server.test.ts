@@ -47,6 +47,7 @@ const on = {
   passkeys: true,
   'household-settings': false,
   'activity-log': false,
+  shares: false,
 };
 let next = 0;
 
