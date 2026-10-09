@@ -10,7 +10,13 @@
   <span class="font-medium wrap-break-word">{item.task}</span>
   <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
     <dt class="text-muted-foreground">{m['plan.day']()}</dt>
-    <dd><time datetime={item.date}>{item.day}</time></dd>
+    <dd>
+      {#if item.anyDay}
+        {item.day}
+      {:else}
+        <time datetime={item.date}>{item.day}</time>
+      {/if}
+    </dd>
     {#if item.points !== null}
       <dt class="text-muted-foreground">{m['plan.points-label']()}</dt>
       <dd>{item.points}</dd>

@@ -309,6 +309,8 @@
   "plan.gone": "There’s no draft to publish any more.",
   "plan.any-time": "Each task can be done any day of its week.",
   "plan.day": "Day",
+  "plan.any-day-this-week": "Any day this week",
+  "plan.any-day-next-week": "Any day next week",
   "plan.points-label": "Points",
   "plan.why": "Why",
   "plan.nothing": "Nothing this week.",

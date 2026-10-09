@@ -34,14 +34,36 @@ describe('the scheduler’s timing (ADR-0006 §2, ADR-0008 §10)', () => {
     );
   });
 
-  it('drafts before it publishes, and publishes before the week starts', () => {
+  it('drafts no later than it publishes, and publishes no later than the week starts', () => {
     fc.assert(
       fc.property(calendar, instant, timings, (c, now, t) => {
         const next = nextPlanWeek(now, c);
         const times = planTimes(next, c, t);
-        const start = startOf(next.start, c);
-        expect(times.draft.until(times.publish).total('hours')).toBe(t.draft - t.publish);
-        expect(times.publish.until(start).total('hours')).toBe(t.publish);
+        // Equal only where the clocks skip the hour between them, as in the Azores at midnight.
+        expect(Temporal.Instant.compare(times.draft, times.publish)).toBeLessThanOrEqual(0);
+        expect(Temporal.Instant.compare(times.publish, startOf(next.start, c))).toBeLessThanOrEqual(
+          0,
+        );
+      }),
+    );
+  });
+
+  it('counts the hours on the local clock, moving a time the clocks skip on past them', () => {
+    fc.assert(
+      fc.property(calendar, instant, timings, (c, now, t) => {
+        const next = nextPlanWeek(now, c);
+        const times = planTimes(next, c, t);
+        for (const step of ['draft', 'publish'] as const) {
+          const meant = next.start.toPlainDateTime().subtract({ hours: t[step] });
+          const shown = times[step].toZonedDateTimeISO(c.timeZone).toPlainDateTime();
+          const later = meant.until(shown).total('minutes');
+          if (later === 0) continue;
+          // Only a time that doesn't exist there moves, by the hour the clocks skip.
+          expect(later).toBe(60);
+          expect(() => meant.toZonedDateTime(c.timeZone, { disambiguation: 'reject' })).toThrow(
+            RangeError,
+          );
+        }
       }),
     );
   });

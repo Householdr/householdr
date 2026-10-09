@@ -65,6 +65,24 @@ describe('queueDuePlanSteps (ADR-0006 §2, ADR-0008 §10)', () => {
     expect(await tick(publishTime, h)).toEqual([]);
   });
 
+  it('catches up on a week begun without its plan published, as after a stop (§2, clarification)', async () => {
+    const h = await plannedHousehold(db);
+    await draftPlan(h.scheduler, { week: '2026-10-12' });
+    // Tuesday 13 October: the scheduler missed Sunday's publish time.
+    expect(await tick('2026-10-13T08:00:00Z', h)).toEqual([
+      ['plan-publish', h.householdId, '2026-10-12'],
+    ]);
+    await publishPlan(h.scheduler, { week: '2026-10-12' });
+    expect(await tick('2026-10-13T08:01:00Z', h)).toEqual([]);
+  });
+
+  it('catches up on a week begun with no plan at all, drafting it first (§2, clarification)', async () => {
+    const h = await plannedHousehold(db);
+    expect(await tick('2026-10-13T08:00:00Z', h)).toEqual([
+      ['plan-draft', h.householdId, '2026-10-12'],
+    ]);
+  });
+
   it('queues nothing for a household in setup, or before its first plan week (ADR-0007 §2)', async () => {
     const inSetup = await plannedHousehold(db, { started: null });
     const later = await plannedHousehold(db, { started: '2026-10-19' });

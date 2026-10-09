@@ -1090,6 +1090,14 @@
     "note": "Label, in a task of the plan, of the day it is planned for.",
     "needsReview": ["nl"]
   },
+  "plan.any-day-this-week": {
+    "note": "In this week's plan, instead of a day, for a task from an earlier week that can be done any day of this one.",
+    "needsReview": ["nl"]
+  },
+  "plan.any-day-next-week": {
+    "note": "In next week's plan, instead of a day, for a task from an earlier week that can be done any day of that one.",
+    "needsReview": ["nl"]
+  },
   "plan.points-label": {
     "note": "Label, in the reader's own tasks, of the points the task costs them (ADR-0001 §5).",
     "needsReview": ["nl"]

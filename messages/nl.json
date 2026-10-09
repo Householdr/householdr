@@ -309,6 +309,8 @@
   "plan.gone": "Er is geen ontwerp meer om te publiceren.",
   "plan.any-time": "Elke taak kan op elke dag van haar week.",
   "plan.day": "Dag",
+  "plan.any-day-this-week": "Een dag naar keuze deze week",
+  "plan.any-day-next-week": "Een dag naar keuze volgende week",
   "plan.points-label": "Punten",
   "plan.why": "Waarom",
   "plan.nothing": "Niets deze week.",

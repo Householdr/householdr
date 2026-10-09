@@ -68,20 +68,34 @@ describe('planTimes (ADR-0006 §2)', () => {
     expect(local(times.publish)).toBe('2026-10-11T23:00:00');
   });
 
-  it('counts elapsed hours when the clocks go back in the weekend before (TEST-2)', () => {
+  it('counts hours on the local clock when the clocks go back in the weekend before (TEST-2)', () => {
     // The clocks go back at 03:00 on Sunday 25 October 2026: that day has 25 hours.
     const times = planTimes(week('2026-10-26'), brussels, defaultPlanTimings);
-    expect(times.draft.toString()).toBe('2026-10-23T23:00:00Z');
-    expect(local(times.draft)).toBe('2026-10-24T01:00:00');
+    expect(times.draft.toString()).toBe('2026-10-23T22:00:00Z');
+    expect(local(times.draft)).toBe('2026-10-24T00:00:00');
     expect(local(times.publish)).toBe('2026-10-25T12:00:00');
   });
 
-  it('counts elapsed hours when the clocks go forward in the weekend before (TEST-2)', () => {
+  it('counts hours on the local clock when the clocks go forward in the weekend before (TEST-2)', () => {
     // The clocks go forward at 02:00 on Sunday 29 March 2026: that day has 23 hours.
     const times = planTimes(week('2026-03-30'), brussels, defaultPlanTimings);
-    expect(times.draft.toString()).toBe('2026-03-27T22:00:00Z');
-    expect(local(times.draft)).toBe('2026-03-27T23:00:00');
+    expect(times.draft.toString()).toBe('2026-03-27T23:00:00Z');
+    expect(local(times.draft)).toBe('2026-03-28T00:00:00');
     expect(local(times.publish)).toBe('2026-03-29T12:00:00');
+  });
+
+  it('moves a time the clocks skip on by as much as they skip (TEST-2)', () => {
+    // 22 hours before Monday 30 March is 02:00 on Sunday, which the clocks skip to 03:00.
+    const times = planTimes(week('2026-03-30'), brussels, { draft: 22, publish: 12 });
+    expect(local(times.draft)).toBe('2026-03-29T03:00:00');
+    expect(times.draft.toString()).toBe('2026-03-29T01:00:00Z');
+  });
+
+  it('takes the first of a time the clocks go through twice (TEST-2)', () => {
+    // 22 hours before Monday 26 October is 02:00 on Sunday, which comes twice: first in summer time.
+    const times = planTimes(week('2026-10-26'), brussels, { draft: 22, publish: 12 });
+    expect(local(times.draft)).toBe('2026-10-25T02:00:00');
+    expect(times.draft.toString()).toBe('2026-10-25T00:00:00Z');
   });
 
   it('starts the week at midnight where the household is', () => {

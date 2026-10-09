@@ -4,7 +4,8 @@ import { awayThroughout } from './week-occurrences';
 
 /**
  * When a household's plans are drafted and published: whole hours before the plan week starts, at
- * 00:00 on its first day in the household's time zone (ADR-0006 §2). The draft comes first.
+ * 00:00 on its first day, on the household's local clock (ADR-0006 §2, clarification). The draft
+ * comes first.
  */
 export interface PlanTimings {
   draft: number;
@@ -31,19 +32,19 @@ export function nextPlanWeek(now: Temporal.Instant, calendar: HouseholdCalendar)
 
 /**
  * When `week`'s plan is drafted and when it is published: the timings' hours before the week
- * starts. Hours are elapsed time, so across a change of the clocks the local time is an hour off:
- * 48 hours before a Monday after the clocks went back is Saturday 01:00.
+ * starts, counted on the household's local clock (ADR-0006 §2, clarification), so 48 hours before
+ * a Monday is Saturday 00:00, also when the clocks change that weekend. A time the clocks skip
+ * comes as much later as they skip, and one they go through twice is the first of the two.
  */
 export function planTimes(
   week: PlanWeek,
   calendar: HouseholdCalendar,
   timings: PlanTimings,
 ): Record<PlanStep, Temporal.Instant> {
-  const start = week.start.toZonedDateTime({ timeZone: calendar.timeZone }).toInstant();
-  return {
-    draft: start.subtract({ hours: timings.draft }),
-    publish: start.subtract({ hours: timings.publish }),
-  };
+  const start = week.start.toPlainDateTime();
+  const before = (hours: number) =>
+    start.subtract({ hours }).toZonedDateTime(calendar.timeZone).toInstant();
+  return { draft: before(timings.draft), publish: before(timings.publish) };
 }
 
 /** A household as the scheduler sees it (ADR-0006 §2, ADR-0007 §2, ADR-0008 §10). */
