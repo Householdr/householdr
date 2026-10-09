@@ -9,6 +9,7 @@ import {
   pgTable,
   smallint,
   text,
+  timestamp,
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
@@ -104,4 +105,25 @@ export const members = pgTable(
     check('members_role', sql`${t.role} in ('head', 'adult', 'child')`),
     check('members_birth_date', sql`(${t.role} = 'child') = (${t.birthDate} is not null)`),
   ],
+);
+
+/**
+ * The invitation link of a profile without an account (ADR-0010 §5): one per profile, since making
+ * a new one replaces the old, and only the hash of its token, which is in the link alone (SEC-7).
+ */
+export const invitations = pgTable(
+  'invitations',
+  {
+    memberId: uuid()
+      .primaryKey()
+      .references(() => members.id, { onDelete: 'cascade' }),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    /** The SHA-256 of the link's token, in base64url. */
+    tokenHash: text().notNull().unique('invitations_token_hash'),
+    /** A link works for 7 days (ADR-0010 §5). */
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+  },
+  (t) => [householdOnly(t.householdId), index('invitations_household').on(t.householdId)],
 );

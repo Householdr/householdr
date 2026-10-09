@@ -1,6 +1,8 @@
 <script lang="ts">
   import { enhance, type SubmitFunction } from '$app/forms';
   import { goto } from '$app/navigation';
+  import { page } from '$app/state';
+  import { afterSignIn } from '#lib/after-sign-in.js';
   import ErrorSummary from '#lib/components/ErrorSummary.svelte';
   import { Button } from '#lib/components/ui/button/index.js';
   import { Input } from '#lib/components/ui/input/index.js';
@@ -14,7 +16,7 @@
 
   /** Signs in with a passkey, then goes where a password sign-in goes. */
   async function signInWithPasskey() {
-    if (await passkeys.sign('/sign-in/passkey')) await goto('/');
+    if (await passkeys.sign('/sign-in/passkey')) await goto(afterSignIn(page.url));
   }
 
   /** A password sign-in replaces what a passkey's failure said. */

@@ -24,13 +24,18 @@ const newAccount = async () => {
 };
 
 /** Sends the form, with the flag on unless said otherwise, and returns what came of it. */
-const submit = async (fields: Record<string, string>, flags = { 'sign-in': true }) => {
+const submit = async (
+  fields: Record<string, string>,
+  flags = { 'sign-in': true },
+  address = 'https://householdr.example.org/sign-in',
+) => {
   const body = new FormData();
   for (const [name, value] of Object.entries(fields)) body.set(name, value);
   const set = vi.fn();
   const event = {
     locals: { flags },
-    request: new Request('https://householdr.example.org/sign-in', { method: 'POST', body }),
+    request: new Request(address, { method: 'POST', body }),
+    url: new URL(address),
     cookies: { set },
     getClientAddress: () => '192.0.2.1',
   } as unknown as Parameters<typeof actions.default>[0];
@@ -73,6 +78,18 @@ describe('the sign-in page (ADR-0010 §2)', () => {
       expect.any(String),
       expect.objectContaining({ path: '/', secure: true, httpOnly: true, sameSite: 'lax' }),
     );
+  });
+
+  it('goes back to the invitation it came from, and nowhere else (ADR-0010 §5)', async () => {
+    const email = await newAccount();
+    const at = (next: string) =>
+      submit({ email, password }, undefined, `https://householdr.example.org/sign-in?next=${next}`);
+    const back = await at('invitation');
+    expect(isRedirect(back.thrown) && back.thrown).toMatchObject({ location: '/invitation' });
+    for (const next of ['https://example.com', '//example.com', '/security']) {
+      const elsewhere = await at(encodeURIComponent(next));
+      expect(isRedirect(elsewhere.thrown) && elsewhere.thrown).toMatchObject({ location: '/' });
+    }
   });
 
   it('keeps the e-mail address but not the password when signing in fails (UI-10)', async () => {

@@ -15,3 +15,17 @@ export async function accountHouseholds(
   );
   return rows.map((row) => row.id);
 }
+
+/**
+ * The id of the household whose invitation's token hashes to `tokenHash`, if any, found before one
+ * is set (ADR-0008 §9, clarifications; ADR-0010 §5). Read the invitation itself with `inHousehold`.
+ */
+export async function invitationHousehold(
+  db: Database | Transaction,
+  tokenHash: string,
+): Promise<string | null> {
+  const { rows } = await db.execute<{ id: string }>(
+    sql`select invitation_household(${tokenHash}) as id`,
+  );
+  return rows[0]?.id ?? null;
+}

@@ -1,5 +1,6 @@
 import { signInWithPassword } from '@householdr/auth';
 import { error, fail, redirect } from '@sveltejs/kit';
+import { afterSignIn } from '#lib/after-sign-in.js';
 import { authContext } from '#lib/server/auth.js';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -16,7 +17,7 @@ export const load: PageServerLoad = ({ locals, url }) => {
 
 export const actions = {
   // Signs in with an e-mail address and a password (ADR-0010 §2).
-  default: async ({ locals, request, cookies, getClientAddress }) => {
+  default: async ({ locals, request, cookies, getClientAddress, url }) => {
     needsFlag(locals);
     const form = await request.formData();
     const email = form.get('email');
@@ -28,8 +29,7 @@ export const actions = {
     );
     if (result.ok) {
       for (const cookie of result.cookies) cookies.set(cookie.name, cookie.value, cookie.options);
-      // The account's household, or the list of them (ADR-0005 §1).
-      redirect(303, '/');
+      redirect(303, afterSignIn(url));
     }
     // The e-mail address stays in the form; the password never comes back (UI-10).
     const typed = typeof email === 'string' ? email : '';

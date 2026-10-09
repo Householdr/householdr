@@ -186,5 +186,36 @@
   "household.add": "Toevoegen",
   "household.added": "{name} is toegevoegd. Laat het hen weten: zodra ze aansluiten met een eigen account, zien ze alles wat over hen is vastgelegd.",
   "household.add-failed": "Toevoegen is niet gelukt",
-  "household.invalid-name": "Vul hun naam in, tot 100 tekens."
+  "household.invalid-name": "Vul hun naam in, tot 100 tekens.",
+  "household.invite": "{name} uitnodigen",
+  "household.new-link": "Een nieuwe link maken voor {name}",
+  "household.revoke": "De link van {name} intrekken",
+  "household.link": "Uitnodigingslink voor {name}",
+  "household.link-help": "Stuur deze link naar {name}. Hij werkt één keer, 7 dagen lang. Wie hem opent, kan aansluiten als {name}, dus stuur hem alleen naar hen.",
+  "household.link-out": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Er staat een uitnodigingslink uit. Hij werkt nog {count} dag.",
+        "countPlural=other": "Er staat een uitnodigingslink uit. Hij werkt nog {count} dagen."
+      }
+    }
+  ],
+  "household.copy": "De link kopiëren",
+  "household.copied": "De link is gekopieerd.",
+  "household.revoked": "De link van {name} is ingetrokken: hij werkt niet meer.",
+  "household.not-invitable": "Dat profiel kan niet meer uitgenodigd worden. Misschien is die persoon al aangesloten.",
+  "household.joined-as": "Aangesloten als {name}, {email}",
+  "invitation.page-title": "Uitnodiging · Householdr",
+  "invitation.title": "Aansluiten bij {household}",
+  "invitation.title-expired": "Uitnodiging",
+  "invitation.invited": "Je bent uitgenodigd om op Householdr aan te sluiten bij {household} als {profile}.",
+  "invitation.sign-in-first": "Meld je aan om de uitnodiging aan te nemen.",
+  "invitation.sign-in": "Aanmelden",
+  "invitation.accept": "Aansluiten bij het huishouden",
+  "invitation.failed": "Aansluiten is niet gelukt",
+  "invitation.member": "Je bent al lid van {household}.",
+  "invitation.not-allowed": "Bevestig eerst je e-mailadres: dat is nodig om bij een huishouden aan te sluiten.",
+  "invitation.expired": "Deze uitnodiging is verlopen of al gebruikt. Vraag wie je uitnodigde om een nieuwe link."
 }
