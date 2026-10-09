@@ -287,5 +287,22 @@
   "shares.failed": "Saving didn’t work",
   "shares.check": "Check the share you entered.",
   "shares.invalid": "Enter a whole number from {min} to {max}.",
-  "shares.conflict": "{name} changed a moment ago, so your change wasn’t saved. Their share is {share} this week. What you entered is still in the form, so you can save it again."
+  "shares.conflict": "{name} changed a moment ago, so your change wasn’t saved. Their share is {share} this week. What you entered is still in the form, so you can save it again.",
+  "shares.temporary-this-week": "{share} this week, with a temporary share",
+  "shares.temporary-list": "Temporary shares for {name}",
+  "shares.temporary": "{share} for {days}",
+  "shares.remove-temporary": "Remove {name}’s {share} for {days}",
+  "shares.add-temporary": "Add a temporary share for {name}",
+  "shares.temporary-hint": "On the days you choose, both included, it replaces the share. It can start this week, and up to a year ahead. No reason is asked or kept.",
+  "shares.first-day": "First day",
+  "shares.last-day": "Last day",
+  "shares.temporary-field": "Share on those days (%)",
+  "shares.add-temporary-button": "Add {name}’s temporary share",
+  "shares.added-temporary": "{name}’s temporary share is added.",
+  "shares.removed-temporary": "{name}’s temporary share is removed.",
+  "shares.check-temporary": "Check the temporary share you entered.",
+  "shares.invalid-first-day": "Choose a day from {earliest} to {latest}.",
+  "shares.invalid-last-day": "Choose a day from the first day to {latest}.",
+  "shares.overlap": "{name} already has a temporary share of {share} for {days}, and two can’t share a day. Choose other days, or remove that one first.",
+  "shares.overlap-days": "Choose days outside {days}."
 }

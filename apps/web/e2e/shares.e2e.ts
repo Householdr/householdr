@@ -21,7 +21,52 @@ const withSam = async (page: Page, id: string) => {
   await expect(page).toHaveTitle('Shares · Householdr');
 };
 
-const items = (page: Page) => page.getByRole('list', { name: 'Shares' }).getByRole('listitem');
+const items = (page: Page) =>
+  page.getByRole('list', { name: 'Shares', exact: true }).locator(':scope > li');
+
+/** The days from `first` to `last` days from today in Brussels, as the form takes and the page says them. */
+const daysAhead = (first: number, last: number) => {
+  const today = Temporal.Now.plainDateISO('Europe/Brussels');
+  const from = today.add({ days: first });
+  const to = today.add({ days: last });
+  const utc = (day: Temporal.PlainDate) => day.toZonedDateTime('UTC').epochMilliseconds;
+  // An English page for an en-BE account, as the test accounts are (ADR-0008 §6, clarification).
+  const format = new Intl.DateTimeFormat('en-BE', { dateStyle: 'long', timeZone: 'UTC' });
+  return {
+    firstDay: from.toString(),
+    lastDay: to.toString(),
+    said: format.formatRange(utc(from), utc(to)),
+  };
+};
+
+/**
+ * `text` as a pattern that takes any spaces where it has some: the page's Intl and the test's can
+ * space a range of days differently, such as with a thin space around the dash.
+ */
+const loosely = (text: string, { whole = false } = {}) => {
+  const pattern = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s*');
+  return new RegExp(whole ? `^${pattern}$` : pattern);
+};
+
+/** Sam's form for a temporary share, which every member has one of. */
+const samsTemporary = (page: Page) =>
+  page.locator('details', { hasText: 'Add a temporary share for Sam' });
+
+/** Adds a temporary share for Sam through its form, opening it if it's closed. */
+const addTemporary = async (
+  page: Page,
+  { firstDay, lastDay }: { firstDay: string; lastDay: string },
+  percent: string,
+) => {
+  const form = samsTemporary(page);
+  if (!(await form.getByLabel('First day').isVisible())) {
+    await form.getByText('Add a temporary share for Sam').click();
+  }
+  await form.getByLabel('First day').fill(firstDay);
+  await form.getByLabel('Last day').fill(lastDay);
+  await form.getByLabel('Share on those days (%)').fill(percent);
+  await form.getByRole('button', { name: 'Add Sam’s temporary share' }).click();
+};
 
 for (const javaScriptEnabled of [true, false]) {
   test.describe(javaScriptEnabled ? 'with JavaScript' : 'without JavaScript (CODE-13)', () => {
@@ -113,6 +158,63 @@ for (const javaScriptEnabled of [true, false]) {
       await page.getByRole('button', { name: 'Save Sam’s share' }).click();
       await expect(page.getByRole('status')).toHaveText('Sam’s share is saved.');
       await expect(items(page).nth(1)).toContainText('70% this week, set by a head');
+    });
+
+    test('a head plans a temporary share, and removes it', async ({ page, accounts, account }) => {
+      await accounts.addSecondFactor(account.email);
+      const id = await accounts.addHousehold(account.email, 'Ash Lane');
+      await signIn(page, account, `/households/${id}`);
+      await withSam(page, id);
+      const nextWeek = daysAhead(7, 13);
+      await addTemporary(page, nextWeek, '50');
+      await expect(page.getByRole('status')).toHaveText('Sam’s temporary share is added.');
+      const planned = page.getByRole('list', { name: 'Temporary shares for Sam' });
+      await expect(planned.getByRole('listitem')).toHaveText([loosely(`50% for ${nextWeek.said}`)]);
+      if (javaScriptEnabled) await expectAccessible(page, 'temporary');
+
+      await page
+        .getByRole('button', { name: loosely(`Remove Sam’s 50% for ${nextWeek.said}`) })
+        .click();
+      await expect(page.getByRole('status')).toHaveText('Sam’s temporary share is removed.');
+      await expect(planned).toHaveCount(0);
+    });
+
+    test('a temporary share that isn’t valid, or overlaps another, is kept, with why', async ({
+      page,
+      accounts,
+      account,
+    }) => {
+      await accounts.addSecondFactor(account.email);
+      const id = await accounts.addHousehold(account.email, 'Ash Lane');
+      await signIn(page, account, `/households/${id}`);
+      await withSam(page, id);
+      const backwards = { firstDay: daysAhead(9, 9).firstDay, lastDay: daysAhead(7, 7).lastDay };
+      const form = samsTemporary(page);
+      await form.getByText('Add a temporary share for Sam').click();
+      await form.locator('form').evaluate((element) => {
+        if (element instanceof HTMLFormElement) element.noValidate = true;
+      });
+      await addTemporary(page, backwards, '50');
+      const summary = page.getByRole('region', { name: 'Saving didn’t work' });
+      await expect(summary).toBeFocused();
+      await expect(summary.getByRole('link')).toHaveText([/^Choose a day from the first day to /]);
+      await expect(form.getByLabel('First day')).toHaveValue(backwards.firstDay);
+      await expect(form.getByLabel('Last day')).toHaveValue(backwards.lastDay);
+      await expect(form.getByLabel('Last day')).toHaveAttribute('aria-invalid', 'true');
+      if (javaScriptEnabled) await expectAccessible(page, 'temporary-invalid');
+
+      const nextWeek = daysAhead(7, 13);
+      await addTemporary(page, nextWeek, '50');
+      await expect(page.getByRole('status')).toHaveText('Sam’s temporary share is added.');
+      await addTemporary(page, daysAhead(13, 15), '20');
+      await expect(summary).toBeFocused();
+      await expect(summary).toContainText(
+        loosely(`Sam already has a temporary share of 50% for ${nextWeek.said}`),
+      );
+      await expect(summary.getByRole('link')).toHaveText([
+        loosely(`Choose days outside ${nextWeek.said}.`, { whole: true }),
+      ]);
+      await expect(form.getByLabel('Share on those days (%)')).toHaveValue('20');
     });
   });
 }

@@ -969,5 +969,73 @@
   "shares.conflict": {
     "note": "Shown when someone changed the member since the page was loaded (ADR-0019 §5). {name} is the member's name, {share} a formatted percentage.",
     "needsReview": ["nl"]
+  },
+  "shares.temporary-this-week": {
+    "note": "A member's share this week when a temporary share covers some of its days. {share} is a formatted percentage, such as 43%.",
+    "needsReview": ["nl"]
+  },
+  "shares.temporary-list": {
+    "note": "Accessible name of the list of a member's temporary shares.",
+    "needsReview": ["nl"]
+  },
+  "shares.temporary": {
+    "note": "A temporary share. {share} is a formatted percentage, such as 50%; {days} a formatted range of days, such as 12–18 October 2026.",
+    "needsReview": ["nl"]
+  },
+  "shares.remove-temporary": {
+    "note": "Button that removes a temporary share. {share} is a formatted percentage, {days} a formatted range of days.",
+    "needsReview": ["nl"]
+  },
+  "shares.add-temporary": {
+    "note": "Opens the form that adds a temporary share for a member.",
+    "needsReview": ["nl"]
+  },
+  "shares.temporary-hint": {
+    "note": "Hint of the form that adds a temporary share (ADR-0001 §4, ADR-0012 §2: no reason is stored).",
+    "needsReview": ["nl"]
+  },
+  "shares.first-day": {
+    "note": "Label of the first day of a temporary share.",
+    "needsReview": ["nl"]
+  },
+  "shares.last-day": {
+    "note": "Label of the last day of a temporary share.",
+    "needsReview": ["nl"]
+  },
+  "shares.temporary-field": {
+    "note": "Label of the share of a temporary share, in percent.",
+    "needsReview": ["nl"]
+  },
+  "shares.add-temporary-button": {
+    "note": "Button that adds the temporary share.",
+    "needsReview": ["nl"]
+  },
+  "shares.added-temporary": {
+    "note": "Status after adding a temporary share.",
+    "needsReview": ["nl"]
+  },
+  "shares.removed-temporary": {
+    "note": "Status after removing a temporary share.",
+    "needsReview": ["nl"]
+  },
+  "shares.check-temporary": {
+    "note": "Error summary message when a temporary share isn't valid.",
+    "needsReview": ["nl"]
+  },
+  "shares.invalid-first-day": {
+    "note": "Why the first day of a temporary share wasn't accepted. {earliest} and {latest} are formatted dates, such as 12 October 2026.",
+    "needsReview": ["nl"]
+  },
+  "shares.invalid-last-day": {
+    "note": "Why the last day of a temporary share wasn't accepted. {latest} is a formatted date.",
+    "needsReview": ["nl"]
+  },
+  "shares.overlap": {
+    "note": "Shown when a new temporary share would overlap one the member has. {share} is a formatted percentage, {days} a formatted range of days.",
+    "needsReview": ["nl"]
+  },
+  "shares.overlap-days": {
+    "note": "Next to the first day, when a temporary share would overlap another. {days} is a formatted range of days.",
+    "needsReview": ["nl"]
   }
 }
