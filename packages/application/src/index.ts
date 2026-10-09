@@ -41,6 +41,8 @@ export {
   type HouseholdMember,
   type HouseholdsContext,
 } from './households/membership';
+export { completeOccurrence } from './completions/complete-occurrence';
+export { undoCompletion } from './completions/undo-completion';
 export { draftPlan } from './plans/draft-plan';
 export { queueDuePlanSteps, type ScheduleContext } from './plans/plan-schedule';
 export type { PlanContext } from './plans/planning';
@@ -48,6 +50,7 @@ export { publishPlan } from './plans/publish-plan';
 export {
   viewPlan,
   type MemberPlan,
+  type PlanCompletion,
   type PlannedAssignment,
   type UnassignedOccurrence,
   type WeekPlan,

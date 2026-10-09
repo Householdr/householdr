@@ -62,6 +62,7 @@ describe('the activity log (ADR-0018 §5)', () => {
         actorId: robin,
         action: 'household.name',
         setBeforeStart: null,
+        subjectId: null,
       },
     ]);
   });
@@ -95,6 +96,40 @@ describe('the activity log (ADR-0018 §5)', () => {
       }),
     );
     expect(await refusal(unknown)).toBe('activity_log_action');
+  });
+
+  it('names whom a completion entry was done to, and keeps it once their profile goes', async () => {
+    const { id, robin } = await withEntry();
+    const [alex] = await inHousehold(db, id, (tx) =>
+      tx
+        .insert(members)
+        .values({ householdId: id, name: 'Alex', role: 'adult' })
+        .returning({ id: members.id }),
+    );
+    if (!alex) throw new Error('No member');
+    const entry = (action: ActivityAction) =>
+      inHousehold(db, id, (tx) =>
+        tx
+          .insert(activityLog)
+          .values({ householdId: id, at: new Date(), actorId: robin, action, subjectId: alex.id }),
+      );
+    expect(await refusal(entry('completion.logged'))).toBeUndefined();
+    expect(await refusal(entry('completion.undone'))).toBeUndefined();
+    // Only the actions done to someone name them (ADR-0018 §5).
+    expect(await refusal(entry('household.name'))).toBe('activity_log_subject');
+    await owner.delete(members).where(eq(members.id, alex.id));
+    const entries = await inHousehold(db, id, (tx) =>
+      tx
+        .select({ action: activityLog.action, subjectId: activityLog.subjectId })
+        .from(activityLog)
+        .where(eq(activityLog.actorId, robin)),
+    );
+    expect(entries).toEqual(
+      expect.arrayContaining([
+        { action: 'completion.logged', subjectId: null },
+        { action: 'completion.undone', subjectId: null },
+      ]),
+    );
   });
 
   it('lists what was set before the start in the start entry only, by member id (ADR-0007 §2)', async () => {

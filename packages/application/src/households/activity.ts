@@ -1,6 +1,7 @@
 import { activityLog, households, inHousehold, members, type ActivityAction } from '@householdr/db';
 import { can } from '@householdr/domain';
 import { desc, eq } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import type { HouseholdContext } from './membership';
 
 /** How many entries the log shows, newest first. */
@@ -23,6 +24,11 @@ export interface ActivityEntry {
   /** The name of who did it, or null for a former member (ADR-0012 §6). */
   actor: string | null;
   action: ActivityAction;
+  /**
+   * For the entries done to someone, such as logging a completion on their behalf, their name, or
+   * null for a former member; null for any other.
+   */
+  subject: string | null;
   /** For the start entry, what was set before, the starter's own share included; null for any other. */
   setBeforeStart: SetBeforeStartNames | null;
 }
@@ -43,16 +49,19 @@ export async function householdActivity(
   return inHousehold(context.db, context.householdId, async (tx) => {
     const [household] = await tx.select({ timeZone: households.timeZone }).from(households);
     if (!household) throw new Error('The household of a member is gone.');
+    const subjects = alias(members, 'subjects');
     const rows = await tx
       .select({
         id: activityLog.id,
         at: activityLog.at,
         actor: members.name,
         action: activityLog.action,
+        subject: subjects.name,
         setBeforeStart: activityLog.setBeforeStart,
       })
       .from(activityLog)
       .leftJoin(members, eq(members.id, activityLog.actorId))
+      .leftJoin(subjects, eq(subjects.id, activityLog.subjectId))
       .orderBy(desc(activityLog.at), desc(activityLog.id))
       .limit(shown);
     const names = rows.some((row) => row.setBeforeStart !== null)

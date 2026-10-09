@@ -219,6 +219,8 @@
   "activity.set-before-start-shares": "Ingesteld vóór de start: aandelen voor {shares}.",
   "activity.set-before-start-days-away": "Ingesteld vóór de start: dagen weg voor {daysAway}.",
   "activity.a-former-member": "een voormalig lid",
+  "activity.completion-logged": "{actor} heeft een taak afgevinkt voor {subject}.",
+  "activity.completion-undone": "{actor} heeft een taak die voor {subject} was afgevinkt ongedaan gemaakt.",
   "household.shares": "Aandelen",
   "shares.page-title": "Aandelen · Householdr",
   "shares.title": "Aandelen",

@@ -5,6 +5,8 @@ import { connect, inHousehold, refuseBypass, type Database } from './connection'
 import {
   absences,
   assignments,
+  completionCredits,
+  completions,
   households,
   members,
   occurrences,
@@ -378,6 +380,128 @@ describe('plans, occurrences and assignments (ADR-0008 §9, CODE-17)', () => {
     }));
     expect(changed).toEqual({ plans: [], assignments: [] });
   });
+
+  describe('completions and their credits (ADR-0006 §4)', () => {
+    /** Completes household `id`'s occurrence for its head, at 30 points, as that household. */
+    const complete = (id: string, own: typeof ashPlan) =>
+      inHousehold(db, id, async (tx) => {
+        const [completion] = await tx
+          .insert(completions)
+          .values({
+            householdId: id,
+            occurrenceId: own.occurrence,
+            planId: own.plan,
+            loggedBy: own.member,
+            at: new Date('2026-10-14T17:00:00Z'),
+          })
+          .returning({ id: completions.id });
+        if (!completion) throw new Error('No completion');
+        await tx.insert(completionCredits).values({
+          householdId: id,
+          completionId: completion.id,
+          memberId: own.member,
+          points: 30,
+        });
+        return completion.id;
+      });
+    let birchCompletion: string;
+    beforeAll(async () => {
+      await complete(ash, ashPlan);
+      birchCompletion = await complete(birch, birchPlan);
+    });
+
+    it('are seen in their own household only', async () => {
+      const seen = (id: string) =>
+        inHousehold(db, id, async (tx) => ({
+          completions: await tx.select({ loggedBy: completions.loggedBy }).from(completions),
+          credits: await tx.select({ member: completionCredits.memberId }).from(completionCredits),
+        }));
+      expect(await seen(ash)).toEqual({
+        completions: [{ loggedBy: ashPlan.member }],
+        credits: [{ member: ashPlan.member }],
+      });
+      expect(await db.select().from(completions)).toEqual([]);
+      expect(await db.select().from(completionCredits)).toEqual([]);
+    });
+
+    it('never refer to another household’s occurrence, plan, member or completion', async () => {
+      // An occurrence not done yet, so only the key each breaks refuses it.
+      const [open] = await inHousehold(db, ash, (tx) =>
+        tx
+          .insert(occurrences)
+          .values({ householdId: ash, taskId: ashPlan.task, date: '2026-10-17', ...window })
+          .returning({ id: occurrences.id }),
+      );
+      if (!open) throw new Error('No occurrence');
+      const own = { ...ashPlan, occurrence: open.id };
+      for (const [constraint, row] of [
+        ['completions_occurrence', { ...own, occurrence: birchPlan.occurrence }],
+        ['completions_plan', { ...own, plan: birchPlan.plan }],
+        ['completions_logged_by', { ...own, member: birchPlan.member }],
+      ] as const) {
+        expect(
+          await refusal(
+            inHousehold(db, ash, (tx) =>
+              tx.insert(completions).values({
+                householdId: ash,
+                occurrenceId: row.occurrence,
+                planId: row.plan,
+                loggedBy: row.member,
+                at: new Date(),
+              }),
+            ),
+          ),
+        ).toBe(constraint);
+      }
+      expect(
+        await refusal(
+          inHousehold(db, ash, (tx) =>
+            tx.insert(completionCredits).values({
+              householdId: ash,
+              completionId: birchCompletion,
+              memberId: ashPlan.member,
+              points: 30,
+            }),
+          ),
+        ),
+      ).toBe('completion_credits_completion');
+    });
+
+    it('cannot be added to, changed in or deleted from another household', async () => {
+      expect(
+        await refusal(
+          inHousehold(db, ash, (tx) =>
+            tx.insert(completions).values({
+              householdId: birch,
+              occurrenceId: birchPlan.occurrence,
+              planId: birchPlan.plan,
+              loggedBy: birchPlan.member,
+              at: new Date(),
+            }),
+          ),
+        ),
+      ).toBe(refusedByRowSecurity);
+      const changed = await inHousehold(db, ash, async (tx) => ({
+        completions: await tx
+          .delete(completions)
+          .where(eq(completions.id, birchCompletion))
+          .returning(),
+        credits: await tx
+          .update(completionCredits)
+          .set({ points: 0 })
+          .where(eq(completionCredits.completionId, birchCompletion))
+          .returning(),
+      }));
+      expect(changed).toEqual({ completions: [], credits: [] });
+    });
+
+    it('keep an occurrence done once, and go with their credits when undone', async () => {
+      expect(await refusal(complete(ash, ashPlan))).toBe('completions_once');
+      await inHousehold(db, ash, (tx) => tx.delete(completions));
+      const left = await inHousehold(db, ash, (tx) => tx.select().from(completionCredits));
+      expect(left).toEqual([]);
+    });
+  });
 });
 
 describe('connect (ADR-0008 §9)', () => {
@@ -435,6 +559,8 @@ describe('every household-owned table (CODE-17)', () => {
       'activity_log',
       'assignments',
       'away_periods',
+      'completion_credits',
+      'completions',
       'households',
       'members',
       'occurrences',

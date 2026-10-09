@@ -219,6 +219,8 @@
   "activity.set-before-start-shares": "Set before the start: shares for {shares}.",
   "activity.set-before-start-days-away": "Set before the start: days away for {daysAway}.",
   "activity.a-former-member": "a former member",
+  "activity.completion-logged": "{actor} marked a task done for {subject}.",
+  "activity.completion-undone": "{actor} undid a task marked done for {subject}.",
   "household.shares": "Shares",
   "shares.page-title": "Shares · Householdr",
   "shares.title": "Shares",

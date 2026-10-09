@@ -190,7 +190,17 @@ export type ActivityAction =
   | 'household.language'
   | 'household.country'
   /** A head started the household, which ends setting it up (ADR-0007 §2 step 7, §3). */
-  | 'household.started';
+  | 'household.started'
+  /**
+   * A member logged a completion that credits another, its subject: on their behalf, or done
+   * together (ADR-0006 §4, ADR-0018 §5). One entry per member credited besides the actor.
+   */
+  | 'completion.logged'
+  /** A member undid a completion that credited another, its subject (ADR-0006 §4, clarification). */
+  | 'completion.undone';
+
+/** The actions whose entries name whom they were done to (ADR-0018 §5). */
+const toWhom = sql.raw(`'completion.logged', 'completion.undone'`);
 
 /**
  * What was set before the household started, which its start entry lists
@@ -230,6 +240,11 @@ export const activityLog = pgTable(
      * whose profile goes stays in it by id, which then names nobody (ADR-0012 §6).
      */
     setBeforeStart: jsonb().$type<SetBeforeStart>(),
+    /**
+     * To whom it was done, for the actions that name one; none once their profile is deleted, when
+     * they show as a former member (ADR-0012 §6). Never a value, such as a task's points.
+     */
+    subjectId: uuid().references(() => members.id, { onDelete: 'set null' }),
   },
   (t) => [
     householdOnly(t.householdId),
@@ -237,8 +252,11 @@ export const activityLog = pgTable(
     check(
       'activity_log_action',
       sql`${t.action} in ('household.name', 'household.timeZone', 'household.language',
-        'household.country', 'household.started')`,
+        'household.country', 'household.started', 'completion.logged', 'completion.undone')`,
     ),
+    // Only the actions done to someone name them. One way only: a subject whose profile goes
+    // leaves the entry without them.
+    check('activity_log_subject', sql`${t.subjectId} is null or ${t.action} in (${toWhom})`),
     // The start entry, and only it, lists what was set before the start: two lists of member ids,
     // and nothing else, so never a value (ADR-0018 §5).
     check(
@@ -565,5 +583,88 @@ export const assignments = pgTable(
       sql`${t.unassignedCause} in ('nobody eligible', 'bound member not eligible',
         'linked member not eligible')`,
     ),
+  ],
+);
+
+/**
+ * A completion of an occurrence (ADR-0006 §4): logged with one tap by a member with an account, for
+ * whoever did it, themselves or someone else, in the published plan of the plan week it was done
+ * in, within which it can be undone. An occurrence is done once: a second tap finds it done
+ * (ADR-0019 §6). Undoing it deletes it, with its credits, and opens the occurrence again.
+ */
+export const completions = pgTable(
+  'completions',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    occurrenceId: uuid().notNull(),
+    /** The published plan of the plan week it was done in. */
+    planId: uuid().notNull(),
+    /** Who logged it: one of those who did it, or someone on their behalf (ADR-0006 §4). */
+    loggedBy: uuid().notNull(),
+    /**
+     * When it was logged, from the clock. Others than those it credits see the day only
+     * (ADR-0018 §3, ADR-0012 §3).
+     */
+    at: timestamp({ withTimezone: true }).notNull(),
+  },
+  (t) => [
+    householdOnly(t.householdId),
+    // Its credits refer to it together with its household, so never to another's.
+    unique('completions_household_id').on(t.householdId, t.id),
+    // An occurrence is done once (ADR-0019 §6).
+    unique('completions_once').on(t.householdId, t.occurrenceId),
+    foreignKey({
+      name: 'completions_occurrence',
+      columns: [t.householdId, t.occurrenceId],
+      foreignColumns: [occurrences.householdId, occurrences.id],
+    }),
+    foreignKey({
+      name: 'completions_plan',
+      columns: [t.householdId, t.planId],
+      foreignColumns: [plans.householdId, plans.id],
+    }),
+    foreignKey({
+      name: 'completions_logged_by',
+      columns: [t.householdId, t.loggedBy],
+      foreignColumns: [members.householdId, members.id],
+    }),
+  ],
+);
+
+/**
+ * A member a completion credits, with the points it credits them: the task's minutes times their
+ * own burden, also when several did it together (ADR-0002 §1, §4). The weekly settlement adds them
+ * up into what each member did.
+ */
+export const completionCredits = pgTable(
+  'completion_credits',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    completionId: uuid().notNull(),
+    memberId: uuid().notNull(),
+    /** Points, at the member's own cost (ADR-0001 §5). */
+    points: doublePrecision().notNull(),
+  },
+  (t) => [
+    householdOnly(t.householdId),
+    // A member is credited once for a completion.
+    unique('completion_credits_once').on(t.completionId, t.memberId),
+    foreignKey({
+      name: 'completion_credits_completion',
+      columns: [t.householdId, t.completionId],
+      foreignColumns: [completions.householdId, completions.id],
+    }).onDelete('cascade'),
+    foreignKey({
+      name: 'completion_credits_member',
+      columns: [t.householdId, t.memberId],
+      foreignColumns: [members.householdId, members.id],
+    }),
+    check('completion_credits_points', sql`${t.points} >= 0`),
   ],
 );

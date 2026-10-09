@@ -730,6 +730,14 @@
     "note": "Stands for a name in the lists of 'Set before the start' when the person is no longer a member. Lower case, as it sits in a sentence.",
     "needsReview": ["nl"]
   },
+  "activity.completion-logged": {
+    "note": "An entry of the activity log: someone marked a task done that {subject} is credited for, on their behalf or done together (ADR-0018 §5). {subject} is a name or 'a former member'. Never which task or its points.",
+    "needsReview": ["nl"]
+  },
+  "activity.completion-undone": {
+    "note": "An entry of the activity log: someone undid a task that {subject} was credited for (ADR-0006 §4, ADR-0018 §5). {subject} is a name or 'a former member'.",
+    "needsReview": ["nl"]
+  },
   "household.shares": {
     "note": "Link from the household page to its shares page.",
     "needsReview": ["nl"]

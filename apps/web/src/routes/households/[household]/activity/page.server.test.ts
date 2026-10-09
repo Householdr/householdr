@@ -72,6 +72,7 @@ describe('the activity page (ADR-0018 §5)', () => {
           at: test.context.clock.now().epochMilliseconds,
           actor: 'Robin',
           action: 'household.name',
+          subject: null,
           setBeforeStart: null,
         },
       ],

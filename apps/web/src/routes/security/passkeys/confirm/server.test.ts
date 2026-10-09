@@ -51,6 +51,7 @@ const on = {
   availability: false,
   tasks: false,
   plans: false,
+  completions: false,
 };
 let next = 0;
 
