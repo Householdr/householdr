@@ -556,5 +556,27 @@
   "plan.undone-already": "{task} isn’t done any more: it was undone already.",
   "plan.completed": "{task} is marked done.",
   "plan.reopened": "{task} is open again.",
-  "activity.completion-picked-up": "{actor} picked up a task of {subject}’s."
+  "activity.completion-picked-up": "{actor} picked up a task of {subject}’s.",
+  "household.balances": "Balances",
+  "balances.page-title": "Balances · Householdr",
+  "balances.title": "Balances",
+  "balances.intro": "A balance compares what someone did with their fair portion of the household’s work, in points. Positive means ahead of their fair portion, negative means behind.",
+  "balances.evening-out": "The next weeks’ plans even balances out: whoever is behind gets a little more to do, whoever is ahead a little less.",
+  "balances.rate-fast": "This household evens them out fast: within two or three weeks.",
+  "balances.rate-normal": "This household evens them out at a normal pace: over about a month.",
+  "balances.rate-slow": "This household evens them out slowly: over a season.",
+  "balances.points": [
+    {
+      "declarations": ["input count", "input points", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{points} point",
+        "countPlural=other": "{points} points"
+      }
+    }
+  ],
+  "balances.history": "Week by week",
+  "balances.week": "Week",
+  "balances.change": "Change",
+  "balances.no-history": "Nothing yet: a week counts once it’s over."
 }
