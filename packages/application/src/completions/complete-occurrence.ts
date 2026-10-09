@@ -40,20 +40,26 @@ type CompleteOccurrenceResult =
   | { ok: false; error: 'not-allowed' }
   /** Closed as missed or away (ADR-0002 §2, ADR-0005 §5): there is nothing left to do. */
   | { ok: false; error: 'closed' }
-  /** It isn't in this plan week's published plan: only in a draft, or in another week's. */
+  /**
+   * It isn't in this plan week's published plan: only in a draft, or in another week's, such as
+   * one it is carried over into, which hasn't begun.
+   */
   | { ok: false; error: 'not-this-week' }
   /** Someone completed it already, as those who did it say (ADR-0019 §6). */
   | { ok: false; error: 'already-done'; doers: Named[] };
 
 /**
- * Completes an occurrence of this plan week's published plan with one tap (ADR-0006 §4): by whoever
- * did it, or by any member with an account on their behalf, the completion recording who did it and
- * who logged it. Those who did it together are each credited at their own cost (ADR-0002 §1); one
- * who isn't its assignee picks it up, and the weekly settlement credits them, not the assignee
- * (§4). Logging it for someone else is written to the activity log, once per member credited
- * besides whoever logs it (ADR-0018 §5), and so is picking it up, once per member credited, as done
- * to its assignee (§5, clarification). An occurrence is done once: the same completion sent again
- * changes nothing, and any other finds it done, with who did it (ADR-0019 §6).
+ * Completes an open occurrence of this plan week's published plan with one tap (ADR-0006 §4): one
+ * of the week's own, or one carried over into it from an earlier week. One the next week's plan
+ * carries over is still this week's until the next begins (ADR-0002 §2, clarifications); done by
+ * then, the next plan shows it done, as no work of its own. By whoever did it, or by any member
+ * with an account on their behalf, the completion recording who did it and who logged it. Those
+ * who did it together are each credited at their own cost (ADR-0002 §1); one who isn't its
+ * assignee picks it up, and the weekly settlement credits them, not the assignee (§4). Logging it
+ * for someone else is written to the activity log, once per member credited besides whoever logs
+ * it (ADR-0018 §5), and so is picking it up, once per member credited, as done to its assignee
+ * (§5, clarification). An occurrence is done once: the same completion sent again changes nothing,
+ * and any other finds it done, with who did it (ADR-0019 §6).
  */
 export async function completeOccurrence(
   context: HouseholdContext,

@@ -2,6 +2,7 @@ import { jobQueue, type Database, type JobQueue, type Jobs } from '@householdr/d
 import { testDatabase } from '@householdr/db/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { settableClock } from '../testing';
+import { closeDueOccurrences } from './closing';
 import { draftPlan } from './draft-plan';
 import { queueDuePlanSteps } from './plan-schedule';
 import { publishPlan } from './publish-plan';
@@ -27,11 +28,15 @@ const tick = async (at: string, ...households: PlannedHousehold[]) => {
   const clock = settableClock(Temporal.Instant.from(at));
   await queueDuePlanSteps({ db, clock, queue });
   const ids = new Set(households.map((h) => h.householdId));
-  const waiting = async (name: 'plan-draft' | 'plan-publish') =>
+  const waiting = async (name: 'plan-draft' | 'plan-publish' | 'plan-close') =>
     (await queue.fetch<Jobs[typeof name]>(name, { batchSize: 100 }))
       .filter((job) => ids.has(job.data.household))
       .map((job) => [name, job.data.household, job.data.week]);
-  return [...(await waiting('plan-draft')), ...(await waiting('plan-publish'))];
+  return [
+    ...(await waiting('plan-draft')),
+    ...(await waiting('plan-publish')),
+    ...(await waiting('plan-close')),
+  ];
 };
 
 // The week of Monday 12 October 2026 is drafted from Saturday 10 October 00:00 in Brussels and
@@ -111,5 +116,44 @@ describe('queueDuePlanSteps (ADR-0006 §2, ADR-0008 §10)', () => {
     expect(await tick('2026-10-09T23:00:00Z', lisbon)).toEqual([
       ['plan-draft', lisbon.householdId, '2026-10-12'],
     ]);
+  });
+
+  it('queues closing what a week no longer carries over once it begins, in each time zone', async () => {
+    const brussels = await plannedHousehold(db);
+    const lisbon = await plannedHousehold(db, { timeZone: 'Europe/Lisbon', country: 'PT' });
+    // Vacuuming on Wednesdays: week 2's replaces week 1's, which closes as week 2 begins.
+    for (const h of [brussels, lisbon]) {
+      await h.task('Vacuum', 30, 'weekly', '2026-10-14');
+      await draftPlan(h.scheduler, { week: '2026-10-12' });
+      await publishPlan(h.scheduler, { week: '2026-10-12' });
+      h.clock.advance({ hours: 9 * 24 });
+      await draftPlan(h.scheduler, { week: '2026-10-19' });
+      await publishPlan(h.scheduler, { week: '2026-10-19' });
+    }
+    // Sunday 23:00 in Brussels, 22:00 in Lisbon: nothing to close yet.
+    expect(await tick('2026-10-18T21:00:00Z', brussels, lisbon)).toEqual([]);
+    // 00:30 on Monday in Brussels, still 23:30 on Sunday in Lisbon.
+    expect(await tick('2026-10-18T22:30:00Z', brussels, lisbon)).toEqual([
+      ['plan-close', brussels.householdId, '2026-10-19'],
+    ]);
+    // Queued once, however often it ticks while the step waits or runs (CODE-19).
+    expect(await tick('2026-10-18T22:31:00Z', brussels)).toEqual([]);
+    expect(await tick('2026-10-18T23:00:00Z', lisbon)).toEqual([
+      ['plan-close', lisbon.householdId, '2026-10-19'],
+    ]);
+  });
+
+  it('queues no closing once what was due is closed', async () => {
+    const h = await plannedHousehold(db);
+    await h.task('Vacuum', 30, 'weekly', '2026-10-14');
+    await draftPlan(h.scheduler, { week: '2026-10-12' });
+    await publishPlan(h.scheduler, { week: '2026-10-12' });
+    h.clock.advance({ hours: 9 * 24 });
+    await draftPlan(h.scheduler, { week: '2026-10-19' });
+    // Published at its time, so there's nothing to catch up on either (ADR-0006 §2, clarification).
+    await publishPlan(h.scheduler, { week: '2026-10-19' });
+    h.clock.advance({ hours: 2 * 24 });
+    expect(await closeDueOccurrences(h.scheduler)).toEqual({ ok: true, closed: 1 });
+    expect(await tick('2026-10-19T08:00:00Z', h)).toEqual([]);
   });
 });

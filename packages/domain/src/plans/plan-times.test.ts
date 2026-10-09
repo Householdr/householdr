@@ -5,6 +5,7 @@ import {
   duePlanStep,
   nextPlanWeek,
   planTimes,
+  weekHasBegun,
   type ScheduledHousehold,
 } from './plan-times';
 
@@ -186,5 +187,36 @@ describe('duePlanStep (ADR-0006 §2, ADR-0008 §10)', () => {
     const now = instant('2026-10-09T22:30:00Z');
     expect(duePlanStep(now, next, undefined, started)).toBe('draft');
     expect(duePlanStep(now, next, undefined, lisbon)).toBeUndefined();
+  });
+});
+
+describe('weekHasBegun (ADR-0002 §2, clarifications)', () => {
+  const monday = date('2026-10-19');
+
+  it('is true from 00:00 on the week’s first day in the household’s time zone', () => {
+    // 00:00 on Monday 19 October in Brussels is 22:00 on Sunday in UTC.
+    expect(weekHasBegun(monday, instant('2026-10-18T21:59:59Z'), 'Europe/Brussels')).toBe(false);
+    expect(weekHasBegun(monday, instant('2026-10-18T22:00:00Z'), 'Europe/Brussels')).toBe(true);
+    expect(weekHasBegun(monday, instant('2026-10-25T12:00:00Z'), 'Europe/Brussels')).toBe(true);
+  });
+
+  it('follows the household’s time zone, not UTC', () => {
+    // 23:30 on Sunday in Lisbon is already Monday in Brussels.
+    const now = instant('2026-10-18T22:30:00Z');
+    expect(weekHasBegun(monday, now, 'Europe/Brussels')).toBe(true);
+    expect(weekHasBegun(monday, now, 'Europe/Lisbon')).toBe(false);
+  });
+
+  it('begins at midnight on the day the clocks change (TEST-2)', () => {
+    // Sunday weeks: 25 October 2026 is the day the clocks go back, 29 March the day they go forward.
+    expect(
+      weekHasBegun(date('2026-10-25'), instant('2026-10-24T21:59:00Z'), 'Europe/Brussels'),
+    ).toBe(false);
+    expect(
+      weekHasBegun(date('2026-10-25'), instant('2026-10-24T22:00:00Z'), 'Europe/Brussels'),
+    ).toBe(true);
+    expect(
+      weekHasBegun(date('2026-03-29'), instant('2026-03-28T23:00:00Z'), 'Europe/Brussels'),
+    ).toBe(true);
   });
 });

@@ -68,6 +68,7 @@ export {
   nextPlanWeek,
   planTimes,
   type PlanStatus,
+  weekHasBegun,
   type PlanStep,
   type PlanTimings,
 } from './plans/plan-times';

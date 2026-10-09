@@ -500,7 +500,7 @@ describe('plans, occurrences and assignments (ADR-0001 §1, ADR-0006)', () => {
     ).toBeUndefined();
   });
 
-  it('keeps an occurrence once per task and date, open until closed by a plan (ADR-0002 §2, ADR-0005 §5)', async () => {
+  it('keeps an occurrence once per task and date, closed only by a plan (ADR-0002 §2, ADR-0005 §5)', async () => {
     const p = await planned();
     expect(p.occurrence).toMatchObject({ status: 'open', closedByPlan: null });
     const add = (fields: Partial<typeof occurrences.$inferInsert>) =>
@@ -516,9 +516,12 @@ describe('plans, occurrences and assignments (ADR-0001 §1, ADR-0006)', () => {
     expect(await refusal(add({ date: '2026-10-14' }))).toBe('occurrences_task_date');
     expect(await refusal(add({ windowEnd: window.windowStart }))).toBe('occurrences_window');
     expect(await refusal(add({ status: 'missed' }))).toBe('occurrences_closed');
-    expect(await refusal(add({ status: 'open', closedByPlan: p.plan.id }))).toBe(
-      'occurrences_closed',
-    );
+    expect(await refusal(add({ status: 'away' }))).toBe('occurrences_closed');
+    // Open, or done, with the plan that closes it if it is still open when that plan's week begins.
+    expect(await refusal(add({ status: 'open', closedByPlan: p.plan.id }))).toBeUndefined();
+    expect(
+      await refusal(add({ date: '2026-11-11', status: 'done', closedByPlan: p.plan.id })),
+    ).toBeUndefined();
     expect(await refusal(add({ status: 'late' as 'open' }))).toBe('occurrences_status');
     for (const status of ['missed', 'away'] as const) {
       const date = status === 'missed' ? '2026-10-28' : '2026-11-04';

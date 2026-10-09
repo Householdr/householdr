@@ -43,6 +43,7 @@ export {
 } from './households/membership';
 export { completeOccurrence } from './completions/complete-occurrence';
 export { undoCompletion } from './completions/undo-completion';
+export { closeDueOccurrences } from './plans/closing';
 export { draftPlan } from './plans/draft-plan';
 export { queueDuePlanSteps, type ScheduleContext } from './plans/plan-schedule';
 export type { PlanContext } from './plans/planning';

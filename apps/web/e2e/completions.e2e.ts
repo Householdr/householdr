@@ -242,6 +242,40 @@ test('of two members marking a task done at once, the second is told who did it 
   await expect(entry).not.toContainText(/Dishes|\d+ points?/);
 });
 
+test('what next week’s draft takes over is still this week’s to do, and done shows there (ADR-0002 §2)', async ({
+  page,
+  accounts,
+  account,
+}) => {
+  // Robin alone, with dishes every day and the windows every two weeks from today.
+  await accounts.addSecondFactor(account.email);
+  const id = await accounts.addHousehold(account.email, 'Ash Lane');
+  await accounts.addTask(id, { name: 'Dishes', duration: 20, frequency: 'daily' });
+  await accounts.addTask(id, { name: 'Windows', duration: 15, frequency: 'biweekly' });
+  await accounts.publishThisWeek(id);
+  // Next week's draft: its own dishes replace this week's, and the windows carry over.
+  await accounts.draftNextWeek(id);
+  await signIn(page, account, `/households/${id}`);
+  const week = await thisWeek(page, id);
+  const next = page.getByRole('region', { name: /^Next week: / });
+  // Every task left this week can still be marked done.
+  const tasks = week.getByRole('listitem');
+  await expect(week.getByRole('button', { name: /^Done: / })).toHaveCount(await tasks.count());
+  const carried = next.getByRole('listitem').filter({ hasText: 'Windows' });
+  await expect(carried).toContainText('Points');
+
+  await week.getByRole('button', { name: /^Done: Windows, / }).click();
+  await expect(week.getByRole('status')).toHaveText('Windows is marked done.');
+  // Next week shows it done, and as no work of its own there.
+  await expect(carried).toContainText(new RegExp(`Done on ${day} at ${time} by you\\.`));
+  await expect(carried).not.toContainText('Points');
+  await expect(carried.getByRole('button', { name: /^Done: / })).toHaveCount(0);
+  await expect(next.getByRole('listitem').filter({ hasText: 'Dishes' }).first()).toContainText(
+    'Points',
+  );
+  await expectAccessible(page, 'carried over and done');
+});
+
 test('nothing can be marked done while its flag is off (CODE-20)', async ({
   page,
   context,

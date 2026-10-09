@@ -1,0 +1,2 @@
+ALTER TABLE "occurrences" DROP CONSTRAINT "occurrences_closed";--> statement-breakpoint
+ALTER TABLE "occurrences" ADD CONSTRAINT "occurrences_closed" CHECK ("occurrences"."status" not in ('missed', 'away') or "occurrences"."closed_by_plan" is not null);

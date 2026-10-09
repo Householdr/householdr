@@ -475,7 +475,7 @@ export type OccurrenceStatus = 'open' | 'done' | 'missed' | 'away';
  * task and schedule date are who it is, across drafts and weeks: the domain names it
  * `task@date`. It outlives the plans it is in: an open one goes back into the next week's pool, and
  * closes as missed by its task's on-miss policy (ADR-0002 §2), or as away when its whole window
- * falls while the household is away (ADR-0005 §5). Done waits for completions (ADR-0006 §4).
+ * falls while the household is away (ADR-0005 §5). It is done once completed (ADR-0006 §4).
  */
 export const occurrences = pgTable(
   'occurrences',
@@ -491,8 +491,10 @@ export const occurrences = pgTable(
     windowEnd: timestamp({ withTimezone: true }).notNull(),
     status: text().$type<OccurrenceStatus>().notNull().default('open'),
     /**
-     * The plan whose drafting closed it as missed or away; drafting that plan again, while it is a
-     * draft, opens it again first.
+     * The plan that closes it as missed: the one whose draft doesn't carry it on, being a lapsing
+     * one whose window has ended by then, or a rolling one a new occurrence of its task replaces
+     * (ADR-0002 §2). Drafting sets it and drafting again clears it; the occurrence stays open, its
+     * own week's work, until that plan's week begins, when it closes if nobody did it.
      */
     closedByPlan: uuid(),
   },
@@ -515,9 +517,10 @@ export const occurrences = pgTable(
     index('occurrences_household_status').on(t.householdId, t.status),
     check('occurrences_window', sql`${t.windowStart} < ${t.windowEnd}`),
     check('occurrences_status', sql`${t.status} in ('open', 'done', 'missed', 'away')`),
+    // A closed one names the plan that closed it; an open or done one may name the plan that will.
     check(
       'occurrences_closed',
-      sql`(${t.status} in ('missed', 'away')) = (${t.closedByPlan} is not null)`,
+      sql`${t.status} not in ('missed', 'away') or ${t.closedByPlan} is not null`,
     ),
   ],
 );

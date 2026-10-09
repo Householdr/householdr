@@ -1,9 +1,18 @@
-import { createHousehold, viewPlan, type Database, type Jobs } from '@householdr/application';
+import {
+  addTask,
+  completeOccurrence,
+  createHousehold,
+  draftPlan,
+  publishPlan,
+  viewPlan,
+  type Database,
+  type Jobs,
+} from '@householdr/application';
 import { recordingMailer, settableClock, settableFlags } from '@householdr/application/testing';
 import { createTestAccount, startTestHousehold, testSignInContext } from '@householdr/auth/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { workQueues, type WorkerContext } from './index';
-import { draftScheduledPlan, tickPlans } from './plans';
+import { closeScheduledOccurrences, draftScheduledPlan, tickPlans } from './plans';
 
 // The plans' jobs, from the tick to a published plan (ADR-0006 §2, ADR-0008 §10), on a real
 // database and queue (TEST-11), behind the plans' flag (CODE-20).
@@ -92,5 +101,36 @@ describe('the plans’ jobs (ADR-0006 §2, ADR-0008 §10)', () => {
     } finally {
       await queue.stop({ graceful: false });
     }
+  });
+
+  it('close what a week no longer carries over, once it begins, while the flag is on', async () => {
+    // Vacuuming on Wednesdays from 14 October: week 2's replaces week 1's.
+    const clock = settableClock(Temporal.Instant.from('2026-10-08T08:00:00Z'));
+    const { householdId, head } = await started(test.context.db, clock);
+    await addTask(head, {
+      name: 'Vacuum',
+      duration: 30,
+      frequency: 'weekly',
+      start: '2026-10-14',
+      onMiss: 'roll over',
+    });
+    const scheduler = { db: head.db, clock, householdId, member: 'scheduler' as const };
+    await draftPlan(scheduler, { week: '2026-10-12' });
+    await publishPlan(scheduler, { week: '2026-10-12' });
+    const shown = await viewPlan(head);
+    const [vacuum] = (shown.ok && shown.nextWeek?.members.flatMap((m) => m.assignments)) || [];
+    if (!vacuum) throw new Error('No vacuuming planned');
+    clock.advance({ hours: 9 * 24 });
+    await draftPlan(scheduler, { week: '2026-10-19' });
+    // Monday 19 October in Brussels: week 2 has begun.
+    clock.advance({ hours: 2 * 24 });
+    const job = { household: householdId, week: '2026-10-19' };
+    const complete = () => completeOccurrence(head, { occurrence: vacuum.occurrence });
+    await closeScheduledOccurrences({ ...test.context, clock, flags: settableFlags() }, job);
+    // Still open, though no plan of this week has it.
+    expect(await complete()).toEqual({ ok: false, error: 'not-this-week' });
+    const on = settableFlags({ plans: true });
+    await closeScheduledOccurrences({ ...test.context, clock, flags: on }, job);
+    expect(await complete()).toEqual({ ok: false, error: 'closed' });
   });
 });

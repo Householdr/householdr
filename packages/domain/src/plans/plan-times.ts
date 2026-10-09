@@ -1,3 +1,4 @@
+import { householdDate } from '../households/date';
 import type { AwayPeriod } from '../schedules/since-last-done';
 import { planWeek, type HouseholdCalendar, type PlanWeek } from '../schedules/week';
 import { awayThroughout } from './week-occurrences';
@@ -83,4 +84,15 @@ export function duePlanStep(
     return reached('publish') ? 'publish' : undefined;
   }
   return undefined;
+}
+
+/**
+ * Whether the plan week starting on `start` has begun at `now`: 00:00 on its first day has come in
+ * the household's time zone. An occurrence its plan no longer carries over closes as missed then,
+ * and not before (ADR-0002 §2, clarifications): until then it is still its own week's work, to be
+ * done in that week (ADR-0006 §4). A lapsing one's window has ended by then; a rolling one is
+ * replaced by a new occurrence of its task.
+ */
+export function weekHasBegun(start: Temporal.PlainDate, now: Temporal.Instant, timeZone: string) {
+  return Temporal.PlainDate.compare(householdDate(now, timeZone), start) >= 0;
 }
