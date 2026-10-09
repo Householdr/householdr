@@ -72,6 +72,21 @@ const notices = {
     m['email.passkey-removed.done'],
     m['email.passkey-removed.not-you'],
   ],
+  'two-factor-on': [
+    m['email.two-factor-on.subject'],
+    m['email.two-factor-on.done'],
+    m['email.two-factor-on.not-you'],
+  ],
+  'two-factor-off': [
+    m['email.two-factor-off.subject'],
+    m['email.two-factor-off.done'],
+    m['email.two-factor-off.not-you'],
+  ],
+  'recovery-codes-changed': [
+    m['email.recovery-codes-changed.subject'],
+    m['email.recovery-codes-changed.done'],
+    m['email.recovery-codes-changed.not-you'],
+  ],
 } as const;
 
 /** What each account e-mail says, in `locale`. */

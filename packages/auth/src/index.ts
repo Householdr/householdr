@@ -8,6 +8,7 @@ export {
 export { createAuth, type Auth, type AuthSettings } from './auth';
 export { type Cookie } from './cookies';
 export { counterKeys, type CounterKey } from './counter-keys';
+export { totpKeys, type TotpKeys } from './totp-keys';
 export {
   createHouseholdWithPasskey,
   householdPasskeyOptions,
@@ -53,6 +54,16 @@ export {
   signUpRequest,
   type SignUpContext,
 } from './sign-up';
+export {
+  accountTwoFactor,
+  finishTwoFactor,
+  replaceRecoveryCodes,
+  startTwoFactor,
+  turnOffTwoFactor,
+  type TwoFactorContext,
+  type TwoFactorSetup,
+} from './two-factor';
+export { codeAwaited, signInWithCode, type CodeResult } from './two-factor-sign-in';
 export {
   currentSession,
   deviceToSignOut,

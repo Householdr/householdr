@@ -80,6 +80,7 @@ const open = new Set([
   '/sign-in',
   '/sign-in/passkey/options',
   '/sign-in/passkey',
+  '/sign-in/two-factor',
   '/forgot-password',
   '/reset-password',
   '/reset-password/[token]',

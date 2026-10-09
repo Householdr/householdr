@@ -4,16 +4,19 @@ import {
   credentials,
   passkeys,
   sessions,
+  twoFactors,
   verifications,
   type Database,
   type Transaction,
 } from '@householdr/db';
-import { betterAuth } from 'better-auth';
+import { betterAuth, type BetterAuthPlugin } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { APIError, getSessionFromCtx } from 'better-auth/api';
+import { twoFactor } from 'better-auth/plugins/two-factor';
 import { and, eq } from 'drizzle-orm';
 import { deviceOf } from './device';
 import { accountInTheMaking, linkInTheMaking, passwordResetInTheMaking } from './links';
+import type { TotpKeys } from './totp-keys';
 
 export interface AuthSettings {
   /** The database, or a transaction that everything the library writes joins. */
@@ -22,6 +25,11 @@ export interface AuthSettings {
   baseUrl: string;
   /** Signs session cookies: at least 32 random bytes. */
   secret: string;
+  /**
+   * The keys that encrypt the secrets of authenticator apps and the recovery codes (ADR-0017 §7).
+   * Absent where nothing reads or writes those, such as in the worker: the library then can't.
+   */
+  totpKeys?: TotpKeys;
 }
 
 /** A day in seconds, the unit the library takes session lifetimes in. */
@@ -34,10 +42,32 @@ const day = 24 * 60 * 60;
 export const recentSignIn = Temporal.Duration.from({ minutes: 10 });
 
 /**
+ * Has the library encrypt with the versioned TOTP keys rather than with the session secret, which it
+ * would use otherwise (ADR-0012 §4, ADR-0017 §7): a key can then be rotated without locking anyone
+ * out of their second factor or signing anyone out. Of the library's features this app uses, only
+ * the two-factor plugin encrypts anything.
+ */
+function totpEncryption(keys: TotpKeys | undefined) {
+  return {
+    id: 'totp-encryption',
+    init: () => ({
+      context: {
+        secretConfig: {
+          keys: new Map(keys?.keys),
+          // Without keys, no version is current, so encrypting fails rather than falling back.
+          currentVersion: keys?.current ?? -1,
+          legacySecret: undefined,
+        },
+      },
+    }),
+  } satisfies BetterAuthPlugin;
+}
+
+/**
  * The authentication library over the `auth` tables (ADR-0008 §9 and ADR-0023 §2,
  * clarifications). Sign-in methods are added by the features that offer them (ADR-0010 §2).
  */
-export function createAuth({ db, baseUrl, secret }: AuthSettings) {
+export function createAuth({ db, baseUrl, secret, totpKeys }: AuthSettings) {
   return betterAuth({
     appName: 'Householdr',
     baseURL: baseUrl,
@@ -50,6 +80,7 @@ export function createAuth({ db, baseUrl, secret }: AuthSettings) {
         session: sessions,
         verification: verifications,
         passkey: passkeys,
+        twoFactor: twoFactors,
       },
     }),
     emailAndPassword: {
@@ -121,14 +152,15 @@ export function createAuth({ db, baseUrl, secret }: AuthSettings) {
       },
       // Without tracking the library still writes an empty address; a session keeps none, and of
       // the user agent only the browser's and system's names. The database refuses the rest
-      // (ADR-0012 §2, clarification).
+      // (ADR-0012 §2, clarification). A session the library makes in place of another, such as
+      // when two-factor is turned on, has no user agent of its own and keeps the names it took over.
       session: {
         create: {
           before: (session) =>
             Promise.resolve({
               data: {
                 ...session,
-                ...deviceOf(session.userAgent),
+                ...(session.userAgent ? deviceOf(session.userAgent) : {}),
                 ipAddress: null,
                 userAgent: null,
               },
@@ -173,6 +205,18 @@ export function createAuth({ db, baseUrl, secret }: AuthSettings) {
           },
         },
       }),
+      // Codes from an authenticator app after the password, with ten recovery codes (ADR-0010
+      // §2). A password sign-in of an account that has them on leaves no session, only a step that
+      // waits for a code for 10 minutes; a passkey sign-in never asks for one.
+      twoFactor({
+        issuer: 'Householdr',
+        twoFactorCookieMaxAge: 10 * 60,
+        // Wrong codes make the next attempt wait instead, counted per account (ADR-0010 §2,
+        // clarification): the library's lock-out would let anyone who knows the password lock
+        // the person whose account it is out.
+        accountLockout: { enabled: false },
+      }),
+      totpEncryption(totpKeys),
     ],
     // Nothing leaves the server, on our hosting or a self-hosted one (SEC-13).
     telemetry: { enabled: false },

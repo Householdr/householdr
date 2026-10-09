@@ -3,9 +3,11 @@ import { connect, jobQueue } from '@householdr/application';
 import {
   counterKeys,
   createAuth,
+  totpKeys,
   type HouseholdSignUpContext,
   type PasswordResetContext,
   type Terms,
+  type TotpKeys,
 } from '@householdr/auth';
 
 type Environment = Record<string, string | undefined>;
@@ -42,6 +44,22 @@ function termsOf(env: Environment): Terms | null {
   return { url, version };
 }
 
+/**
+ * The versioned keys that encrypt two-factor secrets (ADR-0017 §7; .env.example): both settings, or
+ * neither. Without them nothing can encrypt or read those secrets, so two-factor can't be turned on,
+ * and an instance where it never was runs as before (CODE-20).
+ */
+function totpKeysOf(env: Environment): TotpKeys | undefined {
+  const { TOTP_ENCRYPTION_KEYS: keys, TOTP_ENCRYPTION_KEY_CURRENT: current } = env;
+  if (!keys && !current) return undefined;
+  if (!keys || !current) {
+    throw new Error(
+      'Set both TOTP_ENCRYPTION_KEYS and TOTP_ENCRYPTION_KEY_CURRENT, or neither (.env.example).',
+    );
+  }
+  return totpKeys(keys, current);
+}
+
 async function start(env: Environment): Promise<AuthContext> {
   const [url, baseUrl, secret] = ['DATABASE_URL', 'ORIGIN', 'SESSION_SECRET'].map((name) => {
     const value = env[name];
@@ -49,6 +67,7 @@ async function start(env: Environment): Promise<AuthContext> {
     return value;
   }) as [string, string, string];
   const terms = termsOf(env);
+  const keys = totpKeysOf(env);
   const { db, close } = await connect(url);
   const queue = await jobQueue(db).start();
   // The queue's timers would keep a stopping server running; it stops with the server instead
@@ -57,7 +76,7 @@ async function start(env: Environment): Promise<AuthContext> {
     void queue.stop().then(close);
   });
   return {
-    auth: createAuth({ db, baseUrl, secret }),
+    auth: createAuth({ db, baseUrl, secret, totpKeys: keys }),
     db,
     clock: systemClock,
     counterKey: counterKeys(secret),

@@ -31,7 +31,7 @@ export type AccountEmail =
     }
   /**
    * A notice that a way of signing in changed: the password, which every recovery sends
-   * (ADR-0010 §8), or a passkey (§2).
+   * (ADR-0010 §8), a passkey, two-factor or its recovery codes (§2).
    */
   | { kind: Exclude<AccountEmailKind, LinkKind>; to: string };
 

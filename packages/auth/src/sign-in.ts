@@ -28,6 +28,11 @@ export type SignInResult =
   | { ok: false; error: 'incorrect' }
   /** The password was right, but the e-mail address isn't confirmed yet (ADR-0010 §1). */
   | { ok: false; error: 'unverified' }
+  /**
+   * The password was right, and the account has two-factor on: no session yet, only the cookie of
+   * a step that waits 10 minutes for a code (`signInWithCode`, ADR-0010 §2).
+   */
+  | { ok: false; error: 'needs-code'; cookies: Cookie[] }
   /** Turned away unchecked, after repeated failures (ADR-0010 §2, clarification). */
   | { ok: false; error: 'wait'; until: Temporal.Instant };
 
@@ -42,7 +47,8 @@ export interface Client {
  * counts as a failure, under the e-mail address typed and under the client's IP address, until it
  * turns out not to be one; after repeated failures the next attempt waits, and one made during the
  * wait is turned away without its password being checked (§2, clarification). The session keeps
- * the names of the client's browser and system (§6).
+ * the names of the client's browser and system (§6). An account with two-factor on gets no session
+ * yet: a code comes first.
  */
 export async function signInWithPassword(
   context: SignInContext,
@@ -66,11 +72,18 @@ export async function signInWithPassword(
   );
   if ('waitUntil' in attempt) return { ok: false, error: 'wait', until: attempt.waitUntil };
   try {
-    const { headers } = await context.auth.api.signInEmail({
+    const { headers, response } = await context.auth.api.signInEmail({
       body: { email, password },
       headers: new Headers(client.userAgent ? { 'user-agent': client.userAgent } : {}),
       returnHeaders: true,
     });
+    // The two-factor plugin answers in the sign-in's place. The password was right, so this was no
+    // failure; the e-mail address's count goes once the code is right too.
+    if ('twoFactorRedirect' in response) {
+      await withdrawAttempt(context.db, attempt.counted, emailKey);
+      await withdrawAttempt(context.db, attempt.counted, addressKey);
+      return { ok: false, error: 'needs-code', cookies: cookiesFrom(headers) };
+    }
     // Signing in clears the e-mail address's count, never the IP address's.
     await forgetCount(context.db, emailKey);
     await withdrawAttempt(context.db, attempt.counted, addressKey);

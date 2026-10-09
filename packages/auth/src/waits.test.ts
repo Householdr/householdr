@@ -26,8 +26,14 @@ describe('waitAfter', () => {
     expect([30, 31, 10_000].map((n) => seconds(n, signInWaits.address))).toEqual([512, 900, 900]);
   });
 
+  it('waits after 5 wrong codes for an account, never longer than 15 minutes', () => {
+    const account = (n: number) => seconds(n, signInWaits.account);
+    expect([0, 5, 6, 7, 8].map(account)).toEqual([0, 0, 1, 2, 4]);
+    expect([15, 16, 10_000].map(account)).toEqual([512, 900, 900]);
+  });
+
   it('never waits less after more failures', () => {
-    const rules = fc.constantFrom(signInWaits.email, signInWaits.address);
+    const rules = fc.constantFrom(signInWaits.email, signInWaits.address, signInWaits.account);
     fc.assert(
       fc.property(rules, fc.nat(100_000), fc.nat(100), (rule, failures, more) => {
         expect(seconds(failures + more, rule)).toBeGreaterThanOrEqual(seconds(failures, rule));

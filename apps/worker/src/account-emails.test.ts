@@ -100,6 +100,27 @@ describe('the passkey e-mails (ADR-0010 §2, ADR-0014 §2)', () => {
   });
 });
 
+describe('the two-factor e-mails (ADR-0010 §2, ADR-0014 §2)', () => {
+  it('say what changed and what to do if it wasn’t you, with no link and no code', () => {
+    const on = written({ kind: 'two-factor-on', to: 'robin@example.org' });
+    expect(on.subject).toBe('Two-factor authentication was turned on for your Householdr account');
+    expect(on.text).toContain('also asks for a code from your authenticator app');
+    expect(on.text).toContain('turn two-factor authentication off');
+    const off = written({ kind: 'two-factor-off', to: 'robin@example.org' });
+    expect(off.subject).toBe(
+      'Two-factor authentication was turned off for your Householdr account',
+    );
+    expect(off.text).toContain('Your password signs you in on its own again.');
+    const codes = written({ kind: 'recovery-codes-changed', to: 'robin@example.org' });
+    expect(codes.subject).toBe('New recovery codes were made for your Householdr account');
+    expect(codes.text).toContain('The old ones no longer work.');
+    for (const mail of [on, off, codes]) {
+      expect(mail.html).not.toContain('<a ');
+      expect(mail.text).not.toMatch(/[a-z0-9]{5}-[a-z0-9]{5}/);
+    }
+  });
+});
+
 describe('delivering an account e-mail (ADR-0014 §7, clarification)', () => {
   it('sends it with a fresh link and deletes its row', async () => {
     const account = await newAccount();

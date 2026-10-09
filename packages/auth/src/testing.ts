@@ -1,4 +1,11 @@
-import { createHash, generateKeyPairSync, randomBytes, sign, type KeyObject } from 'node:crypto';
+import {
+  createHash,
+  createHmac,
+  generateKeyPairSync,
+  randomBytes,
+  sign,
+  type KeyObject,
+} from 'node:crypto';
 import { createHousehold } from '@householdr/application';
 import { settableClock } from '@householdr/application/testing';
 import {
@@ -22,8 +29,10 @@ import { createAuth, type Auth } from './auth';
 import type { Cookie } from './cookies';
 import { counterKeys } from './counter-keys';
 import { addPasskey, passkeyOptions, type PasskeysContext } from './passkeys';
-import type { Session } from './sessions';
+import { sessionCookie, type Session } from './sessions';
 import type { Client, SignInContext } from './sign-in';
+import type { TotpKeys } from './totp-keys';
+import { finishTwoFactor, startTwoFactor, type TwoFactorContext } from './two-factor';
 
 /** What signs in to an account in tests. */
 export interface TestAccount {
@@ -134,17 +143,75 @@ export async function testAccounts(url: string) {
   };
 }
 
+/** A key of its own to encrypt two-factor secrets with, as version 1 (ADR-0017 §7). */
+export const testTotpKeys = (): TotpKeys => ({
+  current: 1,
+  keys: new Map([[1, randomBytes(32).toString('base64')]]),
+});
+
 /** What signing in needs, over a fresh database and with a clock the test sets (TEST-11). */
 export async function testSignInContext() {
   const { db, close } = await testDatabase();
   const secret = randomBytes(32).toString('base64');
+  const totpKeys = testTotpKeys();
   const context = {
-    auth: createAuth({ db, baseUrl: 'https://householdr.example.org', secret }),
+    auth: createAuth({ db, baseUrl: 'https://householdr.example.org', secret, totpKeys }),
     db,
     clock: settableClock(Temporal.Instant.from('2026-10-08T08:00:00Z')),
     counterKey: counterKeys(secret),
   } satisfies SignInContext;
-  return { context, close };
+  return { context, close, secret, totpKeys };
+}
+
+/** The bytes of a key in base 32 (RFC 4648), as authenticator apps take it. */
+function fromBase32(key: string) {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  const bytes: number[] = [];
+  let bits = 0;
+  let value = 0;
+  for (const character of key.replaceAll(' ', '').toUpperCase()) {
+    value = ((value << 5) | alphabet.indexOf(character)) & 0xffff;
+    bits += 5;
+    if (bits >= 8) {
+      bits -= 8;
+      bytes.push((value >>> bits) & 255);
+    }
+  }
+  return Buffer.from(bytes);
+}
+
+/**
+ * The code an authenticator app set up with `key` shows at `at` (RFC 6238): six digits, a new one
+ * every 30 seconds. The library checks codes against the system's clock, so that is the default.
+ */
+export function totpCode(key: string, at: Temporal.Instant = Temporal.Now.instant()) {
+  const step = Buffer.alloc(8);
+  step.writeBigUInt64BE(BigInt(Math.floor(at.epochMilliseconds / 30_000)));
+  const hash = createHmac('sha1', fromBase32(key)).update(step).digest();
+  const offset = (hash.at(-1) ?? 0) & 15;
+  return String((hash.readUInt32BE(offset) & 0x7fffffff) % 1_000_000).padStart(6, '0');
+}
+
+/**
+ * Turns two-factor on for the account of `session`, signed in with `cookie`, the way the security
+ * page does, with a code from the setup's key (ADR-0010 §2). Returns the key, the recovery codes,
+ * and the session that replaced this one with its cookie.
+ */
+export async function turnOnTestTwoFactor(
+  context: TwoFactorContext,
+  session: Session,
+  cookie: Cookie,
+) {
+  const started = await startTwoFactor(context, session);
+  if (!started.ok) throw new Error(`Not started: ${started.error}`);
+  const headers = new Headers({ cookie: `${cookie.name}=${encodeURIComponent(cookie.value)}` });
+  const { key } = started.setup;
+  const finished = await finishTwoFactor(context, session, headers, { code: totpCode(key) });
+  if (!finished.ok) throw new Error(`Not finished: ${finished.error}`);
+  const replaced = finished.cookies.find(({ name }) => name === sessionCookie);
+  if (!replaced) throw new Error('No new session');
+  const { recoveryCodes, session: now } = finished;
+  return { key, recoveryCodes, session: now, cookie: replaced };
 }
 
 /**

@@ -41,6 +41,9 @@ export default async function startServer(config: FullConfig) {
       // accept them (ADR-0007 §2, clarification); an instance without is unit-tested.
       TERMS_URL: termsUrl,
       TERMS_VERSION: '2026-10-01',
+      // A key of its own for two-factor secrets, as every instance has (ADR-0017 §7).
+      TOTP_ENCRYPTION_KEYS: `1:${randomBytes(32).toString('base64')}`,
+      TOTP_ENCRYPTION_KEY_CURRENT: '1',
     },
     stdio: ['ignore', 'ignore', 'inherit'],
   });

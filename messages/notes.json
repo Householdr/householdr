@@ -159,7 +159,7 @@
     "needsReview": ["nl"]
   },
   "security.confirm-intro": {
-    "note": "Why it's asked again: the sign-in is over 10 minutes old. The person confirms with a passkey or the password.",
+    "note": "Why it's asked again: the sign-in is over 10 minutes old. The person confirms with a passkey, or the password (and a code from their authenticator app when two-factor is on), before passkeys or two-factor change (ADR-0010 §6).",
     "needsReview": ["nl"]
   },
   "security.confirm-passkey": {
@@ -187,7 +187,111 @@
     "needsReview": ["nl"]
   },
   "security.confirmed": {
-    "note": "Status message after confirming: changes are possible for 10 minutes.",
+    "note": "Status message after confirming: passkeys and two-factor can change for 10 minutes.",
+    "needsReview": ["nl"]
+  },
+  "security.confirm-code": {
+    "note": "Label of the code field when confirming it's you, shown when two-factor is on. Use the same term for 'authenticator app' everywhere.",
+    "needsReview": ["nl"]
+  },
+  "security.incorrect-code": {
+    "note": "When confirming it's you: the password was right, the code wasn't.",
+    "needsReview": ["nl"]
+  },
+  "security.two-factor": {
+    "note": "Heading of the security page's section about codes from an authenticator app (ADR-0010 §2). Use the same term everywhere, also in the e-mails.",
+    "needsReview": ["nl"]
+  },
+  "security.two-factor-intro": {
+    "note": "What two-factor authentication does, in plain words. Only shown to accounts with a password.",
+    "needsReview": ["nl"]
+  },
+  "security.two-factor-on": {
+    "note": "The section's state, and the status message once it was turned on.",
+    "needsReview": ["nl"]
+  },
+  "security.two-factor-off": {
+    "note": "The section's state, and the status message once it was turned off.",
+    "needsReview": ["nl"]
+  },
+  "security.turn-on": {
+    "note": "Button that starts setting up an authenticator app.",
+    "needsReview": ["nl"]
+  },
+  "security.setup": {
+    "note": "Heading of the setup steps: scan the QR code or enter the key, then enter the app's first code.",
+    "needsReview": ["nl"]
+  },
+  "security.setup-scan": {
+    "note": "First setup step, above the QR code.",
+    "needsReview": ["nl"]
+  },
+  "security.setup-qr": {
+    "note": "What a screen reader says for the QR code image.",
+    "needsReview": ["nl"]
+  },
+  "security.setup-key": {
+    "note": "Before the setup key, for typing it into the app instead of scanning. The key itself isn't translated.",
+    "needsReview": ["nl"]
+  },
+  "security.setup-code": {
+    "note": "Label of the field for the app's first code, which finishes the setup.",
+    "needsReview": ["nl"]
+  },
+  "security.setup-code-hint": {
+    "note": "Hint below the setup code field. Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "security.setup-submit": {
+    "note": "Button that finishes the setup with the app's first code.",
+    "needsReview": ["nl"]
+  },
+  "security.two-factor-failed": {
+    "note": "Heading of the box that says why turning two-factor on or off, or making new recovery codes, didn't work.",
+    "needsReview": ["nl"]
+  },
+  "security.setup-incorrect": {
+    "note": "When the setup's first code is wrong. Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "security.setup-not-started": {
+    "note": "When a setup code arrives but no setup waits for one, for instance after it was finished in another tab.",
+    "needsReview": ["nl"]
+  },
+  "security.two-factor-unavailable": {
+    "note": "When turning it on is started while it is on already, for instance from another tab.",
+    "needsReview": ["nl"]
+  },
+  "security.two-factor-head": {
+    "note": "Why turning it off is refused: heads must keep two factors (ADR-0010 §3). A passkey counts as two factors.",
+    "needsReview": ["nl"]
+  },
+  "security.two-factor-already-off": {
+    "note": "When new recovery codes are asked for while two-factor is off, for instance from another tab.",
+    "needsReview": ["nl"]
+  },
+  "security.recovery-codes": {
+    "note": "Heading above the ten recovery codes, shown once after turning two-factor on or making new codes (ADR-0010 §2).",
+    "needsReview": ["nl"]
+  },
+  "security.recovery-codes-intro": {
+    "note": "What recovery codes are for, and that they're shown only now. Calm, no urgency beyond the fact.",
+    "needsReview": ["nl"]
+  },
+  "security.recovery-codes-done": {
+    "note": "Link below the recovery codes that closes them, once they are saved.",
+    "needsReview": ["nl"]
+  },
+  "security.new-recovery-codes": {
+    "note": "Button that replaces the recovery codes with ten new ones; the old ones stop working.",
+    "needsReview": ["nl"]
+  },
+  "security.recovery-codes-made": {
+    "note": "Status message after making new recovery codes.",
+    "needsReview": ["nl"]
+  },
+  "security.turn-off": {
+    "note": "Button that turns two-factor off.",
     "needsReview": ["nl"]
   },
   "email.password-reset.subject": {
@@ -244,6 +348,42 @@
   },
   "email.passkey-removed.not-you": {
     "note": "For someone who didn't remove it. The quoted text is the sign-in page's link, sign-in.forgot-password, and must match it.",
+    "needsReview": ["nl"]
+  },
+  "email.two-factor-on.subject": {
+    "note": "Subject of the e-mail sent when two-factor authentication was turned on (ADR-0010 §2, ADR-0014 §2). Householdr is the product name, not translated. Use the same term for two-factor authentication everywhere.",
+    "needsReview": ["nl"]
+  },
+  "email.two-factor-on.done": {
+    "note": "First line of the two-factor-on e-mail: what happened, and what changes when signing in.",
+    "needsReview": ["nl"]
+  },
+  "email.two-factor-on.not-you": {
+    "note": "For someone who didn't turn it on: someone else is signed in. The quoted text is the sign-in page's link, sign-in.forgot-password, and must match it.",
+    "needsReview": ["nl"]
+  },
+  "email.two-factor-off.subject": {
+    "note": "Subject of the e-mail sent when two-factor authentication was turned off. Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "email.two-factor-off.done": {
+    "note": "First line of the two-factor-off e-mail: what happened, and what it means for signing in.",
+    "needsReview": ["nl"]
+  },
+  "email.two-factor-off.not-you": {
+    "note": "For someone who didn't turn it off. The quoted text is the sign-in page's link, sign-in.forgot-password, and must match it.",
+    "needsReview": ["nl"]
+  },
+  "email.recovery-codes-changed.subject": {
+    "note": "Subject of the e-mail sent when new recovery codes replaced the old ones (ADR-0010 §2). Recovery codes sign in once each when the authenticator app isn't at hand. Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "email.recovery-codes-changed.done": {
+    "note": "First line of the e-mail about new recovery codes.",
+    "needsReview": ["nl"]
+  },
+  "email.recovery-codes-changed.not-you": {
+    "note": "For someone who didn't make new recovery codes. The quoted text is the sign-in page's link, sign-in.forgot-password, and must match it.",
     "needsReview": ["nl"]
   },
   "sign-in.forgot-password": {
@@ -332,6 +472,58 @@
   },
   "sign-in.create-household": {
     "note": "Link from the sign-in page to signing up, which creates a household (ADR-0010 §1).",
+    "needsReview": ["nl"]
+  },
+  "sign-in-code.page-title": {
+    "note": "Browser tab title of the step after a right password, which asks for a code (ADR-0010 §2). Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "sign-in-code.title": {
+    "note": "Heading of the step that asks for a code after the password. Use the same term as security.two-factor.",
+    "needsReview": ["nl"]
+  },
+  "sign-in-code.intro": {
+    "note": "What to do on the code step. Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "sign-in-code.code": {
+    "note": "Label of the code field on the code step. Same words as security.confirm-code.",
+    "needsReview": ["nl"]
+  },
+  "sign-in-code.submit": {
+    "note": "Button that signs in with the app's code. Same words as sign-in.submit.",
+    "needsReview": ["nl"]
+  },
+  "sign-in-code.use-recovery-code": {
+    "note": "Opens the field for a recovery code, for when the authenticator app isn't at hand.",
+    "needsReview": ["nl"]
+  },
+  "sign-in-code.recovery-code": {
+    "note": "Label of the recovery code field.",
+    "needsReview": ["nl"]
+  },
+  "sign-in-code.recovery-code-hint": {
+    "note": "Hint below the recovery code field. Keep the example code as it is.",
+    "needsReview": ["nl"]
+  },
+  "sign-in-code.recovery-submit": {
+    "note": "Button that signs in with a recovery code.",
+    "needsReview": ["nl"]
+  },
+  "sign-in-code.incorrect": {
+    "note": "When the app's code is wrong, or was used already.",
+    "needsReview": ["nl"]
+  },
+  "sign-in-code.incorrect-recovery": {
+    "note": "When the recovery code is wrong or used up.",
+    "needsReview": ["nl"]
+  },
+  "sign-in-code.expired": {
+    "note": "When the step after the password is over: 10 minutes passed, or it was used. Not the person's fault.",
+    "needsReview": ["nl"]
+  },
+  "sign-in-code.start-again": {
+    "note": "Link back to the sign-in page, to enter the password again.",
     "needsReview": ["nl"]
   },
   "sign-up.page-title": {
