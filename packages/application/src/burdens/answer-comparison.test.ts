@@ -143,6 +143,32 @@ describe('answerComparison (ADR-0003 §3a)', () => {
     ]);
   });
 
+  it('records the task chosen as harder, whichever order the pair is sent in (ADR-0003 §3a, clarification)', async () => {
+    // The game shows a pair either way round, and the order sent back is only what the page
+    // says: the order alone never decides which task was harder.
+    const head = await founded();
+    const { dishes, ironing } = head;
+    for (const tasks of [
+      [dishes, ironing],
+      [ironing, dishes],
+    ]) {
+      for (const harder of [ironing, dishes]) {
+        const easier = harder === ironing ? dishes : ironing;
+        expect(await answerComparison(head, { tasks, harder })).toEqual({
+          ok: true,
+          harder: harder === ironing ? 'Ironing' : 'Dishes',
+          easier: easier === ironing ? 'Ironing' : 'Dishes',
+        });
+        expect((await answersIn(head.householdId)).at(-1)).toMatchObject({
+          harderTaskId: harder,
+          easierTaskId: easier,
+        });
+        head.clock.advance({ minutes: 1 });
+      }
+    }
+    expect(await answersIn(head.householdId)).toHaveLength(4);
+  });
+
   it('records for the member answering, whoever else the answer names', async () => {
     const head = await founded();
     const adult = await joined(head);

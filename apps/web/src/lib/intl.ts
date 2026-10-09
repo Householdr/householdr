@@ -92,11 +92,3 @@ export function minutesText(minutes: number, locale: string) {
     unitDisplay: 'long',
   }).format(minutes);
 }
-
-/** A burden factor with one decimal, in `locale`, such as “1.6” (ADR-0003 §1). */
-export function factorText(factor: number, locale: string) {
-  return new Intl.NumberFormat(locale, {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  }).format(factor);
-}

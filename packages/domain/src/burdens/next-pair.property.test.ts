@@ -1,6 +1,6 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { nextPair } from './next-pair';
+import { inRandomOrder, nextPair } from './next-pair';
 
 // Invariants of the pair the comparison game asks next, over generated estimates (TEST-1).
 
@@ -14,6 +14,8 @@ const entries = (estimate = fc.record({ theta, uncertainty })) =>
     maxLength: 8,
   });
 const pairs = (n: number) => (n < 2 ? 0 : (n * (n - 1)) / 2);
+/** A number from 0 up to 1, as a random draw gives it. */
+const draw = fc.double({ min: 0, max: 1, maxExcluded: true, noNaN: true });
 
 describe('the next pair of the comparison game (ADR-0003 §3a)', () => {
   it('asks about two different tasks it was given, or nothing with fewer than two', () => {
@@ -87,6 +89,18 @@ describe('the next pair of the comparison game (ADR-0003 §3a)', () => {
         const top = list.map(([, e]) => e.uncertainty).sort((a, b) => b - a);
         expect(Math.min(...chosen)).toBe(top[1]);
         expect(Math.max(...chosen)).toBe(top[0]);
+      }),
+    );
+  });
+
+  it('shows the same two tasks, in the order asked for half the draws and swapped for the others', () => {
+    fc.assert(
+      fc.property(entries(), fc.nat({ max: 100 }), draw, (list, skipped, chosen) => {
+        fc.pre(list.length >= 2);
+        const pair = nextPair(new Map(list), skipped);
+        if (!pair) throw new Error('No pair');
+        const shown = inRandomOrder(pair, chosen);
+        expect(shown).toEqual(chosen < 0.5 ? pair : pair.toReversed());
       }),
     );
   });

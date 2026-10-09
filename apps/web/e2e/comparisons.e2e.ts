@@ -3,12 +3,15 @@ import type { Page } from '@playwright/test';
 import { expect, expectAccessible, forceFlags, signIn, test } from './fixtures';
 import { ownNetwork } from './proxy';
 
-// The comparison game: a member says which of two tasks is harder for them, and sees what their
-// answers change, which nobody else sees (ADR-0003 §3a, §5). Behind its flag (CODE-20).
+// The comparison game: a member says which of two tasks is harder for them, shown in a random
+// order, and sees what their answers change as an order of their tasks, without figures, which
+// nobody else sees (ADR-0003 §3a, §5 and clarifications). Behind its flag (CODE-20).
 
 const flags = { 'sign-in': true, onboarding: true, comparisons: true };
 const title = 'What’s hard for you';
-const noAnswers = 'Once you’ve answered a few, you’ll see here how much each task counts for you.';
+const order = 'What’s hard for you, hardest first';
+const noAnswers =
+  'Once you’ve answered a question, you’ll see your tasks here, from the hardest for you to the easiest.';
 
 test.beforeEach(async ({ context, baseURL }) => {
   await forceFlags(context, baseURL, flags);
@@ -20,7 +23,7 @@ const pairOn = (page: Page) =>
 
 /**
  * Answers the pair on `page` as someone who finds ironing hardest and the dishes easiest would,
- * and checks the answer is saved and the next question has the focus.
+ * wherever each task is shown, and checks the answer is saved and the next question has the focus.
  */
 async function answer(page: Page) {
   const order = ['Dishes', 'Vacuum', 'Ironing'];
@@ -82,15 +85,16 @@ for (const javaScriptEnabled of [true, false]) {
 
       for (let i = 0; i < 3; i++) await answer(page);
       await expect(
-        page.getByText('An average task counts as 1.0×.', { exact: false }),
+        page.getByText(
+          'The higher a task is here, the more it counts when plans share out the work. Your answers move tasks up or down.',
+        ),
       ).toBeVisible();
-      await expect(
-        page.getByRole('list', { name: 'What your answers change' }).getByRole('listitem'),
-      ).toHaveText([
-        /^\s*Ironing counts as 1\.\d× for you\s*$/,
-        /^\s*Vacuum counts as \d\.\d× for you\s*$/,
-        /^\s*Dishes counts as 0\.\d× for you\s*$/,
-      ]);
+      // The member's burdens as an order, hardest first, without figures (ADR-0003 §5,
+      // clarification): no factor, no number, not even the list's own.
+      const hardestFirst = page.getByRole('list', { name: order });
+      await expect(hardestFirst.getByRole('listitem')).toHaveText(['Ironing', 'Vacuum', 'Dishes']);
+      await expect(hardestFirst).toHaveCSS('list-style-type', 'none');
+      await expect(page.getByRole('main')).not.toContainText(/\d|×/);
       if (javaScriptEnabled) await expectAccessible(page, 'answered');
 
       await page.getByRole('link', { name: 'Back to Ash Lane' }).click();
@@ -131,7 +135,7 @@ test('another member sees none of a member’s answers, and the other way round'
   await signIn(page, account, `/households/${id}`);
   await page.goto(`/households/${id}/comparisons`);
   for (let i = 0; i < 3; i++) await answer(page);
-  const yours = page.getByRole('list', { name: 'What your answers change' });
+  const yours = page.getByRole('list', { name: order });
   const before = await yours.getByRole('listitem').allInnerTexts();
   expect(before).toHaveLength(3);
 
@@ -144,13 +148,20 @@ test('another member sees none of a member’s answers, and the other way round'
   await signIn(theirs, sam, `/households/${id}`);
   await theirs.getByRole('link', { name: title }).click();
   await expect(theirs.getByText(noAnswers)).toBeVisible();
-  await expect(theirs.getByRole('list', { name: 'What your answers change' })).toHaveCount(0);
-  // Their own answer changes only what they see.
-  await pairOn(theirs).first().click();
-  await expect(theirs.getByRole('status')).toHaveText(/^Saved: /);
-  await expect(
-    theirs.getByRole('list', { name: 'What your answers change' }).getByRole('listitem'),
-  ).toHaveCount(3);
+  await expect(theirs.getByRole('list', { name: order })).toHaveCount(0);
+  // Their own answers change only what they see: the task chosen is saved as the harder one,
+  // whichever side it was shown on.
+  for (const side of ['first', 'last'] as const) {
+    const [first = '', second = ''] = (await pairOn(theirs).allInnerTexts()).map((name) =>
+      name.trim(),
+    );
+    const [harder, easier] = side === 'first' ? [first, second] : [second, first];
+    await pairOn(theirs)[side]().click();
+    await expect(theirs.getByRole('status')).toHaveText(
+      `Saved: ${harder} is harder for you than ${easier}.`,
+    );
+  }
+  await expect(theirs.getByRole('list', { name: order }).getByRole('listitem')).toHaveCount(3);
   await elsewhere.close();
 
   await page.reload();

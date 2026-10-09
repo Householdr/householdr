@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { estimateBurdens, type BurdenTask, type Evidence } from './estimate';
-import { nextPair } from './next-pair';
+import { inRandomOrder, nextPair } from './next-pair';
 
 const at = (theta: number, uncertainty = 1) => ({ theta, uncertainty });
 const task = (id: string): BurdenTask => ({ id, prior: 1, weight: 52 });
@@ -89,6 +89,23 @@ describe('nextPair (ADR-0003 §3a)', () => {
     ]);
     for (const skipped of [-1, 0.5, Number.NaN, Number.POSITIVE_INFINITY]) {
       expect(() => nextPair(estimates, skipped)).toThrow(RangeError);
+    }
+  });
+});
+
+describe('inRandomOrder (ADR-0003 §3a, clarification)', () => {
+  it('keeps the pair’s order for a draw below ½, and swaps it from ½', () => {
+    for (const draw of [0, 0.25, 0.4999]) {
+      expect(inRandomOrder(['iron', 'vacuum'], draw)).toEqual(['iron', 'vacuum']);
+    }
+    for (const draw of [0.5, 0.75, 0.9999]) {
+      expect(inRandomOrder(['iron', 'vacuum'], draw)).toEqual(['vacuum', 'iron']);
+    }
+  });
+
+  it('rejects a draw that isn’t a number from 0 up to 1', () => {
+    for (const draw of [-0.1, 1, 1.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(() => inRandomOrder(['iron', 'vacuum'], draw)).toThrow(RangeError);
     }
   });
 });

@@ -4,19 +4,20 @@ import { authContext } from '#lib/server/auth.js';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
- * The household's context for the member playing the comparison game; the guard has checked that
- * they are one of its members (ADR-0017 §2). The page exists only while the game's release flag is
- * on (CODE-20).
+ * The household's context for the member playing the comparison game, with the draws that order
+ * its pairs; the guard has checked that they are one of its members (ADR-0017 §2). The page exists
+ * only while the game's release flag is on (CODE-20).
  */
 async function householdContext(locals: App.Locals) {
   if (!locals.flags.comparisons || !locals.membership) error(404);
-  const { db, clock } = await authContext();
-  return { db, clock, ...locals.membership };
+  const { db, clock, random } = await authContext();
+  return { db, clock, random, ...locals.membership };
 }
 
 /**
- * The next pair to compare, after the pairs skipped, and the member's own burdens (ADR-0003 §3a,
- * §5). Skipping records nothing, so it only asks for this page with one more pair skipped.
+ * The next pair to compare, after the pairs skipped, and the member's own burdens as an order
+ * (ADR-0003 §3a, §5). Skipping records nothing, so it only asks for this page with one more pair
+ * skipped.
  */
 export const load = (async ({ locals, url }) => {
   const context = await householdContext(locals);
@@ -29,12 +30,13 @@ export const load = (async ({ locals, url }) => {
     pair: result.pair,
     skipped: result.skipped,
     answered: result.answered,
-    burdens: result.burdens,
+    hardestFirst: result.hardestFirst,
   };
 }) satisfies PageServerLoad;
 
 export const actions = {
-  // Which of the two tasks is harder for the member (ADR-0003 §3a).
+  // Which of the two tasks is harder for the member (ADR-0003 §3a): the one chosen, whatever
+  // order the pair was shown or sent in.
   answer: async ({ locals, request }) => {
     const context = await householdContext(locals);
     const form = await request.formData();

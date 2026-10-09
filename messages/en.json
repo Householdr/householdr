@@ -419,9 +419,8 @@
   "comparisons.not-saved": "Your answer wasn’t saved",
   "comparisons.changed": "The tasks may have changed in the meantime. Here’s a new question.",
   "comparisons.none": "There’s nothing to compare yet. Once your household has at least two tasks, you can say here which ones you find harder.",
-  "comparisons.effect": "What your answers change",
-  "comparisons.effect-none": "Once you’ve answered a few, you’ll see here how much each task counts for you.",
-  "comparisons.effect-hint": "An average task counts as {average}×. The harder a task is for you, the more it counts when plans share out the work.",
-  "comparisons.counts": "{task} counts as {factor}× for you",
+  "comparisons.order": "What’s hard for you, hardest first",
+  "comparisons.order-none": "Once you’ve answered a question, you’ll see your tasks here, from the hardest for you to the easiest.",
+  "comparisons.order-hint": "The higher a task is here, the more it counts when plans share out the work. Your answers move tasks up or down.",
   "comparisons.back": "Back to {household}"
 }

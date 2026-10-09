@@ -35,6 +35,14 @@ export interface Clock {
 }
 
 /**
+ * Draws numbers at random, from 0 up to 1: the system's generator in the app, fixed draws in
+ * tests (ADR-0023 §3, TEST-2).
+ */
+export interface Random {
+  next: () => number;
+}
+
+/**
  * Whether a flag of the registry is on (ADR-0015 §3, §4): from Flipt in the app, at the registry's
  * safe defaults without it, as a test sets it in tests (TEST-9). Flags are evaluated for everyone
  * until households exist in the app (ADR-0015 §3, clarification).

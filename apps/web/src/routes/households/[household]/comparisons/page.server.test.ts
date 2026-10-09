@@ -1,16 +1,23 @@
 import { addTask, createHousehold, membership } from '@householdr/application';
 import { createTestAccount, testSignInContext } from '@householdr/auth/testing';
 import { isActionFailure, isHttpError } from '@sveltejs/kit';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { actions, load } from './+page.server';
 
-// The comparison game's page maps the next pair and the member's own burdens to the page, or to a
-// status, and an answer to its result (TEST-4), against a real database (TEST-11).
+// The comparison game's page maps the next pair and the member's own burdens as an order to the
+// page, or to a status, and an answer to its result (TEST-4), against a real database (TEST-11).
 
 let test: Awaited<ReturnType<typeof testSignInContext>>;
-vi.mock('#lib/server/auth.js', () => ({ authContext: () => Promise.resolve(test.context) }));
+/** The draw that orders the next pair the page shows: 0 keeps the domain's order (TEST-2). */
+let draw = 0;
+vi.mock('#lib/server/auth.js', () => ({
+  authContext: () => Promise.resolve({ ...test.context, random: { next: () => draw } }),
+}));
 beforeAll(async () => {
   test = await testSignInContext();
+});
+beforeEach(() => {
+  draw = 0;
 });
 afterAll(() => test.close());
 
@@ -98,14 +105,42 @@ describe('the comparison game’s page (ADR-0003 §3a, §5)', () => {
       pair: [
         { id: tasks.Dishes, name: 'Dishes' },
         { id: tasks.Ironing, name: 'Ironing' },
-        // The task with the lower id first.
+        // The task with the lower id first, which a draw of 0 keeps.
       ].sort((a, b) => ((a.id ?? '') < (b.id ?? '') ? -1 : 1)),
       skipped: 0,
       answered: false,
-      burdens: [
-        { id: tasks.Dishes, name: 'Dishes', burden: 1 },
-        { id: tasks.Ironing, name: 'Ironing', burden: 1 },
+      hardestFirst: [
+        { id: tasks.Dishes, name: 'Dishes' },
+        { id: tasks.Ironing, name: 'Ironing' },
       ],
+    });
+  });
+
+  it('shows the pair in the order the draw says, and saves the task chosen from either (ADR-0003 §3a, clarification)', async () => {
+    const { membership: member, tasks } = await founded('Dishes', 'Ironing');
+    const { Dishes = '', Ironing = '' } = tasks;
+    const shown = async (chosen: number) => {
+      draw = chosen;
+      const page = await opened({ ...on, membership: member });
+      if (typeof page === 'number' || !page.pair) throw new Error('No pair');
+      return page.pair.map((task) => task.id);
+    };
+    const kept = await shown(0.25);
+    const swapped = await shown(0.75);
+    expect(swapped).toEqual(kept.toReversed());
+    for (const pair of [kept, swapped]) {
+      // As the page sends it, in the order shown, and in the other order, as a changed page might.
+      for (const sent of [pair, pair.toReversed()]) {
+        expect(await answer({ ...on, membership: member }, sent, Ironing)).toEqual({
+          answered: { harder: 'Ironing', easier: 'Dishes' },
+        });
+      }
+    }
+    expect(await answer({ ...on, membership: member }, swapped, Dishes)).toEqual({
+      answered: { harder: 'Dishes', easier: 'Ironing' },
+    });
+    expect(await opened({ ...on, membership: member })).toMatchObject({
+      hardestFirst: [{ name: 'Ironing' }, { name: 'Dishes' }],
     });
   });
 
@@ -114,17 +149,20 @@ describe('the comparison game’s page (ADR-0003 §3a, §5)', () => {
     expect(await opened({ ...on, membership: member })).toMatchObject({ pair: null });
   });
 
-  it('saves an answer, says which, and shows what it changes', async () => {
+  it('saves an answer, says which, and shows what it changes as an order, without figures', async () => {
     const { membership: member, tasks } = await founded('Dishes', 'Ironing');
     const { Dishes = '', Ironing = '' } = tasks;
     expect(await answer({ ...on, membership: member }, [Dishes, Ironing], Ironing)).toEqual({
       answered: { harder: 'Ironing', easier: 'Dishes' },
     });
     const page = await opened({ ...on, membership: member });
-    expect(page).toMatchObject({
-      answered: true,
-      burdens: [{ name: 'Ironing' }, { name: 'Dishes' }],
-    });
+    expect(page).toMatchObject({ answered: true });
+    // Exactly the tasks, by name: nothing else about them reaches the page (ADR-0003 §5,
+    // clarification).
+    expect(typeof page === 'number' ? page : page.hardestFirst).toEqual([
+      { id: Ironing, name: 'Ironing' },
+      { id: Dishes, name: 'Dishes' },
+    ]);
   });
 
   it('asks another pair after a skip, and refuses a skip that isn’t a number', async () => {
@@ -171,7 +209,7 @@ describe('the comparison game’s page (ADR-0003 §3a, §5)', () => {
     });
     expect(await opened({ ...on, membership: adult })).toMatchObject({
       answered: false,
-      burdens: [{ burden: 1 }, { burden: 1 }],
+      hardestFirst: [{ name: 'Dishes' }, { name: 'Ironing' }],
     });
   });
 

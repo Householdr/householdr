@@ -1422,20 +1422,16 @@
     "note": "Shown instead of the question while the household has fewer than two tasks.",
     "needsReview": ["nl"]
   },
-  "comparisons.effect": {
-    "note": "Heading of the list of how much each task counts for the member, which their answers change.",
+  "comparisons.order": {
+    "note": "Heading of the list of the member's own tasks, from the one they find hardest to the one they find easiest, which their answers change. It shows no numbers (ADR-0003 §5).",
     "needsReview": ["nl"]
   },
-  "comparisons.effect-none": {
-    "note": "Shown instead of the list until the member has answered at least once.",
+  "comparisons.order-none": {
+    "note": "Shown instead of the list until the member has answered at least one question.",
     "needsReview": ["nl"]
   },
-  "comparisons.effect-hint": {
-    "note": "Above the list. {average} is 1.0, written for the reader's language. × means times.",
-    "needsReview": ["nl"]
-  },
-  "comparisons.counts": {
-    "note": "One line of the list. {task} is a task's name, as typed; {factor} how much it counts for this member, a number with one decimal such as 1.6, written for the reader's language. × means times.",
+  "comparisons.order-hint": {
+    "note": "Above the list. Higher means harder for this member; a task that is harder for them weighs more when the weekly plans divide the tasks. No numbers on purpose.",
     "needsReview": ["nl"]
   },
   "comparisons.back": {

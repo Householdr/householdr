@@ -4,13 +4,10 @@
   import ErrorSummary from '#lib/components/ErrorSummary.svelte';
   import { Button } from '#lib/components/ui/button/index.js';
   import { useComparisons } from '#lib/hooks/use-comparisons.svelte.js';
-  import { factorText } from '#lib/intl.js';
   import { m } from '#lib/paraglide/messages.js';
-  import { getLocale } from '#lib/paraglide/runtime.js';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
-  const locale = getLocale();
   const game = useComparisons();
 </script>
 
@@ -53,7 +50,8 @@
         </legend>
         <input type="hidden" name="tasks" value={first.id} />
         <input type="hidden" name="tasks" value={second.id} />
-        <!-- Both look the same, so neither answer is suggested; side by side where they fit. -->
+        <!-- Both look the same, so neither answer is suggested, and the server put them in a random
+             order (ADR-0003 §3a, clarification); side by side where they fit. -->
         <div class="@container">
           <div class="grid gap-3 @sm:grid-cols-2">
             {#each [first, second] as task (task.id)}
@@ -79,24 +77,19 @@
       </Button>
     </form>
 
-    <section aria-labelledby="effect" class="flex flex-col gap-4">
-      <h2 id="effect" class="text-lg font-semibold">{m['comparisons.effect']()}</h2>
+    <!-- The member's burdens as an order, without figures: their answers show as tasks moving in
+         it (ADR-0003 §5, clarification). -->
+    <section aria-labelledby="order" class="flex flex-col gap-4">
+      <h2 id="order" class="text-lg font-semibold">{m['comparisons.order']()}</h2>
       {#if data.answered}
-        <p class="text-sm text-muted-foreground">
-          {m['comparisons.effect-hint']({ average: factorText(1, locale) })}
-        </p>
-        <ul aria-labelledby="effect" class="flex flex-col divide-y rounded-lg border">
-          {#each data.burdens as task (task.id)}
-            <li class="p-4 wrap-break-word">
-              {m['comparisons.counts']({
-                task: task.name,
-                factor: factorText(task.burden, locale),
-              })}
-            </li>
+        <p class="text-sm text-muted-foreground">{m['comparisons.order-hint']()}</p>
+        <ol aria-labelledby="order" class="flex flex-col divide-y rounded-lg border">
+          {#each data.hardestFirst as task (task.id)}
+            <li class="p-4 wrap-break-word">{task.name}</li>
           {/each}
-        </ul>
+        </ol>
       {:else}
-        <p>{m['comparisons.effect-none']()}</p>
+        <p>{m['comparisons.order-none']()}</p>
       {/if}
     </section>
   {:else}

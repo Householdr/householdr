@@ -419,9 +419,8 @@
   "comparisons.not-saved": "Je antwoord is niet bewaard",
   "comparisons.changed": "De taken zijn intussen misschien veranderd. Hier is een nieuwe vraag.",
   "comparisons.none": "Er valt nog niets te vergelijken. Zodra jullie huishouden minstens twee taken heeft, kun je hier zeggen welke je zwaarder vindt.",
-  "comparisons.effect": "Wat je antwoorden veranderen",
-  "comparisons.effect-none": "Zodra je er een paar hebt beantwoord, zie je hier hoeveel elke taak voor jou telt.",
-  "comparisons.effect-hint": "Een gemiddelde taak telt als {average}×. Hoe zwaarder een taak voor jou is, hoe meer ze telt als een planning het werk verdeelt.",
-  "comparisons.counts": "{task} telt voor jou als {factor}×",
+  "comparisons.order": "Wat jij zwaar vindt, het zwaarste eerst",
+  "comparisons.order-none": "Zodra je een vraag hebt beantwoord, zie je hier je taken, van de zwaarste voor jou tot de lichtste.",
+  "comparisons.order-hint": "Hoe hoger een taak hier staat, hoe meer ze telt als een planning het werk verdeelt. Je antwoorden schuiven taken omhoog of omlaag.",
   "comparisons.back": "Terug naar {household}"
 }
