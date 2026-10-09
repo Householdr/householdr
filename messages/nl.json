@@ -555,5 +555,6 @@
   "plan.week-over": "{task} kan niet meer ongedaan gemaakt worden: de week is voorbij.",
   "plan.undone-already": "{task} is niet meer gedaan: het werd al ongedaan gemaakt.",
   "plan.completed": "{task} is afgevinkt.",
-  "plan.reopened": "{task} staat weer open."
+  "plan.reopened": "{task} staat weer open.",
+  "activity.completion-picked-up": "{actor} nam een taak van {subject} over."
 }

@@ -1,5 +1,5 @@
 {
-  "id": "fa3e421a-72b5-4c80-8654-2c5f1f6661e4",
+  "id": "20cffa64-e6b5-4cce-88d1-41e353fa0070",
   "prevId": "8b4b8344-7ffc-4504-b81b-2f1b54d60555",
   "version": "7",
   "dialect": "postgresql",
@@ -263,11 +263,11 @@
       "checkConstraints": {
         "activity_log_action": {
           "name": "activity_log_action",
-          "value": "\"activity_log\".\"action\" in ('household.name', 'household.timeZone', 'household.language',\n        'household.country', 'household.started', 'completion.logged', 'completion.undone')"
+          "value": "\"activity_log\".\"action\" in ('household.name', 'household.timeZone', 'household.language',\n        'household.country', 'household.started', 'completion.logged', 'completion.undone',\n        'completion.picked-up')"
         },
         "activity_log_subject": {
           "name": "activity_log_subject",
-          "value": "\"activity_log\".\"subject_id\" is null or \"activity_log\".\"action\" in ('completion.logged', 'completion.undone')"
+          "value": "\"activity_log\".\"subject_id\" is null or \"activity_log\".\"action\" in ('completion.logged', 'completion.undone', 'completion.picked-up')"
         },
         "activity_log_set_before_start": {
           "name": "activity_log_set_before_start",

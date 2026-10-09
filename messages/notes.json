@@ -1933,5 +1933,9 @@
   "plan.reopened": {
     "note": "Read out after the reader undid a task that was done: it is to be done again (UI-12).",
     "needsReview": ["nl"]
+  },
+  "activity.completion-picked-up": {
+    "note": "Activity log entry: {actor} did a task the plan gave to {subject}, so it became their work (a pick-up). {actor} and {subject} are names, or “a former member”; the task and its points are never shown.",
+    "needsReview": ["nl"]
   }
 }

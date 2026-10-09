@@ -31,8 +31,9 @@ ALTER TABLE "completions" ADD CONSTRAINT "completions_occurrence" FOREIGN KEY ("
 ALTER TABLE "completions" ADD CONSTRAINT "completions_plan" FOREIGN KEY ("household_id","plan_id") REFERENCES "public"."plans"("household_id","id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "completions" ADD CONSTRAINT "completions_logged_by" FOREIGN KEY ("household_id","logged_by") REFERENCES "public"."members"("household_id","id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "activity_log" ADD CONSTRAINT "activity_log_subject_id_members_id_fk" FOREIGN KEY ("subject_id") REFERENCES "public"."members"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "activity_log" ADD CONSTRAINT "activity_log_subject" CHECK ("activity_log"."subject_id" is null or "activity_log"."action" in ('completion.logged', 'completion.undone'));--> statement-breakpoint
+ALTER TABLE "activity_log" ADD CONSTRAINT "activity_log_subject" CHECK ("activity_log"."subject_id" is null or "activity_log"."action" in ('completion.logged', 'completion.undone', 'completion.picked-up'));--> statement-breakpoint
 ALTER TABLE "activity_log" ADD CONSTRAINT "activity_log_action" CHECK ("activity_log"."action" in ('household.name', 'household.timeZone', 'household.language',
-        'household.country', 'household.started', 'completion.logged', 'completion.undone'));--> statement-breakpoint
+        'household.country', 'household.started', 'completion.logged', 'completion.undone',
+        'completion.picked-up'));--> statement-breakpoint
 CREATE POLICY "household_only" ON "completion_credits" AS PERMISSIVE FOR ALL TO public USING ("completion_credits"."household_id" = nullif(current_setting('householdr.household_id', true), '')::uuid) WITH CHECK ("completion_credits"."household_id" = nullif(current_setting('householdr.household_id', true), '')::uuid);--> statement-breakpoint
 CREATE POLICY "household_only" ON "completions" AS PERMISSIVE FOR ALL TO public USING ("completions"."household_id" = nullif(current_setting('householdr.household_id', true), '')::uuid) WITH CHECK ("completions"."household_id" = nullif(current_setting('householdr.household_id', true), '')::uuid);

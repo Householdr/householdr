@@ -555,5 +555,6 @@
   "plan.week-over": "{task} can’t be undone any more: its week is over.",
   "plan.undone-already": "{task} isn’t done any more: it was undone already.",
   "plan.completed": "{task} is marked done.",
-  "plan.reopened": "{task} is open again."
+  "plan.reopened": "{task} is open again.",
+  "activity.completion-picked-up": "{actor} picked up a task of {subject}’s."
 }

@@ -1,6 +1,7 @@
 import {
   accounts,
   activityLog,
+  assignments,
   completionCredits,
   completions,
   members,
@@ -167,7 +168,43 @@ describe('completeOccurrence (ADR-0006 §4)', () => {
     await completed(h.adult, occurrence);
     const { credits } = await stored(h);
     expect(credits.map((c) => c.member)).toEqual([h.alex]);
-    expect(await logged(h)).toEqual([]);
+    // It became Alex's work, which Robin sees (ADR-0018 §5, clarification).
+    expect(await logged(h)).toEqual([
+      { actor: h.alex, action: 'completion.picked-up', subject: h.robin },
+    ]);
+  });
+
+  it('logs a pick-up for each who did it, also when someone else logs it', async () => {
+    const h = await household();
+    const occurrence = await occurrenceOf(h, 'Alex');
+    await completed(h.head, occurrence, [h.kim, h.robin]);
+    expect(await logged(h)).toEqual(
+      expect.arrayContaining([
+        { actor: h.robin, action: 'completion.logged', subject: h.kim },
+        { actor: h.kim, action: 'completion.picked-up', subject: h.alex },
+        { actor: h.robin, action: 'completion.picked-up', subject: h.alex },
+      ]),
+    );
+    expect(await logged(h)).toHaveLength(3);
+  });
+
+  it('logs no pick-up when its assignee is among those who did it, or it has none', async () => {
+    const h = await household();
+    const alexs = await occurrenceOf(h, 'Alex');
+    await completed(h.head, alexs, [h.alex, h.robin]);
+    expect(await logged(h)).toEqual([
+      { actor: h.robin, action: 'completion.logged', subject: h.alex },
+    ]);
+    const robins = await occurrenceOf(h, 'Robin');
+    // Given to nobody, as when nobody could take it (ADR-0001 §7, clarification).
+    await h.inIt((tx) =>
+      tx
+        .update(assignments)
+        .set({ memberId: null, cost: null, reason: null, unassignedCause: 'nobody eligible' })
+        .where(eq(assignments.occurrenceId, robins)),
+    );
+    await completed(h.adult, robins);
+    expect(await logged(h)).toHaveLength(1);
   });
 
   it('credits each who did it together at their own cost, and logs it for the others', async () => {

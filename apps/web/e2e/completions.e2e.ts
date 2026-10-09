@@ -233,6 +233,13 @@ test('of two members marking a task done at once, the second is told who did it 
   await expect(own).toContainText(new RegExp(`Done on ${day} by Alex\\.`));
   await expect(own.getByRole('button', { name: /^Undo: Dishes, / })).toBeVisible();
   await expectAccessible(page, 'done by someone else first');
+
+  // It became Alex's work, which the activity log shows (ADR-0018 §5, clarification).
+  await page.goto(`/households/${id}/activity`);
+  const entry = page.getByRole('listitem');
+  await expect(entry).toHaveCount(1);
+  await expect(entry).toContainText('Alex picked up a task of Robin’s.');
+  await expect(entry).not.toContainText(/Dishes|\d+ points?/);
 });
 
 test('nothing can be marked done while its flag is off (CODE-20)', async ({
