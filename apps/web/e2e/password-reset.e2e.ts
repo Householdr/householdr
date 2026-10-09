@@ -1,5 +1,5 @@
 import { expect, expectAccessible, forceFlags, signIn, test } from './fixtures';
-import { forgetMail, mailTo } from './mail';
+import { forgetMail, mailTo, resetLink } from './mail';
 
 // Choosing a new password through an e-mailed link (ADR-0010 §8), while its release flag is off by
 // default (CODE-20).
@@ -13,14 +13,6 @@ test('the reset pages aren’t there while their flag is off', async ({ page, co
   await page.goto('/sign-in');
   await expect(page.getByRole('link', { name: 'Forgot your password?' })).toHaveCount(0);
 });
-
-/** The link in the reset e-mail to `address`. */
-const resetLink = async (address: string) => {
-  const text = await mailTo(address, 'Choose a new password for Householdr');
-  const link = /https?:\/\/\S+\/reset-password\/\S+/.exec(text)?.[0];
-  if (!link) throw new Error(`No link in: ${text}`);
-  return link;
-};
 
 for (const javaScriptEnabled of [true, false]) {
   test.describe(javaScriptEnabled ? 'with JavaScript' : 'without JavaScript (CODE-13)', () => {
@@ -56,6 +48,8 @@ for (const javaScriptEnabled of [true, false]) {
       await expect(field).toHaveAccessibleDescription(
         'At least 12 characters, and no other rules.',
       );
+      // Without two-factor on, the new password is all it asks for (ADR-0010 §8).
+      await expect(page.getByLabel(/code/i)).toHaveCount(0);
       if (javaScriptEnabled) await expectAccessible(page, 'new password');
 
       const newPassword = `a new password for ${test.info().project.name}`;

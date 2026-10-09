@@ -35,7 +35,7 @@ export {
 export {
   passwordResetRequest,
   requestPasswordReset,
-  resetLinkWorks,
+  resetLink,
   setNewPassword,
   type NewPasswordResult,
   type PasswordResetContext,

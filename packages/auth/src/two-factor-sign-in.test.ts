@@ -324,7 +324,9 @@ describe('the waits after wrong codes (ADR-0010 §2, clarification)', () => {
     if (prepared?.kind !== 'password-reset') throw new Error('No reset link');
     await accountEmailSent(test.context, row?.id ?? '');
     const token = prepared.link.split('/').at(-1) ?? '';
-    expect(await setNewPassword(context, { token, password })).toEqual({ ok: true });
+    // With two-factor on, a new password needs a code too (ADR-0010 §8).
+    const code = person.recoveryCodes[1] ?? '';
+    expect(await setNewPassword(context, { token, password, code })).toEqual({ ok: true });
     const headers = headersWith(...(await passwordStep(person.email)));
     for (let i = 0; i < 5; i++) {
       expect(

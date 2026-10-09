@@ -1,11 +1,11 @@
 import { totpCode } from '@householdr/auth/testing';
 import type { Page } from '@playwright/test';
 import { expect, expectAccessible, forceFlags, signIn, test, withAuthenticator } from './fixtures';
-import { forgetMail, mailTo } from './mail';
+import { forgetMail, mailTo, resetLink } from './mail';
 
 // Two-factor codes from an authenticator app: turning them on and off on the security page,
-// signing in with them or a recovery code, and confirming it's you with one (ADR-0010 §2, §3, §6),
-// behind their release flag (CODE-20). The tests compute the app's codes from the key the page
+// signing in with them or a recovery code, confirming it's you with one, and choosing a new
+// password with one (ADR-0010 §2, §3, §6, §8), behind their release flag (CODE-20). The tests compute the app's codes from the key the page
 // shows, as an app would. Axe needs JavaScript in the page, so it checks the pages with it.
 
 const flags = { 'sign-in': true, 'two-factor': true };
@@ -206,6 +206,60 @@ for (const javaScriptEnabled of [true, false]) {
       await expect(summary).toBeFocused();
       await expect(page.getByLabel('Recovery code')).toBeVisible();
       if (javaScriptEnabled) await expectAccessible(page, 'recovery code used');
+    });
+
+    test('asks for a code with a new password from a reset link (ADR-0010 §8)', async ({
+      page,
+      context,
+      baseURL,
+      account,
+    }) => {
+      await forceFlags(context, baseURL, { ...flags, 'password-reset': true });
+      await signIn(page, account);
+      const { key, recoveryCodes } = await turnOn(page);
+      await signOut(page);
+      await forgetMail(account.email);
+      await page.goto('/forgot-password');
+      await page.getByLabel('E-mail address').fill(account.email);
+      await page.getByRole('button', { name: 'Send the link' }).click();
+      await expect(page.getByRole('status')).toContainText(account.email);
+      await page.goto(await resetLink(account.email));
+      await expect(page).toHaveURL('/reset-password');
+
+      const code = page.getByLabel('Code from your authenticator app, or a recovery code');
+      await expect(code).toHaveAttribute('autocomplete', 'one-time-code');
+      await expect(code).toHaveAccessibleDescription(
+        'Enter the code your authenticator app shows for Householdr. Without the app, enter one of the recovery codes you saved when you turned on two-factor authentication, such as abcde-12345. Each works once.',
+      );
+      if (javaScriptEnabled) await expectAccessible(page, 'new password with a code');
+
+      // A wrong code changes nothing, and the link keeps working.
+      const newPassword = `a new password for ${test.info().project.name}`;
+      await page.getByLabel('New password').fill(newPassword);
+      await code.fill(wrongCode(key));
+      await page.getByRole('button', { name: 'Save the new password' }).click();
+      const summary = page.getByRole('region', { name: 'Saving the password didn’t work' });
+      await expect(summary).toContainText('The code is incorrect, or it was used already.');
+      await expect(summary).toBeFocused();
+      await expect(code).toHaveAttribute('aria-invalid', 'true');
+      // Neither the password nor the code comes back from the server (ADR-0011 §6, clarification).
+      if (!javaScriptEnabled) {
+        await expect(page.getByLabel('New password')).toHaveValue('');
+        await expect(code).toHaveValue('');
+      }
+      if (javaScriptEnabled) await expectAccessible(page, 'wrong code with a new password');
+
+      await page.getByLabel('New password').fill(newPassword);
+      await code.fill(recoveryCodes[0] ?? '');
+      await page.getByRole('button', { name: 'Save the new password' }).click();
+      await expect(page).toHaveURL('/sign-in?password=changed');
+      await mailTo(account.email, 'Your Householdr password was changed');
+
+      // The new password, and still the app's code after it.
+      await password(page, { ...account, password: newPassword });
+      await page.getByLabel('Code from your authenticator app').fill(totpCode(key));
+      await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+      await expect(page).toHaveURL('/security');
     });
 
     test('asks for a code too to confirm it’s you, and turns two-factor off', async ({

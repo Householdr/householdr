@@ -65,3 +65,14 @@ export async function signUpLink(address: string) {
   if (!link) throw new Error(`No link in: ${text}`);
   return link;
 }
+
+/** A link to choose a new password, in an e-mail's text. */
+const resetLinkPattern = /https?:\/\/\S+\/reset-password\/\S+/;
+
+/** The link in the reset e-mail to `address`, waiting for it to arrive. */
+export async function resetLink(address: string) {
+  const text = await mailTo(address, 'Choose a new password for Householdr');
+  const link = resetLinkPattern.exec(text)?.[0];
+  if (!link) throw new Error(`No link in: ${text}`);
+  return link;
+}
