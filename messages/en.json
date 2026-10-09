@@ -507,5 +507,28 @@
       }
     }
   ],
-  "plan.publish-failed": "Publishing didn’t work"
+  "plan.publish-failed": "Publishing didn’t work",
+  "household.start-title": "Ready to start?",
+  "household.start-intro": "Once everyone and the tasks are in, start the household: it then gets a plan every week.",
+  "household.start": "Start the household",
+  "household.started": "Your household has started. Its first plan is for the week from {week}: you can check its draft from {draft}, and everyone sees it from {publish}.",
+  "activity.household-started": "{actor} started the household.",
+  "activity.set-before-start": "Set before the start: shares for {shares}; days away for {daysAway}.",
+  "activity.set-before-start-shares": "Set before the start: shares for {shares}.",
+  "activity.set-before-start-days-away": "Set before the start: days away for {daysAway}.",
+  "activity.a-former-member": "a former member",
+  "plan.draft-heads-publish": "This is a draft. Only heads see it until one of them publishes it.",
+  "start.page-title": "Start · Householdr",
+  "start.title": "Start your household",
+  "start.intro": "Once your household starts, it gets a plan every week that shares the tasks fairly. Choose when the first one is for.",
+  "start.when": "When do you want to start?",
+  "start.now": "Start now",
+  "start.now-hint": "This week is planned right away, from today to {last}. Tasks due before today are left out, and the work is shared over the days left. You check the draft, then publish it so everyone sees it.",
+  "start.week-start": "Start on {day}",
+  "start.week-start-hint": "The first plan is for the full week from that day. You can check its draft from {draft}; everyone sees it from {publish}.",
+  "start.submit": "Start",
+  "start.failed": "Starting didn’t work",
+  "start.invalid": "Choose when to start.",
+  "start.already-started": "Someone else started the household just now, so nothing changed.",
+  "start.started": "Your household has started."
 }

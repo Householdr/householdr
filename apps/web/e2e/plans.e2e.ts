@@ -4,8 +4,8 @@ import { ownNetwork } from './proxy';
 
 // Each week's plan: heads see the draft and can publish it early, everyone sees the published plan,
 // and each task says why it went to whoever has it (ADR-0006 §2, ADR-0007 §5). Behind its release
-// flag (CODE-20). Until Start exists, the test helpers take the household out of setup and draft
-// next week's plan as the scheduler would (ADR-0007 §2).
+// flag (CODE-20). The test helpers take the household out of setup and draft next week's plan as
+// the scheduler would (ADR-0007 §2); `start.e2e.ts` starts one as a head does.
 
 const flags = { 'sign-in': true, onboarding: true, plans: true };
 
