@@ -146,7 +146,7 @@ for (const javaScriptEnabled of [true, false]) {
   });
 }
 
-test('the activity log lists what was set for others before the start, never a value', async ({
+test('the activity log lists what was set before the start, the head’s own share too, never a value', async ({
   page,
   browser,
   accounts,
@@ -158,6 +158,8 @@ test('the activity log lists what was set for others before the start, never a v
   await accounts.add(alex);
   await accounts.addMember(id, alex.email, 'Alex');
   await accounts.setShare(id, alex.email, 60);
+  // The starting head's own share is listed too (ADR-0018 §4, clarification).
+  await accounts.setShare(id, account.email, 80);
   const today = Temporal.Now.plainDateISO('Europe/Brussels');
   const away = [today.add({ weeks: 2 }).toString(), today.add({ weeks: 2, days: 2 }).toString()];
   await accounts.addProfile(id, 'Sam', { away: [away[0] ?? '', away[1] ?? ''] });
@@ -177,10 +179,11 @@ test('the activity log lists what was set for others before the start, never a v
     const entry = other.getByRole('listitem');
     await expect(entry).toHaveCount(1);
     await expect(entry).toContainText('Robin started the household.');
+    // The list is the reader's language's, with or without a comma before "and".
     await expect(entry).toContainText(
-      'Set before the start: shares for Alex and Kim; days away for Sam.',
+      /Set before the start: shares for Alex, Kim,? and Robin; days away for Sam\./,
     );
-    await expect(entry).not.toContainText(/%|\b60\b|\b50\b/);
+    await expect(entry).not.toContainText(/%|\b60\b|\b50\b|\b80\b/);
     await expectAccessible(other, 'start entry');
   } finally {
     await theirs.close();

@@ -12,6 +12,7 @@ import {
 } from '@householdr/domain';
 import { sql, type AnyColumn } from 'drizzle-orm';
 import {
+  boolean,
   check,
   date,
   doublePrecision,
@@ -70,6 +71,11 @@ export const households = pgTable(
      * plan is drafted or published for it (ADR-0007 §2).
      */
     firstPlanWeek: date(),
+    /**
+     * Whether it started now, with its first plan week drafted at once for the days left: that
+     * draft waits for a head to publish it (ADR-0006 §2, ADR-0007 §3, clarifications).
+     */
+    startedNow: boolean().notNull().default(false),
     /** When plans are drafted and published: hours before the week starts (ADR-0006 §2). */
     draftHours: smallint().notNull().default(defaultPlanTimings.draft),
     publishHours: smallint().notNull().default(defaultPlanTimings.publish),
@@ -101,6 +107,8 @@ export const households = pgTable(
       sql`${t.publishHours} >= 0 and ${t.draftHours} > ${t.publishHours}`,
     ),
     check('households_rebalance', sql`${t.rebalance} in ('fast', 'normal', 'slow')`),
+    // Only a household that has started started now.
+    check('households_started_now', sql`not ${t.startedNow} or ${t.firstPlanWeek} is not null`),
   ],
 );
 
@@ -185,7 +193,7 @@ export type ActivityAction =
   | 'household.started';
 
 /**
- * What was set for other members before the household started, which its start entry lists
+ * What was set before the household started, which its start entry lists
  * (ADR-0007 §2, ADR-0018 §5, clarifications): whose share a head set, as a share of their own or a
  * temporary one, and for which profiles without an account days away were planned, by a head
  * acting for them. Member ids only, never a value: no share, no day.
@@ -218,7 +226,7 @@ export const activityLog = pgTable(
     actorId: uuid().references(() => members.id, { onDelete: 'set null' }),
     action: text().$type<ActivityAction>().notNull(),
     /**
-     * For `household.started`, and only for it: what was set for others before the start. A member
+     * For `household.started`, and only for it: what was set before the start. A member
      * whose profile goes stays in it by id, which then names nobody (ADR-0012 §6).
      */
     setBeforeStart: jsonb().$type<SetBeforeStart>(),

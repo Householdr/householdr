@@ -604,6 +604,13 @@
           "primaryKey": false,
           "notNull": false
         },
+        "started_now": {
+          "name": "started_now",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "draft_hours": {
           "name": "draft_hours",
           "type": "smallint",
@@ -681,6 +688,10 @@
         "households_rebalance": {
           "name": "households_rebalance",
           "value": "\"households\".\"rebalance\" in ('fast', 'normal', 'slow')"
+        },
+        "households_started_now": {
+          "name": "households_started_now",
+          "value": "not \"households\".\"started_now\" or \"households\".\"first_plan_week\" is not null"
         }
       },
       "isRLSEnabled": false

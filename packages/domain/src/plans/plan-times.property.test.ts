@@ -72,7 +72,13 @@ describe('the scheduler’s timing (ADR-0006 §2, ADR-0008 §10)', () => {
     fc.assert(
       fc.property(calendar, instant, timings, status, (c, now, t, plan) => {
         const next = nextPlanWeek(now, c);
-        const household = { calendar: c, timings: t, firstWeek: next.start, away: [] };
+        const household = {
+          calendar: c,
+          timings: t,
+          firstWeek: next.start,
+          startedNow: false,
+          away: [],
+        };
         const step = duePlanStep(now, next, plan, household);
         const times = planTimes(next, c, t);
         if (step === 'draft') {
@@ -91,7 +97,13 @@ describe('the scheduler’s timing (ADR-0006 §2, ADR-0008 §10)', () => {
   it('takes no step for a household in setup', () => {
     fc.assert(
       fc.property(calendar, instant, timings, status, (c, now, t, plan) => {
-        const household = { calendar: c, timings: t, firstWeek: undefined, away: [] };
+        const household = {
+          calendar: c,
+          timings: t,
+          firstWeek: undefined,
+          startedNow: false,
+          away: [],
+        };
         expect(duePlanStep(now, nextPlanWeek(now, c), plan, household)).toBeUndefined();
       }),
     );
@@ -101,7 +113,13 @@ describe('the scheduler’s timing (ADR-0006 §2, ADR-0008 §10)', () => {
     fc.assert(
       fc.property(calendar, instant, timings, (c, now, t) => {
         const next = nextPlanWeek(now, c);
-        const household = { calendar: c, timings: t, firstWeek: next.start, away: [] };
+        const household = {
+          calendar: c,
+          timings: t,
+          firstWeek: next.start,
+          startedNow: false,
+          away: [],
+        };
         const late = planTimes(next, c, t).publish;
         let plan: PlanStatus | undefined;
         for (let steps = 0; steps < 2; steps++) {

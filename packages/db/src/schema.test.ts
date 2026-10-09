@@ -66,6 +66,7 @@ describe('households', () => {
       // In setup, with the plan timings and rebalance rate of the ADRs (ADR-0007 §2, ADR-0006 §2,
       // ADR-0002 §3).
       firstPlanWeek: null,
+      startedNow: false,
       draftHours: 48,
       publishHours: 12,
       rebalance: 'normal',
@@ -81,6 +82,13 @@ describe('households', () => {
     expect(await refusal(addHousehold({ draftHours: 12, publishHours: -1 }))).toBe(
       'households_plan_timings',
     );
+  });
+
+  it('started now only once it has started (ADR-0007 §3)', async () => {
+    expect(await refusal(addHousehold({ startedNow: true }))).toBe('households_started_now');
+    expect(
+      await refusal(addHousehold({ startedNow: true, firstPlanWeek: '2026-10-05' })),
+    ).toBeUndefined();
   });
 
   it('catches up at one of the rebalance rates (ADR-0002 §3)', async () => {
