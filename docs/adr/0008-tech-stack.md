@@ -166,7 +166,13 @@ conventions.
 - Which cultures ship at launch and who translates the task template catalogue belong to the
   localisation ADR.
 
-### 7. A Progressive Web App on modern web APIs
+> **Clarification (2026-10-09):** the culture a page formats with is **the page's language with the
+> account culture's country**. While a culture's language isn't offered yet
+> ([ADR-0016](0016-localisation.md) §1), its page is in an offered language, and a date or list in
+> that page's text follows that language: an `nl-BE` account reading English sees `en-BE`
+> ("9 October 2026"), not `en` ("October 9, 2026"), and not Dutch words in an English sentence.
+> Once its language is offered, this is the full culture. A page nobody is signed in to formats with
+> its language alone.
 
 One responsive web app, installable on the home screen; no native apps. The platform APIs it builds
 on, each feature-detected with a working fallback:
