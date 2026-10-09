@@ -12,12 +12,13 @@ import {
 import {
   can,
   hasTwoFactors,
+  mayRemovePasskey,
   mayTurnOffTotp,
   type Member,
   type Role,
   type SignInMethods,
 } from '@householdr/domain';
-import { and, eq, isNotNull } from 'drizzle-orm';
+import { and, eq, isNotNull, ne } from 'drizzle-orm';
 import * as v from 'valibot';
 import type { Clock } from '../ports';
 
@@ -38,10 +39,21 @@ export interface HouseholdContext extends HouseholdsContext {
 
 const householdId = v.pipe(v.string(), v.uuid());
 
-/** How the account signs in: with a passkey, a password, and codes from an app (ADR-0010 §2). */
-async function signInMethods(db: Database, accountId: string): Promise<SignInMethods> {
+/**
+ * How the account signs in: with a passkey, a password, and codes from an app (ADR-0010 §2). With
+ * `withoutPasskey`, as it would once that passkey is gone.
+ */
+async function signInMethods(
+  db: Database,
+  accountId: string,
+  withoutPasskey?: string,
+): Promise<SignInMethods> {
+  const otherPasskeys = and(
+    eq(passkeys.userId, accountId),
+    withoutPasskey === undefined ? undefined : ne(passkeys.id, withoutPasskey),
+  );
   const [[passkey], [password], [account]] = await Promise.all([
-    db.select({ id: passkeys.id }).from(passkeys).where(eq(passkeys.userId, accountId)).limit(1),
+    db.select({ id: passkeys.id }).from(passkeys).where(otherPasskeys).limit(1),
     db
       .select({ id: credentials.id })
       .from(credentials)
@@ -112,6 +124,11 @@ export async function accountHouseholdList(
   return list.sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
 }
 
+/** Whether the account is a head of any of its households ("head" as ADR-0010 §3 means it). */
+async function headAnywhere(context: HouseholdsContext, accountId: string) {
+  return (await accountHouseholdList(context, accountId)).some(({ role }) => role === 'head');
+}
+
 /**
  * Whether the account may turn TOTP off: a head of any of its households must keep two factors,
  * so one without a passkey is refused (ADR-0010 §3).
@@ -120,8 +137,22 @@ export async function mayTurnOffTwoFactor(
   context: HouseholdsContext,
   accountId: string,
 ): Promise<boolean> {
-  const head = (await accountHouseholdList(context, accountId)).some(({ role }) => role === 'head');
+  const head = await headAnywhere(context, accountId);
   return mayTurnOffTotp(await signInMethods(context.db, accountId), head);
+}
+
+/**
+ * Whether the account may remove its passkey `passkeyId`: a head of any of its households must keep
+ * two factors, so one left with neither another passkey nor a password with TOTP is refused
+ * (ADR-0010 §3, clarification).
+ */
+export async function mayRemoveAccountPasskey(
+  context: HouseholdsContext,
+  accountId: string,
+  passkeyId: string,
+): Promise<boolean> {
+  const head = await headAnywhere(context, accountId);
+  return mayRemovePasskey(await signInMethods(context.db, accountId, passkeyId), head);
 }
 
 /** A member of the household, as the member viewing it sees them (ADR-0018 §3). */

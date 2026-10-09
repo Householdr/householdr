@@ -52,6 +52,11 @@
     return '';
   });
 
+  /** Why a passkey wasn't removed, in words (CODE-13). */
+  const passkeysProblem = $derived(
+    form?.passkeys === 'head' ? m['security.passkey-head']() : undefined,
+  );
+
   /** Whether ways of signing in can change here: some are offered, and not just yet. */
   const confirming = $derived((data.passkeys || data.twoFactor) && !data.changeable);
 
@@ -111,6 +116,16 @@
       target()?.focus();
     };
   const keepFocus = keepFocusOn(() => heading);
+
+  // A removed passkey's button leaves with it, so the focus goes to the list's heading; a refusal's
+  // summary takes the focus itself.
+  const afterRemovingPasskey: SubmitFunction =
+    () =>
+    async ({ result, update }) => {
+      passkeys.clear();
+      await update();
+      if (result.type !== 'failure' || result.data?.passkeys !== 'head') passkeysHeading?.focus();
+    };
 
   // A change to two-factor shows what comes next, and the focus goes to its heading; a refusal's
   // summary takes the focus itself.
@@ -246,6 +261,11 @@
         {m['security.passkeys']()}
       </h2>
       <p>{m['security.passkeys-intro']()}</p>
+      {#key form}
+        {#if passkeysProblem}
+          <ErrorSummary heading={m['security.passkey-remove-failed']()} message={passkeysProblem} />
+        {/if}
+      {/key}
       {#if data.passkeys.length > 0}
         <ul aria-labelledby="passkeys" class="flex flex-col divide-y rounded-lg border">
           {#each data.passkeys as passkey (passkey.id)}
@@ -255,11 +275,7 @@
                 <p class="text-sm text-muted-foreground">{added(passkey.daysSinceAdded)}</p>
               </div>
               {#if data.changeable}
-                <form
-                  method="POST"
-                  action="?/removePasskey"
-                  use:enhance={keepFocusOn(() => passkeysHeading)}
-                >
+                <form method="POST" action="?/removePasskey" use:enhance={afterRemovingPasskey}>
                   <input type="hidden" name="passkey" value={passkey.id} />
                   <Button type="submit" variant="outline" aria-describedby="passkey-{passkey.id}">
                     {m['security.remove-passkey']()}

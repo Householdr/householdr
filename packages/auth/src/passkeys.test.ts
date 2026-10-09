@@ -1,3 +1,4 @@
+import { createHousehold } from '@householdr/application';
 import { recordingLogger } from '@householdr/application/testing';
 import { accountEmails, jobQueue, passkeys, sessions, type JobQueue } from '@householdr/db';
 import { eq } from 'drizzle-orm';
@@ -21,6 +22,7 @@ import {
   signUpLinkTo,
   testAuthenticator,
   testSignInContext,
+  turnOnTestTwoFactor,
 } from './testing';
 
 // Adding and removing passkeys on the security page (ADR-0010 §2, §6), on a real database
@@ -64,6 +66,27 @@ const signedIn = async () => {
   const { session } = await currentSession(test.context.auth, headersWith(cookie));
   if (!session) throw new Error('No session');
   return { session, cookie, email };
+};
+
+/** Makes the account of `session` the founding head of a household (ADR-0007 §2). */
+const headOfAHousehold = async (session: Session) => {
+  const created = await createHousehold(
+    {
+      db: test.context.db,
+      actor: { account: session.accountId, twoFactor: true },
+      account: { id: session.accountId, managed: false, guardians: [] },
+    },
+    {
+      name: 'Ash Lane',
+      headName: 'Robin',
+      country: 'BE',
+      timeZone: 'Europe/Brussels',
+      language: 'en',
+      weekStartDay: 1,
+      adult: true,
+    },
+  );
+  if (!created.ok) throw new Error(`No household: ${created.error}`);
 };
 
 /** Adds a passkey made by a test authenticator, as the security page's endpoints would. */
@@ -275,6 +298,59 @@ describe('removing a passkey (ADR-0010 §2)', () => {
       error: 'confirm',
     });
     expect(await accountPasskeys(context, person.session)).toHaveLength(1);
+  });
+});
+
+describe('removing a head’s passkey (ADR-0010 §3, clarification)', () => {
+  it('refuses the last one without a password with TOTP, and says why', async () => {
+    const person = await signedIn();
+    await added(person);
+    await headOfAHousehold(person.session);
+    const [passkey] = await accountPasskeys(context, person.session);
+    expect(await removePasskey(context, person.session, { passkey: passkey?.id })).toEqual({
+      ok: false,
+      error: 'head',
+    });
+    expect(await accountPasskeys(context, person.session)).toHaveLength(1);
+    expect(await waiting(person.session.accountId)).toEqual(['passkey-added']);
+  });
+
+  it('removes one while another is left, but not the one left', async () => {
+    const person = await signedIn();
+    await added(person);
+    await added(person);
+    await headOfAHousehold(person.session);
+    const [newest, oldest] = await accountPasskeys(context, person.session);
+    expect(await removePasskey(context, person.session, { passkey: oldest?.id })).toEqual({
+      ok: true,
+    });
+    expect(await removePasskey(context, person.session, { passkey: newest?.id })).toEqual({
+      ok: false,
+      error: 'head',
+    });
+    expect(await accountPasskeys(context, person.session)).toHaveLength(1);
+  });
+
+  it('removes the last one of a head whose password has TOTP on', async () => {
+    const person = await signedIn();
+    await added(person);
+    await headOfAHousehold(person.session);
+    const { session } = await turnOnTestTwoFactor(context, person.session, person.cookie);
+    const [passkey] = await accountPasskeys(context, session);
+    expect(await removePasskey(context, session, { passkey: passkey?.id })).toEqual({ ok: true });
+  });
+
+  it('still says a passkey that isn’t the account’s isn’t there', async () => {
+    const owner = await signedIn();
+    await added(owner);
+    const [passkey] = await accountPasskeys(context, owner.session);
+    const head = await signedIn();
+    await added(head);
+    await headOfAHousehold(head.session);
+    expect(await removePasskey(context, head.session, { passkey: passkey?.id })).toEqual({
+      ok: false,
+      error: 'not-found',
+    });
   });
 });
 

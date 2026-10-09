@@ -139,6 +139,8 @@ export const actions = {
     if (result.ok) return { done: 'passkey-removed' as const };
     // Asked to confirm first: the page shows how, once it loads again.
     if (result.error === 'confirm') return fail(403, { done: 'confirm' as const });
+    // A head's last two factors, with the reason (ADR-0010 §3).
+    if (result.error === 'head') return fail(403, { passkeys: result.error });
     return fail(404, { done: 'passkey-not-found' as const });
   },
   // Starts turning two-factor on: the app's setup, for its first code (ADR-0010 §2).

@@ -193,6 +193,30 @@ for (const javaScriptEnabled of [true, false]) {
       await mailTo(account.email, 'A passkey was removed from your Householdr account');
     });
 
+    test('keeps a head’s last passkey without two-factor, and says why (ADR-0010 §3)', async ({
+      page,
+      accounts,
+      account,
+    }) => {
+      await signIn(page, account);
+      // A passkey no device holds, and a password without two-factor.
+      await accounts.addSecondFactor(account.email);
+      await accounts.addHousehold(account.email, 'Ash Lane');
+      await page.goto('/security');
+      const section = page.getByRole('region', { name: 'Passkeys' });
+      const passkeys = section.getByRole('list', { name: 'Passkeys' }).getByRole('listitem');
+      await expect(passkeys).toHaveCount(1);
+      await passkeys.getByRole('button', { name: 'Remove' }).click();
+      const summary = page.getByRole('region', { name: 'Removing the passkey didn’t work' });
+      await expect(summary).toContainText(
+        'As a head of a household, you need two factors to sign in. Add another passkey first, then you can remove this one.',
+      );
+      await expect(summary).toBeFocused();
+      await expect(passkeys).toHaveCount(1);
+      await expect(section.getByRole('status')).toHaveText('');
+      if (javaScriptEnabled) await expectAccessible(page, 'head keeps the last passkey');
+    });
+
     test('asks to confirm it’s you once the sign-in is 10 minutes old', async ({
       page,
       accounts,

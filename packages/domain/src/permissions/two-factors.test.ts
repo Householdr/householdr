@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hasTwoFactors, mayTurnOffTotp, type SignInMethods } from './two-factors';
+import { hasTwoFactors, mayRemovePasskey, mayTurnOffTotp, type SignInMethods } from './two-factors';
 
 // Two factors for heads (ADR-0010 §3), for every combination of sign-in methods. "Y" yes, "." no.
 
@@ -33,6 +33,21 @@ describe('mayTurnOffTotp (ADR-0010 §3)', () => {
 
   it('lets anyone else turn it off', () => {
     expect(row((methods) => mayTurnOffTotp(methods, false))).toBe(
+      '---:Y --t:Y -p-:Y -pt:Y k--:Y k-t:Y kp-:Y kpt:Y',
+    );
+  });
+});
+
+describe('mayRemovePasskey (ADR-0010 §3, clarification)', () => {
+  // Each combination is what the account is left with once the passkey is gone.
+  it('refuses a head left with neither another passkey nor a password with TOTP', () => {
+    expect(row((left) => mayRemovePasskey(left, true))).toBe(
+      '---:. --t:. -p-:. -pt:Y k--:Y k-t:Y kp-:Y kpt:Y',
+    );
+  });
+
+  it('lets anyone else remove one', () => {
+    expect(row((left) => mayRemovePasskey(left, false))).toBe(
       '---:Y --t:Y -p-:Y -pt:Y k--:Y k-t:Y kp-:Y kpt:Y',
     );
   });

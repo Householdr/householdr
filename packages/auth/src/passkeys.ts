@@ -1,3 +1,4 @@
+import { mayRemoveAccountPasskey } from '@householdr/application';
 import { accounts, passkeys, sessions } from '@householdr/db';
 import { isAPIError } from 'better-auth/api';
 import { and, eq } from 'drizzle-orm';
@@ -196,11 +197,17 @@ type RemovePasskeyResult =
   /** The sign-in isn't recent: the person confirms it is them first (ADR-0010 §6). */
   | { ok: false; error: 'confirm' }
   /** Not a passkey of this account, or one already removed. */
-  | { ok: false; error: 'not-found' };
+  | { ok: false; error: 'not-found' }
+  /**
+   * A head would be left with neither another passkey nor a password with TOTP, so keeps it, to
+   * keep two factors (ADR-0010 §3, clarification).
+   */
+  | { ok: false; error: 'head' };
 
 /**
  * Removes one of the account's passkeys, and e-mails the member that it was removed, in the same
- * transaction (ADR-0010 §2, ADR-0014 §7).
+ * transaction (ADR-0010 §2, ADR-0014 §7). A head is refused the passkey that is their last two
+ * factors (§3).
  */
 export async function removePasskey(
   context: PasskeysContext,
@@ -210,6 +217,9 @@ export async function removePasskey(
   const parsed = v.safeParse(passkeyToRemove, input);
   if (!parsed.success) return { ok: false, error: 'not-found' };
   if (!(await signedInRecently(context, session))) return { ok: false, error: 'confirm' };
+  if (!(await mayRemoveAccountPasskey(context, session.accountId, parsed.output.passkey))) {
+    return { ok: false, error: 'head' };
+  }
   return context.db.transaction(async (tx) => {
     const removed = await tx
       .delete(passkeys)

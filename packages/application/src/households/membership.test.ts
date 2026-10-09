@@ -11,7 +11,13 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { settableClock } from '../testing';
 import { createHousehold } from './create-household';
-import { accountHouseholdList, mayTurnOffTwoFactor, membership, viewHousehold } from './membership';
+import {
+  accountHouseholdList,
+  mayRemoveAccountPasskey,
+  mayTurnOffTwoFactor,
+  membership,
+  viewHousehold,
+} from './membership';
 
 // Who is a member of which household, and what they see of it (ADR-0017 §2, ADR-0007 §1), on a
 // real database (TEST-11).
@@ -68,16 +74,22 @@ const addMembers = (
     ),
   );
 
-/** Gives `account` a passkey that no device holds. */
-const addPasskey = (account: string) =>
-  db.insert(passkeys).values({
-    userId: account,
-    publicKey: 'a-key',
-    credentialID: `credential-${String(++next)}`,
-    counter: 0,
-    deviceType: 'singleDevice',
-    backedUp: false,
-  });
+/** Gives `account` a passkey that no device holds, and returns its ID. */
+const addPasskey = async (account: string) => {
+  const [row] = await db
+    .insert(passkeys)
+    .values({
+      userId: account,
+      publicKey: 'a-key',
+      credentialID: `credential-${String(++next)}`,
+      counter: 0,
+      deviceType: 'singleDevice',
+      backedUp: false,
+    })
+    .returning({ id: passkeys.id });
+  if (!row) throw new Error('No passkey');
+  return row.id;
+};
 /** Gives `account` a password, as the library keeps one: by its hash. */
 const addPassword = (account: string) =>
   db.insert(credentials).values({
@@ -154,6 +166,45 @@ describe('mayTurnOffTwoFactor (ADR-0010 §3)', () => {
 
   it('lets an account that heads no household turn it off', async () => {
     expect(await mayTurnOffTwoFactor({ db }, await withTotp())).toBe(true);
+  });
+});
+
+describe('mayRemoveAccountPasskey (ADR-0010 §3, clarification)', () => {
+  it('refuses a head’s last passkey without a password with TOTP', async () => {
+    const robin = await newAccount();
+    await household(robin);
+    const passkey = await addPasskey(robin);
+    expect(await mayRemoveAccountPasskey({ db }, robin, passkey)).toBe(false);
+    await addPassword(robin);
+    expect(await mayRemoveAccountPasskey({ db }, robin, passkey)).toBe(false);
+    await setTotp(robin, true);
+    expect(await mayRemoveAccountPasskey({ db }, robin, passkey)).toBe(true);
+  });
+
+  it('lets a head remove a passkey while another one is left', async () => {
+    const robin = await newAccount();
+    await household(robin);
+    const first = await addPasskey(robin);
+    const second = await addPasskey(robin);
+    expect(await mayRemoveAccountPasskey({ db }, robin, first)).toBe(true);
+    expect(await mayRemoveAccountPasskey({ db }, robin, second)).toBe(true);
+    await db.delete(passkeys).where(eq(passkeys.id, first));
+    expect(await mayRemoveAccountPasskey({ db }, robin, second)).toBe(false);
+  });
+
+  it('refuses a head of any of the account’s households', async () => {
+    const robin = await newAccount();
+    const passkey = await addPasskey(robin);
+    const sam = await newAccount();
+    await addMembers(await household(sam), { name: 'Robin', role: 'adult', accountId: robin });
+    expect(await mayRemoveAccountPasskey({ db }, robin, passkey)).toBe(true);
+    await household(robin, 'Birch Court');
+    expect(await mayRemoveAccountPasskey({ db }, robin, passkey)).toBe(false);
+  });
+
+  it('lets an account that heads no household remove its last passkey', async () => {
+    const robin = await newAccount();
+    expect(await mayRemoveAccountPasskey({ db }, robin, await addPasskey(robin))).toBe(true);
   });
 });
 

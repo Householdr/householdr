@@ -74,6 +74,8 @@
   "security.passkey-added": "The passkey is added.",
   "security.passkey-removed": "The passkey is removed.",
   "security.passkey-not-found": "That passkey was already removed.",
+  "security.passkey-remove-failed": "Removing the passkey didn’t work",
+  "security.passkey-head": "As a head of a household, you need two factors to sign in. Add another passkey first, then you can remove this one.",
   "security.passkey-failed": "Adding the passkey didn’t work. Try again, or add it on another device.",
   "security.confirm": "Confirm it’s you",
   "security.confirm-intro": "You signed in more than 10 minutes ago. Confirm it’s you to change how you sign in.",

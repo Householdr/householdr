@@ -230,6 +230,35 @@ describe('the security page’s passkeys (ADR-0010 §2, §6)', () => {
     });
   });
 
+  it('keeps a head’s last passkey without TOTP, with the reason (ADR-0010 §3)', async () => {
+    const { session, cookie } = await signedInHere();
+    await addTestPasskey(context, session, cookie, client);
+    const created = await createHousehold(
+      {
+        db: test.context.db,
+        actor: { account: session.accountId, twoFactor: true },
+        account: { id: session.accountId, managed: false, guardians: [] },
+      },
+      {
+        name: 'Ash Lane',
+        headName: 'Robin',
+        country: 'BE',
+        timeZone: 'Europe/Brussels',
+        language: 'en',
+        weekStartDay: 1,
+        adult: true,
+      },
+    );
+    expect(created.ok).toBe(true);
+    const id = (await loadFor({ session, flags: withPasskeys })).passkeys?.[0]?.id ?? '';
+    const refused = await submit('removePasskey', session, { passkey: id }, withPasskeys);
+    expect(isActionFailure(refused.returned) && refused.returned).toMatchObject({
+      status: 403,
+      data: { passkeys: 'head' },
+    });
+    expect((await loadFor({ session, flags: withPasskeys })).passkeys).toHaveLength(1);
+  });
+
   it('asks to confirm it’s you with the password when the sign-in is old (ADR-0010 §6)', async () => {
     const { session, cookie } = await signedInHere();
     await addTestPasskey(context, session, cookie, client);
