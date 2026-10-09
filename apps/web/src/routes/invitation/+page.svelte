@@ -1,6 +1,7 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import ErrorSummary from '#lib/components/ErrorSummary.svelte';
+  import InvitationSignUp from '#lib/components/InvitationSignUp.svelte';
   import { Button } from '#lib/components/ui/button/index.js';
   import { m } from '#lib/paraglide/messages.js';
   import type { PageProps } from './$types';
@@ -46,6 +47,13 @@
       <form method="POST" action="?/accept" use:enhance>
         <Button type="submit" class="w-full">{m['invitation.accept']()}</Button>
       </form>
+    {:else if data.signUp}
+      <InvitationSignUp
+        email={data.signUp.email}
+        profile={data.invitation.profile}
+        languages={data.signUp.languages}
+        terms={data.signUp.terms}
+      />
     {:else}
       <p>{m['invitation.sign-in-first']()}</p>
       <a
@@ -54,6 +62,11 @@
       >
         {m['invitation.sign-in']()}
       </a>
+      <!-- An account is created by confirming an address first (ADR-0010 §1, clarification); the
+           link in that e-mail comes back here. -->
+      <p>
+        <a href="/sign-up" class="underline">{m['invitation.create-account']()}</a>
+      </p>
     {/if}
   {:else}
     <h1 class="text-2xl font-semibold">{m['invitation.title-expired']()}</h1>

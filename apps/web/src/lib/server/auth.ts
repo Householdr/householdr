@@ -30,8 +30,9 @@ export function authContext(env: Environment = process.env): Promise<AuthContext
 }
 
 /**
- * The instance's own terms, which a new head accepts, if its operator set them: both settings, or
- * neither (ADR-0021 §5, clarification; .env.example).
+ * The instance's own terms, which a new head, and someone creating their account through an
+ * invitation, accept, if its operator set them: both settings, or neither (ADR-0021 §5; ADR-0010
+ * §1; clarifications; .env.example).
  */
 function termsOf(env: Environment): Terms | null {
   const { TERMS_URL: url, TERMS_VERSION: version } = env;

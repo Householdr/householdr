@@ -2,6 +2,7 @@
 export type { Clock, Flags, LogFields, Logger, Mail, Mailer } from './ports';
 export { flags, type FlagKey } from './flags/registry';
 export { addAdult } from './households/add-adult';
+export { name as nameField } from './households/name';
 export {
   createHousehold,
   newHousehold,

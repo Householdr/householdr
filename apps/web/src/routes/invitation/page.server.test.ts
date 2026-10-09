@@ -1,5 +1,6 @@
 import { addAdult, createHousehold, invite, membership } from '@householdr/application';
-import { createTestAccount, testSignInContext } from '@householdr/auth/testing';
+import type { InvitationSignUpContext } from '@householdr/auth';
+import { createTestAccount, signUpLinkTo, testSignInContext } from '@householdr/auth/testing';
 import { isActionFailure, isHttpError, isRedirect } from '@sveltejs/kit';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { actions, load } from './+page.server';
@@ -8,7 +9,10 @@ import { actions, load } from './+page.server';
 // (TEST-4), against a real database (TEST-11).
 
 let test: Awaited<ReturnType<typeof testSignInContext>>;
-vi.mock('#lib/server/auth.js', () => ({ authContext: () => Promise.resolve(test.context) }));
+let terms: InvitationSignUpContext['terms'] = null;
+vi.mock('#lib/server/auth.js', () => ({
+  authContext: () => Promise.resolve({ ...test.context, terms }),
+}));
 beforeAll(async () => {
   test = await testSignInContext();
 });
@@ -54,8 +58,16 @@ const invited = async () => {
   return { head, householdId: created.householdId, token: link.token };
 };
 
-/** A request with `token` in the invitation cookie, signed in as `accountId` if given. */
-const request = (token: string | undefined, accountId?: string, onboarding = true) => {
+/**
+ * A request with `token` in the invitation cookie, signed in as `accountId` if given, with
+ * `signUpToken` in the sign-up link's cookie if given.
+ */
+const request = (
+  token: string | undefined,
+  accountId?: string,
+  onboarding = true,
+  signUpToken?: string,
+) => {
   const deleted = vi.fn();
   const event = {
     locals: {
@@ -63,7 +75,12 @@ const request = (token: string | undefined, accountId?: string, onboarding = tru
       session: accountId ? { id: 'session', accountId } : null,
     },
     cookies: {
-      get: (name: string) => (name === '__Host-householdr.invitation' ? token : undefined),
+      get: (name: string) =>
+        name === '__Host-householdr.invitation'
+          ? token
+          : name === '__Host-householdr.sign-up'
+            ? signUpToken
+            : undefined,
       delete: deleted,
     },
   };
@@ -95,16 +112,41 @@ describe('the invitation page (ADR-0010 §5)', () => {
     expect(await opened(request(token).event)).toEqual({
       invitation: { household: 'Ash Lane', profile: 'Kim' },
       signedIn: false,
+      signUp: null,
     });
     expect(await opened(request(token, await newAccount()).event)).toMatchObject({
       signedIn: true,
     });
   });
 
+  it('asks someone signed out with a confirmed address to create their account (ADR-0010 §1)', async () => {
+    const { token } = await invited();
+    const signUpToken = await signUpLinkTo(test.context, 'sam@example.org');
+    expect(await opened(request(token, undefined, true, signUpToken).event)).toMatchObject({
+      signUp: { email: 'sam@example.org', languages: ['en'], terms: null },
+    });
+    // Signed in, the account accepts as it is.
+    const signedIn = request(token, await newAccount(), true, signUpToken);
+    expect(await opened(signedIn.event)).toMatchObject({ signUp: null });
+  });
+
+  it('links to the instance’s terms for the new account to accept, where it has them (ADR-0010 §1, clarification)', async () => {
+    const { token } = await invited();
+    const signUpToken = await signUpLinkTo(test.context, 'terms@example.org');
+    terms = { url: 'https://householdr.example.org/terms', version: '2026-10-01' };
+    expect(await opened(request(token, undefined, true, signUpToken).event)).toMatchObject({
+      signUp: { terms: 'https://householdr.example.org/terms' },
+    });
+    terms = null;
+    expect(await opened(request(token, undefined, true, signUpToken).event)).toMatchObject({
+      signUp: { terms: null },
+    });
+  });
+
   it('forgets a link that doesn’t work', async () => {
     for (const token of [undefined, 'not-a-link']) {
       const { event, deleted } = request(token);
-      expect(await opened(event)).toEqual({ invitation: null, signedIn: false });
+      expect(await opened(event)).toEqual({ invitation: null, signedIn: false, signUp: null });
       expect(deleted).toHaveBeenCalledWith('__Host-householdr.invitation', expect.anything());
     }
   });

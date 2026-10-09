@@ -13,9 +13,15 @@ export {
   householdPasskeyOptions,
   type HouseholdSignUpContext,
   type HouseholdSignUpField,
-  type Terms,
 } from './household-sign-up';
+export {
+  invitationPasskeyOptions,
+  joinWithPasskey,
+  type InvitationSignUpContext,
+  type InvitationSignUpField,
+} from './invitation-sign-up';
 export { confirmWithPasskey, passkeyChallenge, signInWithPasskey } from './passkey-sign-in';
+export { type Terms } from './passkey-sign-up';
 export {
   accountPasskeys,
   addPasskey,
