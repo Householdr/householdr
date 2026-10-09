@@ -171,6 +171,34 @@ describe('plan generation invariants (ADR-0001 §7, ADR-0004 §4, ADR-0005 §5)'
     );
   }, 60_000);
 
+  it('plans none of a schedule’s dates already gone in a week begun (ADR-0007 §3)', () => {
+    fc.assert(
+      fc.property(
+        household,
+        fc.integer({ min: 0, max: weeks - 1 }),
+        fc.integer({ min: 0, max: 10 }),
+        ({ calendar, tasks, away }, w, d) => {
+          const week = planWeek(first.add({ weeks: w }), calendar);
+          const today = week.start.add({ days: d });
+          const input = { week: week.start, calendar, tasks, open: [], away };
+          const result = weekOccurrences({ ...input, placedEarlier: new Set(), today });
+          // Planned while a day left is at home; nothing scheduled on a day gone.
+          const left = days(today, Math.max(0, today.until(week.end).days));
+          expect(result.planned).toBe(left.some((day) => !isAway(away, day)));
+          for (const o of result.occurrences) {
+            if (!o.task.startsWith('floating')) expect(before(o.date, today)).toBe(false);
+          }
+          // On the week's first day nothing is gone: the week is planned as usual.
+          if (d === 0) {
+            const usual = weekOccurrences({ ...input, placedEarlier: new Set() });
+            expect(result.occurrences.map((o) => o.id)).toEqual(usual.occurrences.map((o) => o.id));
+          }
+        },
+      ),
+      { numRuns: 30 },
+    );
+  }, 30_000);
+
   it('does not depend on the order of the tasks', () => {
     fc.assert(
       fc.property(

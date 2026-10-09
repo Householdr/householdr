@@ -1,7 +1,11 @@
 // Use cases: authorise, validate, transact, emit events, return a result (ADR-0023).
 export type { Clock, Flags, LogFields, Logger, Mail, Mailer, Random } from './ports';
 export { flags, type FlagKey } from './flags/registry';
-export { householdActivity, type ActivityEntry } from './households/activity';
+export {
+  householdActivity,
+  type ActivityEntry,
+  type SetBeforeStartNames,
+} from './households/activity';
 export { answerComparison } from './burdens/answer-comparison';
 export { comparisonGame, type ComparedTask } from './burdens/comparison-game';
 export {
@@ -31,6 +35,7 @@ export {
   type CreateHouseholdContext,
   type NewHouseholdField,
 } from './households/create-household';
+export { startHousehold, startOptions } from './households/start-household';
 export {
   acceptInvitation,
   invite,
@@ -77,7 +82,7 @@ export type { TaskField } from './tasks/task-fields';
 export { taskToEdit, type EditableTask } from './tasks/task-to-edit';
 // The household member as permissions see them, which the web app's guard keeps per request, and
 // why an occurrence went where it did, which the plan's page puts in words.
-export type { Member, Reason, Role, UnassignedCause } from '@householdr/domain';
+export type { Member, Reason, Role, StartChoice, UnassignedCause } from '@householdr/domain';
 export { defaultFlags, flagValues } from './flags/values';
 // The apps open the database and the job queue here, to put them into their contexts (ADR-0023 §4);
 // only use cases and `auth` query the one and queue jobs on the other.

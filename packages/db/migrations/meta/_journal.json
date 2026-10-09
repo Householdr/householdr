@@ -169,6 +169,13 @@
       "when": 1791798508125,
       "tag": "0023_started-households",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1791802181633,
+      "tag": "0024_start",
+      "breakpoints": true
     }
   ]
 }

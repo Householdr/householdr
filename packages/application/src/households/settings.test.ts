@@ -1,4 +1,11 @@
-import { accounts, activityLog, inHousehold, passkeys, type Database } from '@householdr/db';
+import {
+  accounts,
+  activityLog,
+  inHousehold,
+  members,
+  passkeys,
+  type Database,
+} from '@householdr/db';
 import { testDatabase } from '@householdr/db/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { settableClock } from '../testing';
@@ -121,6 +128,28 @@ describe('householdSettings and changeHouseholdSettings (ADR-0007 §2)', () => {
       changedBy: 'Robin',
     });
     expect(await householdSettings(head)).toMatchObject({ settings: { name: 'Birch Court' } });
+  });
+
+  it('says who changed a setting last, whatever else the log shows since', async () => {
+    const head = await household();
+    await changeHouseholdSettings(head, { ...settings, name: 'Birch Court', version: 1 });
+    // Sam starts the household afterwards (ADR-0007 §2), which changes no setting.
+    await inHousehold(db, head.householdId, async (tx) => {
+      const [sam] = await tx
+        .insert(members)
+        .values({ householdId: head.householdId, name: 'Sam', role: 'head' })
+        .returning({ id: members.id });
+      await tx.insert(activityLog).values({
+        householdId: head.householdId,
+        at: new Date('2026-10-08T09:00:00Z'),
+        actorId: sam?.id,
+        action: 'household.started',
+        setBeforeStart: { shares: [], daysAway: [] },
+      });
+    });
+    expect(
+      await changeHouseholdSettings(head, { ...settings, name: 'Cedar Row', version: 1 }),
+    ).toMatchObject({ error: 'conflict', changedBy: 'Robin' });
   });
 
   it('says which fields aren’t valid, with a time zone that must be the country’s', async () => {
