@@ -91,7 +91,15 @@ describe('the signed-in devices of an account (ADR-0010 §6)', () => {
   it('leaves out sessions that have expired', async () => {
     const email = await newAccount();
     const { session } = await signIn(email);
-    const later = test.context.clock.now().add({ hours: 31 * 24 });
+    // The library dates a session from the real time, not the test's clock: go past its own expiry.
+    const [row] = await test.context.db
+      .select({ expiresAt: sessions.expiresAt })
+      .from(sessions)
+      .where(eq(sessions.id, session.id));
+    if (!row) throw new Error('The session is gone.');
+    const later = Temporal.Instant.fromEpochMilliseconds(row.expiresAt.getTime()).add({
+      minutes: 1,
+    });
     const devices = await signedInDevices(
       { ...test.context, clock: { now: () => later } },
       session,
