@@ -133,19 +133,17 @@ export async function testAccounts(url: string) {
       return result.householdId;
     },
     /**
-     * Makes the account at `email` an adult member of household `householdId`, named Sam, as
+     * Makes the account at `email` an adult member of household `householdId`, named `name`, as
      * accepting an invitation will (ADR-0010 §5).
      */
-    addMember: async (email: string, householdId: string) => {
+    addMember: async (email: string, householdId: string, name = 'Sam') => {
       const [account] = await db
         .select({ id: accounts.id })
         .from(accounts)
         .where(eq(accounts.email, email));
       if (!account) throw new Error('No such account');
       await inHousehold(db, householdId, (tx) =>
-        tx
-          .insert(members)
-          .values({ householdId, name: 'Sam', role: 'adult', accountId: account.id }),
+        tx.insert(members).values({ householdId, name, role: 'adult', accountId: account.id }),
       );
     },
     /**

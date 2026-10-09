@@ -1,9 +1,11 @@
 import type { HouseholdCalendar } from '@householdr/domain';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { inHousehold, type Database, type Transaction } from './connection';
 import { accountEmails, accounts, sessions, twoFactors } from './auth-schema';
 import {
+  absences,
+  awayPeriods,
   comparisons,
   households,
   members,
@@ -498,6 +500,93 @@ describe('comparisons (ADR-0003 §3a, ADR-0012 §5)', () => {
     }
     const byHousehold = await answered();
     expect(await leftAfter(byHousehold.id, (tx) => tx.delete(households))).toEqual([]);
+  });
+});
+
+describe('absences (ADR-0005 §2)', () => {
+  /** A household with one member, Robin, and `days` as their absences. Returns its id. */
+  const away = async (...days: { firstDay: string; lastDay: string }[]) => {
+    const id = newId();
+    await inHousehold(db, id, async (tx) => {
+      await tx.insert(households).values(household(id));
+      const [robin] = await tx
+        .insert(members)
+        .values({ householdId: id, name: 'Robin', role: 'head' })
+        .returning({ id: members.id });
+      if (!robin) throw new Error('No member');
+      for (const each of days) {
+        await tx.insert(absences).values({ householdId: id, memberId: robin.id, ...each });
+      }
+    });
+    return id;
+  };
+  const daysOf = (id: string) =>
+    inHousehold(db, id, (tx) =>
+      tx.select({ firstDay: absences.firstDay, lastDay: absences.lastDay }).from(absences),
+    );
+
+  it('are whole days, the last not before the first, both included', async () => {
+    const id = await away(
+      { firstDay: '2026-10-12', lastDay: '2026-10-16' },
+      { firstDay: '2026-10-20', lastDay: '2026-10-20' },
+    );
+    expect(await daysOf(id)).toEqual([
+      { firstDay: '2026-10-12', lastDay: '2026-10-16' },
+      { firstDay: '2026-10-20', lastDay: '2026-10-20' },
+    ]);
+    expect(await refusal(away({ firstDay: '2026-10-16', lastDay: '2026-10-15' }))).toBe(
+      'absences_days',
+    );
+  });
+
+  it('store no reason, place or detail (ADR-0012 §2, ADR-0018 §3)', async () => {
+    const { rows } = await db.execute<{ name: string }>(sql`
+      select column_name as name from information_schema.columns
+      where table_schema = 'public' and table_name = 'absences' order by ordinal_position`);
+    expect(rows.map((r) => r.name)).toEqual([
+      'id',
+      'household_id',
+      'member_id',
+      'first_day',
+      'last_day',
+    ]);
+  });
+
+  it('go with their member’s profile, and with their household', async () => {
+    const id = await away({ firstDay: '2026-10-12', lastDay: '2026-10-16' });
+    await inHousehold(db, id, (tx) => tx.delete(members));
+    expect(await daysOf(id)).toEqual([]);
+    const other = await away({ firstDay: '2026-10-12', lastDay: '2026-10-16' });
+    await inHousehold(db, other, (tx) => tx.delete(households));
+    expect(await daysOf(other)).toEqual([]);
+  });
+});
+
+describe('away periods (ADR-0005 §5)', () => {
+  /** A household with `days` as its periods away. Returns its id. */
+  const awayTogether = async (...days: { firstDay: string; lastDay: string }[]) => {
+    const id = newId();
+    await inHousehold(db, id, async (tx) => {
+      await tx.insert(households).values(household(id));
+      for (const each of days) await tx.insert(awayPeriods).values({ householdId: id, ...each });
+    });
+    return id;
+  };
+
+  it('are whole days, the last not before the first, both included, and go with the household', async () => {
+    const id = await awayTogether({ firstDay: '2026-10-12', lastDay: '2026-10-12' });
+    expect(
+      await inHousehold(db, id, (tx) =>
+        tx
+          .select({ firstDay: awayPeriods.firstDay, lastDay: awayPeriods.lastDay })
+          .from(awayPeriods),
+      ),
+    ).toEqual([{ firstDay: '2026-10-12', lastDay: '2026-10-12' }]);
+    expect(await refusal(awayTogether({ firstDay: '2026-10-16', lastDay: '2026-10-15' }))).toBe(
+      'away_periods_days',
+    );
+    await inHousehold(db, id, (tx) => tx.delete(households));
+    expect(await inHousehold(db, id, (tx) => tx.select().from(awayPeriods))).toEqual([]);
   });
 });
 

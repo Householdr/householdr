@@ -111,6 +111,7 @@ describe('the flags of a request (ADR-0015 §3)', () => {
       'two-factor': false,
       tasks: false,
       comparisons: false,
+      availability: false,
     });
   });
 
@@ -128,6 +129,7 @@ describe('the flags of a request (ADR-0015 §3)', () => {
       'two-factor': false,
       tasks: false,
       comparisons: false,
+      availability: false,
     });
   });
 });
