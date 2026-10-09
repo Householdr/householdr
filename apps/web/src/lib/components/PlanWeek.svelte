@@ -14,19 +14,29 @@
     week,
     status,
     problem,
+    taskProblem,
     attempt,
     publish,
+    submit,
     heading = $bindable(),
   }: {
     week: ShownWeek;
-    /** What publishing it did (UI-12). */
+    /** What publishing it, or marking one of its tasks done or undoing it, did (UI-12). */
     status: string;
     /** Why publishing it didn't go through, if it didn't. */
     problem: string;
+    /** Why marking one of its tasks done, or undoing it, didn't go through, if it didn't. */
+    taskProblem: {
+      heading: string;
+      message: string;
+      fields: { id: string; problem: string }[];
+    } | null;
     /** The answer to the last form sent, so a new summary takes the focus again. */
     attempt: unknown;
     /** How the publishing form is sent, with the focus kept (UI-7). */
     publish: SubmitFunction;
+    /** How a task's forms are sent, with the focus kept (UI-7). */
+    submit: (...targets: string[]) => SubmitFunction;
     /** The week's heading, which takes the focus once publishing takes its button with it. */
     heading?: HTMLElement;
   } = $props();
@@ -35,6 +45,13 @@
 <h2 id={week.id} tabindex="-1" bind:this={heading} class="text-xl font-semibold wrap-break-word">
   {week.heading}
 </h2>
+
+<!-- A new summary for every attempt, so it takes the focus again. -->
+{#key attempt}
+  {#if taskProblem}
+    <ErrorSummary {...taskProblem} />
+  {/if}
+{/key}
 
 {#if week.draft}
   <p class="rounded-lg border p-4">{week.draft}</p>
@@ -61,7 +78,7 @@
     {#if member.items.length > 0}
       <ul aria-labelledby="{week.id}-{member.id}" class="flex flex-col divide-y rounded-lg border">
         {#each member.items as item (item.id)}
-          <PlanItem {item} />
+          <PlanItem {item} {submit} />
         {/each}
       </ul>
     {:else}
@@ -76,7 +93,7 @@
     <p>{m['plan.unassigned-intro']()}</p>
     <ul aria-labelledby="{week.id}-unassigned" class="flex flex-col divide-y rounded-lg border">
       {#each week.unassigned as item (item.id)}
-        <PlanItem {item} />
+        <PlanItem {item} {submit} />
       {/each}
     </ul>
   </section>
