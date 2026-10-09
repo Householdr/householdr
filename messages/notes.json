@@ -602,6 +602,22 @@
     "note": "Why adding didn't work: no name, or one over 100 characters. 'Their' is gender-neutral.",
     "needsReview": ["nl"]
   },
+  "household.start-title": {
+    "note": "Heading of the box on the household's page that leads a head to Start, the last step of setting up, while the household is in setup (ADR-0007 §2 step 7).",
+    "needsReview": ["nl"]
+  },
+  "household.start-intro": {
+    "note": "Under 'Ready to start?' on the household's page, for heads while the household is in setup (ADR-0007 §2).",
+    "needsReview": ["nl"]
+  },
+  "household.start": {
+    "note": "Link, styled as a button, from the household's page to the Start page.",
+    "needsReview": ["nl"]
+  },
+  "household.started": {
+    "note": "Status on the household's page right after a head started it on the week start day (ADR-0007 §3). {week} is a day such as “Monday 12 October”; {draft} and {publish} are a day and time such as “Sunday 11 October 2026 at 12:00”.",
+    "needsReview": ["nl"]
+  },
   "household.more": {
     "note": "Accessible name of the navigation at the bottom of a household's page (settings, activity, security).",
     "needsReview": ["nl"]
@@ -692,6 +708,26 @@
   },
   "activity.household-language": {
     "note": "Log entry. {actor} is a member's name, or 'A former member'.",
+    "needsReview": ["nl"]
+  },
+  "activity.household-started": {
+    "note": "Log entry when a head started the household, which ends setting it up (ADR-0007 §2). {actor} is a member's name, or 'A former member'.",
+    "needsReview": ["nl"]
+  },
+  "activity.set-before-start": {
+    "note": "Follows 'started the household' when a head had set shares, and planned days away for members without an account, before the start (ADR-0018 §5). Never shows a value. {shares} and {daysAway} are lists of names, such as “Sam and Kim”.",
+    "needsReview": ["nl"]
+  },
+  "activity.set-before-start-shares": {
+    "note": "As 'Set before the start: shares for …; days away for …', when only shares were set. {shares} is a list of names, such as “Sam and Kim”.",
+    "needsReview": ["nl"]
+  },
+  "activity.set-before-start-days-away": {
+    "note": "As 'Set before the start: shares for …; days away for …', when only days away were planned. {daysAway} is a list of names, such as “Sam”.",
+    "needsReview": ["nl"]
+  },
+  "activity.a-former-member": {
+    "note": "Stands for a name in the lists of 'Set before the start' when the person is no longer a member. Lower case, as it sits in a sentence.",
     "needsReview": ["nl"]
   },
   "household.shares": {
@@ -1066,6 +1102,10 @@
     "note": "Shown to heads above a draft plan (ADR-0006 §2). {when} is a day and time, such as “Sunday 11 October 2026 at 12:00”.",
     "needsReview": ["nl"]
   },
+  "plan.draft-heads-publish": {
+    "note": "Shown to heads above the draft of this week's plan when a household has just started (ADR-0007 §3): nothing publishes it on its own, a head does.",
+    "needsReview": ["nl"]
+  },
   "plan.publish": {
     "note": "Button with which a head publishes the draft early, so everyone sees it (ADR-0006 §2).",
     "needsReview": ["nl"]
@@ -1184,6 +1224,58 @@
   },
   "plan.publish-failed": {
     "note": "Heading of the summary when a head's publishing didn't go through; plan.changed or plan.gone says why.",
+    "needsReview": ["nl"]
+  },
+  "start.page-title": {
+    "note": "Browser tab title of the Start page, the last step of setting up a household (ADR-0007 §2 step 7).",
+    "needsReview": ["nl"]
+  },
+  "start.title": {
+    "note": "Heading of the Start page.",
+    "needsReview": ["nl"]
+  },
+  "start.intro": {
+    "note": "Introduces the two ways to start a household (ADR-0007 §3).",
+    "needsReview": ["nl"]
+  },
+  "start.when": {
+    "note": "Legend of the two choices on the Start page.",
+    "needsReview": ["nl"]
+  },
+  "start.now": {
+    "note": "The first choice, chosen unless the head picks the other (ADR-0007 §2).",
+    "needsReview": ["nl"]
+  },
+  "start.now-hint": {
+    "note": "Explains 'Start now' (ADR-0007 §3). {last} is the last day of this week, such as “Sunday 11 October”.",
+    "needsReview": ["nl"]
+  },
+  "start.week-start": {
+    "note": "The second choice: start on the household's week start day. {day} is that day, such as “Monday 12 October”.",
+    "needsReview": ["nl"]
+  },
+  "start.week-start-hint": {
+    "note": "Explains starting on the week start day (ADR-0007 §3). {draft} and {publish} are a day and time, such as “Saturday 10 October 2026 at 00:00”.",
+    "needsReview": ["nl"]
+  },
+  "start.submit": {
+    "note": "The Start page's button.",
+    "needsReview": ["nl"]
+  },
+  "start.failed": {
+    "note": "Heading of the error summary on the Start page.",
+    "needsReview": ["nl"]
+  },
+  "start.invalid": {
+    "note": "When the form came without a choice.",
+    "needsReview": ["nl"]
+  },
+  "start.already-started": {
+    "note": "When another head started the household while this one was choosing. Calm: the household has started.",
+    "needsReview": ["nl"]
+  },
+  "start.started": {
+    "note": "On the Start page when it is opened after the household started.",
     "needsReview": ["nl"]
   }
 }

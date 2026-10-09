@@ -84,3 +84,8 @@ export function dayAndTime(at: number, timeZone: string, locale: string) {
     timeZone,
   }).format(at);
 }
+
+/** `items` as a list in `locale`, such as “Sam, Kim and Lee” (UI-21). */
+export function listOf(items: readonly string[], locale: string) {
+  return new Intl.ListFormat(locale, { style: 'long', type: 'conjunction' }).format(items);
+}

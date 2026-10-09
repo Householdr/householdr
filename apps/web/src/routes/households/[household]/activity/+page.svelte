@@ -1,27 +1,11 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { dayOf } from '#lib/intl.js';
+  import { useActivity } from '#lib/hooks/use-activity.svelte.js';
   import { m } from '#lib/paraglide/messages.js';
-  import { getLocale } from '#lib/paraglide/runtime.js';
   import type { PageProps } from './$types';
 
   let { data }: PageProps = $props();
-  const locale = getLocale();
-
-  /** An entry in words: who did what (ADR-0018 §5), a former member without a name (ADR-0012 §6). */
-  const said = (entry: PageProps['data']['entries'][number]) => {
-    const actor = entry.actor ?? m['activity.former-member']();
-    switch (entry.action) {
-      case 'household.name':
-        return m['activity.household-name']({ actor });
-      case 'household.country':
-        return m['activity.household-country']({ actor });
-      case 'household.timeZone':
-        return m['activity.household-time-zone']({ actor });
-      case 'household.language':
-        return m['activity.household-language']({ actor });
-    }
-  };
+  const activity = useActivity(() => data);
 </script>
 
 <svelte:head>
@@ -32,14 +16,16 @@
   <h1 id="activity" class="text-2xl font-semibold">{m['activity.title']()}</h1>
   <p>{m['activity.intro']()}</p>
 
-  {#if data.entries.length > 0}
+  {#if activity.entries.length > 0}
     <ul aria-labelledby="activity" class="flex flex-col divide-y rounded-lg border">
-      {#each data.entries as entry (entry.id)}
+      {#each activity.entries as entry (entry.id)}
         <li class="flex flex-col gap-1 p-4">
-          <span class="wrap-break-word">{said(entry)}</span>
+          <span class="wrap-break-word">{entry.said}</span>
+          {#if entry.detail}
+            <span class="wrap-break-word">{entry.detail}</span>
+          {/if}
           <!-- The day only, never the time: when someone is active isn't shared (ADR-0018 §3). -->
-          <span class="text-sm text-muted-foreground">{dayOf(entry.at, data.timeZone, locale)}</span
-          >
+          <span class="text-sm text-muted-foreground">{entry.day}</span>
         </li>
       {/each}
     </ul>

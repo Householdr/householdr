@@ -60,7 +60,8 @@ export async function createTestAccount(
 
 /**
  * Takes household `householdId` out of setup, with its first plan week starting on `firstWeek`,
- * as Start will (ADR-0007 §2, §3). Until Start exists, this is how a household gets plans.
+ * as Start does (ADR-0007 §2, §3), for tests that need a started household without its draft or
+ * its entry in the activity log.
  */
 export async function startTestHousehold(db: Database, householdId: string, firstWeek: string) {
   await inHousehold(db, householdId, (tx) =>
@@ -185,6 +186,43 @@ export async function testAccounts(url: string) {
         if (!member) throw new Error('Not a member');
         await tx.insert(absences).values({ householdId, memberId: member.id, firstDay, lastDay });
       });
+    },
+    /**
+     * Adds a profile without an account named `name` to household `householdId`, as a head does
+     * (ADR-0007 §1), and sets what a head can set for it before the start: a share, in percent
+     * (ADR-0001 §4), and days away, both days included, as `YYYY-MM-DD` (ADR-0018 §4).
+     */
+    addProfile: async (
+      householdId: string,
+      name: string,
+      { share, away }: { share?: number; away?: [string, string] } = {},
+    ) => {
+      await inHousehold(db, householdId, async (tx) => {
+        const [profile] = await tx
+          .insert(members)
+          .values({ householdId, name, role: 'adult', sharePercent: share ?? null })
+          .returning({ id: members.id });
+        if (!profile) throw new Error('No profile');
+        if (away) {
+          const [firstDay, lastDay] = away;
+          await tx
+            .insert(absences)
+            .values({ householdId, memberId: profile.id, firstDay, lastDay });
+        }
+      });
+    },
+    /** Sets the share of the account at `email` in household `householdId`, in percent. */
+    setShare: async (householdId: string, email: string, percent: number) => {
+      const account = db
+        .select({ id: accounts.id })
+        .from(accounts)
+        .where(eq(accounts.email, email));
+      await inHousehold(db, householdId, (tx) =>
+        tx
+          .update(members)
+          .set({ sharePercent: percent })
+          .where(inArray(members.accountId, account)),
+      );
     },
     /**
      * Takes household `householdId` out of setup from this plan week on, and drafts next week's

@@ -13,16 +13,31 @@ async function householdContext(locals: App.Locals) {
   return { db, clock, ...locals.membership };
 }
 
-/** The household's name and its members, and what the member opening it may do there. */
-export const load = (async ({ locals }) => {
+/**
+ * The household's name and its members, and what the member opening it may do there. Right after
+ * a head started it on the week start day, which sends them here, when its first plan comes
+ * (ADR-0007 §3).
+ */
+export const load = (async ({ locals, url }) => {
   const context = await householdContext(locals);
   const result = await viewHousehold(context);
   if (!result.ok) error(403);
+  const { firstPlan } = result;
   return {
     name: result.name,
     members: result.members,
     mayAddMembers: result.mayAddMembers,
     mayChangeSettings: result.mayChangeSettings,
+    mayStart: result.mayStart,
+    started:
+      url.searchParams.has('started') && firstPlan
+        ? {
+            week: firstPlan.week.toString(),
+            draftAt: firstPlan.draftAt.epochMilliseconds,
+            publishAt: firstPlan.publishAt.epochMilliseconds,
+            timeZone: firstPlan.publishAt.timeZoneId,
+          }
+        : null,
     you: context.member.id,
   };
 }) satisfies PageServerLoad;

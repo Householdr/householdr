@@ -5,11 +5,25 @@
   import { Button } from '#lib/components/ui/button/index.js';
   import { Input } from '#lib/components/ui/input/index.js';
   import { Label } from '#lib/components/ui/label/index.js';
+  import { dayAndTime, weekDay } from '#lib/intl.js';
   import { m } from '#lib/paraglide/messages.js';
+  import { getLocale } from '#lib/paraglide/runtime.js';
   import type { Role } from '@householdr/application';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
+  const locale = getLocale();
+
+  /** When the first plan comes, right after a head started the household (ADR-0007 §3). */
+  const started = $derived.by(() => {
+    if (!data.started) return '';
+    const { week, draftAt, publishAt, timeZone } = data.started;
+    return m['household.started']({
+      week: weekDay(week, locale),
+      draft: dayAndTime(draftAt, timeZone, locale),
+      publish: dayAndTime(publishAt, timeZone, locale),
+    });
+  });
 
   /** A role in words. */
   const roles: Record<Role, () => string> = {
@@ -25,6 +39,21 @@
 
 <main class="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-12">
   <h1 class="text-2xl font-semibold wrap-break-word">{data.name}</h1>
+
+  {#if data.flags.plans}
+    <p role="status" class="wrap-break-word empty:hidden">{started}</p>
+  {/if}
+
+  <!-- The last step of setting up, for heads, until the household has started (ADR-0007 §2). -->
+  {#if data.flags.plans && data.mayStart}
+    <section aria-labelledby="start" class="flex flex-col gap-4 rounded-lg border p-4">
+      <h2 id="start" class="text-lg font-semibold">{m['household.start-title']()}</h2>
+      <p>{m['household.start-intro']()}</p>
+      <Button href="/households/{page.params.household}/start" class="w-full">
+        {m['household.start']()}
+      </Button>
+    </section>
+  {/if}
 
   <section aria-labelledby="members" class="flex flex-col gap-4">
     <h2 id="members" class="text-lg font-semibold">{m['household.members']()}</h2>

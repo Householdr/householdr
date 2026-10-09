@@ -1,4 +1,4 @@
-import { createHousehold, membership } from '@householdr/application';
+import { createHousehold, membership, startHousehold } from '@householdr/application';
 import { createTestAccount, testSignInContext } from '@householdr/auth/testing';
 import { isActionFailure, isHttpError } from '@sveltejs/kit';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -42,9 +42,10 @@ const founded = async () => {
   return { householdId: result.householdId, member };
 };
 
-const opened = async (locals: object) => {
+const opened = async (locals: object, address = 'https://householdr.example.org/households/x') => {
   try {
-    return await load({ locals } as unknown as Parameters<typeof load>[0]);
+    const url = new URL(address);
+    return await load({ locals, url } as unknown as Parameters<typeof load>[0]);
   } catch (thrown) {
     if (isHttpError(thrown)) return thrown.status;
     throw thrown;
@@ -80,6 +81,8 @@ describe('a household’s page (ADR-0007 §1)', () => {
       members: [{ id: membership.member.id, name: 'Robin', role: 'head' }],
       mayAddMembers: false,
       mayChangeSettings: false,
+      mayStart: false,
+      started: null,
       you: membership.member.id,
     });
   });
@@ -89,6 +92,29 @@ describe('a household’s page (ADR-0007 §1)', () => {
     expect(await opened({ flags: { onboarding: true }, membership })).toMatchObject({
       mayAddMembers: true,
     });
+  });
+
+  it('lets a head start it while in setup, then says when the first plan comes (ADR-0007 §3)', async () => {
+    const membership = withTwoFactor(await founded());
+    const locals = { flags: { onboarding: true }, membership };
+    expect(await opened(locals)).toMatchObject({ mayStart: true, started: null });
+    const { db, clock } = test.context;
+    await startHousehold({ db, clock, ...membership }, { when: 'week start' });
+    // The test clock reads Thursday 8 October 2026: the first plan is for the week of 12 October,
+    // drafted on Saturday 10 October at 00:00 and published on Sunday 11 October at 12:00.
+    expect(
+      await opened(locals, 'https://householdr.example.org/households/x?started'),
+    ).toMatchObject({
+      mayStart: false,
+      started: {
+        week: '2026-10-12',
+        draftAt: Date.parse('2026-10-09T22:00:00Z'),
+        publishAt: Date.parse('2026-10-11T10:00:00Z'),
+        timeZone: 'Europe/Brussels',
+      },
+    });
+    // Only right after starting.
+    expect(await opened(locals)).toMatchObject({ mayStart: false, started: null });
   });
 
   it('is not found until onboarding’s flag is on (CODE-20), or outside a household', async () => {
