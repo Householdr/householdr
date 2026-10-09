@@ -71,6 +71,11 @@ const firstPlanWeek = async (h: PlannedHousehold) => {
   return row?.week;
 };
 
+const startedNow = async (h: PlannedHousehold) => {
+  const [row] = await h.inIt((tx) => tx.select({ now: households.startedNow }).from(households));
+  return row?.now;
+};
+
 const entries = (h: PlannedHousehold) =>
   h.inIt((tx) =>
     tx
@@ -108,6 +113,8 @@ describe('startHousehold now (ADR-0007 §3)', () => {
       drafted: true,
     });
     expect(await firstPlanWeek(h)).toBe(thisWeek);
+    // Its draft waits for a head to publish it (ADR-0006 §2, clarification).
+    expect(await startedNow(h)).toBe(true);
     const plan = await h.plan(thisWeek);
     expect(plan).toMatchObject({ weekEnd: nextWeek, status: 'draft', publishedAt: null });
     expect(plan?.draftedAt).toEqual(new Date('2026-10-08T08:00:00Z'));
@@ -182,6 +189,7 @@ describe('startHousehold on the week start day (ADR-0007 §3)', () => {
       drafted: false,
     });
     expect(await firstPlanWeek(h)).toBe(nextWeek);
+    expect(await startedNow(h)).toBe(false);
     expect(await h.plan(thisWeek)).toBeUndefined();
     expect(await h.plan(nextWeek)).toBeUndefined();
     expect(await h.occurrences()).toEqual([]);
@@ -275,7 +283,8 @@ describe('the start entry of the activity log (ADR-0007 §2, ADR-0018 §5, clari
     const sam = await profile(h, 'Sam');
     const kim = await profile(h, 'Kim');
     await profile(h, 'Lee');
-    // Robin's own share is no one else's; Alex's days away are their own to set (ADR-0018 §4).
+    // Robin's own share is listed too (ADR-0018 §4, clarification); Alex's days away are their own
+    // to set (ADR-0018 §4).
     await h.share(h.robin, 80);
     await h.share(h.alex, 60);
     await h.temporaryShare(sam, '2026-10-12', '2026-10-18', 50);
@@ -288,7 +297,7 @@ describe('the start entry of the activity log (ADR-0007 §2, ADR-0018 §5, clari
         actorId: h.robin,
         action: 'household.started',
         setBeforeStart: {
-          shares: [h.alex, sam].sort(),
+          shares: [h.robin, h.alex, sam].sort(),
           daysAway: [kim, sam].sort(),
         },
       },
@@ -302,12 +311,12 @@ describe('the start entry of the activity log (ADR-0007 §2, ADR-0018 §5, clari
         at: '2026-10-08T08:00:00Z',
         actor: 'Robin',
         action: 'household.started',
-        setBeforeStart: { shares: ['Alex', 'Sam'], daysAway: ['Kim', 'Sam'] },
+        setBeforeStart: { shares: ['Alex', 'Robin', 'Sam'], daysAway: ['Kim', 'Sam'] },
       },
     ]);
   });
 
-  it('lists nothing for a household where nothing was set for others', async () => {
+  it('lists the starting head’s own share, and nothing when nothing was set', async () => {
     const h = await inSetup();
     await h.share(h.robin, 80);
     await started(h, 'now');
@@ -315,10 +324,15 @@ describe('the start entry of the activity log (ADR-0007 §2, ADR-0018 §5, clari
       {
         actorId: h.robin,
         action: 'household.started',
-        setBeforeStart: { shares: [], daysAway: [] },
+        setBeforeStart: { shares: [h.robin], daysAway: [] },
       },
     ]);
     expect(await householdActivity(h.head)).toMatchObject({
+      entries: [{ actor: 'Robin', setBeforeStart: { shares: ['Robin'], daysAway: [] } }],
+    });
+    const birch = await inSetup();
+    await started(birch, 'week start');
+    expect(await householdActivity(birch.head)).toMatchObject({
       entries: [{ actor: 'Robin', setBeforeStart: { shares: [], daysAway: [] } }],
     });
   });

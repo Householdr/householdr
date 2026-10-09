@@ -23,7 +23,7 @@ export interface ActivityEntry {
   /** The name of who did it, or null for a former member (ADR-0012 §6). */
   actor: string | null;
   action: ActivityAction;
-  /** For the start entry, what was set for other members before; null for any other. */
+  /** For the start entry, what was set before, the starter's own share included; null for any other. */
   setBeforeStart: SetBeforeStartNames | null;
 }
 

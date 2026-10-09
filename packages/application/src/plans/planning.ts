@@ -29,6 +29,8 @@ export interface Planning {
   timings: PlanTimings;
   /** The first day of its first plan week; none while it is in setup (ADR-0007 §2). */
   firstWeek: Temporal.PlainDate | undefined;
+  /** Whether it started now, whose first draft waits for a head (ADR-0007 §3). */
+  startedNow: boolean;
   rebalance: RebalancePreset;
 }
 
@@ -41,6 +43,7 @@ export async function planningOf(tx: Transaction, { lock = false } = {}): Promis
     .select({
       ...calendarColumns,
       firstPlanWeek: households.firstPlanWeek,
+      startedNow: households.startedNow,
       draftHours: households.draftHours,
       publishHours: households.publishHours,
       rebalance: households.rebalance,
@@ -52,6 +55,7 @@ export async function planningOf(tx: Transaction, { lock = false } = {}): Promis
     calendar: calendarOf(row),
     timings: { draft: row.draftHours, publish: row.publishHours },
     firstWeek: row.firstPlanWeek === null ? undefined : Temporal.PlainDate.from(row.firstPlanWeek),
+    startedNow: row.startedNow,
     rebalance: row.rebalance,
   };
 }

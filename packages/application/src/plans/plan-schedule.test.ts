@@ -83,6 +83,12 @@ describe('queueDuePlanSteps (ADR-0006 §2, ADR-0008 §10)', () => {
     ]);
   });
 
+  it('leaves the draft of a household that started now for a head to publish (ADR-0007 §3)', async () => {
+    const h = await plannedHousehold(db, { startedNow: true });
+    await draftPlan(h.scheduler, { week: '2026-10-12' });
+    expect(await tick('2026-10-13T08:00:00Z', h)).toEqual([]);
+  });
+
   it('queues nothing for a household in setup, or before its first plan week (ADR-0007 §2)', async () => {
     const inSetup = await plannedHousehold(db, { started: null });
     const later = await plannedHousehold(db, { started: '2026-10-19' });

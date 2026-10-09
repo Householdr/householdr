@@ -16,7 +16,7 @@ import {
   startChoices,
   type StartChoice,
 } from '@householdr/domain';
-import { and, asc, eq, exists, isNotNull, isNull, ne, or } from 'drizzle-orm';
+import { and, asc, eq, exists, isNotNull, isNull, or } from 'drizzle-orm';
 import * as v from 'valibot';
 import { draftWeek } from '../plans/draft-plan';
 import { planningOf } from '../plans/planning';
@@ -106,8 +106,8 @@ type StartHouseholdResult =
  * the first plan week: this one when it starts now, whose draft is made at once for the days left,
  * with the days before today counted as days away, for a head to check and publish; or the next
  * one when it starts on the week start day, which the scheduler drafts and publishes at its times
- * (ADR-0006 §2). The activity log shows who started it, with what was set for other members
- * before, never a value (ADR-0018 §5).
+ * (ADR-0006 §2). The activity log shows who started it, with what was set before, their own
+ * share included, never a value (ADR-0018 §5).
  */
 export async function startHousehold(
   context: HouseholdContext,
@@ -126,14 +126,14 @@ export async function startHousehold(
     const week = firstPlanWeek(when, now, planning.calendar);
     await tx
       .update(households)
-      .set({ firstPlanWeek: week.start.toString() })
+      .set({ firstPlanWeek: week.start.toString(), startedNow: when === 'now' })
       .where(eq(households.id, householdId));
     await tx.insert(activityLog).values({
       householdId,
       at: new Date(now.epochMilliseconds),
       actorId: context.member.id,
       action: 'household.started',
-      setBeforeStart: await setBeforeStart(tx, context.member.id),
+      setBeforeStart: await setBeforeStart(tx),
     });
     if (when === 'week start') return { ok: true, when, firstWeek: week.start, drafted: false };
     const planId = await draftWeek(tx, {
@@ -148,12 +148,12 @@ export async function startHousehold(
 }
 
 /**
- * What heads set for members other than `starter`, the head who starts the household, before it
- * started (ADR-0007 §2, ADR-0018 §5, clarifications): whose share was set, as a share of their own
- * or a temporary one, which only heads set (ADR-0001 §4); and which profiles without an account
- * have days away, which only a head acting for them plans (ADR-0018 §4). Ids only, in a fixed order.
+ * What heads set before the household started (ADR-0007 §2, ADR-0018 §5, clarifications): whose
+ * share was set, as a share of their own or a temporary one, which only heads set (ADR-0001 §4),
+ * the starting head's own included (ADR-0018 §4); and which profiles without an account have days
+ * away, which only a head acting for them plans (ADR-0018 §4). Ids only, in a fixed order.
  */
-async function setBeforeStart(tx: Transaction, starter: string): Promise<SetBeforeStart> {
+async function setBeforeStart(tx: Transaction): Promise<SetBeforeStart> {
   const temporaryShare = tx
     .select({ id: temporaryShares.id })
     .from(temporaryShares)
@@ -161,9 +161,7 @@ async function setBeforeStart(tx: Transaction, starter: string): Promise<SetBefo
   const shares = await tx
     .select({ id: members.id })
     .from(members)
-    .where(
-      and(ne(members.id, starter), or(isNotNull(members.sharePercent), exists(temporaryShare))),
-    )
+    .where(or(isNotNull(members.sharePercent), exists(temporaryShare)))
     .orderBy(asc(members.id));
   const absence = tx
     .select({ id: absences.id })
@@ -172,7 +170,7 @@ async function setBeforeStart(tx: Transaction, starter: string): Promise<SetBefo
   const daysAway = await tx
     .select({ id: members.id })
     .from(members)
-    .where(and(ne(members.id, starter), isNull(members.accountId), exists(absence)))
+    .where(and(isNull(members.accountId), exists(absence)))
     .orderBy(asc(members.id));
   return { shares: shares.map((row) => row.id), daysAway: daysAway.map((row) => row.id) };
 }
