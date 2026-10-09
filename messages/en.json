@@ -231,5 +231,10 @@
   "invitation.ask-again": "Ask for a new link",
   "invitation.invalid-name": "Enter your name, up to 100 characters.",
   "invitation.invalid-language": "Choose your language.",
-  "invitation.invalid-terms": "Accept the terms to create an account."
+  "invitation.invalid-terms": "Accept the terms to create an account.",
+  "household.share": "Share the link",
+  "household.share-title": "Join {household} on Householdr",
+  "household.share-text": "Here’s your invitation to join {household} on Householdr, where we share the chores fairly.",
+  "household.qr-help": "Or let {name} scan this code with their phone’s camera.",
+  "household.qr": "QR code of the invitation link for {name}"
 }

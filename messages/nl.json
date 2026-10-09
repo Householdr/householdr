@@ -231,5 +231,10 @@
   "invitation.ask-again": "Een nieuwe link vragen",
   "invitation.invalid-name": "Vul je naam in, tot 100 tekens.",
   "invitation.invalid-language": "Kies je taal.",
-  "invitation.invalid-terms": "Ga akkoord met de voorwaarden om een account aan te maken."
+  "invitation.invalid-terms": "Ga akkoord met de voorwaarden om een account aan te maken.",
+  "household.share": "De link delen",
+  "household.share-title": "Sluit aan bij {household} op Householdr",
+  "household.share-text": "Hier is je uitnodiging om aan te sluiten bij {household} op Householdr, waar we de huishoudtaken eerlijk verdelen.",
+  "household.qr-help": "Of laat {name} deze code scannen met de camera van hun telefoon.",
+  "household.qr": "QR-code van de uitnodigingslink voor {name}"
 }
