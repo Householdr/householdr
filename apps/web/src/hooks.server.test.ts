@@ -109,6 +109,7 @@ describe('the flags of a request (ADR-0015 §3)', () => {
       'activity-log': false,
       shares: false,
       'two-factor': false,
+      tasks: false,
     });
   });
 
@@ -124,6 +125,7 @@ describe('the flags of a request (ADR-0015 §3)', () => {
       'activity-log': false,
       shares: false,
       'two-factor': false,
+      tasks: false,
     });
   });
 });

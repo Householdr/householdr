@@ -49,6 +49,7 @@ const on = {
   'activity-log': false,
   shares: false,
   'two-factor': false,
+  tasks: false,
 };
 let next = 0;
 
