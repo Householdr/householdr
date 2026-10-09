@@ -7,13 +7,16 @@
 
   let { data, form }: PageProps = $props();
 
-  const plan = usePlan(() => data);
+  const plan = usePlan(
+    () => data,
+    () => form,
+  );
   /** Each week's heading, which takes the focus once publishing takes its button with it. */
   const headings = $state<Record<string, HTMLElement | undefined>>({});
 
-  /** What publishing `week` did, in words (UI-12). */
+  /** What publishing `week`, or marking one of its tasks done or undoing it, did (UI-12). */
   const statusOf = (week: string) =>
-    form?.week === week && form.published ? m['plan.published']() : '';
+    form?.week === week && form.published ? m['plan.published']() : plan.statusOf(week);
 
   /** Why publishing `week` didn't go through, in words (CODE-13). */
   const problemOf = (week: string) => {
@@ -45,8 +48,10 @@
         bind:heading={headings[week.id]}
         status={statusOf(week.start)}
         problem={problemOf(week.start)}
+        taskProblem={plan.problemOf(week.start)}
         attempt={form}
         publish={plan.publishThenFocus(() => headings[week.id])}
+        submit={plan.thenFocus}
       />
     </section>
   {/each}

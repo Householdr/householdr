@@ -1234,6 +1234,98 @@
     "note": "Heading of the summary when a head's publishing didn't go through; plan.changed or plan.gone says why.",
     "needsReview": ["nl"]
   },
+  "plan.you": {
+    "note": "Stands for the reader in the lists of who did a task and who logged it, as in 'Done on Thursday 15 October by you and Alex'. Lower case, as it sits in a sentence after 'by'.",
+    "needsReview": ["nl"]
+  },
+  "plan.done": {
+    "note": "Under a task that is done: the day it was done (weekday, day and month) and who did it, a list such as 'Alex' or 'you and Kim'. Others see the day only, never the time (ADR-0018 §3).",
+    "needsReview": ["nl"]
+  },
+  "plan.done-at": {
+    "note": "Under a task that is done, for those who did it only: the day, the time of day in the household's time zone, and who did it, a list such as 'you' or 'you and Kim' (ADR-0018 §3).",
+    "needsReview": ["nl"]
+  },
+  "plan.logged-by": {
+    "note": "Under a task that is done, when whoever marked it done wasn't the only one who did it: who marked it done, by name or 'you' (ADR-0002, Consequences).",
+    "needsReview": ["nl"]
+  },
+  "plan.undo": {
+    "note": "Button under a task that is done, which marks it as not done again. Shown to whoever marked it done, those who did it, and heads, until the end of the week (ADR-0006 §4).",
+    "needsReview": ["nl"]
+  },
+  "plan.undo-label": {
+    "note": "What screen readers call the Undo button: it starts with plan.undo, then names the task and its day (weekday, day and month), so each button on the page has a name of its own.",
+    "needsReview": ["nl"]
+  },
+  "plan.done-button": {
+    "note": "Button on the reader's own task in this week's plan, which marks it done with one tap (ADR-0006 §4). Short, as it says the reader did it.",
+    "needsReview": ["nl"]
+  },
+  "plan.done-label": {
+    "note": "What screen readers call the Done button: it starts with plan.done-button, then names the task and its day (weekday, day and month).",
+    "needsReview": ["nl"]
+  },
+  "plan.done-with-others": {
+    "note": "Opens a choice of who did the reader's own task: with others, or someone else instead of them (ADR-0006 §4).",
+    "needsReview": ["nl"]
+  },
+  "plan.mark-done": {
+    "note": "Opens a choice of who did a task of someone else's, or of nobody's: whoever it was given to, the reader picking it up, or several together (ADR-0006 §4, ADR-0002 §4). Differs from plan.mark-done-button, the choice's own button.",
+    "needsReview": ["nl"]
+  },
+  "plan.who": {
+    "note": "Heading of the list of household members to tick who did a task. Several can be ticked: each gets the task's points (ADR-0002 §1).",
+    "needsReview": ["nl"]
+  },
+  "plan.mark-done-button": {
+    "note": "Button under the list of who did a task, which marks it done for those ticked.",
+    "needsReview": ["nl"]
+  },
+  "plan.mark-done-label": {
+    "note": "What screen readers call the button under the list of who did a task: it starts with plan.mark-done-button, then names the task and its day (weekday, day and month).",
+    "needsReview": ["nl"]
+  },
+  "plan.no-doers": {
+    "note": "Next to the list of who did a task, when it was sent with nobody ticked.",
+    "needsReview": ["nl"]
+  },
+  "plan.no-doers-summary": {
+    "note": "In the summary at the top of the week when a task was sent to be marked done with nobody ticked; links to the list. {task} is the task's name as the household typed it.",
+    "needsReview": ["nl"]
+  },
+  "plan.complete-failed": {
+    "note": "Heading of the summary when marking a task done didn't go through; the message under it says why.",
+    "needsReview": ["nl"]
+  },
+  "plan.undo-failed": {
+    "note": "Heading of the summary when undoing a task that was done didn't go through; the message under it says why.",
+    "needsReview": ["nl"]
+  },
+  "plan.already-done": {
+    "note": "When someone else marked the task done a moment before the reader (ADR-0019 §6). {doers} is who did it, a list such as 'Alex' or 'you and Kim'. Calm, never a reproach.",
+    "needsReview": ["nl"]
+  },
+  "plan.not-completable": {
+    "note": "When a task can no longer be marked done: its week is over, or it was taken out of the plan. The page shows the plan as it is now.",
+    "needsReview": ["nl"]
+  },
+  "plan.week-over": {
+    "note": "When undoing a task that was done comes after the end of its plan week (ADR-0006 §4).",
+    "needsReview": ["nl"]
+  },
+  "plan.undone-already": {
+    "note": "When someone else undid the task a moment before the reader tried to.",
+    "needsReview": ["nl"]
+  },
+  "plan.completed": {
+    "note": "Read out after the reader marked a task done (UI-12). {task} is the task's name as the household typed it.",
+    "needsReview": ["nl"]
+  },
+  "plan.reopened": {
+    "note": "Read out after the reader undid a task that was done: it is to be done again (UI-12).",
+    "needsReview": ["nl"]
+  },
   "start.page-title": {
     "note": "Browser tab title of the Start page, the last step of setting up a household (ADR-0007 §2 step 7).",
     "needsReview": ["nl"]

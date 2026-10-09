@@ -89,3 +89,8 @@ export function dayAndTime(at: number, timeZone: string, locale: string) {
 export function listOf(items: readonly string[], locale: string) {
   return new Intl.ListFormat(locale, { style: 'long', type: 'conjunction' }).format(items);
 }
+
+/** The time of day of `at` (epoch milliseconds) in `timeZone`, in `locale`, such as “18:30”. */
+export function timeOf(at: number, timeZone: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, { timeStyle: 'short', timeZone }).format(at);
+}

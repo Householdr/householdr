@@ -1,5 +1,5 @@
 import { createHash, generateKeyPairSync, randomBytes, sign, type KeyObject } from 'node:crypto';
-import { addTask, createHousehold, draftPlan } from '@householdr/application';
+import { addTask, createHousehold, draftPlan, publishPlan } from '@householdr/application';
 import { settableClock } from '@householdr/application/testing';
 import {
   absences,
@@ -244,6 +244,27 @@ export async function testAccounts(url: string) {
       const result = await draftPlan(scheduler, { week });
       if (!result.ok) throw new Error(`No draft: ${result.error}`);
       return week;
+    },
+    /**
+     * Takes household `householdId` out of setup from this plan week on, and drafts and publishes
+     * this week's plan for the days left, as starting now and a head publishing its draft do
+     * (ADR-0006 §2, ADR-0007 §3), without an entry in the activity log.
+     */
+    publishThisWeek: async (householdId: string) => {
+      const today = Temporal.Now.plainDateISO('Europe/Brussels');
+      // Weeks start on Mondays in Brussels, as `addHousehold` makes them.
+      const week = today.subtract({ days: today.dayOfWeek - 1 }).toString();
+      await startTestHousehold(db, householdId, week);
+      const scheduler = {
+        db,
+        clock: { now: () => Temporal.Now.instant() },
+        householdId,
+        member: 'scheduler' as const,
+      };
+      const drafted = await draftPlan(scheduler, { week });
+      if (!drafted.ok) throw new Error(`No draft: ${drafted.error}`);
+      const published = await publishPlan(scheduler, { week });
+      if (!published.ok) throw new Error(`Not published: ${published.error}`);
     },
     /** Makes every sign-in of the account at `email` 11 minutes old (ADR-0010 §6). */
     signedInLongAgo: async (email: string) => {
