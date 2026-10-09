@@ -14,9 +14,13 @@
   let { data, form }: PageProps = $props();
   const passkeys = usePasskeys();
 
-  /** Signs in with a passkey, then goes where a password sign-in goes. */
+  /**
+   * Signs in with a passkey, then goes where a password sign-in goes, with every page's data loaded
+   * anew for the account, as after the password form (ADR-0008 §6).
+   */
   async function signInWithPasskey() {
-    if (await passkeys.sign('/sign-in/passkey')) await goto(afterSignIn(page.url));
+    if (await passkeys.sign('/sign-in/passkey'))
+      await goto(afterSignIn(page.url), { invalidateAll: true });
   }
 
   /** A password sign-in replaces what a passkey's failure said. */

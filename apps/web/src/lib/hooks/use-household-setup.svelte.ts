@@ -1,7 +1,7 @@
 import { goto } from '$app/navigation';
 import { countries, countryOfTimeZone, isCountry, timeZonesOf } from '@householdr/domain';
 import { onMount } from 'svelte';
-import { countryName, languageName, weekdayName } from '#lib/intl.js';
+import { countryName, languageName, timeZoneName, weekdayName } from '#lib/intl.js';
 import { getLocale } from '#lib/paraglide/runtime.js';
 import { passkeysSupported } from '#lib/hooks/use-passkeys.svelte.js';
 
@@ -38,6 +38,7 @@ const order: SetupField[] = [
  * the household, which the page says.
  */
 export function useHouseholdSetup(languages: readonly string[]) {
+  // Before there is an account, values are written in the page's language alone (ADR-0008 §6).
   const locale = getLocale();
   const offered = languages[0] ?? '';
   const fields = $state({
@@ -83,7 +84,13 @@ export function useHouseholdSetup(languages: readonly string[]) {
     .sort((a, b) => collator.compare(a.name, b.name));
   const languageOptions = languages.map((code) => ({ code, name: languageName(code) }));
   const weekdays = [1, 2, 3, 4, 5, 6, 7].map((day) => ({ day, name: weekdayName(day, locale) }));
-  const timeZones = $derived(isCountry(fields.country) ? timeZonesOf(fields.country) : []);
+  // The chosen country's time zones, its main one first.
+  const timeZones = $derived(
+    (isCountry(fields.country) ? timeZonesOf(fields.country) : []).map((timeZone) => ({
+      timeZone,
+      name: timeZoneName(timeZone, locale),
+    })),
+  );
 
   /** Posts `body` to one of the step's endpoints. */
   const post = (path: string, body: unknown) =>
@@ -139,8 +146,9 @@ export function useHouseholdSetup(languages: readonly string[]) {
         await refused(finished);
         return;
       }
-      // The new household (ADR-0005 §1).
-      await goto('/');
+      // The new household (ADR-0005 §1). Signed in now, every page's data loads anew, such as the
+      // locale the root layout writes values in for the account (ADR-0008 §6).
+      await goto('/', { invalidateAll: true });
     } catch {
       // Cancelled, timed out, or refused by the browser or the authenticator.
       outcome = 'not-created';

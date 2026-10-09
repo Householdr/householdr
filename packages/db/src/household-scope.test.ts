@@ -153,6 +153,7 @@ describe('every household-owned table (CODE-17)', () => {
       where n.nspname = 'public' and c.relkind = 'r'
       order by c.relname`);
     expect(rows.map((r) => r.table)).toEqual([
+      'activity_log',
       'households',
       'invitations',
       'members',

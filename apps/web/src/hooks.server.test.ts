@@ -105,6 +105,8 @@ describe('the flags of a request (ADR-0015 §3)', () => {
       'password-reset': false,
       onboarding: false,
       passkeys: false,
+      'household-settings': false,
+      'activity-log': false,
     });
   });
 
@@ -116,6 +118,8 @@ describe('the flags of a request (ADR-0015 §3)', () => {
       'password-reset': false,
       onboarding: false,
       passkeys: false,
+      'household-settings': false,
+      'activity-log': false,
     });
   });
 });
@@ -124,7 +128,7 @@ describe('who a request is signed in as (ADR-0010 §6)', () => {
   /** A cookie as the browser sends it back. */
   const sent = ({ name, value }: Cookie) => `${name}=${encodeURIComponent(value)}`;
 
-  it('is the account of a valid session cookie', async () => {
+  it('is the account of a valid session cookie, with its culture (ADR-0008 §6)', async () => {
     const email = 'robin@example.org';
     const password = 'correct horse battery staple';
     const accountId = await createTestAccount(test.context.auth, { email, password });
@@ -140,7 +144,11 @@ describe('who a request is signed in as (ADR-0010 §6)', () => {
     await respond(authenticate, { cookie: sent(cookie) }, locals, {
       [sessionCookie]: cookie.value,
     });
-    expect(locals.session).toEqual({ id: expect.any(String) as string, accountId });
+    expect(locals.session).toEqual({
+      id: expect.any(String) as string,
+      accountId,
+      culture: 'en-BE',
+    });
   });
 
   it('is no one without a cookie, or with one that isn’t a session', async () => {

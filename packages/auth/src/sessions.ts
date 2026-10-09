@@ -12,12 +12,14 @@ export const sessionCookie = '__Host-householdr.session_token';
 export interface Session {
   id: string;
   accountId: string;
+  /** The account's culture, such as `nl-BE`: how values are written for it (ADR-0008 §6). */
+  culture: string;
 }
 
 /**
  * The session the request's cookies belong to, if it is still valid, and the cookies to set with
  * the response: a session in use is extended once a day, and one that ended is cleared
- * (ADR-0010 §6).
+ * (ADR-0010 §6). The account's culture comes with the account the library looks up anyway.
  */
 export async function currentSession(
   auth: Auth,
@@ -25,7 +27,11 @@ export async function currentSession(
 ): Promise<{ session: Session | null; cookies: Cookie[] }> {
   const { headers: set, response } = await auth.api.getSession({ headers, returnHeaders: true });
   return {
-    session: response && { id: response.session.id, accountId: response.user.id },
+    session: response && {
+      id: response.session.id,
+      accountId: response.user.id,
+      culture: response.user.culture,
+    },
     cookies: cookiesFrom(set),
   };
 }

@@ -123,6 +123,7 @@ describe('a household’s page (ADR-0007 §1)', () => {
         },
       ],
       mayAddMembers: false,
+      mayChangeSettings: false,
       you: membership.member.id,
     });
   });

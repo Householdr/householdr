@@ -1,4 +1,4 @@
-import { sessions } from '@householdr/db';
+import { accounts, sessions } from '@householdr/db';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Cookie } from './cookies';
@@ -64,6 +64,18 @@ describe('currentSession (ADR-0010 §6)', () => {
     expect(cookies.map(({ name }) => name)).toEqual([sessionCookie]);
     const found = await currentSession(test.context.auth, cookieHeader(cookies));
     expect(found.session).toEqual(session);
+  });
+
+  it('carries the account’s culture as it is now, for how values are written (ADR-0008 §6)', async () => {
+    const email = await newAccount();
+    const { session, cookies } = await signIn(email);
+    expect(session.culture).toBe('en-BE');
+    await test.context.db
+      .update(accounts)
+      .set({ culture: 'nl-NL' })
+      .where(eq(accounts.email, email));
+    const found = await currentSession(test.context.auth, cookieHeader(cookies));
+    expect(found.session?.culture).toBe('nl-NL');
   });
 
   it('finds no one without a valid session', async () => {
