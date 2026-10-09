@@ -8,12 +8,10 @@
   import { Label } from '#lib/components/ui/label/index.js';
   import { percentage } from '#lib/intl.js';
   import { m } from '#lib/paraglide/messages.js';
-  import { getLocale } from '#lib/paraglide/runtime.js';
   import type { MemberShare, Role } from '@householdr/application';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
-  const locale = getLocale();
 
   /** A role in words. */
   const roles: Record<Role, () => string> = {
@@ -24,7 +22,8 @@
 
   /** A share this week in words, and where it comes from (ADR-0001 §4). */
   const said = (share: MemberShare) => {
-    const amount = percentage(share.percent, locale);
+    // With the account's culture (ADR-0008 §6, clarification).
+    const amount = percentage(share.percent, data.locale);
     if (share.set !== null) return m['shares.set']({ share: amount });
     return share.role === 'child'
       ? m['shares.by-age']({ share: amount })
@@ -55,7 +54,7 @@
         heading={m['shares.failed']()}
         message={m['shares.conflict']({
           name: form.conflict.name,
-          share: percentage(form.conflict.percent, locale),
+          share: percentage(form.conflict.percent, data.locale),
         })}
       />
     {:else if refused}
