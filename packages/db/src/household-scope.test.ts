@@ -4,6 +4,7 @@ import pg from 'pg';
 import { connect, inHousehold, refuseBypass, type Database } from './connection';
 import { accounts } from './auth-schema';
 import {
+  comparisons,
   households,
   members,
   parentalConsents,
@@ -200,6 +201,117 @@ describe('schedules and tasks (ADR-0008 §9, CODE-17)', () => {
   });
 });
 
+describe('comparisons (ADR-0008 §9, CODE-17)', () => {
+  /** Ash's and Birch's heads, and two tasks of each, as each household sees them. */
+  const own = (id: string) =>
+    inHousehold(db, id, async (tx) => ({
+      member: (await tx.select({ id: members.id }).from(members))[0]?.id ?? '',
+      tasks: (await tx.select({ id: tasks.id }).from(tasks).orderBy(tasks.name)).map((t) => t.id),
+    }));
+  let ashes: Awaited<ReturnType<typeof own>>;
+  let birches: Awaited<ReturnType<typeof own>>;
+  const answeredAt = new Date('2026-10-08T08:00:00Z');
+  /** An answer in household `id`, with the given member and tasks. */
+  const answer = (
+    id: string,
+    member: string,
+    [harder = '', easier = '']: readonly (string | undefined)[],
+  ) =>
+    inHousehold(db, id, (tx) =>
+      tx
+        .insert(comparisons)
+        .values({
+          householdId: id,
+          memberId: member,
+          harderTaskId: harder,
+          easierTaskId: easier,
+          answeredAt,
+        })
+        .returning({ id: comparisons.id }),
+    );
+  beforeAll(async () => {
+    for (const [id, names] of [
+      [ash, ['Dishes', 'Ironing']],
+      [birch, ['Mow the lawn', 'Windows']],
+    ] as const) {
+      await inHousehold(db, id, async (tx) => {
+        const [schedule] = await tx
+          .insert(schedules)
+          .values({ householdId: id, rules: [{ rrule: 'FREQ=WEEKLY', start: '2026-10-08' }] })
+          .returning({ id: schedules.id });
+        if (!schedule) throw new Error('No schedule');
+        for (const name of names) {
+          await tx.insert(tasks).values({
+            householdId: id,
+            name,
+            duration: 30,
+            scheduleId: schedule.id,
+            timing: 'flexible',
+            onMiss: 'roll over',
+          });
+        }
+      });
+    }
+    ashes = await own(ash);
+    birches = await own(birch);
+    await answer(ash, ashes.member, [ashes.tasks[1], ashes.tasks[0]]);
+    await answer(birch, birches.member, birches.tasks);
+  });
+
+  it('sees only its own', async () => {
+    const seen = await inHousehold(db, ash, (tx) =>
+      tx.select({ memberId: comparisons.memberId }).from(comparisons),
+    );
+    expect(seen).toEqual([{ memberId: ashes.member }]);
+  });
+
+  it('cannot add one to another household', async () => {
+    expect(
+      await refusal(
+        inHousehold(db, ash, (tx) =>
+          tx.insert(comparisons).values({
+            householdId: birch,
+            memberId: birches.member,
+            harderTaskId: birches.tasks[0] ?? '',
+            easierTaskId: birches.tasks[1] ?? '',
+            answeredAt,
+          }),
+        ),
+      ),
+    ).toBe(refusedByRowSecurity);
+  });
+
+  it('cannot be about another household’s member or tasks', async () => {
+    // Foreign keys are checked past row-level security, so each key includes the household.
+    expect(await refusal(answer(ash, birches.member, ashes.tasks))).toBe('comparisons_member');
+    expect(await refusal(answer(ash, ashes.member, [birches.tasks[0], ashes.tasks[0]]))).toBe(
+      'comparisons_harder_task',
+    );
+    expect(await refusal(answer(ash, ashes.member, [ashes.tasks[0], birches.tasks[0]]))).toBe(
+      'comparisons_easier_task',
+    );
+  });
+
+  it('cannot change or delete another household’s', async () => {
+    const changed = await inHousehold(db, ash, async (tx) => ({
+      updated: await tx
+        .update(comparisons)
+        .set({ answeredAt: new Date('2026-10-09T08:00:00Z') })
+        .where(eq(comparisons.memberId, birches.member))
+        .returning(),
+      deleted: await tx
+        .delete(comparisons)
+        .where(eq(comparisons.memberId, birches.member))
+        .returning(),
+    }));
+    expect(changed).toEqual({ updated: [], deleted: [] });
+    const theirs = await inHousehold(db, birch, (tx) =>
+      tx.select({ memberId: comparisons.memberId }).from(comparisons),
+    );
+    expect(theirs).toEqual([{ memberId: birches.member }]);
+  });
+});
+
 describe('connect (ADR-0008 §9)', () => {
   it('refuses a superuser, whom row-level security does not bind', async () => {
     await expect(connect(testServerUrl())).rejects.toThrow('bypasses row-level security');
@@ -252,6 +364,7 @@ describe('every household-owned table (CODE-17)', () => {
       order by c.relname`);
     expect(rows.map((r) => r.table)).toEqual([
       'activity_log',
+      'comparisons',
       'households',
       'invitations',
       'members',

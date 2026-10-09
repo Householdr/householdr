@@ -6,12 +6,14 @@ import {
   sign,
   type KeyObject,
 } from 'node:crypto';
-import { createHousehold } from '@householdr/application';
+import { addTask, createHousehold, membership } from '@householdr/application';
 import { settableClock } from '@householdr/application/testing';
 import {
   accountEmails,
   accounts,
   connect,
+  inHousehold,
+  members,
   passkeys,
   sessions,
   type Database,
@@ -129,6 +131,43 @@ export async function testAccounts(url: string) {
       );
       if (!result.ok) throw new Error(`No household: ${result.error}`);
       return result.householdId;
+    },
+    /**
+     * Makes the account at `email` an adult member of household `householdId`, named Sam, as
+     * accepting an invitation will (ADR-0010 §5).
+     */
+    addMember: async (email: string, householdId: string) => {
+      const [account] = await db
+        .select({ id: accounts.id })
+        .from(accounts)
+        .where(eq(accounts.email, email));
+      if (!account) throw new Error('No such account');
+      await inHousehold(db, householdId, (tx) =>
+        tx
+          .insert(members)
+          .values({ householdId, name: 'Sam', role: 'adult', accountId: account.id }),
+      );
+    },
+    /**
+     * Adds weekly tasks named `names` to household `householdId`, as its head at `email` does on
+     * the tasks page: with two factors (ADR-0010 §3).
+     */
+    addTasks: async (email: string, householdId: string, ...names: string[]) => {
+      const [account] = await db
+        .select({ id: accounts.id })
+        .from(accounts)
+        .where(eq(accounts.email, email));
+      if (!account) throw new Error('No such account');
+      const member = await membership({ db }, account.id, householdId);
+      if (!member) throw new Error('Not a member');
+      const clock = { now: () => Temporal.Now.instant() };
+      for (const name of names) {
+        const result = await addTask(
+          { db, clock, householdId, member },
+          { name, duration: 20, frequency: 'weekly', onMiss: 'roll over' },
+        );
+        if (!result.ok) throw new Error(`No task: ${result.error}`);
+      }
     },
     /** Makes every sign-in of the account at `email` 11 minutes old (ADR-0010 §6). */
     signedInLongAgo: async (email: string) => {

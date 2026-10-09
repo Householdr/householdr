@@ -1,5 +1,10 @@
-import { checkBreachedPassword, stdoutLogger, systemClock } from '@householdr/adapters';
-import { connect, jobQueue } from '@householdr/application';
+import {
+  checkBreachedPassword,
+  stdoutLogger,
+  systemClock,
+  systemRandom,
+} from '@householdr/adapters';
+import { connect, jobQueue, type Random } from '@householdr/application';
 import {
   counterKeys,
   createAuth,
@@ -12,8 +17,11 @@ import {
 
 type Environment = Record<string, string | undefined>;
 
-/** What signing in, sessions, password resets and signing up need. */
-type AuthContext = PasswordResetContext & HouseholdSignUpContext;
+/**
+ * What signing in, sessions, password resets and signing up need, and the draws that decide the
+ * order of the comparison game's pairs (ADR-0003 §3a, clarification).
+ */
+type AuthContext = PasswordResetContext & HouseholdSignUpContext & { random: Random };
 
 let started: Promise<AuthContext> | undefined;
 
@@ -79,6 +87,7 @@ async function start(env: Environment): Promise<AuthContext> {
     auth: createAuth({ db, baseUrl, secret, totpKeys: keys }),
     db,
     clock: systemClock,
+    random: systemRandom,
     counterKey: counterKeys(secret),
     queue,
     logger: stdoutLogger(),

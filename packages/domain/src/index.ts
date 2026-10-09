@@ -30,6 +30,7 @@ export {
   type BurdenTask,
   type Evidence,
 } from './burdens/estimate';
+export { inRandomOrder, nextPair } from './burdens/next-pair';
 export {
   completionCredits,
   rebalanceRates,

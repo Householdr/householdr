@@ -63,6 +63,13 @@ export const flags = {
     owner: 'Jens',
     expires: '2027-03-31',
   },
+  comparisons: {
+    kind: 'release',
+    description:
+      'The comparison game, for a member’s own burdens, and what their answers change (ADR-0003 §3a, §5).',
+    owner: 'Jens',
+    expires: '2027-03-31',
+  },
 } as const satisfies Record<string, Flag>;
 
 export type FlagKey = keyof typeof flags;

@@ -283,6 +283,14 @@
         {m['tasks.title']()}
       </a>
     {/if}
+    {#if data.flags.comparisons}
+      <a
+        href="/households/{page.params.household}/comparisons"
+        class="underline underline-offset-4"
+      >
+        {m['comparisons.title']()}
+      </a>
+    {/if}
     <a href="/security" class="underline underline-offset-4">{m['security.title']()}</a>
   </nav>
 </main>

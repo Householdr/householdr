@@ -12,6 +12,7 @@ describe('withForcedFlags (ADR-0015 §10)', () => {
     shares: false,
     'two-factor': false,
     tasks: false,
+    comparisons: false,
   };
 
   it('turns the flags a test names on or off, and leaves the rest', () => {

@@ -362,9 +362,53 @@ export const tasks = pgTable(
       foreignColumns: [schedules.householdId, schedules.id],
     }),
     index('tasks_household_schedule').on(t.householdId, t.scheduleId),
+    // What a row about a task refers to, so that it can only be about one of its own household.
+    unique('tasks_household_task').on(t.householdId, t.id),
     check('tasks_name', sql`${t.name} <> ''`),
     check('tasks_duration', sql`${t.duration} between 1 and 1440`),
     check('tasks_timing', sql`${t.timing} in ('flexible', 'floating')`),
     check('tasks_on_miss', sql`${t.onMiss} in ('roll over', 'lapse')`),
+  ],
+);
+
+/**
+ * One answer of a member in the comparison game: which of two tasks is harder for them (ADR-0003
+ * §3a), and when they gave it. It is burden evidence, which only the member sees (ADR-0012 §2–§3):
+ * row-level security keeps households apart, and the use cases keep each member to their own rows.
+ * It goes with the member's profile, with either task and with the household (ADR-0012 §5).
+ */
+export const comparisons = pgTable(
+  'comparisons',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid().notNull(),
+    /** Whose evidence it is. */
+    memberId: uuid().notNull(),
+    harderTaskId: uuid().notNull(),
+    easierTaskId: uuid().notNull(),
+    answeredAt: timestamp({ withTimezone: true }).notNull(),
+  },
+  (t) => [
+    householdOnly(t.householdId),
+    // A member and tasks of the same household (ADR-0008 §9).
+    foreignKey({
+      name: 'comparisons_member',
+      columns: [t.householdId, t.memberId],
+      foreignColumns: [members.householdId, members.id],
+    }).onDelete('cascade'),
+    foreignKey({
+      name: 'comparisons_harder_task',
+      columns: [t.householdId, t.harderTaskId],
+      foreignColumns: [tasks.householdId, tasks.id],
+    }).onDelete('cascade'),
+    foreignKey({
+      name: 'comparisons_easier_task',
+      columns: [t.householdId, t.easierTaskId],
+      foreignColumns: [tasks.householdId, tasks.id],
+    }).onDelete('cascade'),
+    index('comparisons_household_member').on(t.householdId, t.memberId),
+    index('comparisons_household_harder_task').on(t.householdId, t.harderTaskId),
+    index('comparisons_household_easier_task').on(t.householdId, t.easierTaskId),
+    check('comparisons_two_tasks', sql`${t.harderTaskId} <> ${t.easierTaskId}`),
   ],
 );
