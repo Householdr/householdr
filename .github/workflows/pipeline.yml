@@ -158,7 +158,8 @@ jobs:
     name: '🧪 Test: E2E'
     needs: bundle
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    # The suite runs about 9–10 minutes (ADR-0009 §4: a little above its normal duration).
+    timeout-minutes: 15
     # The test server's database, as for the unit tests: throwaway, and reachable only from this job.
     # And the mail server the worker sends to, whose API the tests read the e-mails from.
     services:
