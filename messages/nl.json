@@ -236,5 +236,14 @@
   "household.share-title": "Sluit aan bij {household} op Householdr",
   "household.share-text": "Hier is je uitnodiging om aan te sluiten bij {household} op Householdr, waar we de huishoudtaken eerlijk verdelen.",
   "household.qr-help": "Of laat {name} deze code scannen met de camera van hun telefoon.",
-  "household.qr": "QR-code van de uitnodigingslink voor {name}"
+  "household.qr": "QR-code van de uitnodigingslink voor {name}",
+  "household.add-child": "Een kind toevoegen",
+  "household.add-child-intro": "Alleen wie het ouderlijk gezag over een kind heeft, kan het toevoegen. Heb je dat niet, zoals een stiefouder soms, nodig dan een van de ouders van het kind uit om het toe te voegen.",
+  "household.birth-date": "Geboortedatum",
+  "household.child-consent": "Ik heb het ouderlijk gezag over dit kind, en ik ga ermee akkoord dat het Householdr gebruikt.",
+  "household.child-added": "{name} is toegevoegd. Laat het hen weten, in woorden die ze begrijpen: zodra ze een eigen account hebben, zien ze alles wat over hen is vastgelegd.",
+  "household.check": "Kijk deze na en probeer het opnieuw:",
+  "household.invalid-birth-date": "Vul hun geboortedatum in, niet later dan vandaag.",
+  "household.child-is-adult": "Ze zijn 18 jaar of ouder: voeg hen toe als volwassene.",
+  "household.invalid-consent": "Bevestig, om een kind toe te voegen, dat je het ouderlijk gezag over het kind hebt en ermee akkoord gaat dat het Householdr gebruikt."
 }

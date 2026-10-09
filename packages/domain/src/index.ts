@@ -46,6 +46,8 @@ export {
   timeZonesOf,
   type Country,
 } from './households/countries';
+export { householdDate } from './households/date';
+export { isAdultOn } from './members/age';
 export {
   canForAccount,
   type Account,

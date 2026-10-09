@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { inHousehold, type Database } from './connection';
 import { accountEmails, accounts, sessions } from './auth-schema';
-import { households, members } from './schema';
+import { households, members, parentalConsents, profileGuardians } from './schema';
 import { refusal, testDatabase } from './testing';
 
 // The database keeps to the domain's rules as a second line of defence (ADR-0006 §1, ADR-0012 §2).
@@ -150,6 +150,108 @@ describe('members', () => {
       return tx.select().from(members);
     });
     expect(left).toEqual([]);
+  });
+});
+
+describe('guardians and consents of a child’s profile (ADR-0010 §9)', () => {
+  /** A household with a child's profile, and an account to be its guardian. */
+  const withChild = async () => {
+    const [account] = await db
+      .insert(accounts)
+      .values({ name: 'Robin', email: `robin-${String(++next)}@example.org`, culture: 'en-BE' })
+      .returning({ id: accounts.id });
+    if (!account) throw new Error('No account');
+    const householdId = newId();
+    const [child] = await inHousehold(db, householdId, async (tx) => {
+      await tx.insert(households).values(household(householdId));
+      return tx
+        .insert(members)
+        .values({ householdId, name: 'Kim', role: 'child', birthDate: '2016-03-01' })
+        .returning({ id: members.id });
+    });
+    if (!child) throw new Error('No child');
+    return { householdId, memberId: child.id, accountId: account.id };
+  };
+  type Child = Awaited<ReturnType<typeof withChild>>;
+  const consentOf = (
+    { householdId, memberId, accountId }: Child,
+    fields: Partial<typeof parentalConsents.$inferInsert> = {},
+  ) =>
+    inHousehold(db, householdId, (tx) =>
+      tx.insert(parentalConsents).values({
+        householdId,
+        memberId,
+        givenBy: accountId,
+        givenAt: new Date('2026-10-08T08:00:00Z'),
+        text: 'I have parental responsibility for this child, and I agree to them using Householdr.',
+        language: 'en',
+        ...fields,
+      }),
+    );
+  const guardianOf = ({ householdId, memberId, accountId }: Child) =>
+    inHousehold(db, householdId, (tx) =>
+      tx.insert(profileGuardians).values({ householdId, memberId, accountId }),
+    );
+
+  it('keep the consent’s text, and its language as a language tag', async () => {
+    const child = await withChild();
+    for (const language of ['nl', 'en', 'nl-BE', 'fil', 'en-XA']) {
+      expect(await refusal(consentOf(child, { language }))).toBeUndefined();
+    }
+    for (const language of ['', 'Dutch', 'NL', 'nl_BE', 'nl-be', 'nl-BE-x']) {
+      expect(await refusal(consentOf(child, { language }))).toBe('parental_consents_language');
+    }
+    expect(await refusal(consentOf(child, { text: '' }))).toBe('parental_consents_text');
+  });
+
+  it('are about a profile of their own household (ADR-0008 §9)', async () => {
+    const child = await withChild();
+    const elsewhere = await withChild();
+    // Row-level security takes the household id; the profile is another household's.
+    const crossed = { ...child, memberId: elsewhere.memberId };
+    expect(await refusal(consentOf(crossed))).toBe('parental_consents_member');
+    expect(await refusal(guardianOf(crossed))).toBe('profile_guardians_member');
+  });
+
+  it('give a profile each guardian once', async () => {
+    const child = await withChild();
+    expect(await refusal(guardianOf(child))).toBeUndefined();
+    expect(await refusal(guardianOf(child))).toBe('profile_guardians_account');
+  });
+
+  it('end a guardianship with the profile, or with the guardian’s account', async () => {
+    const guardians = ({ householdId }: Child) =>
+      inHousehold(db, householdId, (tx) => tx.select().from(profileGuardians));
+    const child = await withChild();
+    await guardianOf(child);
+    await db.delete(accounts).where(eq(accounts.id, child.accountId));
+    expect(await guardians(child)).toEqual([]);
+    const other = await withChild();
+    await guardianOf(other);
+    await inHousehold(db, other.householdId, (tx) =>
+      tx.delete(members).where(eq(members.id, other.memberId)),
+    );
+    expect(await guardians(other)).toEqual([]);
+  });
+
+  it('keep a consent: nothing deletes it along with what it is about (ADR-0012 §5)', async () => {
+    // The record outlives the profile by a year, which the code deleting profiles, households and
+    // accounts will see to; until then the database refuses to lose it on the way.
+    const child = await withChild();
+    await consentOf(child);
+    expect(
+      await refusal(
+        inHousehold(db, child.householdId, (tx) =>
+          tx.delete(members).where(eq(members.id, child.memberId)),
+        ),
+      ),
+    ).toBe('parental_consents_member');
+    expect(await refusal(inHousehold(db, child.householdId, (tx) => tx.delete(households)))).toBe(
+      'parental_consents_member',
+    );
+    expect(await refusal(db.delete(accounts).where(eq(accounts.id, child.accountId)))).toBe(
+      'parental_consents_given_by_accounts_id_fk',
+    );
   });
 });
 

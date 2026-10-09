@@ -3,6 +3,7 @@ import { sql, type AnyColumn } from 'drizzle-orm';
 import {
   check,
   date,
+  foreignKey,
   index,
   integer,
   pgPolicy,
@@ -10,6 +11,7 @@ import {
   smallint,
   text,
   timestamp,
+  unique,
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
@@ -101,6 +103,8 @@ export const members = pgTable(
     index('members_household').on(t.householdId),
     // One profile per household for an account (ADR-0010 §5).
     uniqueIndex('members_account').on(t.householdId, t.accountId),
+    // What a row about a member refers to, so that it can only be about one of its own household.
+    unique('members_household_member').on(t.householdId, t.id),
     check('members_name', sql`${t.name} <> ''`),
     check('members_role', sql`${t.role} in ('head', 'adult', 'child')`),
     check('members_birth_date', sql`(${t.role} = 'child') = (${t.birthDate} is not null)`),
@@ -126,4 +130,73 @@ export const invitations = pgTable(
     expiresAt: timestamp({ withTimezone: true }).notNull(),
   },
   (t) => [householdOnly(t.householdId), index('invitations_household').on(t.householdId)],
+);
+
+/**
+ * The guardians of a child's profile, while the child has no account: at first the head who added
+ * it (ADR-0010 §9, clarification). Once the child has an account, guardianship moves to it. A
+ * guardianship ends with the profile, or with the guardian's account.
+ */
+export const profileGuardians = pgTable(
+  'profile_guardians',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid().notNull(),
+    /** The child's profile. */
+    memberId: uuid().notNull(),
+    /** The guardian: an adult's account with parental responsibility for the child. */
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+  },
+  (t) => [
+    householdOnly(t.householdId),
+    // A profile of the same household (ADR-0008 §9).
+    foreignKey({
+      name: 'profile_guardians_member',
+      columns: [t.householdId, t.memberId],
+      foreignColumns: [members.householdId, members.id],
+    }).onDelete('cascade'),
+    // An account guards a profile once.
+    uniqueIndex('profile_guardians_account').on(t.householdId, t.memberId, t.accountId),
+  ],
+);
+
+/**
+ * A parent's consent to their child's use of the service, given when they added the child's
+ * profile: who gave it, when, and the text they were shown, in its language (ADR-0010 §9, ADR-0012
+ * §2). It is proof that is kept as long as the profile exists, plus one year (ADR-0012 §5,
+ * clarification), so it is never deleted along with the profile, its household or the account
+ * that gave it: deleting any of them is refused while the record is there, until the code that
+ * deletes them keeps the record for its year.
+ */
+export const parentalConsents = pgTable(
+  'parental_consents',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid().notNull(),
+    /** The child's profile. */
+    memberId: uuid().notNull(),
+    /** Who gave it: the account of an adult with parental responsibility for the child. */
+    givenBy: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'restrict' }),
+    givenAt: timestamp({ withTimezone: true }).notNull(),
+    /** The sentence they confirmed, exactly as they were shown it. */
+    text: text().notNull(),
+    /** The language it was in, as a BCP 47 tag such as `nl` (ADR-0016 §2). */
+    language: text().notNull(),
+  },
+  (t) => [
+    householdOnly(t.householdId),
+    // A profile of the same household (ADR-0008 §9).
+    foreignKey({
+      name: 'parental_consents_member',
+      columns: [t.householdId, t.memberId],
+      foreignColumns: [members.householdId, members.id],
+    }).onDelete('restrict'),
+    index('parental_consents_household_member').on(t.householdId, t.memberId),
+    check('parental_consents_text', sql`${t.text} <> ''`),
+    check('parental_consents_language', sql`${t.language} ~ '^[a-z]{2,3}(-[A-Z]{2})?$'`),
+  ],
 );
