@@ -4,28 +4,19 @@ import {
   offeredLanguages,
   type NewHouseholdField,
 } from '@householdr/application';
-import { accounts, passkeys } from '@householdr/db';
-import { isAPIError } from 'better-auth/api';
-import { eq } from 'drizzle-orm';
 import * as v from 'valibot';
-import { createAuth } from './auth';
-import { cookiesFrom, type Cookie } from './cookies';
-import { deviceOf } from './device';
-import { accountInTheMaking, signUpLinkId, type AccountInTheMaking } from './links';
-import type { Client, SignInContext } from './sign-in';
+import type { Cookie } from './cookies';
+import {
+  createAccountWithPasskey,
+  signUpPasskeyOptions,
+  type PasskeySignUpContext,
+  type Terms,
+} from './passkey-sign-up';
+import type { Client } from './sign-in';
 import { signUpLinkAddress } from './sign-up';
 
-/** The instance's own terms: where to read them, and their version (ADR-0021 §5, clarification). */
-export interface Terms {
-  url: string;
-  version: string;
-}
-
 /** What creating a household with its head's account needs from the app. */
-export interface HouseholdSignUpContext extends Pick<SignInContext, 'auth' | 'db' | 'clock'> {
-  /** Null on an instance without terms, which asks nothing about them (ADR-0007 §2, clarification). */
-  terms: Terms | null;
-}
+export type HouseholdSignUpContext = PasskeySignUpContext;
 
 /** A field of the first step of onboarding: the new household's, or the head's own. */
 export type HouseholdSignUpField = NewHouseholdField | 'headLanguage' | 'terms';
@@ -72,9 +63,7 @@ type HouseholdPasskeyOptionsResult =
 /**
  * Starts creating a household, from the first step of onboarding (ADR-0007 §2): checks that the
  * sign-up link of `token` still works and that the fields are valid, then makes a challenge for
- * the browser to make the new account's passkey with, which works once and for five minutes. The
- * passkey is shown under the link's address in the person's password manager. Nothing is stored
- * yet but the challenge (ADR-0010 §1, clarification).
+ * the browser to make the new account's passkey with (`signUpPasskeyOptions`).
  */
 export async function householdPasskeyOptions(
   context: HouseholdSignUpContext,
@@ -85,22 +74,8 @@ export async function householdPasskeyOptions(
   if (!email) return { ok: false, error: 'expired' };
   const fields = parsedFields(context, input);
   if (!fields.ok) return { ok: false, error: 'invalid', fields: fields.invalid };
-  // Without the request's cookies: the passkey is for the account in the making, whoever may be
-  // signed in on this device.
-  const { headers, response } = await accountInTheMaking.run({ email }, () =>
-    context.auth.api.generatePasskeyRegistrationOptions({
-      headers: new Headers(),
-      returnHeaders: true,
-    }),
-  );
-  return { ok: true, options: response, cookies: cookiesFrom(headers) };
+  return { ok: true, ...(await signUpPasskeyOptions(context, email)) };
 }
-
-/** What the browser sends back once it has made the passkey: WebAuthn's JSON form (CODE-12). */
-const newPasskey = v.object({ response: v.record(v.string(), v.unknown()) });
-
-/** The cookie that keeps a passkey's challenge, under the library's name with our prefix. */
-const challengeCookie = '__Host-householdr.better-auth-passkey';
 
 type CreateHouseholdWithPasskeyResult =
   /** Created and signed in: the new session's cookie, for the response to set. */
@@ -114,20 +89,11 @@ type CreateHouseholdWithPasskeyResult =
   /** Not a passkey made for the challenge this browser was given, or the challenge expired. */
   | { ok: false; error: 'failed' };
 
-/** Why nothing was created, thrown so that the transaction keeps nothing. */
-class NotCreated extends Error {
-  constructor(readonly reason: 'expired' | 'failed') {
-    super(`Not created: ${reason}`);
-  }
-}
-
 /**
  * Creates the household from the first step of onboarding, with the passkey the browser made for
- * the challenge of `householdPasskeyOptions` (ADR-0007 §2; ADR-0010 §1, §3, clarifications): in
- * one transaction, the account with its confirmed address, culture and accepted terms, its
- * passkey named after its device, its session, the household with the account as its head, and
- * the sign-up link of `token` used up. On any failure, none of it is kept. The passkey is the
- * account's first, part of creating it, so no e-mail says one was added (ADR-0010 §2).
+ * the challenge of `householdPasskeyOptions` (ADR-0007 §2; ADR-0010 §1, §3, clarifications): the
+ * account (`createAccountWithPasskey`) and the household with the account as its head, in one
+ * transaction.
  */
 export async function createHouseholdWithPasskey(
   context: HouseholdSignUpContext,
@@ -139,83 +105,25 @@ export async function createHouseholdWithPasskey(
   if (!token || token.length > 256) return { ok: false, error: 'expired' };
   const fields = parsedFields(context, input);
   if (!fields.ok) return { ok: false, error: 'invalid', fields: fields.invalid };
-  const passkey = v.safeParse(newPasskey, input);
-  if (!passkey.success) return { ok: false, error: 'failed' };
-  const { baseURL, secret } = context.auth.options;
-  if (typeof baseURL !== 'string' || !secret)
-    throw new Error('The library has no base URL or secret.');
-  const termsAccepted = context.terms && {
-    termsVersion: context.terms.version,
-    termsAcceptedAt: new Date(context.clock.now().epochMilliseconds),
-  };
-  // Of the request, only the challenge's cookie: whoever may be signed in on this device has
-  // nothing to do with the new account, whose session replaces theirs here.
-  const challenge = (headers.get('cookie') ?? '')
-    .split(';')
-    .map((cookie) => cookie.trim())
-    .filter((cookie) => cookie.startsWith(`${challengeCookie}=`));
-  const request = new Headers({
-    cookie: challenge.join('; '),
-    ...(client.userAgent ? { 'user-agent': client.userAgent } : {}),
-  });
-  try {
-    return await context.db.transaction(async (tx) => {
-      // The library writes the passkey and the session through this transaction too.
-      const auth = createAuth({ db: tx, baseUrl: baseURL, secret });
-      const internal = await auth.$context;
-      const link = await internal.internalAdapter.consumeVerificationValue(signUpLinkId(token));
-      if (!link) throw new NotCreated('expired');
-      // Kept in an object, which the callback below changes.
-      const outcome = { taken: false };
-      const account: AccountInTheMaking = {
-        email: link.value,
-        write: async (id) => {
-          const written = await tx
-            .insert(accounts)
-            .values({
-              id,
-              name: fields.household.headName,
-              email: link.value,
-              emailVerified: true,
-              culture: fields.culture,
-              ...termsAccepted,
-            })
-            .onConflictDoNothing({ target: accounts.email })
-            .returning({ id: accounts.id });
-          outcome.taken = written.length === 0;
-          return !outcome.taken;
-        },
-      };
-      let made;
-      try {
-        made = await accountInTheMaking.run(account, () =>
-          auth.api.verifyPasskeyRegistration({
-            headers: request,
-            body: { response: passkey.output.response, createSession: true },
-            returnHeaders: true,
-          }),
-        );
-      } catch (error) {
-        if (!isAPIError(error)) throw error;
-        // An address that got an account in the meantime is a link that no longer works.
-        throw new NotCreated(outcome.taken ? 'expired' : 'failed');
-      }
-      const { response, headers: set } = made;
-      await tx.update(passkeys).set(deviceOf(client.userAgent)).where(eq(passkeys.id, response.id));
+  const account = { name: fields.household.headName, culture: fields.culture };
+  return createAccountWithPasskey(
+    context,
+    token,
+    headers,
+    account,
+    input,
+    client,
+    async (tx, accountId) => {
       const created = await createHousehold(
         {
           db: tx,
           // Its passkey is its two factors (ADR-0010 §3).
-          actor: { account: response.userId, twoFactor: true },
-          account: { id: response.userId, managed: false, guardians: [] },
+          actor: { account: accountId, twoFactor: true },
+          account: { id: accountId, managed: false, guardians: [] },
         },
         fields.household,
       );
       if (!created.ok) throw new Error(`No household was created: ${created.error}.`);
-      return { ok: true, cookies: cookiesFrom(set) } as const;
-    });
-  } catch (error) {
-    if (error instanceof NotCreated) return { ok: false, error: error.reason };
-    throw error;
-  }
+    },
+  );
 }

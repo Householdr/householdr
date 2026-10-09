@@ -1,6 +1,8 @@
 import type { Browser, Page } from '@playwright/test';
-import { expect, expectAccessible, forceFlags, signIn, test } from './fixtures';
-import { proxyHeaders } from './proxy';
+import { expect, expectAccessible, forceFlags, signIn, test, withAuthenticator } from './fixtures';
+import { termsUrl } from './global-setup';
+import { forgetMail, signUpLink } from './mail';
+import { ownNetwork } from './proxy';
 
 // Invitation links (ADR-0010 §5): a head makes one for a profile, someone with an account accepts
 // it and joins as that profile, and the head sees who did. Behind onboarding's flag (CODE-20).
@@ -24,7 +26,8 @@ async function someoneElse(
   const context = await browser.newContext({
     baseURL,
     javaScriptEnabled,
-    extraHTTPHeaders: proxyHeaders,
+    // From a network of their own, so that limits per network don't count other tests' requests.
+    extraHTTPHeaders: ownNetwork(`${test.info().testId}-invitee`),
   });
   await forceFlags(context, baseURL, flags);
   return context.newPage();
@@ -149,4 +152,106 @@ test('copies the link where the browser can', async ({ page, context, accounts, 
   await page.getByRole('button', { name: 'Copy the link' }).click();
   await expect(page.getByRole('status').first()).toHaveText('The link is copied.');
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(link);
+});
+
+/** Opens `link` in `invitee`'s browser, and confirms a new address from there (ADR-0010 §1). */
+async function confirmNewAddress(invitee: Page, link: string, email: string) {
+  await forgetMail(email);
+  await invitee.goto(link);
+  await invitee.getByRole('link', { name: 'New here? Create an account' }).click();
+  await expect(invitee).toHaveURL('/sign-up');
+  await invitee.getByLabel('E-mail address').fill(email);
+  await invitee.getByRole('button', { name: 'Send the link' }).click();
+  await expect(invitee.getByRole('status')).toContainText(email);
+  // The link in the e-mail comes back to the invitation, in the browser that opened it.
+  await invitee.goto(await signUpLink(email));
+  await expect(invitee).toHaveURL('/invitation');
+}
+
+test('someone new creates an account with a passkey from the link, and joins', async ({
+  page,
+  browser,
+  baseURL,
+  accounts,
+  account,
+}, testInfo) => {
+  const { id, link } = await inviteKim(page, accounts, account);
+  const invitee = await someoneElse(browser, baseURL);
+  await withAuthenticator(invitee);
+  const email = `${testInfo.testId}-sam@example.org`;
+  await confirmNewAddress(invitee, link, email);
+  await expect(
+    invitee.getByText(`Your e-mail address ${email} is confirmed. Create your account to join.`),
+  ).toBeVisible();
+  // The profile's name to start with, which is theirs to change (ADR-0010 §1, clarification).
+  await expect(invitee.getByLabel('Your name')).toHaveValue('Kim');
+  await expect(invitee.getByLabel('Your name')).toHaveAttribute('autocomplete', 'name');
+  // The instance's terms, as the founding head accepts them, in a new tab so the form stays
+  // (ADR-0010 §1, clarification).
+  const terms = invitee.getByRole('link', { name: 'Read the terms (opens in a new tab)' });
+  await expect(terms).toHaveAttribute('href', termsUrl);
+  await expect(terms).toHaveAttribute('target', '_blank');
+  await expectAccessible(invitee, 'creating an account');
+  await invitee.getByLabel('Your name').fill('Sam');
+  await invitee.getByRole('checkbox', { name: 'I accept the terms' }).check();
+  await invitee.getByRole('button', { name: 'Create my account with a passkey and join' }).click();
+  await expect(invitee).toHaveURL(`/households/${id}`);
+  await expect(membersOf(invitee)).toHaveText([/Robin\s*Head/, /Kim \(you\)\s*Adult/]);
+  await expectAccessible(invitee, 'joined');
+
+  await page.goto(`/households/${id}`);
+  await expect(membersOf(page).nth(1)).toContainText(`Joined as Sam, ${email}`);
+  await invitee.context().close();
+});
+
+test('says what a new account needs before a passkey is made', async ({
+  page,
+  browser,
+  baseURL,
+  accounts,
+  account,
+}, testInfo) => {
+  const { link } = await inviteKim(page, accounts, account);
+  const invitee = await someoneElse(browser, baseURL);
+  const authenticator = await withAuthenticator(invitee);
+  await confirmNewAddress(invitee, link, `${testInfo.testId}-sam@example.org`);
+  // The browser's own checks come first (UI-2); the server's are what a browser without them sees.
+  await invitee.locator('form').evaluate((form: HTMLFormElement) => {
+    form.noValidate = true;
+  });
+  await invitee.getByLabel('Your name').fill(' ');
+  await invitee.getByRole('button', { name: 'Create my account with a passkey and join' }).click();
+  const summary = invitee.getByRole('region', { name: 'Joining didn’t work' });
+  await expect(summary).toBeFocused();
+  await expect(summary.getByRole('link')).toHaveText([
+    'Enter your name, up to 100 characters.',
+    'Accept the terms to create an account.',
+  ]);
+  await expect(invitee.getByLabel('Your name')).toHaveAttribute('aria-invalid', 'true');
+  const terms = invitee.getByRole('checkbox', { name: 'I accept the terms' });
+  await expect(terms).toHaveAttribute('aria-invalid', 'true');
+  await expect(terms).toHaveAccessibleDescription('Accept the terms to create an account.');
+  await expectAccessible(invitee, 'fields refused');
+  expect(await authenticator.passkeys()).toEqual([]);
+  await invitee.context().close();
+});
+
+test('says so where the browser can’t make a passkey', async ({
+  page,
+  browser,
+  baseURL,
+  accounts,
+  account,
+}, testInfo) => {
+  const { link } = await inviteKim(page, accounts, account);
+  const invitee = await someoneElse(browser, baseURL, false);
+  await confirmNewAddress(invitee, link, `${testInfo.testId}-sam@example.org`);
+  // Playwright's text locators skip what is inside <noscript> (TEST-3 exception).
+  await expect(invitee.locator('noscript p')).toHaveText(
+    /Creating an account needs a passkey, which this browser can’t make\./,
+  );
+  await expect(
+    invitee.getByRole('button', { name: 'Create my account with a passkey and join' }),
+  ).toHaveCount(0);
+  await invitee.context().close();
 });
