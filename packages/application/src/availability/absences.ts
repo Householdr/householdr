@@ -18,6 +18,7 @@ import {
 } from '@householdr/domain';
 import { and, asc, eq, gte } from 'drizzle-orm';
 import * as v from 'valibot';
+import { changeLog } from '../households/change-log';
 import type { HouseholdContext } from '../households/membership';
 
 /** A field of the form that adds an absence, as a refusal names it. */
@@ -108,7 +109,10 @@ type AddAbsenceResult =
 
 /**
  * Plans an absence for a member of the household (ADR-0005 §2). It may overlap others: the domain
- * takes their union, so nothing is merged or refused.
+ * takes their union, so nothing is merged or refused. A head acting for a profile without an
+ * account is shown in the activity log once the household has started, never the days
+ * (ADR-0018 §5); before, the start entry lists it (ADR-0007 §2). Anyone's own days away affect
+ * nobody else, so they aren't logged.
  */
 export async function addAbsence(
   context: HouseholdContext,
@@ -117,6 +121,7 @@ export async function addAbsence(
   const target = v.safeParse(whose, input);
   if (!target.success) return { ok: false, error: 'not-found' };
   return inHousehold(context.db, context.householdId, async (tx): Promise<AddAbsenceResult> => {
+    const log = await changeLog(tx, context);
     const member = await memberOf(tx, target.output.member);
     if (!member) return { ok: false, error: 'not-found' };
     if (!can(context.member, { action: 'availability.manage', member })) {
@@ -138,6 +143,7 @@ export async function addAbsence(
       })
       .returning({ id: absences.id });
     if (!added) throw new Error('No absence was added.');
+    if (!member.hasAccount) await log('absence.added', member.id);
     return { ok: true, absenceId: added.id };
   });
 }
@@ -149,7 +155,10 @@ type RemoveAbsenceResult =
   /** Not an absence the member acting may manage (ADR-0005 §2, ADR-0018 §4). */
   | { ok: false; error: 'not-allowed' };
 
-/** Removes a current or upcoming absence (ADR-0005 §2): changing one is removing it and adding. */
+/**
+ * Removes a current or upcoming absence (ADR-0005 §2): changing one is removing it and adding. Logged
+ * as adding one is, for a profile without an account, once the household has started.
+ */
 export async function removeAbsence(
   context: HouseholdContext,
   input: unknown,
@@ -158,6 +167,7 @@ export async function removeAbsence(
   if (!parsed.success) return { ok: false, error: 'not-found' };
   const absenceId = parsed.output.absence;
   return inHousehold(context.db, context.householdId, async (tx): Promise<RemoveAbsenceResult> => {
+    const log = await changeLog(tx, context);
     const [found] = await tx
       .select({ memberId: absences.memberId })
       .from(absences)
@@ -171,7 +181,9 @@ export async function removeAbsence(
       .delete(absences)
       .where(eq(absences.id, absenceId))
       .returning({ id: absences.id });
-    return removed.length > 0 ? { ok: true } : { ok: false, error: 'not-found' };
+    if (removed.length === 0) return { ok: false, error: 'not-found' };
+    if (!member.hasAccount) await log('absence.removed', member.id);
+    return { ok: true };
   });
 }
 

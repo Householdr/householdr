@@ -2,7 +2,8 @@ import type { Page } from '@playwright/test';
 import { expect, expectAccessible, forceFlags, signIn, test } from './fixtures';
 
 // Heads set members' shares (ADR-0001 §4), which only they and the member see (ADR-0018 §4), from
-// the version they saw (ADR-0019 §5). Behind its flag (CODE-20).
+// the version they saw (ADR-0019 §5); once the household has started, the activity log shows whose
+// changed (ADR-0018 §5). Behind its flag (CODE-20).
 
 const flags = { 'sign-in': true, onboarding: true, shares: true };
 
@@ -216,6 +217,42 @@ for (const javaScriptEnabled of [true, false]) {
     });
   });
 }
+
+test('after the start, the activity log says whose share a head changed, never to what', async ({
+  page,
+  context,
+  baseURL,
+  accounts,
+  account,
+}) => {
+  // Starting takes the plans' flag, and the log its own (ADR-0007 §2, ADR-0018 §5).
+  await forceFlags(context, baseURL, { ...flags, plans: true, 'activity-log': true });
+  await accounts.addSecondFactor(account.email);
+  const id = await accounts.addHousehold(account.email, 'Ash Lane');
+  await accounts.addProfile(id, 'Sam');
+  await signIn(page, account, `/households/${id}`);
+  const ready = page.getByRole('region', { name: 'Ready to start?' });
+  await ready.getByRole('link', { name: 'Start the household' }).click();
+  await page.getByRole('radio', { name: /^Start on / }).check();
+  await page.getByRole('button', { name: 'Start', exact: true }).click();
+  await expect(page).toHaveURL(`/households/${id}?started`);
+
+  await page.getByRole('link', { name: 'Shares' }).click();
+  await page.getByLabel('Share for Sam (%)').fill('50');
+  await page.getByRole('button', { name: 'Save Sam’s share' }).click();
+  await expect(page.getByRole('status')).toHaveText('Sam’s share is saved.');
+
+  await page.goto(`/households/${id}`);
+  await page.getByRole('link', { name: 'Activity' }).click();
+  const entries = page.getByRole('list', { name: 'Activity' }).getByRole('listitem');
+  await expect(entries).toHaveText([
+    /^\s*Robin changed Sam’s share\./,
+    /^\s*Robin started the household\./,
+  ]);
+  // Only heads and Sam see the share itself (ADR-0018 §4).
+  await expect(entries.first()).not.toContainText(/%|\b50\b/);
+  await expectAccessible(page, 'share changed');
+});
 
 test('without head powers, a member sees only their own share', async ({
   page,

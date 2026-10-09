@@ -134,6 +134,13 @@
       "when": 1791531359426,
       "tag": "0018_ledger",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1791537614196,
+      "tag": "0019_start-logging",
+      "breakpoints": true
     }
   ]
 }

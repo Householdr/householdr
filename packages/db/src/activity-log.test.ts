@@ -132,6 +132,41 @@ describe('the activity log (ADR-0018 §5)', () => {
     );
   });
 
+  it('names whose share or days away a head changed after the start, never a value', async () => {
+    const { id, robin } = await withEntry();
+    const [sam] = await inHousehold(db, id, (tx) =>
+      tx
+        .insert(members)
+        .values({ householdId: id, name: 'Sam', role: 'adult' })
+        .returning({ id: members.id }),
+    );
+    if (!sam) throw new Error('No member');
+    const entry = (action: ActivityAction, setBeforeStart?: SetBeforeStart) =>
+      inHousehold(db, id, (tx) =>
+        tx.insert(activityLog).values({
+          householdId: id,
+          at: new Date(),
+          actorId: robin,
+          action,
+          subjectId: sam.id,
+          setBeforeStart,
+        }),
+      );
+    for (const action of [
+      'share.changed',
+      'temporary-share.added',
+      'temporary-share.removed',
+      'absence.added',
+      'absence.removed',
+    ] as const) {
+      expect(await refusal(entry(action))).toBeUndefined();
+      // Only the start entry lists anything besides whom (ADR-0018 §5, clarification).
+      expect(await refusal(entry(action, { shares: [sam.id], daysAway: [] }))).toBe(
+        'activity_log_set_before_start',
+      );
+    }
+  });
+
   it('lists what was set before the start in the start entry only, by member id (ADR-0007 §2)', async () => {
     const { id, robin } = await withEntry();
     const entry = (action: ActivityAction, setBeforeStart: unknown) =>

@@ -52,6 +52,17 @@ export function useActivity(data: () => { timeZone: string; entries: ActivityEnt
         return m['activity.completion-undone']({ actor, subject: subjectOf(entry) });
       case 'completion.picked-up':
         return m['activity.completion-picked-up']({ actor, subject: subjectOf(entry) });
+      // Whose, never the share or the days (ADR-0018 §5).
+      case 'share.changed':
+        return m['activity.share-changed']({ actor, subject: subjectOf(entry) });
+      case 'temporary-share.added':
+        return m['activity.temporary-share-added']({ actor, subject: subjectOf(entry) });
+      case 'temporary-share.removed':
+        return m['activity.temporary-share-removed']({ actor, subject: subjectOf(entry) });
+      case 'absence.added':
+        return m['activity.absence-added']({ actor, subject: subjectOf(entry) });
+      case 'absence.removed':
+        return m['activity.absence-removed']({ actor, subject: subjectOf(entry) });
     }
   };
 

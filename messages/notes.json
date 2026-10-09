@@ -746,6 +746,26 @@
     "note": "Activity log entry: {actor} did a task the plan gave to {subject}, so it became their work (a pick-up). {actor} and {subject} are names, or “a former member”; the task and its points are never shown.",
     "needsReview": ["nl"]
   },
+  "activity.share-changed": {
+    "note": "Activity log entry, after the household started: a head set {subject}’s share, or put it back to the default; {subject} can be the head themselves (ADR-0018 §4–§5). {actor} and {subject} are names, or “a former member”. Never the share itself, which only heads and the member see.",
+    "needsReview": ["nl"]
+  },
+  "activity.temporary-share-added": {
+    "note": "Activity log entry, after the household started: a head planned a temporary share for {subject}, a share for a few days or weeks (ADR-0001 §4). {actor} and {subject} are names, or “a former member”. Never its days or the share.",
+    "needsReview": ["nl"]
+  },
+  "activity.temporary-share-removed": {
+    "note": "Activity log entry, after the household started: a head removed one of {subject}’s temporary shares. {actor} and {subject} are names, or “a former member”. Never which one.",
+    "needsReview": ["nl"]
+  },
+  "activity.absence-added": {
+    "note": "Activity log entry, after the household started: a head planned days away for {subject}, a member without an account, acting for them (ADR-0018 §5). “Days away” as on the availability page. {actor} and {subject} are names, or “a former member”. Never the days.",
+    "needsReview": ["nl"]
+  },
+  "activity.absence-removed": {
+    "note": "Activity log entry, after the household started: a head removed days away planned for {subject}, a member without an account. {actor} and {subject} are names, or “a former member”. Never the days.",
+    "needsReview": ["nl"]
+  },
   "household.shares": {
     "note": "Link from the household page to its shares page.",
     "needsReview": ["nl"]

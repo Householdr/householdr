@@ -1,9 +1,18 @@
-import { accounts, inHousehold, members, passkeys, type Database } from '@householdr/db';
+import {
+  accounts,
+  activityLog,
+  inHousehold,
+  members,
+  passkeys,
+  type Database,
+} from '@householdr/db';
 import { testDatabase } from '@householdr/db/testing';
-import { eq } from 'drizzle-orm';
+import { asc, eq, ne } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { householdActivity } from '../households/activity';
 import { createHousehold } from '../households/create-household';
 import { membership, type HouseholdContext } from '../households/membership';
+import { startHousehold } from '../households/start-household';
 import { settableClock } from '../testing';
 import { changeShare, householdShares } from './shares';
 import { addTemporaryShare, removeTemporaryShare } from './temporary-shares';
@@ -467,5 +476,128 @@ describe('addTemporaryShare and removeTemporaryShare (ADR-0001 §4, clarificatio
       expect(await removeTemporaryShare(head, { id })).toEqual({ ok: false, error: 'not-found' });
     }
     expect(await shareOf(other.head, other.sam)).toMatchObject({ temporary: [{ id: theirs.id }] });
+  });
+});
+
+/** Starts the household on the week start day, by Robin (ADR-0007 §2 step 7). */
+const start = async (head: HouseholdContext) => {
+  const result = await startHousehold(head, { when: 'week start' });
+  if (!result.ok) throw new Error(`Not started: ${result.error}`);
+};
+
+/** The household's activity log as stored, whole rows, besides its start entry, oldest first. */
+const logged = (head: HouseholdContext) =>
+  inHousehold(db, head.householdId, (tx) =>
+    tx
+      .select()
+      .from(activityLog)
+      .where(ne(activityLog.action, 'household.started'))
+      .orderBy(asc(activityLog.at)),
+  );
+
+describe('share changes in the activity log (ADR-0018 §5)', () => {
+  // Thursday 8 October 2026: this plan week runs from Monday 5 to Sunday 11 October.
+  const nextWeek = { firstDay: '2026-10-12', lastDay: '2026-10-18' };
+
+  it('logs nothing before Start, whose entry lists them instead (ADR-0007 §2)', async () => {
+    const { head, sam, kim } = await household();
+    await changeShare(head, { member: sam, percent: 50, version: 1 });
+    await addTemporaryShare(head, { member: kim, ...nextWeek, percent: 20 });
+    const [planned] = (await shareOf(head, kim))?.temporary ?? [];
+    if (!planned) throw new Error('No temporary share');
+    await removeTemporaryShare(head, { id: planned.id });
+    await addTemporaryShare(head, { member: kim, ...nextWeek, percent: 20 });
+    expect(await logged(head)).toEqual([]);
+    await start(head);
+    expect(await householdActivity(head)).toMatchObject({
+      entries: [{ action: 'household.started', setBeforeStart: { shares: ['Kim', 'Sam'] } }],
+    });
+  });
+
+  it('logs each change after Start, saying whose and never a value', async () => {
+    const { head, adult, clock, robin, sam, kim } = await household();
+    await start(head);
+    const at = (minutes: number) => {
+      clock.advance({ minutes });
+      return new Date(clock.now().epochMilliseconds);
+    };
+    const entry = (when: Date, action: string, subjectId: string) => ({
+      id: expect.any(String) as string,
+      householdId: head.householdId,
+      at: when,
+      actorId: robin,
+      action,
+      setBeforeStart: null,
+      subjectId,
+    });
+    const first = at(1);
+    await changeShare(head, { member: sam, percent: 50, version: 1 });
+    // Back to the default is a change too.
+    const second = at(1);
+    await changeShare(head, { member: sam, percent: null, version: 2 });
+    const third = at(1);
+    await addTemporaryShare(head, { member: kim, ...nextWeek, percent: 20 });
+    const [planned] = (await shareOf(head, kim))?.temporary ?? [];
+    if (!planned) throw new Error('No temporary share');
+    const fourth = at(1);
+    await removeTemporaryShare(head, { id: planned.id });
+    // A head's own share too (ADR-0018 §4).
+    const fifth = at(1);
+    await changeShare(head, { member: robin, percent: 80, version: 1 });
+    expect(await logged(head)).toEqual([
+      entry(first, 'share.changed', sam),
+      entry(second, 'share.changed', sam),
+      entry(third, 'temporary-share.added', kim),
+      entry(fourth, 'temporary-share.removed', kim),
+      entry(fifth, 'share.changed', robin),
+    ]);
+    // Every member sees them, by name (ADR-0018 §5), whoever's share it was.
+    const shown = await householdActivity(adult);
+    if (!shown.ok) throw new Error(shown.error);
+    expect(shown.entries.map(({ actor, action, subject }) => [actor, action, subject])).toEqual([
+      ['Robin', 'share.changed', 'Robin'],
+      ['Robin', 'temporary-share.removed', 'Kim'],
+      ['Robin', 'temporary-share.added', 'Kim'],
+      ['Robin', 'share.changed', 'Sam'],
+      ['Robin', 'share.changed', 'Sam'],
+      ['Robin', 'household.started', null],
+    ]);
+  });
+
+  it('logs nothing for a change that changes nothing, or isn’t made', async () => {
+    const { head, adult, robin, sam, kim } = await household();
+    await start(head);
+    await changeShare(head, { member: sam, percent: 50, version: 1 });
+    await addTemporaryShare(head, { member: kim, ...nextWeek, percent: 20 });
+    const before = await logged(head);
+    expect(before).toHaveLength(2);
+    // The same share saved again, or the default kept.
+    expect(await changeShare(head, { member: sam, percent: 50, version: 2 })).toMatchObject({
+      ok: true,
+      share: { version: 2 },
+    });
+    expect(await changeShare(head, { member: robin, percent: null, version: 1 })).toMatchObject({
+      ok: true,
+      share: { version: 1 },
+    });
+    // Refused: from a version gone, not valid, overlapping, or not a head's to make.
+    expect(await changeShare(head, { member: sam, percent: 70, version: 1 })).toMatchObject({
+      error: 'conflict',
+    });
+    expect(await changeShare(head, { member: sam, percent: 101, version: 2 })).toMatchObject({
+      error: 'invalid',
+    });
+    expect(await addTemporaryShare(head, { member: kim, ...nextWeek, percent: 30 })).toMatchObject({
+      error: 'overlap',
+    });
+    expect(await changeShare(adult, { member: sam, percent: 70, version: 2 })).toMatchObject({
+      error: 'not-allowed',
+    });
+    const [planned] = (await shareOf(head, kim))?.temporary ?? [];
+    if (!planned) throw new Error('No temporary share');
+    expect(await removeTemporaryShare(adult, { id: planned.id })).toMatchObject({
+      error: 'not-allowed',
+    });
+    expect(await logged(head)).toEqual(before);
   });
 });

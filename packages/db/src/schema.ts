@@ -202,16 +202,35 @@ export type ActivityAction =
    * A member did an occurrence assigned to another, its subject, so it became their own work: a
    * pick-up (ADR-0006 §3, ADR-0018 §5, clarification). One entry per member credited.
    */
-  | 'completion.picked-up';
+  | 'completion.picked-up'
+  /**
+   * Once the household has started, a head set the share of a member, its subject, or put it back
+   * to the default by role and age; their own included (ADR-0001 §4, ADR-0018 §4–§5).
+   */
+  | 'share.changed'
+  /** Once it has started, a head planned a temporary share for its subject (ADR-0001 §4). */
+  | 'temporary-share.added'
+  /** Once it has started, a head removed a temporary share of its subject's (ADR-0001 §4). */
+  | 'temporary-share.removed'
+  /**
+   * Once it has started, a head planned days away for its subject, a profile without an account,
+   * acting for them (ADR-0005 §2, ADR-0018 §4–§5).
+   */
+  | 'absence.added'
+  /** Once it has started, a head removed days away of its subject's, a profile without an account. */
+  | 'absence.removed';
 
 /** The actions whose entries name whom they were done to (ADR-0018 §5). */
-const toWhom = sql.raw(`'completion.logged', 'completion.undone', 'completion.picked-up'`);
+const toWhom = sql.raw(`'completion.logged', 'completion.undone', 'completion.picked-up',
+  'share.changed', 'temporary-share.added', 'temporary-share.removed', 'absence.added',
+  'absence.removed'`);
 
 /**
  * What was set before the household started, which its start entry lists
  * (ADR-0007 §2, ADR-0018 §5, clarifications): whose share a head set, as a share of their own or a
  * temporary one, and for which profiles without an account days away were planned, by a head
- * acting for them. Member ids only, never a value: no share, no day.
+ * acting for them. Member ids only, never a value: no share, no day. After the start, each such
+ * change is an entry of its own, naming its subject.
  */
 export interface SetBeforeStart {
   shares: string[];
@@ -247,7 +266,8 @@ export const activityLog = pgTable(
     setBeforeStart: jsonb().$type<SetBeforeStart>(),
     /**
      * To whom it was done, for the actions that name one; none once their profile is deleted, when
-     * they show as a former member (ADR-0012 §6). Never a value, such as a task's points.
+     * they show as a former member (ADR-0012 §6). Never a value, such as a task's points, a share
+     * or the days someone is away.
      */
     subjectId: uuid().references(() => members.id, { onDelete: 'set null' }),
   },
@@ -258,7 +278,8 @@ export const activityLog = pgTable(
       'activity_log_action',
       sql`${t.action} in ('household.name', 'household.timeZone', 'household.language',
         'household.country', 'household.started', 'completion.logged', 'completion.undone',
-        'completion.picked-up')`,
+        'completion.picked-up', 'share.changed', 'temporary-share.added',
+        'temporary-share.removed', 'absence.added', 'absence.removed')`,
     ),
     // Only the actions done to someone name them. One way only: a subject whose profile goes
     // leaves the entry without them.

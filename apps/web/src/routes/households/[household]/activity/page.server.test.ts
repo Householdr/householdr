@@ -1,5 +1,8 @@
 import {
+  addAbsence,
+  addAdult,
   changeHouseholdSettings,
+  changeShare,
   createHousehold,
   membership,
   startHousehold,
@@ -92,5 +95,74 @@ describe('the activity page (ADR-0018 §5)', () => {
     });
     expect(await opened({ flags: { 'activity-log': false }, membership: head })).toBe(404);
     expect(await opened({ flags: { 'activity-log': true }, membership: null })).toBe(404);
+  });
+
+  it('shows whose share and days away a head changed after the start, never a value', async () => {
+    const accountId = await createTestAccount(test.context.auth, {
+      email: `robin-${crypto.randomUUID()}@example.org`,
+      password: 'correct horse battery staple',
+    });
+    const created = await createHousehold(
+      {
+        db: test.context.db,
+        actor: { account: accountId, twoFactor: true },
+        account: { id: accountId, managed: false, guardians: [] },
+      },
+      {
+        name: 'Ash Lane',
+        headName: 'Robin',
+        country: 'BE',
+        timeZone: 'Europe/Brussels',
+        language: 'en',
+        weekStartDay: 1,
+        adult: true,
+      },
+    );
+    if (!created.ok) throw new Error('No household');
+    const member = await membership(test.context, accountId, created.householdId);
+    if (!member) throw new Error('Not a member');
+    const head = { householdId: created.householdId, member: { ...member, twoFactor: true } };
+    const context = { ...test.context, ...head };
+    const sam = await addAdult(context, { name: 'Sam' });
+    if (!sam.ok) throw new Error('No profile');
+    await startHousehold(context, { when: 'week start' });
+    const started = test.context.clock.now().epochMilliseconds;
+    test.context.clock.advance({ hours: 1 });
+    await changeShare(context, { member: sam.memberId, percent: 50, version: 1 });
+    const changed = test.context.clock.now().epochMilliseconds;
+    test.context.clock.advance({ hours: 1 });
+    const today = test.context.clock.now().toZonedDateTimeISO('Europe/Brussels').toPlainDate();
+    const day = today.add({ days: 1 }).toString();
+    await addAbsence(context, { member: sam.memberId, firstDay: day, lastDay: day });
+    // Whom, and nothing that says the share or the days (ADR-0018 §5).
+    expect(await opened({ flags: { 'activity-log': true }, membership: head })).toEqual({
+      timeZone: 'Europe/Brussels',
+      entries: [
+        {
+          id: expect.any(String) as string,
+          at: test.context.clock.now().epochMilliseconds,
+          actor: 'Robin',
+          action: 'absence.added',
+          subject: 'Sam',
+          setBeforeStart: null,
+        },
+        {
+          id: expect.any(String) as string,
+          at: changed,
+          actor: 'Robin',
+          action: 'share.changed',
+          subject: 'Sam',
+          setBeforeStart: null,
+        },
+        {
+          id: expect.any(String) as string,
+          at: started,
+          actor: 'Robin',
+          action: 'household.started',
+          subject: null,
+          setBeforeStart: { shares: [], daysAway: [] },
+        },
+      ],
+    });
   });
 });
