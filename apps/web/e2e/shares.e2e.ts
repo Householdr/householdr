@@ -12,8 +12,9 @@ test.beforeEach(async ({ context, baseURL }) => {
 
 /** Adds Sam's profile on the household page, then opens the shares. */
 const withSam = async (page: Page, id: string) => {
-  await page.getByLabel('Name').fill('Sam');
-  await page.getByRole('button', { name: 'Add' }).click();
+  const form = page.getByRole('region', { name: 'Add an adult' });
+  await form.getByLabel('Name').fill('Sam');
+  await form.getByRole('button', { name: 'Add', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('Sam');
   await page.getByRole('link', { name: 'Shares' }).click();
   await expect(page).toHaveURL(`/households/${id}/shares`);
