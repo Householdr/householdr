@@ -28,6 +28,7 @@ export {
 } from './households/invitations';
 export {
   accountHouseholdList,
+  mayRemoveAccountPasskey,
   mayTurnOffTwoFactor,
   membership,
   viewHousehold,

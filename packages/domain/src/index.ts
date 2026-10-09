@@ -61,7 +61,12 @@ export {
   type Permission,
   type Role,
 } from './permissions/household';
-export { hasTwoFactors, mayTurnOffTotp, type SignInMethods } from './permissions/two-factors';
+export {
+  hasTwoFactors,
+  mayRemovePasskey,
+  mayTurnOffTotp,
+  type SignInMethods,
+} from './permissions/two-factors';
 export {
   averageWeeklyMinutes,
   weekOccurrences,

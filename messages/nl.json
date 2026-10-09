@@ -74,6 +74,8 @@
   "security.passkey-added": "De passkey is toegevoegd.",
   "security.passkey-removed": "De passkey is verwijderd.",
   "security.passkey-not-found": "Die passkey was al verwijderd.",
+  "security.passkey-remove-failed": "Verwijderen van de passkey is niet gelukt",
+  "security.passkey-head": "Als hoofd van een huishouden heb je twee factoren nodig om in te loggen. Voeg eerst een andere passkey toe, daarna kun je deze verwijderen.",
   "security.passkey-failed": "Toevoegen van de passkey is niet gelukt. Probeer het opnieuw, of voeg hem toe op een ander apparaat.",
   "security.confirm": "Bevestig dat jij het bent",
   "security.confirm-intro": "Je bent meer dan 10 minuten geleden ingelogd. Bevestig dat jij het bent om te wijzigen hoe je inlogt.",

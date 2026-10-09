@@ -150,6 +150,14 @@
     "note": "Status message when the passkey to remove was already gone.",
     "needsReview": ["nl"]
   },
+  "security.passkey-remove-failed": {
+    "note": "Heading of the box that says why a passkey wasn't removed. Same pattern as security.passkey-failed.",
+    "needsReview": ["nl"]
+  },
+  "security.passkey-head": {
+    "note": "Why removing a passkey is refused: heads must keep two factors, and without this passkey they would have neither another passkey nor a password with two-factor authentication (ADR-0010 §3). Same pattern as security.two-factor-head.",
+    "needsReview": ["nl"]
+  },
   "security.passkey-failed": {
     "note": "When the browser or the server couldn't add the passkey, for instance because it was cancelled.",
     "needsReview": ["nl"]
