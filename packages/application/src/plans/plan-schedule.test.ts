@@ -1,7 +1,8 @@
 import { jobQueue, type Database, type JobQueue, type Jobs } from '@householdr/db';
 import { testDatabase } from '@householdr/db/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { settableClock } from '../testing';
+import { settlePlanWeek } from '../ledger/settle-plan-week';
+import { settableClock, settableFlags } from '../testing';
 import { closeDueOccurrences } from './closing';
 import { draftPlan } from './draft-plan';
 import { queueDuePlanSteps } from './plan-schedule';
@@ -23,10 +24,13 @@ afterAll(async () => {
   await close();
 });
 
-/** Ticks at `at`, and returns the steps waiting for `households`, by household and week. */
+/**
+ * Ticks at `at`, with the flags at their defaults (TEST-9), and returns the steps waiting for
+ * `households`, by household and week.
+ */
 const tick = async (at: string, ...households: PlannedHousehold[]) => {
   const clock = settableClock(Temporal.Instant.from(at));
-  await queueDuePlanSteps({ db, clock, queue });
+  await queueDuePlanSteps({ db, clock, queue, flags: settableFlags() });
   const ids = new Set(households.map((h) => h.householdId));
   const waiting = async (name: 'plan-draft' | 'plan-publish' | 'plan-close') =>
     (await queue.fetch<Jobs[typeof name]>(name, { batchSize: 100 }))
@@ -55,9 +59,10 @@ describe('queueDuePlanSteps (ADR-0006 §2, ADR-0008 §10)', () => {
   it('queues a step once, however often it ticks while the step waits (CODE-19)', async () => {
     const h = await plannedHousehold(db);
     const clock = settableClock(Temporal.Instant.from(draftTime));
-    expect(await queueDuePlanSteps({ db, clock, queue })).toBeGreaterThanOrEqual(1);
+    const flags = settableFlags();
+    expect(await queueDuePlanSteps({ db, clock, queue, flags })).toBeGreaterThanOrEqual(1);
     clock.advance({ minutes: 1 });
-    await queueDuePlanSteps({ db, clock, queue });
+    await queueDuePlanSteps({ db, clock, queue, flags });
     expect(await tick(draftTime, h)).toEqual([['plan-draft', h.householdId, '2026-10-12']]);
   });
 
@@ -155,5 +160,66 @@ describe('queueDuePlanSteps (ADR-0006 §2, ADR-0008 §10)', () => {
     h.clock.advance({ hours: 2 * 24 });
     expect(await closeDueOccurrences(h.scheduler)).toEqual({ ok: true, closed: 1 });
     expect(await tick('2026-10-19T08:00:00Z', h)).toEqual([]);
+  });
+
+  describe('settling a week once it is over (ADR-0002 §1, §7)', () => {
+    /** Ticks at `at` with the balances' flag on, and returns the settling waiting for `households`. */
+    const settling = async (at: string, ...households: PlannedHousehold[]) => {
+      const clock = settableClock(Temporal.Instant.from(at));
+      await queueDuePlanSteps({ db, clock, queue, flags: settableFlags({ balances: true }) });
+      const ids = new Set(households.map((h) => h.householdId));
+      return (await queue.fetch<Jobs['plan-settle']>('plan-settle', { batchSize: 100 }))
+        .filter((job) => ids.has(job.data.household))
+        .map((job) => [job.data.household, job.data.week]);
+    };
+
+    /** A household whose week 1 plan is published, with `publish` false a draft only. */
+    const withWeek1 = async (
+      options: Parameters<typeof plannedHousehold>[1] = {},
+      publish = true,
+    ) => {
+      const h = await plannedHousehold(db, options);
+      await h.task('Vacuum', 30, 'weekly', '2026-10-14');
+      await draftPlan(h.scheduler, { week: '2026-10-12' });
+      if (publish) await publishPlan(h.scheduler, { week: '2026-10-12' });
+      return h;
+    };
+
+    it('queues it once the next week has begun, in each household’s time zone, once', async () => {
+      const brussels = await withWeek1();
+      const lisbon = await withWeek1({ timeZone: 'Europe/Lisbon', country: 'PT' });
+      // Sunday 23:59 in Brussels: week 1 isn't over anywhere.
+      expect(await settling('2026-10-18T21:59:00Z', brussels, lisbon)).toEqual([]);
+      // 00:30 on Monday in Brussels, still 23:30 on Sunday in Lisbon.
+      expect(await settling('2026-10-18T22:30:00Z', brussels, lisbon)).toEqual([
+        [brussels.householdId, '2026-10-12'],
+      ]);
+      // Queued once, however often it ticks while the step waits or runs (CODE-19).
+      expect(await settling('2026-10-18T22:31:00Z', brussels)).toEqual([]);
+      expect(await settling('2026-10-18T23:00:00Z', lisbon)).toEqual([
+        [lisbon.householdId, '2026-10-12'],
+      ]);
+    });
+
+    it('queues nothing once the week is settled, or for a draft never published', async () => {
+      const settled = await withWeek1();
+      const draft = await withWeek1({}, false);
+      settled.clock.advance({ hours: 11 * 24 });
+      expect(await settlePlanWeek(settled.scheduler, { week: '2026-10-12' })).toEqual({
+        ok: true,
+        settled: true,
+      });
+      expect(await settling('2026-10-19T08:00:00Z', settled, draft)).toEqual([]);
+    });
+
+    it('queues nothing while the balances’ release flag is off (CODE-20)', async () => {
+      const h = await withWeek1();
+      // Week 2 is caught up on, as when the scheduler was down, but week 1 isn't settled.
+      expect(await tick('2026-10-19T08:00:00Z', h)).toEqual([
+        ['plan-draft', h.householdId, '2026-10-19'],
+      ]);
+      const waiting = await queue.fetch<Jobs['plan-settle']>('plan-settle', { batchSize: 100 });
+      expect(waiting.filter((job) => job.data.household === h.householdId)).toEqual([]);
+    });
   });
 });

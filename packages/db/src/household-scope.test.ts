@@ -679,6 +679,7 @@ describe('every household-owned table (CODE-17)', () => {
       'completions',
       'households',
       'invitations',
+      'ledger_entries',
       'members',
       'occurrences',
       'parental_consents',

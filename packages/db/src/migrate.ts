@@ -11,6 +11,8 @@ const migrationsFolder = fileURLToPath(new URL('../migrations', import.meta.url)
 const appendOnly = [
   // The activity log can't be edited or deleted by anyone in the household (ADR-0018 §5).
   'activity_log',
+  // A balance changes by new entries only, never by editing history (ADR-0002 §7).
+  'ledger_entries',
 ];
 
 /**

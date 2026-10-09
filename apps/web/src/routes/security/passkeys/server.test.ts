@@ -47,6 +47,7 @@ const on = {
   availability: false,
   plans: false,
   completions: false,
+  balances: false,
 };
 let next = 0;
 

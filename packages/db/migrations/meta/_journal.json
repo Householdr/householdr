@@ -190,6 +190,13 @@
       "when": 1791811183925,
       "tag": "0026_plan-closing",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1791812518001,
+      "tag": "0027_ledger",
+      "breakpoints": true
     }
   ]
 }

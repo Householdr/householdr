@@ -1,20 +1,15 @@
 import {
-  absences,
   assignments,
   inHousehold,
-  members,
   nextVersion,
   occurrences,
   plans,
   schedules,
   tasks,
-  temporaryShares,
   type Transaction,
 } from '@householdr/db';
 import {
   allocate,
-  availabilityInWeek,
-  fairFractions,
   goneDays,
   householdDate,
   occurrenceId,
@@ -22,7 +17,6 @@ import {
   planWeek,
   rebalanceRates,
   weekOccurrences,
-  weekShare,
   type Absence,
   type AllocationMember,
   type AllocationTask,
@@ -33,11 +27,11 @@ import {
   type Window,
 } from '@householdr/domain';
 import { and, eq, gte, inArray, lt, notExists, sql } from 'drizzle-orm';
-import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import * as v from 'valibot';
-import { basisOf } from '../shares/member-share';
+import { balancesOf } from '../ledger/balances';
 import { closeDue } from './closing';
 import { scheduleOf } from '../tasks/stored-schedule';
+import { fairPortions } from './fair-portions';
 import {
   awayIn,
   mayDraft,
@@ -415,10 +409,9 @@ async function earlierOccurrences(tx: Transaction, week: PlanWeek, timeZone: str
 }
 
 /**
- * The members as the allocator sees them (ADR-0001 §6–§7): their fair portion of the week from
- * their share, temporary ones included, and the time they are available, both over the days the
- * household is at home (ADR-0005 §5); a child's birth date; a balance of 0 until the ledger exists
- * (ADR-0002); and the tasks they had in last week's plan.
+ * The members as the allocator sees them (ADR-0001 §6–§7): their fair portion of the week, over
+ * the days the household is at home (ADR-0005 §5); a child's birth date; their balance, which the
+ * plan catches up on (ADR-0002 §3); and the tasks they had in last week's plan.
  */
 async function membersOf(
   tx: Transaction,
@@ -426,78 +419,22 @@ async function membersOf(
   week: PlanWeek,
   away: readonly Absence[],
 ): Promise<AllocationMember[]> {
-  const { calendar } = planning;
-  // Those of a period that touches the week: its last day in or after it, its first before its end.
-  const inWeek = (first: AnyPgColumn, last: AnyPgColumn) =>
-    and(gte(last, week.start.toString()), lt(first, week.end.toString()));
-  const rows = await tx
-    .select({
-      id: members.id,
-      role: members.role,
-      birthDate: members.birthDate,
-      sharePercent: members.sharePercent,
-    })
-    .from(members);
-  const absent = await tx
-    .select({ memberId: absences.memberId, from: absences.firstDay, to: absences.lastDay })
-    .from(absences)
-    .where(inWeek(absences.firstDay, absences.lastDay));
-  const temporary = await tx
-    .select({
-      memberId: temporaryShares.memberId,
-      from: temporaryShares.firstDay,
-      to: temporaryShares.lastDay,
-      percent: temporaryShares.percent,
-    })
-    .from(temporaryShares)
-    .where(inWeek(temporaryShares.firstDay, temporaryShares.lastDay));
+  const portions = await fairPortions(tx, planning.calendar, week, away);
+  const balances = await balancesOf(tx);
   const lastWeek = await tx
     .select({ memberId: assignments.memberId, taskId: occurrences.taskId })
     .from(assignments)
     .innerJoin(plans, eq(plans.id, assignments.planId))
     .innerJoin(occurrences, eq(occurrences.id, assignments.occurrenceId))
     .where(eq(plans.weekEnd, week.start.toString()));
-  const day = (iso: string) => Temporal.PlainDate.from(iso);
-  const people = rows.map((row) => {
-    const share = weekShare(
-      {
-        basis: basisOf(row),
-        ...(row.sharePercent === null ? {} : { override: row.sharePercent / 100 }),
-        temporary: temporary
-          .filter((t) => t.memberId === row.id)
-          .map((t) => ({ from: day(t.from), to: day(t.to), share: t.percent / 100 })),
-      },
-      week.start,
-      calendar,
-      away,
-    );
-    const availability = {
-      absences: [
-        ...absent
-          .filter((a) => a.memberId === row.id)
-          .map((a) => ({ from: day(a.from), to: day(a.to) })),
-        // The days the household is away count as nobody's: the week is planned for the days at
-        // home, with fair portions over those days (ADR-0005 §5).
-        ...away,
-      ],
-      unavailable: [],
-    };
-    return { row, share, availability };
-  });
-  const fractions = fairFractions(
-    people.map(({ share, availability }) => ({
-      share,
-      availability: availabilityInWeek(availability, week.start, calendar),
-    })),
-  );
-  return people.map(({ row, availability }, index) => ({
-    id: row.id,
-    fairFraction: fractions[index] ?? 0,
+  return portions.map(({ id, birthDate, availability, fairFraction }) => ({
+    id,
+    fairFraction,
     availability,
-    ...(row.birthDate === null ? {} : { birthDate: day(row.birthDate) }),
-    balance: 0,
+    ...(birthDate === undefined ? {} : { birthDate }),
+    balance: balances.get(id) ?? 0,
     load: 0,
-    lastWeek: new Set(lastWeek.filter((a) => a.memberId === row.id).map((a) => a.taskId)),
+    lastWeek: new Set(lastWeek.filter((a) => a.memberId === id).map((a) => a.taskId)),
   }));
 }
 
