@@ -1989,5 +1989,25 @@
   "balances.no-history": {
     "note": "Shown instead of the table of weeks until the household's first week is over and counted.",
     "needsReview": ["nl"]
+  },
+  "plan.joined-since": {
+    "note": "For heads, on a draft: who joined the household after the draft was made, by name as a list (count is how many), so the draft gives them no tasks and they owe nothing for that week (ADR-0002 §1, clarification). It suggests drafting it again.",
+    "needsReview": ["nl"]
+  },
+  "plan.redraft": {
+    "note": "Button under plan.joined-since: a head makes the draft again, which replaces it and shares the work with everyone in the household now.",
+    "needsReview": ["nl"]
+  },
+  "plan.redrafted": {
+    "note": "Status once a head made a draft again.",
+    "needsReview": ["nl"]
+  },
+  "plan.redraft-failed": {
+    "note": "Heading of the summary when making a draft again didn't go through; plan.redraft-gone says why.",
+    "needsReview": ["nl"]
+  },
+  "plan.redraft-gone": {
+    "note": "Why a head couldn't make a draft again: another head published it meanwhile.",
+    "needsReview": ["nl"]
   }
 }

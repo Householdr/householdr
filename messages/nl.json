@@ -578,5 +578,19 @@
   "balances.history": "Week per week",
   "balances.week": "Week",
   "balances.change": "Verschil",
-  "balances.no-history": "Nog niets: een week telt mee zodra ze voorbij is."
+  "balances.no-history": "Nog niets: een week telt mee zodra ze voorbij is.",
+  "plan.joined-since": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{names} kwam erbij nadat dit ontwerp gemaakt is, dus het geeft hen geen taken. Maak het opnieuw om het werk ook met hen te delen.",
+        "countPlural=other": "{names} kwamen erbij nadat dit ontwerp gemaakt is, dus het geeft hen geen taken. Maak het opnieuw om het werk ook met hen te delen."
+      }
+    }
+  ],
+  "plan.redraft": "Opnieuw maken",
+  "plan.redrafted": "Het ontwerp is opnieuw gemaakt, met iedereen in het huishouden.",
+  "plan.redraft-failed": "Opnieuw maken is niet gelukt",
+  "plan.redraft-gone": "Dit ontwerp kan niet meer opnieuw gemaakt worden: het is intussen gepubliceerd."
 }

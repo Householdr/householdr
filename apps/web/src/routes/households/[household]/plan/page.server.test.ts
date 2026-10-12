@@ -84,20 +84,23 @@ const opened = async (locals: object) => {
   }
 };
 
-/** Sends the form that publishes a draft early, with `fields`. */
-const publish = async (locals: object, fields: Record<string, string>) => {
-  const body = new FormData();
-  for (const [name, value] of Object.entries(fields)) body.set(name, value);
-  const request = new Request('https://householdr.example.org/', { method: 'POST', body });
-  try {
-    return await actions.publish({ locals, request } as unknown as Parameters<
-      typeof actions.publish
-    >[0]);
-  } catch (thrown) {
-    if (isHttpError(thrown)) return thrown.status;
-    throw thrown;
-  }
-};
+/** Sends the form of `action`, publishing a draft early or drafting it again, with `fields`. */
+const sent =
+  (action: 'publish' | 'redraft') => async (locals: object, fields: Record<string, string>) => {
+    const body = new FormData();
+    for (const [name, value] of Object.entries(fields)) body.set(name, value);
+    const request = new Request('https://householdr.example.org/', { method: 'POST', body });
+    try {
+      return await actions[action]({ locals, request } as unknown as Parameters<
+        (typeof actions)[typeof action]
+      >[0]);
+    } catch (thrown) {
+      if (isHttpError(thrown)) return thrown.status;
+      throw thrown;
+    }
+  };
+const publish = sent('publish');
+const redraft = sent('redraft');
 
 describe('a household’s plan page (ADR-0006 §2)', () => {
   it('shows a head next week’s draft, with when it is published and why each task went where', async () => {
@@ -133,9 +136,44 @@ describe('a household’s plan page (ADR-0006 §2)', () => {
           },
         ],
         unassigned: [],
+        joinedSince: [],
       },
       mayPublish: true,
       you: membership.member.id,
+    });
+  });
+
+  it('tells a head who joined after the draft, and drafts it again for them (ADR-0002 §1)', async () => {
+    const head = await drafted();
+    // Sam joins an hour after the draft was made.
+    const later = { now: () => Temporal.Instant.from('2026-10-08T09:00:00Z') };
+    const added = await addAdult({ db: test.context.db, clock: later, ...head }, { name: 'Sam' });
+    if (!added.ok) throw new Error('Not added');
+    expect(await opened({ ...on, membership: head })).toMatchObject({
+      nextWeek: { joinedSince: [{ id: added.memberId, name: 'Sam' }] },
+    });
+    const week = { week: '2026-10-12' };
+    expect(await redraft({ ...on, membership: asAdult(head) }, week)).toBe(403);
+    expect(await redraft({ ...on, membership: head }, { week: 'next week' })).toBe(400);
+    // Drafted again two hours later, after Sam joined.
+    test.context.clock.advance({ hours: 2 });
+    try {
+      expect(await redraft({ ...on, membership: head }, week)).toEqual({
+        week: '2026-10-12',
+        redrafted: true,
+      });
+    } finally {
+      test.context.clock.advance({ hours: -2 });
+    }
+    expect(await opened({ ...on, membership: head })).toMatchObject({
+      nextWeek: { status: 'draft', joinedSince: [] },
+    });
+    // Published meanwhile: it can't be drafted again, and the page says which week.
+    await publish({ ...on, membership: head }, { week: '2026-10-12', version: '2' });
+    const refused = await redraft({ ...on, membership: head }, week);
+    expect(isActionFailure(refused) && refused).toMatchObject({
+      status: 409,
+      data: { week: '2026-10-12', problem: 'redraft-gone' },
     });
   });
 

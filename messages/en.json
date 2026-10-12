@@ -578,5 +578,19 @@
   "balances.history": "Week by week",
   "balances.week": "Week",
   "balances.change": "Change",
-  "balances.no-history": "Nothing yet: a week counts once it’s over."
+  "balances.no-history": "Nothing yet: a week counts once it’s over.",
+  "plan.joined-since": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{names} joined after this draft was made, so it gives them no tasks. Draft it again to share the work with them too.",
+        "countPlural=other": "{names} joined after this draft was made, so it gives them no tasks. Draft it again to share the work with them too."
+      }
+    }
+  ],
+  "plan.redraft": "Draft it again",
+  "plan.redrafted": "The draft is made again, with everyone in the household.",
+  "plan.redraft-failed": "Drafting it again didn’t work",
+  "plan.redraft-gone": "This draft can’t be made again any more: it was published in the meantime."
 }

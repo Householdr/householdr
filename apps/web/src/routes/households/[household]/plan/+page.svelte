@@ -14,15 +14,25 @@
   /** Each week's heading, which takes the focus once publishing takes its button with it. */
   const headings = $state<Record<string, HTMLElement | undefined>>({});
 
-  /** What publishing `week`, or marking one of its tasks done or undoing it, did (UI-12). */
-  const statusOf = (week: string) =>
-    form?.week === week && form.published ? m['plan.published']() : plan.statusOf(week);
+  /**
+   * What publishing `week`, drafting it again, or marking one of its tasks done or undoing it, did
+   * (UI-12).
+   */
+  const statusOf = (week: string) => {
+    if (form?.week === week && form.published) return m['plan.published']();
+    if (form?.week === week && form.redrafted) return m['plan.redrafted']();
+    return plan.statusOf(week);
+  };
 
   /** Why publishing `week` didn't go through, in words (CODE-13). */
   const problemOf = (week: string) => {
-    if (form?.week !== week || !form.problem) return '';
+    if (form?.week !== week || !form.problem || form.problem === 'redraft-gone') return '';
     return form.problem === 'conflict' ? m['plan.changed']() : m['plan.gone']();
   };
+
+  /** Why drafting `week` again didn't go through, in words (CODE-13). */
+  const redraftProblemOf = (week: string) =>
+    form?.week === week && form.problem === 'redraft-gone' ? m['plan.redraft-gone']() : '';
 </script>
 
 <svelte:head>
@@ -48,6 +58,7 @@
         bind:heading={headings[week.id]}
         status={statusOf(week.start)}
         problem={problemOf(week.start)}
+        redraftProblem={redraftProblemOf(week.start)}
         taskProblem={plan.problemOf(week.start)}
         attempt={form}
         publish={plan.publishThenFocus(() => headings[week.id])}

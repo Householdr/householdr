@@ -1,5 +1,6 @@
 import {
   completeOccurrence,
+  draftPlan,
   publishPlan,
   undoCompletion,
   viewPlan,
@@ -62,6 +63,7 @@ const weekData = (plan: WeekPlan | null, completions: boolean) => {
       assignments: assignments.map((a) => ({ ...item(a), cost: a.cost, reason: a.reason })),
     })),
     unassigned: plan.unassigned.map((u) => ({ ...item(u), cause: u.cause })),
+    joinedSince: plan.joinedSince,
   };
 };
 
@@ -114,6 +116,19 @@ export const actions = {
     if (result.error === 'invalid') error(400);
     // Drafted again since the head saw it, or gone: the page then shows what there is.
     return fail(409, { week, problem: result.error });
+  },
+
+  // A head drafts a week again, as when someone joined after its draft was made (ADR-0002 §1,
+  // clarification): the new draft replaces it.
+  redraft: async ({ locals, request }) => {
+    const context = await householdContext(locals);
+    const week = field(await request.formData(), 'week');
+    const result = await draftPlan(context, { week });
+    if (result.ok) return { week, redrafted: true };
+    if (result.error === 'not-allowed') error(403);
+    if (result.error === 'invalid') error(400);
+    // Published or no longer drafted in the meantime: the page then shows what there is.
+    return fail(409, { week, problem: 'redraft-gone' as const });
   },
 
   // One tap: the member marks a task done that they did themselves (ADR-0006 §4).

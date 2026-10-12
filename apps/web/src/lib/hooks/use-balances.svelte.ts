@@ -1,6 +1,5 @@
 import { calendarDays, signed } from '#lib/intl.js';
 import { m } from '#lib/paraglide/messages.js';
-import { getLocale } from '#lib/paraglide/runtime.js';
 import type { RebalancePreset } from '@householdr/application';
 
 /** A member's balance and its history, as page data: weeks as `YYYY-MM-DD`, points as numbers. */
@@ -31,30 +30,29 @@ const rates: Record<RebalancePreset, () => string> = {
 
 /**
  * What the balances page needs besides its data (CODE-9): every member's balance and each week's
- * change in whole points with their sign (ADR-0002 §6), weeks in the reader's language (UI-22), and
- * how fast this household evens balances out (§3).
+ * change in whole points with their sign, such as "-80 points" (ADR-0002 §6, clarification), and
+ * weeks, in the page's language with the account's conventions (ADR-0008 §6, UI-22), and how fast
+ * this household evens balances out (§3).
  */
 export function useBalances(
-  data: () => { you: string; rebalance: RebalancePreset; members: BalanceData[] },
+  data: () => { you: string; locale: string; rebalance: RebalancePreset; members: BalanceData[] },
 ) {
-  const locale = getLocale();
-
   /** Points in words, whole, a half rounded away from 0 so a change and its opposite look alike. */
-  const points = (value: number) => {
+  const points = (value: number, locale: string) => {
     const whole = Math.sign(value) * Math.round(Math.abs(value));
     return m['balances.points']({ count: whole, points: signed(whole, locale) });
   };
 
   const members = $derived.by((): ShownBalance[] => {
-    const { you, members: list } = data();
+    const { you, locale, members: list } = data();
     return list.map(({ id, name, balance, history }) => ({
       id,
       heading: id === you ? m['household.you']({ name }) : name,
-      balance: points(balance),
+      balance: points(balance, locale),
       history: history.map((week) => ({
         start: week.start,
         week: calendarDays(week.start, week.last, locale),
-        change: points(week.change),
+        change: points(week.change, locale),
       })),
     }));
   });

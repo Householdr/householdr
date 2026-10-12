@@ -1,5 +1,6 @@
 import type { Browser, TestInfo } from '@playwright/test';
 import type { TestAccount } from '@householdr/auth/testing';
+import { calendarDays } from '../src/lib/intl';
 import { expect, expectAccessible, forceFlags, signIn, test } from './fixtures';
 import { ownNetwork } from './proxy';
 
@@ -40,7 +41,7 @@ const deviceOf = async (
 /**
  * Ash Lane, whose head Robin is the test's account, with Alex, an adult with an account. Last
  * week's plan had dishes every day and the bins once, 20 minutes each, half for each of them:
- * Robin did all of his and Alex none, so it settled Robin at 0 and Alex at −80 points.
+ * Robin did all of theirs and Alex none, so it settled Robin at 0 and Alex at −80 points.
  */
 const household = async (
   accounts: Parameters<Parameters<typeof test>[2]>[0]['accounts'],
@@ -62,15 +63,12 @@ const household = async (
   return { id, alex, week };
 };
 
-/** The days of the week starting on `start`, as the page writes them in English. */
-const daysOf = (start: string) => {
-  const first = Temporal.PlainDate.from(start);
-  const utc = (day: Temporal.PlainDate) => Date.UTC(day.year, day.month - 1, day.day);
-  return new Intl.DateTimeFormat('en', { dateStyle: 'long', timeZone: 'UTC' }).formatRange(
-    utc(first),
-    utc(first.add({ days: 6 })),
-  );
-};
+/**
+ * The days of the week starting on `start`, as the page writes them: in English with the test
+ * accounts' Belgian conventions (ADR-0008 §6).
+ */
+const daysOf = (start: string) =>
+  calendarDays(start, Temporal.PlainDate.from(start).add({ days: 6 }).toString(), 'en-BE');
 
 for (const javaScriptEnabled of [true, false]) {
   test.describe(javaScriptEnabled ? 'with JavaScript' : 'without JavaScript (CODE-13)', () => {
@@ -111,7 +109,7 @@ for (const javaScriptEnabled of [true, false]) {
       ]);
       if (javaScriptEnabled) await expectAccessible(page, 'balances, as a head sees them');
 
-      // Alex sees the same, with "you" for himself (ADR-0012 §3).
+      // Alex sees the same, with "you" for themselves (ADR-0012 §3).
       const device = await deviceOf(browser, testInfo, 'alex', javaScriptEnabled);
       try {
         const other = await device.newPage();
