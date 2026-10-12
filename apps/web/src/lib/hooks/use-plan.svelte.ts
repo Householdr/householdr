@@ -114,10 +114,13 @@ export function usePlan(
       id,
       start: week.start,
       heading: heading(calendarDays(week.start, week.last, locale)),
-      draft:
-        draft && week.publishAt !== null
-          ? m['plan.draft']({ when: dayAndTime(week.publishAt, timeZone, locale) })
-          : null,
+      // A draft of a week begun already, such as the one a household started in, has no time to
+      // be published at: a head publishes it (ADR-0007 §3).
+      draft: draft
+        ? week.publishAt === null
+          ? m['plan.draft-heads-publish']()
+          : m['plan.draft']({ when: dayAndTime(week.publishAt, timeZone, locale) })
+        : null,
       publish: draft && mayPublish ? { week: week.start, version: week.version } : null,
       members: week.members.map((member) => {
         const yours = member.id === you;

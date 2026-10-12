@@ -12,6 +12,7 @@ import {
 } from '@householdr/domain';
 import { sql, type AnyColumn } from 'drizzle-orm';
 import {
+  boolean,
   check,
   date,
   doublePrecision,
@@ -70,6 +71,11 @@ export const households = pgTable(
      * plan is drafted or published for it (ADR-0007 §2).
      */
     firstPlanWeek: date(),
+    /**
+     * Whether it started now, with its first plan week drafted at once for the days left: that
+     * draft waits for a head to publish it (ADR-0006 §2, ADR-0007 §3, clarifications).
+     */
+    startedNow: boolean().notNull().default(false),
     /** When plans are drafted and published: hours before the week starts (ADR-0006 §2). */
     draftHours: smallint().notNull().default(defaultPlanTimings.draft),
     publishHours: smallint().notNull().default(defaultPlanTimings.publish),
@@ -101,6 +107,8 @@ export const households = pgTable(
       sql`${t.publishHours} >= 0 and ${t.draftHours} > ${t.publishHours}`,
     ),
     check('households_rebalance', sql`${t.rebalance} in ('fast', 'normal', 'slow')`),
+    // Only a household that has started started now.
+    check('households_started_now', sql`not ${t.startedNow} or ${t.firstPlanWeek} is not null`),
   ],
 );
 
@@ -267,7 +275,29 @@ export const temporaryShares = pgTable(
 /** What an entry of the activity log says was done (ADR-0018 §5). */
 export type ActivityAction =
   /** A head changed the household's name, time zone, language or country (ADR-0007 §2). */
-  'household.name' | 'household.timeZone' | 'household.language' | 'household.country';
+  | 'household.name'
+  | 'household.timeZone'
+  | 'household.language'
+  | 'household.country'
+  /** A head started the household, which ends setting it up (ADR-0007 §2 step 7, §3). */
+  | 'household.started';
+
+/**
+ * What was set before the household started, which its start entry lists
+ * (ADR-0007 §2, ADR-0018 §5, clarifications): whose share a head set, as a share of their own or a
+ * temporary one, and for which profiles without an account days away were planned, by a head
+ * acting for them. Member ids only, never a value: no share, no day.
+ */
+export interface SetBeforeStart {
+  shares: string[];
+  daysAway: string[];
+}
+
+// An entry of the start entry's object that isn't one of its two lists of member ids (UUIDs).
+const notMemberIds = `$.keyvalue() ? ((@.key != "shares" && @.key != "daysAway")
+  || @.value.type() != "array"
+  || exists(@.value[*] ? (@.type() != "string"
+    || !(@ like_regex "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"))))`;
 
 /**
  * The household's activity log (ADR-0018 §5): who did what to whom, for every member to see. An
@@ -285,13 +315,31 @@ export const activityLog = pgTable(
     /** Who did it; none once their profile is deleted, when they show as a former member. */
     actorId: uuid().references(() => members.id, { onDelete: 'set null' }),
     action: text().$type<ActivityAction>().notNull(),
+    /**
+     * For `household.started`, and only for it: what was set before the start. A member
+     * whose profile goes stays in it by id, which then names nobody (ADR-0012 §6).
+     */
+    setBeforeStart: jsonb().$type<SetBeforeStart>(),
   },
   (t) => [
     householdOnly(t.householdId),
     index('activity_log_household_at').on(t.householdId, t.at),
     check(
       'activity_log_action',
-      sql`${t.action} in ('household.name', 'household.timeZone', 'household.language', 'household.country')`,
+      sql`${t.action} in ('household.name', 'household.timeZone', 'household.language',
+        'household.country', 'household.started')`,
+    ),
+    // The start entry, and only it, lists what was set before the start: two lists of member ids,
+    // and nothing else, so never a value (ADR-0018 §5).
+    check(
+      'activity_log_set_before_start',
+      sql`(${t.action} = 'household.started') = (${t.setBeforeStart} is not null)
+        and case
+          when ${t.setBeforeStart} is null then true
+          when jsonb_typeof(${t.setBeforeStart}) <> 'object' then false
+          else ${t.setBeforeStart} ?& array['shares', 'daysAway']
+            and not jsonb_path_exists(${t.setBeforeStart}, ${sql.raw(`'${notMemberIds}'`)})
+        end`,
     ),
   ],
 );

@@ -112,6 +112,7 @@ describe('duePlanStep (ADR-0006 §2, ADR-0008 §10)', () => {
     calendar: brussels,
     timings: defaultPlanTimings,
     firstWeek: date('2026-10-12'),
+    startedNow: false,
     away: [],
   };
   // Saturday 10 October 00:00 and Sunday 11 October 12:00 in Brussels.
@@ -132,6 +133,15 @@ describe('duePlanStep (ADR-0006 §2, ADR-0008 §10)', () => {
 
   it('drafts first when the publish time came before any draft, as after a missed tick', () => {
     expect(duePlanStep(publishTime.add({ hours: 1 }), next, undefined, started)).toBe('draft');
+  });
+
+  it('leaves the draft of a household that started now for a head to publish (ADR-0007 §3)', () => {
+    const now = { ...started, startedNow: true };
+    const late = publishTime.add({ hours: 48 });
+    expect(duePlanStep(late, next, 'draft', now)).toBeUndefined();
+    // Only its first week's: the weeks after are published at their times.
+    const after = week('2026-10-19');
+    expect(duePlanStep(instant('2026-10-18T10:00:00Z'), after, 'draft', now)).toBe('publish');
   });
 
   it('does nothing more once the plan is published (ADR-0006 §3)', () => {

@@ -1,7 +1,13 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { inHousehold, type Database } from './connection';
-import { activityLog, households, members } from './schema';
+import {
+  activityLog,
+  households,
+  members,
+  type ActivityAction,
+  type SetBeforeStart,
+} from './schema';
 import { refusal, testDatabase } from './testing';
 import { atVersion, nextVersion } from './versioned';
 
@@ -55,6 +61,7 @@ describe('the activity log (ADR-0018 §5)', () => {
         at: new Date('2026-10-08T08:00:00Z'),
         actorId: robin,
         action: 'household.name',
+        setBeforeStart: null,
       },
     ]);
   });
@@ -88,6 +95,38 @@ describe('the activity log (ADR-0018 §5)', () => {
       }),
     );
     expect(await refusal(unknown)).toBe('activity_log_action');
+  });
+
+  it('lists what was set before the start in the start entry only, by member id (ADR-0007 §2)', async () => {
+    const { id, robin } = await withEntry();
+    const entry = (action: ActivityAction, setBeforeStart: unknown) =>
+      inHousehold(db, id, (tx) =>
+        tx.insert(activityLog).values({
+          householdId: id,
+          at: new Date(),
+          actorId: robin,
+          action,
+          setBeforeStart: setBeforeStart as SetBeforeStart,
+        }),
+      );
+    const broken = 'activity_log_set_before_start';
+    expect(
+      await refusal(entry('household.started', { shares: [robin], daysAway: [] })),
+    ).toBeUndefined();
+    expect(await refusal(entry('household.started', null))).toBe(broken);
+    expect(await refusal(entry('household.name', { shares: [], daysAway: [] }))).toBe(broken);
+    // Never a value: no share, no day, nothing but the two lists of ids (ADR-0018 §5).
+    for (const wrong of [
+      { shares: [] },
+      { shares: [50], daysAway: [] },
+      { shares: [{ member: robin, percent: 50 }], daysAway: [] },
+      { shares: [], daysAway: ['2026-10-12'] },
+      { shares: robin, daysAway: [] },
+      { shares: [], daysAway: [], percent: 50 },
+      [robin],
+    ]) {
+      expect(await refusal(entry('household.started', wrong))).toBe(broken);
+    }
   });
 });
 

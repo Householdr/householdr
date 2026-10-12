@@ -27,7 +27,8 @@ let next = 0;
 /**
  * A household founded by Robin, a head with two factors, with Alex, an adult with an account. Its
  * weeks start on Mondays in `timeZone`; it is past setup from the week of `started`, unless that
- * is null. The clock reads Thursday 8 October 2026, 10:00 in Brussels.
+ * is null, having started now if `startedNow`. The clock reads Thursday 8 October 2026, 10:00 in
+ * Brussels.
  */
 export async function plannedHousehold(
   db: Database,
@@ -35,7 +36,8 @@ export async function plannedHousehold(
     timeZone = 'Europe/Brussels',
     country = 'BE',
     started = '2026-10-12',
-  }: { timeZone?: string; country?: string; started?: string | null } = {},
+    startedNow = false,
+  }: { timeZone?: string; country?: string; started?: string | null; startedNow?: boolean } = {},
 ) {
   const account = async (name: string) => {
     const [row] = await db
@@ -75,7 +77,7 @@ export async function plannedHousehold(
   const alex = await account('alex');
   await inHousehold(db, householdId, async (tx) => {
     await tx.insert(members).values({ householdId, name: 'Alex', role: 'adult', accountId: alex });
-    if (started) await tx.update(households).set({ firstPlanWeek: started });
+    if (started) await tx.update(households).set({ firstPlanWeek: started, startedNow });
   });
   const clock = settableClock(Temporal.Instant.from('2026-10-08T08:00:00Z'));
   const as = async (accountId: string): Promise<HouseholdContext> => {

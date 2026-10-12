@@ -53,6 +53,8 @@ export interface ScheduledHousehold {
   timings: PlanTimings;
   /** The first day of its first plan week, which Start records; none while it is in setup. */
   firstWeek: Temporal.PlainDate | undefined;
+  /** Whether it started now, with its first week's draft made at once (ADR-0007 §3). */
+  startedNow: boolean;
   away: readonly AwayPeriod[];
 }
 
@@ -60,7 +62,9 @@ export interface ScheduledHousehold {
  * The step the scheduler takes for `week` at `now`, if any (ADR-0006 §2, ADR-0008 §10): a draft
  * once its draft time has come and it has no plan yet, then publishing that draft once its publish
  * time has come. Nothing for a household in setup or a week before its first plan week (ADR-0007
- * §2), nor for a week the household is away for entirely, which gets no plan (ADR-0005 §5).
+ * §2), nor for a week the household is away for entirely, which gets no plan (ADR-0005 §5). The
+ * draft a household starting now gets for its first week waits for a head to publish it, however
+ * late it is (ADR-0006 §2, ADR-0007 §3, clarifications).
  */
 export function duePlanStep(
   now: Temporal.Instant,
@@ -74,6 +78,9 @@ export function duePlanStep(
   const times = planTimes(week, household.calendar, household.timings);
   const reached = (step: PlanStep) => Temporal.Instant.compare(now, times[step]) >= 0;
   if (plan === undefined) return reached('draft') ? 'draft' : undefined;
-  if (plan === 'draft') return reached('publish') ? 'publish' : undefined;
+  if (plan === 'draft') {
+    if (household.startedNow && week.start.equals(firstWeek)) return undefined;
+    return reached('publish') ? 'publish' : undefined;
+  }
   return undefined;
 }
