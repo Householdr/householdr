@@ -93,7 +93,12 @@ export type Permission =
       credited: readonly string[];
       inPlanWeek: boolean;
     }
-  | { action: MemberAction; member: Member };
+  | {
+      action: MemberAction;
+      member: Member;
+      /** Whether the actor's account is the member's guardian (ADR-0010 §1, ADR-0012 §3). */
+      guardian?: boolean;
+    };
 
 const headOnly = new Set<Permission['action']>([
   'household.settings',
@@ -126,10 +131,19 @@ export function can(actor: Member, permission: Permission): boolean {
         (head || permission.loggedBy === actor.id || permission.credited.includes(actor.id))
       );
   }
-  return 'member' in permission && canFor(actor, head, permission.action, permission.member);
+  return (
+    'member' in permission &&
+    canFor(actor, head, permission.action, permission.member, permission.guardian ?? false)
+  );
 }
 
-function canFor(actor: Member, head: boolean, action: MemberAction, member: Member): boolean {
+function canFor(
+  actor: Member,
+  head: boolean,
+  action: MemberAction,
+  member: Member,
+  guardian: boolean,
+): boolean {
   const self = member.id === actor.id;
   const child = member.role === 'child';
   const profile = !member.hasAccount;
@@ -137,6 +151,8 @@ function canFor(actor: Member, head: boolean, action: MemberAction, member: Memb
     case 'availability.manage':
       return self || (head && (child || profile));
     case 'share.view':
+      // A guardian sees their own child's share, in a household they belong to (ADR-0012 §3).
+      return self || head || (guardian && child);
     case 'email.view':
       return self || head;
     case 'share.edit':
