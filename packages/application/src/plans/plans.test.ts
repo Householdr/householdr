@@ -1,6 +1,7 @@
 import type { Database } from '@householdr/db';
 import { testDatabase } from '@householdr/db/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { addAdult } from '../households/add-adult';
 import { draftPlan } from './draft-plan';
 import { publishPlan } from './publish-plan';
 import { plannedHousehold, type PlannedHousehold } from './testing';
@@ -466,6 +467,27 @@ describe('viewPlan (ADR-0006 §2, ADR-0007 §5)', () => {
       expect(a.window.end.toString()).toBe('2026-10-19T00:00:00+02:00[Europe/Brussels]');
       expect(a.reason).toBe('lowest relative load');
     }
+  });
+
+  it('tells heads who joined after a draft, until it is drafted again (ADR-0002 §1, clarification)', async () => {
+    const h = await household();
+    await chores(h);
+    await drafted(h.scheduler);
+    // Sam is added an hour after the draft was made, by Robin with two factors.
+    h.clock.advance({ hours: 1 });
+    const head = { ...h.head, member: { ...h.head.member, twoFactor: true } };
+    const added = await addAdult(head, { name: 'Sam' });
+    if (!added.ok) throw new Error('Not added');
+    const shown = async (context = head) => {
+      const result = await viewPlan(context);
+      return result.ok ? result.nextWeek?.joinedSince : result.error;
+    };
+    expect(await shown()).toEqual([{ id: added.memberId, name: 'Sam' }]);
+    // Only heads see drafts, and so who joined after one.
+    expect(await shown(h.adult)).toBeUndefined();
+    // Drafted again by Robin: it includes Sam now.
+    await drafted(head);
+    expect(await shown()).toEqual([]);
   });
 
   it('shows other members no draft, but the published plan (ADR-0006 §2, clarification)', async () => {

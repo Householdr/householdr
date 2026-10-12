@@ -80,12 +80,14 @@ export async function createTestAccount(
 /**
  * Takes household `householdId` out of setup, with its first plan week starting on `firstWeek`,
  * as Start does (ADR-0007 §2, §3), for tests that need a started household without its draft or
- * its entry in the activity log.
+ * its entry in the activity log. Its members joined before its first week, whatever the tests'
+ * clocks say, so every plan includes them (ADR-0005 §4, clarification).
  */
 export async function startTestHousehold(db: Database, householdId: string, firstWeek: string) {
-  await inHousehold(db, householdId, (tx) =>
-    tx.update(households).set({ firstPlanWeek: firstWeek }),
-  );
+  await inHousehold(db, householdId, async (tx) => {
+    await tx.update(households).set({ firstPlanWeek: firstWeek });
+    await tx.update(members).set({ joinedAt: new Date(0) });
+  });
 }
 
 /**

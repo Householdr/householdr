@@ -411,7 +411,8 @@ async function earlierOccurrences(tx: Transaction, week: PlanWeek, timeZone: str
 /**
  * The members as the allocator sees them (ADR-0001 §6–§7): their fair portion of the week, over
  * the days the household is at home (ADR-0005 §5); a child's birth date; their balance, which the
- * plan catches up on (ADR-0002 §3); and the tasks they had in last week's plan.
+ * plan catches up on (ADR-0002 §3), as settled up to the week before last; and the tasks they had in
+ * last week's plan.
  */
 async function membersOf(
   tx: Transaction,
@@ -420,7 +421,10 @@ async function membersOf(
   away: readonly Absence[],
 ): Promise<AllocationMember[]> {
   const portions = await fairPortions(tx, planning.calendar, week, away);
-  const balances = await balancesOf(tx);
+  // Up to the week before last: the week before this one is underway as it is drafted, and its work
+  // counts from the draft after (ADR-0002 §3, clarification).
+  const lastWeekStart = planWeek(week.start.subtract({ days: 1 }), planning.calendar).start;
+  const balances = await balancesOf(tx, { before: lastWeekStart });
   const lastWeek = await tx
     .select({ memberId: assignments.memberId, taskId: occurrences.taskId })
     .from(assignments)

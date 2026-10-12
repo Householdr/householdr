@@ -201,6 +201,20 @@ describe('queueDuePlanSteps (ADR-0006 §2, ADR-0008 §10)', () => {
       ]);
     });
 
+    it('queues every week over that isn’t settled, also those missed while it was down', async () => {
+      const h = await withWeek1();
+      // Week 2's plan, drafted and published at its times.
+      h.clock.advance({ hours: 9 * 24 });
+      await draftPlan(h.scheduler, { week: '2026-10-19' });
+      await publishPlan(h.scheduler, { week: '2026-10-19' });
+      // The scheduler was down until Wednesday of week 3: both weeks over are settled (ADR-0002 §1,
+      // clarification).
+      expect((await settling('2026-10-28T08:00:00Z', h)).sort()).toEqual([
+        [h.householdId, '2026-10-12'],
+        [h.householdId, '2026-10-19'],
+      ]);
+    });
+
     it('queues nothing once the week is settled, or for a draft never published', async () => {
       const settled = await withWeek1();
       const draft = await withWeek1({}, false);

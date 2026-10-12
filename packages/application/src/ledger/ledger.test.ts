@@ -1,12 +1,14 @@
-import { households, ledgerEntries, members, type Database } from '@householdr/db';
+import { households, ledgerEntries, members, shareChanges, type Database } from '@householdr/db';
 import { testDatabase } from '@householdr/db/testing';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { completeOccurrence } from '../completions/complete-occurrence';
+import { addAdult } from '../households/add-adult';
 import type { HouseholdContext } from '../households/context';
 import { draftPlan } from '../plans/draft-plan';
 import { publishPlan } from '../plans/publish-plan';
 import { plannedHousehold, type PlannedHousehold } from '../plans/testing';
+import { changeShare } from '../shares/shares';
 import { householdBalances } from './balances';
 import { settlePlanWeek } from './settle-plan-week';
 
@@ -253,12 +255,66 @@ describe('settlePlanWeek (ADR-0002 §1, §7)', () => {
   });
 });
 
+describe('settling with what applied to the week (ADR-0002 §1, clarifications)', () => {
+  /** Robin, signed in with two factors, as only such a head changes shares (ADR-0010 §3). */
+  const withTwoFactors = (h: PlannedHousehold): HouseholdContext => ({
+    ...h.head,
+    member: { ...h.head.member, twoFactor: true },
+  });
+
+  it('uses the share of that week, kept from the next unpublished plan on', async () => {
+    const h = await household();
+    // On Wednesday of week 1, whose plan is published, Robin halves Alex's share.
+    const [alex] = await h.inIt((tx) =>
+      tx.select({ version: members.version }).from(members).where(eq(members.id, h.alex)),
+    );
+    const changed = await changeShare(withTwoFactors(h), {
+      member: h.alex,
+      percent: 50,
+      version: alex?.version,
+    });
+    expect(changed).toMatchObject({ ok: true });
+    // It applies from week 2, the next unpublished plan; the full share before it is kept too.
+    const kept = await h.inIt((tx) =>
+      tx
+        .select({ fromWeek: shareChanges.fromWeek, percent: shareChanges.percent })
+        .from(shareChanges)
+        .orderBy(shareChanges.fromWeek),
+    );
+    expect(kept).toEqual([
+      { fromWeek: week1, percent: null },
+      { fromWeek: week2, percent: 50 },
+    ]);
+    // Week 1 is settled with the full share it was planned with: everyone did theirs, so 0 each.
+    await everyoneDoesTheirs(h);
+    await settle(h);
+    for (const change of Object.values(await changes(h))) expect(change).toBeCloseTo(0, 9);
+  });
+
+  it('charges nothing to a member who joined after the plan was drafted, and credits what they did', async () => {
+    const h = await household();
+    // Sam joins on Wednesday of week 1, after its plan was drafted and published.
+    const added = await addAdult(withTwoFactors(h), { name: 'Sam' });
+    if (!added.ok) throw new Error(`Not added: ${added.error}`);
+    // Sam does one of Alex's tasks; the rest do theirs.
+    const [alexs] = await openFor(h, 'Alex');
+    if (!alexs) throw new Error('Nothing for Alex');
+    await complete(h.adult, alexs, [added.memberId]);
+    await everyoneDoesTheirs(h);
+    await settle(h);
+    const changed = await changes(h);
+    expect(changed.Sam).toBeCloseTo(20, 9);
+    expect(changed.Alex).toBeCloseTo(-20, 9);
+    expect(changed.Robin).toBeCloseTo(0, 9);
+  });
+});
+
 describe('drafting with the balances (ADR-0001 §7, ADR-0002 §3)', () => {
   it('gives more to a member who is behind, at the household’s rebalance rate', async () => {
     const h = await household();
-    // Fast: the plan catches up on half of a balance, 40 of Alex's 80 points, two of his tasks.
+    // Fast: the plan catches up on half of a balance, 40 of Alex's 80 points, two of their tasks.
     await h.inIt((tx) => tx.update(households).set({ rebalance: 'fast' }));
-    // Alex did none of his 80 points, Robin all of his.
+    // Alex did none of their 80 points, Robin all of theirs.
     await everyoneDoesTheirs(h, { Alex: 4 });
     await settle(h);
     expect(await changes(h)).toMatchObject({ Alex: -80 });
@@ -269,6 +325,18 @@ describe('drafting with the balances (ADR-0001 §7, ADR-0002 §3)', () => {
     expect(load.Alex).toBeGreaterThan(load.Robin ?? 0);
     const reasons = (await h.plan(week3))?.rows.filter((row) => row.member === 'Alex');
     expect(reasons).toContainEqual(expect.objectContaining({ reason: 'catching up' }));
+  });
+
+  it('uses the balances up to the week before last, also for a draft made late', async () => {
+    const h = await household();
+    await h.inIt((tx) => tx.update(households).set({ rebalance: 'fast' }));
+    await everyoneDoesTheirs(h, { Alex: 4 });
+    await settle(h);
+    // Week 2 drafted once it began, after week 1 was settled: week 1 is the week before it, not
+    // the week before last, so its work counts from week 3's draft on (ADR-0002 §3, clarification).
+    await planned(h, week2);
+    const load = await loads(h, week2);
+    expect(load.Alex).toBe(load.Robin);
   });
 });
 
@@ -285,7 +353,7 @@ describe('householdBalances (ADR-0002 §6)', () => {
 
   it('shows every member each balance and what each settled week changed it by, and nothing else', async () => {
     const h = await settled();
-    // Alex did 3 of his 4 and 2 of Robin's: 100 of the 80 owed; Robin did 2 of his 4: 40.
+    // Alex did 3 of their 4 and 2 of Robin's: 100 of the 80 owed; Robin did 2 of their 4: 40.
     const expected = {
       ok: true,
       rebalance: 'normal',

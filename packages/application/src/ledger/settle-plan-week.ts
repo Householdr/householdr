@@ -121,7 +121,8 @@ export async function settlePlanWeek(
       calendar.timeZone,
     );
     const away = [...(await awayIn(tx, week)), ...goneDays(week, draftedOn)];
-    const portions = await fairPortions(tx, calendar, week, away);
+    // Nothing is owed by a member who joined after the plan was drafted (ADR-0002 §1, clarification).
+    const portions = await fairPortions(tx, calendar, week, away, { draftedAt: plan.draftedAt });
     const settlement = settleWeek(
       new Map(portions.map(({ id, fairFraction }) => [id, fairFraction])),
       allocated,

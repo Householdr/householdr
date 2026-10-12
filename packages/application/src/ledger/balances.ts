@@ -1,21 +1,26 @@
 import { inHousehold, ledgerEntries, members, plans, type Transaction } from '@householdr/db';
 import { can, type RebalancePreset, type Role } from '@householdr/domain';
-import { desc, eq, sql } from 'drizzle-orm';
+import { desc, eq, lt, sql } from 'drizzle-orm';
 import type { HouseholdContext } from '../households/context';
 import { planningOf } from '../plans/planning';
 
 /**
  * Each member's balance in points, by member id: the sum of their ledger entries (ADR-0002 §7),
- * positive when ahead of their fair portion. A member without entries, such as one who just
- * joined, has none here, which is a balance of 0 (ADR-0005 §4).
+ * positive when ahead of their fair portion; with `before`, of the plan weeks before that day only.
+ * A member without entries, such as one who just joined, has none here, which is a balance of 0
+ * (ADR-0005 §4).
  */
-export async function balancesOf(tx: Transaction): Promise<Map<string, number>> {
+export async function balancesOf(
+  tx: Transaction,
+  { before }: { before?: Temporal.PlainDate } = {},
+): Promise<Map<string, number>> {
   const rows = await tx
     .select({
       member: ledgerEntries.memberId,
       balance: sql<number>`sum(${ledgerEntries.change})`.mapWith(Number),
     })
     .from(ledgerEntries)
+    .where(before === undefined ? undefined : lt(ledgerEntries.week, before.toString()))
     .groupBy(ledgerEntries.memberId);
   return new Map(rows.map((row) => [row.member, row.balance]));
 }

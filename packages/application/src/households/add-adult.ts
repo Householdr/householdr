@@ -28,7 +28,13 @@ export async function addAdult(context: HouseholdContext, input: unknown): Promi
   const [added] = await inHousehold(context.db, context.householdId, (tx) =>
     tx
       .insert(members)
-      .values({ householdId: context.householdId, name: parsed.output.name, role: 'adult' })
+      .values({
+        householdId: context.householdId,
+        name: parsed.output.name,
+        role: 'adult',
+        // When they joined (ADR-0005 §4, clarification).
+        joinedAt: new Date(context.clock.now().epochMilliseconds),
+      })
       .returning({ id: members.id }),
   );
   if (!added) throw new Error('No member was added.');

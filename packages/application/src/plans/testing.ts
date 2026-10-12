@@ -77,6 +77,8 @@ export async function plannedHousehold(
   const alex = await account('alex');
   await inHousehold(db, householdId, async (tx) => {
     await tx.insert(members).values({ householdId, name: 'Alex', role: 'adult', accountId: alex });
+    // Both joined before the test's clock, so before any of its plans (ADR-0005 §4, clarification).
+    await tx.update(members).set({ joinedAt: new Date('2026-10-01T00:00:00Z') });
     if (started) await tx.update(households).set({ firstPlanWeek: started, startedNow });
   });
   const clock = settableClock(Temporal.Instant.from('2026-10-08T08:00:00Z'));

@@ -137,6 +137,12 @@ export const members = pgTable(
      * share; none for the default (ADR-0001 §4). Never a reason for it (ADR-0012 §2).
      */
     sharePercent: smallint(),
+    /**
+     * When the profile was added to the household, which is when the member joined: a plan drafted
+     * before it doesn't include them, so they owe nothing for its week (ADR-0005 §4, ADR-0002 §1,
+     * clarifications). The members added before this was kept have the epoch, before any plan.
+     */
+    joinedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     /** For versioned updates (CODE-14, ADR-0023 §1). */
     version: integer().notNull().default(1),
   },
@@ -269,6 +275,39 @@ export const temporaryShares = pgTable(
     index('temporary_shares_member').on(t.householdId, t.memberId, t.firstDay),
     check('temporary_shares_days', sql`${t.firstDay} <= ${t.lastDay}`),
     check('temporary_shares_percent', sql`${t.percent} between 0 and 100`),
+  ],
+);
+
+/**
+ * The share a member had from a plan week on (ADR-0001 §4): a change applies from the next
+ * unpublished plan, and settling a week uses the share of that week (ADR-0002 §1, clarification).
+ * Kept once the household has started: the first change also keeps the share before it, from the
+ * household's first plan week. `members.share_percent` stays the share set now.
+ */
+export const shareChanges = pgTable(
+  'share_changes',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    memberId: uuid().notNull(),
+    /** The first day of the plan week it applies from. */
+    fromWeek: date().notNull(),
+    /** As `members.share_percent`: none for the default by role and age. */
+    percent: smallint(),
+  },
+  (t) => [
+    householdOnly(t.householdId),
+    // A member of its own household: foreign keys are checked past row-level security (CODE-17).
+    foreignKey({
+      name: 'share_changes_member',
+      columns: [t.householdId, t.memberId],
+      foreignColumns: [members.householdId, members.id],
+    }).onDelete('cascade'),
+    // One share from each week on: a second change before that week replaces the first.
+    uniqueIndex('share_changes_week').on(t.householdId, t.memberId, t.fromWeek),
+    check('share_changes_percent', sql`${t.percent} between 0 and 100`),
   ],
 );
 

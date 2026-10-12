@@ -11,6 +11,7 @@ import {
 import { and, gte, lt } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { basisOf } from '../shares/member-share';
+import { sharesInWeek } from '../shares/share-changes';
 
 // What drafting a week and settling it both read (ADR-0001 §6, ADR-0002 §1).
 
@@ -26,16 +27,19 @@ export interface FairPortion {
 }
 
 /**
- * Each member's fair portion of plan week `week` as it stands (ADR-0001 §6): from their share,
- * temporary ones included, and the time they are available, both over the days the household is at
- * home, `away` being the days it isn't (ADR-0005 §5). Drafting reads it before the week, and
- * settling once it is over, when it has come out as the week ended up (ADR-0002 §1).
+ * Each member's fair portion of plan week `week` as it stands (ADR-0001 §6): from their share in
+ * that week, temporary ones included, and the time they are available, both over the days the
+ * household is at home, `away` being the days it isn't (ADR-0005 §5). Drafting reads it before the
+ * week, and settling once it is over, when it has come out as the week ended up (ADR-0002 §1). A
+ * member who joined after `draftedAt`, when the week's plan was drafted, has none: the plan didn't
+ * include them (ADR-0002 §1, clarification).
  */
 export async function fairPortions(
   tx: Transaction,
   calendar: HouseholdCalendar,
   week: PlanWeek,
   away: readonly Absence[],
+  { draftedAt }: { draftedAt?: Date } = {},
 ): Promise<FairPortion[]> {
   // Those of a period that touches the week: its last day in or after it, its first before its end.
   const inWeek = (first: AnyPgColumn, last: AnyPgColumn) =>
@@ -46,8 +50,11 @@ export async function fairPortions(
       role: members.role,
       birthDate: members.birthDate,
       sharePercent: members.sharePercent,
+      joinedAt: members.joinedAt,
     })
     .from(members);
+  // The share a member had in this week, where a change to it was kept (ADR-0002 §1, clarification).
+  const kept = await sharesInWeek(tx, week);
   const absent = await tx
     .select({ memberId: absences.memberId, from: absences.firstDay, to: absences.lastDay })
     .from(absences)
@@ -63,18 +70,22 @@ export async function fairPortions(
     .where(inWeek(temporaryShares.firstDay, temporaryShares.lastDay));
   const day = (iso: string) => Temporal.PlainDate.from(iso);
   const people = rows.map((row) => {
-    const share = weekShare(
-      {
-        basis: basisOf(row),
-        ...(row.sharePercent === null ? {} : { override: row.sharePercent / 100 }),
-        temporary: temporary
-          .filter((t) => t.memberId === row.id)
-          .map((t) => ({ from: day(t.from), to: day(t.to), share: t.percent / 100 })),
-      },
-      week.start,
-      calendar,
-      away,
-    );
+    const percent = kept.has(row.id) ? (kept.get(row.id) ?? null) : row.sharePercent;
+    const joinedLater = draftedAt !== undefined && row.joinedAt > draftedAt;
+    const share = joinedLater
+      ? 0
+      : weekShare(
+          {
+            basis: basisOf(row),
+            ...(percent === null ? {} : { override: percent / 100 }),
+            temporary: temporary
+              .filter((t) => t.memberId === row.id)
+              .map((t) => ({ from: day(t.from), to: day(t.to), share: t.percent / 100 })),
+          },
+          week.start,
+          calendar,
+          away,
+        );
     const availability = {
       absences: [
         ...absent

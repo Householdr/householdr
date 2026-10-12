@@ -686,6 +686,7 @@ describe('every household-owned table (CODE-17)', () => {
       'plans',
       'profile_guardians',
       'schedules',
+      'share_changes',
       'tasks',
       'temporary_shares',
     ]);

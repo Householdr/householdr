@@ -1,4 +1,11 @@
-import { accounts, inHousehold, members, passkeys, type Database } from '@householdr/db';
+import {
+  accounts,
+  inHousehold,
+  members,
+  passkeys,
+  shareChanges,
+  type Database,
+} from '@householdr/db';
 import { testDatabase } from '@householdr/db/testing';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -227,6 +234,14 @@ describe('changeShare (ADR-0001 §4, ADR-0019 §5)', () => {
       temporaryThisWeek: false,
       version: 2,
     });
+  });
+
+  it('keeps no week for a change before the start, which no plan comes before (ADR-0002 §1)', async () => {
+    const { head, sam } = await household();
+    await changeShare(head, { member: sam, percent: 50, version: 1 });
+    expect(await inHousehold(db, head.householdId, (tx) => tx.select().from(shareChanges))).toEqual(
+      [],
+    );
   });
 
   it('keeps the version when nothing changes', async () => {

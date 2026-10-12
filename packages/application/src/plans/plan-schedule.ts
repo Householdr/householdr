@@ -8,7 +8,7 @@ import {
   type JobQueue,
 } from '@householdr/db';
 import { duePlanStep, householdDate, nextPlanWeek, planWeek } from '@householdr/domain';
-import { and, eq, notExists } from 'drizzle-orm';
+import { and, eq, lte, notExists } from 'drizzle-orm';
 import type { Clock, Flags } from '../ports';
 import { dueToClose } from './closing';
 import { awayIn, planningOf } from './planning';
@@ -29,8 +29,9 @@ export interface ScheduleContext {
  * setup, drafting its next plan week once the draft time has come, and publishing that draft once
  * the publish time has come; once a plan week has begun, closing as missed what its plan doesn't
  * carry over (ADR-0002 §2, clarifications); and once a plan week is over, settling it into the
- * ledger while it has a published plan not settled yet (ADR-0002 §1, §7), from when the balances'
- * release flag is on. Settling doesn't wait for closing: both come as the next week begins. It
+ * ledger while it has a published plan not settled yet (ADR-0002 §1, §7), while the balances'
+ * release flag is on: every such week, also those missed while the scheduler was down (§1,
+ * clarification). Settling doesn't wait for closing: both come as the next week begins. It
  * catches up on the week that has begun too (ADR-0006 §2, clarification): if the scheduler missed
  * its times, as when it was down, that week is drafted, and its draft published, as soon as it runs
  * again. All in the household's own time zone and week. Each step is queued by its household and
@@ -65,13 +66,14 @@ export async function queueDuePlanSteps(context: ScheduleContext): Promise<numbe
         queued++;
       }
       if (context.flags.isOn('balances')) {
-        // The week that ended as this one began, if its published plan isn't settled yet.
-        const [over] = await tx
+        // Every week over, up to the one that ended as this one began, with a published plan that
+        // isn't settled yet.
+        const over = await tx
           .select({ week: plans.weekStart })
           .from(plans)
           .where(
             and(
-              eq(plans.weekEnd, thisWeek.start.toString()),
+              lte(plans.weekEnd, thisWeek.start.toString()),
               eq(plans.status, 'published'),
               notExists(
                 tx
@@ -86,8 +88,8 @@ export async function queueDuePlanSteps(context: ScheduleContext): Promise<numbe
               ),
             ),
           );
-        if (over) {
-          await queueJob(context.queue, tx, 'plan-settle', { household: householdId, ...over });
+        for (const { week } of over) {
+          await queueJob(context.queue, tx, 'plan-settle', { household: householdId, week });
           queued++;
         }
       }

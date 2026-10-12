@@ -113,6 +113,11 @@ export interface WeekPlan {
   members: MemberPlan[];
   /** What nobody could take: for heads; empty for anyone else. */
   unassigned: UnassignedOccurrence[];
+  /**
+   * For heads, while it is a draft: the members who joined after it was drafted, so it gives them
+   * nothing, and drafting it again would (ADR-0002 §1, clarification). Empty for anyone else.
+   */
+  joinedSince: Named[];
 }
 
 type ViewPlanResult =
@@ -156,6 +161,7 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
         weekEnd: plans.weekEnd,
         status: plans.status,
         version: plans.version,
+        draftedAt: plans.draftedAt,
       })
       .from(plans)
       .where(inArray(plans.weekStart, [current.start.toString(), next.start.toString()]));
@@ -167,6 +173,7 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
         name: members.name,
         role: members.role,
         accountId: members.accountId,
+        joinedAt: members.joinedAt,
       })
       .from(members);
     people.sort((a, b) => roleOrder[a.role] - roleOrder[b.role] || a.name.localeCompare(b.name));
@@ -304,6 +311,12 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
               )
               .sort(inOrder)
           : [],
+        joinedSince:
+          mayPublish && plan.status === 'draft'
+            ? people
+                .filter((person) => person.joinedAt > plan.draftedAt)
+                .map(({ id, name }) => ({ id, name }))
+            : [],
       };
     };
     return {
