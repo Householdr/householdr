@@ -186,7 +186,7 @@ for (const javaScriptEnabled of [true, false]) {
         await other.goto(`/households/${id}/activity`);
         const entry = other.getByRole('listitem');
         await expect(entry).toHaveCount(1);
-        await expect(entry).toContainText('Robin marked a task done for Alex.');
+        await expect(entry).toContainText('Robin marked a task done for you.');
         await expect(entry).not.toContainText(/\d+ points?|\d{2}:\d{2}/);
         if (javaScriptEnabled) await expectAccessible(other, 'activity');
       } finally {
@@ -243,7 +243,7 @@ test('of two members marking a task done at once, the second is told who did it 
   await page.goto(`/households/${id}/activity`);
   const entry = page.getByRole('listitem');
   await expect(entry).toHaveCount(1);
-  await expect(entry).toContainText('Alex picked up a task of Robin’s.');
+  await expect(entry).toContainText('Alex picked up a task of yours.');
   await expect(entry).not.toContainText(/Dishes|\d+ points?/);
 });
 

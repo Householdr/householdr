@@ -86,7 +86,7 @@ for (const javaScriptEnabled of [true, false]) {
       await expect(page.getByRole('region', { name: 'Ready to start?' })).toHaveCount(0);
       await expect(page.getByRole('link', { name: 'Start the household' })).toHaveCount(0);
       await page.getByRole('link', { name: 'Activity' }).click();
-      await expect(page.getByRole('listitem')).toHaveText([/^\s*Robin started the household\./]);
+      await expect(page.getByRole('listitem')).toHaveText([/^\s*You started the household\./]);
       expect((await page.goto(`/households/${id}/start`))?.status()).toBe(200);
       await expect(page.getByText('Your household has started.')).toBeVisible();
       await expect(page.getByRole('button', { name: 'Start', exact: true })).toHaveCount(0);
@@ -170,7 +170,7 @@ test('the activity log lists what was set before the start, the head’s own sha
   await page.getByRole('button', { name: 'Start', exact: true }).click();
   await expect(page).toHaveURL(`/households/${id}?started`);
 
-  // Every member sees it, by name, and no share or day (ADR-0018 §5).
+  // Every member sees it, by name, themselves as "you", and no share or day (ADR-0018 §5).
   const theirs = await deviceOf(browser, testInfo, 'alex');
   try {
     const other = await theirs.newPage();
@@ -181,7 +181,7 @@ test('the activity log lists what was set before the start, the head’s own sha
     await expect(entry).toContainText('Robin started the household.');
     // The list is the reader's language's, with or without a comma before "and".
     await expect(entry).toContainText(
-      /Set before the start: shares for Alex, Kim,? and Robin; days away for Sam\./,
+      /Set before the start: shares for you, Kim,? and Robin; days away for Sam\./,
     );
     await expect(entry).not.toContainText(/%|\b60\b|\b50\b|\b80\b/);
     await expectAccessible(other, 'start entry');

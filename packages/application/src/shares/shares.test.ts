@@ -596,6 +596,31 @@ describe('share changes in the activity log (ADR-0018 §5)', () => {
     ]);
   });
 
+  it('says which entries the reader did, or were done to them, or to whoever did them', async () => {
+    const { head, adult, clock, robin, alex } = await household();
+    await start(head);
+    clock.advance({ minutes: 1 });
+    await changeShare(head, { member: alex, percent: 50, version: 1 });
+    clock.advance({ minutes: 1 });
+    await changeShare(head, { member: robin, percent: 80, version: 1 });
+    // So the log can call the reader "you" (ADR-0018 §5, clarification).
+    const flags = async (reader: typeof head) => {
+      const shown = await householdActivity(reader);
+      if (!shown.ok) throw new Error(shown.error);
+      return shown.entries.map(({ byReader, toReader, toActor }) => [byReader, toReader, toActor]);
+    };
+    expect(await flags(adult)).toEqual([
+      [false, false, true],
+      [false, true, false],
+      [false, false, false],
+    ]);
+    expect(await flags(head)).toEqual([
+      [true, true, true],
+      [true, false, false],
+      [true, false, false],
+    ]);
+  });
+
   it('logs nothing for a change that changes nothing, or isn’t made', async () => {
     const { head, adult, robin, sam, kim } = await household();
     await start(head);

@@ -339,10 +339,46 @@
   "activity.intro": "Wat er gedaan is dat anderen in het huishouden raakt. Iedereen in het huishouden ziet het, en niemand kan het wijzigen of wissen.",
   "activity.none": "Nog niets.",
   "activity.former-member": "Een voormalig lid",
-  "activity.household-name": "{actor} heeft de naam van het huishouden gewijzigd.",
-  "activity.household-country": "{actor} heeft het land van het huishouden gewijzigd.",
-  "activity.household-time-zone": "{actor} heeft de tijdzone van het huishouden gewijzigd.",
-  "activity.household-language": "{actor} heeft de taal van het huishouden gewijzigd.",
+  "activity.household-name": [
+    {
+      "declarations": ["input who", "input actor"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je hebt de naam van het huishouden gewijzigd.",
+        "who=*": "{actor} heeft de naam van het huishouden gewijzigd."
+      }
+    }
+  ],
+  "activity.household-country": [
+    {
+      "declarations": ["input who", "input actor"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je hebt het land van het huishouden gewijzigd.",
+        "who=*": "{actor} heeft het land van het huishouden gewijzigd."
+      }
+    }
+  ],
+  "activity.household-time-zone": [
+    {
+      "declarations": ["input who", "input actor"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je hebt de tijdzone van het huishouden gewijzigd.",
+        "who=*": "{actor} heeft de tijdzone van het huishouden gewijzigd."
+      }
+    }
+  ],
+  "activity.household-language": [
+    {
+      "declarations": ["input who", "input actor"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je hebt de taal van het huishouden gewijzigd.",
+        "who=*": "{actor} heeft de taal van het huishouden gewijzigd."
+      }
+    }
+  ],
   "time-zone.name": "{city} ({zone})",
   "household.shares": "Aandelen",
   "shares.page-title": "Aandelen · Householdr",
@@ -513,11 +549,21 @@
   "household.start-intro": "Zodra iedereen en de taken erin staan, start je het huishouden: het krijgt dan elke week een planning.",
   "household.start": "Het huishouden starten",
   "household.started": "Je huishouden is gestart. De eerste planning is voor de week vanaf {week}: je kunt het ontwerp bekijken vanaf {draft}, en iedereen ziet ze vanaf {publish}.",
-  "activity.household-started": "{actor} heeft het huishouden gestart.",
+  "activity.household-started": [
+    {
+      "declarations": ["input who", "input actor"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je hebt het huishouden gestart.",
+        "who=*": "{actor} heeft het huishouden gestart."
+      }
+    }
+  ],
   "activity.set-before-start": "Ingesteld vóór de start: aandelen voor {shares}; dagen weg voor {daysAway}.",
   "activity.set-before-start-shares": "Ingesteld vóór de start: aandelen voor {shares}.",
   "activity.set-before-start-days-away": "Ingesteld vóór de start: dagen weg voor {daysAway}.",
   "activity.a-former-member": "een voormalig lid",
+  "activity.you": "jou",
   "plan.draft-heads-publish": "Dit is een ontwerp. Alleen hoofden zien het tot een van hen het publiceert.",
   "start.page-title": "Starten · Householdr",
   "start.title": "Start je huishouden",
@@ -532,8 +578,28 @@
   "start.invalid": "Kies wanneer je wilt starten.",
   "start.already-started": "Iemand anders heeft het huishouden net gestart, dus er is niets veranderd.",
   "start.started": "Je huishouden is gestart.",
-  "activity.completion-logged": "{actor} heeft een taak afgevinkt voor {subject}.",
-  "activity.completion-undone": "{actor} heeft een taak die voor {subject} was afgevinkt ongedaan gemaakt.",
+  "activity.completion-logged": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je hebt een taak afgevinkt voor {subject}.",
+        "who=to-you": "{actor} heeft een taak voor jou afgevinkt.",
+        "who=*": "{actor} heeft een taak afgevinkt voor {subject}."
+      }
+    }
+  ],
+  "activity.completion-undone": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je hebt een taak die voor {subject} was afgevinkt ongedaan gemaakt.",
+        "who=to-you": "{actor} heeft een taak die voor jou was afgevinkt ongedaan gemaakt.",
+        "who=*": "{actor} heeft een taak die voor {subject} was afgevinkt ongedaan gemaakt."
+      }
+    }
+  ],
   "plan.you": "jou",
   "plan.done": "Gedaan op {day} door {doers}.",
   "plan.done-at": "Gedaan op {day} om {time} door {doers}.",
@@ -557,7 +623,17 @@
   "plan.undone-already": "{task} is niet meer gedaan: het werd al ongedaan gemaakt.",
   "plan.completed": "{task} is afgevinkt.",
   "plan.reopened": "{task} staat weer open.",
-  "activity.completion-picked-up": "{actor} nam een taak van {subject} over.",
+  "activity.completion-picked-up": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je nam een taak van {subject} over.",
+        "who=to-you": "{actor} nam een taak van jou over.",
+        "who=*": "{actor} nam een taak van {subject} over."
+      }
+    }
+  ],
   "household.balances": "Saldo’s",
   "balances.page-title": "Saldo’s · Householdr",
   "balances.title": "Saldo’s",
@@ -594,9 +670,63 @@
   "plan.redrafted": "Het ontwerp is opnieuw gemaakt, met iedereen in het huishouden.",
   "plan.redraft-failed": "Opnieuw maken is niet gelukt",
   "plan.redraft-gone": "Dit ontwerp kan niet meer opnieuw gemaakt worden: het is intussen gepubliceerd.",
-  "activity.share-changed": "{actor} heeft het aandeel van {subject} gewijzigd.",
-  "activity.temporary-share-added": "{actor} heeft een tijdelijk aandeel gepland voor {subject}.",
-  "activity.temporary-share-removed": "{actor} heeft een tijdelijk aandeel van {subject} verwijderd.",
-  "activity.absence-added": "{actor} heeft dagen weg gepland voor {subject}.",
-  "activity.absence-removed": "{actor} heeft dagen weg van {subject} verwijderd."
+  "activity.share-changed": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je hebt het aandeel van {subject} gewijzigd.",
+        "who=to-you": "{actor} heeft je aandeel gewijzigd.",
+        "who=yourself": "Je hebt je aandeel gewijzigd.",
+        "who=themselves": "{actor} heeft het eigen aandeel gewijzigd.",
+        "who=*": "{actor} heeft het aandeel van {subject} gewijzigd."
+      }
+    }
+  ],
+  "activity.temporary-share-added": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je hebt een tijdelijk aandeel gepland voor {subject}.",
+        "who=to-you": "{actor} heeft een tijdelijk aandeel voor jou gepland.",
+        "who=yourself": "Je hebt een tijdelijk aandeel voor jezelf gepland.",
+        "who=themselves": "{actor} heeft een tijdelijk aandeel voor zichzelf gepland.",
+        "who=*": "{actor} heeft een tijdelijk aandeel gepland voor {subject}."
+      }
+    }
+  ],
+  "activity.temporary-share-removed": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je hebt een tijdelijk aandeel van {subject} verwijderd.",
+        "who=to-you": "{actor} heeft een tijdelijk aandeel van jou verwijderd.",
+        "who=yourself": "Je hebt een eigen tijdelijk aandeel verwijderd.",
+        "who=themselves": "{actor} heeft een eigen tijdelijk aandeel verwijderd.",
+        "who=*": "{actor} heeft een tijdelijk aandeel van {subject} verwijderd."
+      }
+    }
+  ],
+  "activity.absence-added": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je hebt dagen weg gepland voor {subject}.",
+        "who=*": "{actor} heeft dagen weg gepland voor {subject}."
+      }
+    }
+  ],
+  "activity.absence-removed": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je hebt dagen weg van {subject} verwijderd.",
+        "who=*": "{actor} heeft dagen weg van {subject} verwijderd."
+      }
+    }
+  ]
 }

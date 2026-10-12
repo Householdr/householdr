@@ -77,6 +77,9 @@ describe('the activity page (ADR-0018 §5)', () => {
           action: 'household.name',
           subject: null,
           setBeforeStart: null,
+          byReader: true,
+          toReader: false,
+          toActor: false,
         },
       ],
     });
@@ -88,7 +91,7 @@ describe('the activity page (ADR-0018 §5)', () => {
         {
           actor: 'Robin',
           action: 'household.started',
-          setBeforeStart: { shares: [], daysAway: [] },
+          setBeforeStart: { shares: [], daysAway: [], reader: { shares: false, daysAway: false } },
         },
         { action: 'household.name', setBeforeStart: null },
       ],
@@ -145,6 +148,9 @@ describe('the activity page (ADR-0018 §5)', () => {
           action: 'absence.added',
           subject: 'Sam',
           setBeforeStart: null,
+          byReader: true,
+          toReader: false,
+          toActor: false,
         },
         {
           id: expect.any(String) as string,
@@ -153,6 +159,9 @@ describe('the activity page (ADR-0018 §5)', () => {
           action: 'share.changed',
           subject: 'Sam',
           setBeforeStart: null,
+          byReader: true,
+          toReader: false,
+          toActor: false,
         },
         {
           id: expect.any(String) as string,
@@ -160,7 +169,10 @@ describe('the activity page (ADR-0018 §5)', () => {
           actor: 'Robin',
           action: 'household.started',
           subject: null,
-          setBeforeStart: { shares: [], daysAway: [] },
+          setBeforeStart: { shares: [], daysAway: [], reader: { shares: false, daysAway: false } },
+          byReader: true,
+          toReader: false,
+          toActor: false,
         },
       ],
     });

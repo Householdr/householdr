@@ -248,8 +248,8 @@ test('after the start, the activity log says whose share a head changed, never t
   await page.getByRole('link', { name: 'Activity' }).click();
   const entries = page.getByRole('list', { name: 'Activity' }).getByRole('listitem');
   await expect(entries).toHaveText([
-    /^\s*Robin changed Sam’s share\./,
-    /^\s*Robin started the household\./,
+    /^\s*You changed Sam’s share\./,
+    /^\s*You started the household\./,
   ]);
   // Only heads and Sam see the share itself (ADR-0018 §4).
   await expect(entries.first()).not.toContainText(/%|\b50\b/);

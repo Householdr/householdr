@@ -1103,19 +1103,19 @@
     "needsReview": ["nl"]
   },
   "activity.household-name": {
-    "note": "Log entry. {actor} is a member's name, or 'A former member'.",
+    "note": "Log entry. {actor} is a member's name, or 'A former member'. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
     "needsReview": ["nl"]
   },
   "activity.household-country": {
-    "note": "Log entry. {actor} is a member's name, or 'A former member'.",
+    "note": "Log entry. {actor} is a member's name, or 'A former member'. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
     "needsReview": ["nl"]
   },
   "activity.household-time-zone": {
-    "note": "Log entry. {actor} is a member's name, or 'A former member'.",
+    "note": "Log entry. {actor} is a member's name, or 'A former member'. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
     "needsReview": ["nl"]
   },
   "activity.household-language": {
-    "note": "Log entry. {actor} is a member's name, or 'A former member'.",
+    "note": "Log entry. {actor} is a member's name, or 'A former member'. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
     "needsReview": ["nl"]
   },
   "time-zone.name": {
@@ -1763,7 +1763,7 @@
     "needsReview": ["nl"]
   },
   "activity.household-started": {
-    "note": "Log entry when a head started the household, which ends setting it up (ADR-0007 §2). {actor} is a member's name, or 'A former member'.",
+    "note": "Log entry when a head started the household, which ends setting it up (ADR-0007 §2). {actor} is a member's name, or 'A former member'. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
     "needsReview": ["nl"]
   },
   "activity.set-before-start": {
@@ -1780,6 +1780,10 @@
   },
   "activity.a-former-member": {
     "note": "Stands for a name in the lists of 'Set before the start' when the person is no longer a member. Lower case, as it sits in a sentence.",
+    "needsReview": ["nl"]
+  },
+  "activity.you": {
+    "note": "Stands for the reader in the lists of 'Set before the start', such as “you and Sam” (ADR-0018 §5, clarification). Lower case, as it sits in a sentence; in Dutch the object form, “jou”.",
     "needsReview": ["nl"]
   },
   "plan.draft-heads-publish": {
@@ -1839,11 +1843,11 @@
     "needsReview": ["nl"]
   },
   "activity.completion-logged": {
-    "note": "An entry of the activity log: someone marked a task done that {subject} is credited for, on their behalf or done together (ADR-0018 §5). {subject} is a name or 'a former member'. Never which task or its points.",
+    "note": "An entry of the activity log: someone marked a task done that {subject} is credited for, on their behalf or done together (ADR-0018 §5). {subject} is a name or 'a former member'. Never which task or its points. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
     "needsReview": ["nl"]
   },
   "activity.completion-undone": {
-    "note": "An entry of the activity log: someone undid a task that {subject} was credited for (ADR-0006 §4, ADR-0018 §5). {subject} is a name or 'a former member'.",
+    "note": "An entry of the activity log: someone undid a task that {subject} was credited for (ADR-0006 §4, ADR-0018 §5). {subject} is a name or 'a former member'. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
     "needsReview": ["nl"]
   },
   "plan.you": {
@@ -1939,7 +1943,7 @@
     "needsReview": ["nl"]
   },
   "activity.completion-picked-up": {
-    "note": "Activity log entry: {actor} did a task the plan gave to {subject}, so it became their work (a pick-up). {actor} and {subject} are names, or “a former member”; the task and its points are never shown.",
+    "note": "Activity log entry: {actor} did a task the plan gave to {subject}, so it became their work (a pick-up). {actor} and {subject} are names, or “a former member”; the task and its points are never shown. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
     "needsReview": ["nl"]
   },
   "household.balances": {
@@ -2015,23 +2019,23 @@
     "needsReview": ["nl"]
   },
   "activity.share-changed": {
-    "note": "Activity log entry, after the household started: a head set {subject}’s share, or put it back to the default; {subject} can be the head themselves (ADR-0018 §4–§5). {actor} and {subject} are names, or “a former member”. Never the share itself, which only heads and the member see.",
+    "note": "Activity log entry, after the household started: a head set {subject}’s share, or put it back to the default; {subject} can be the head themselves (ADR-0018 §4–§5). {actor} and {subject} are names, or “a former member”. Never the share itself, which only heads and the member see. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
     "needsReview": ["nl"]
   },
   "activity.temporary-share-added": {
-    "note": "Activity log entry, after the household started: a head planned a temporary share for {subject}, a share for a few days or weeks (ADR-0001 §4). {actor} and {subject} are names, or “a former member”. Never its days or the share.",
+    "note": "Activity log entry, after the household started: a head planned a temporary share for {subject}, a share for a few days or weeks (ADR-0001 §4). {actor} and {subject} are names, or “a former member”. Never its days or the share. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
     "needsReview": ["nl"]
   },
   "activity.temporary-share-removed": {
-    "note": "Activity log entry, after the household started: a head removed one of {subject}’s temporary shares. {actor} and {subject} are names, or “a former member”. Never which one.",
+    "note": "Activity log entry, after the household started: a head removed one of {subject}’s temporary shares. {actor} and {subject} are names, or “a former member”. Never which one. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
     "needsReview": ["nl"]
   },
   "activity.absence-added": {
-    "note": "Activity log entry, after the household started: a head planned days away for {subject}, a member without an account, acting for them (ADR-0018 §5). “Days away” as on the availability page. {actor} and {subject} are names, or “a former member”. Never the days.",
+    "note": "Activity log entry, after the household started: a head planned days away for {subject}, a member without an account, acting for them (ADR-0018 §5). “Days away” as on the availability page. {actor} and {subject} are names, or “a former member”. Never the days. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
     "needsReview": ["nl"]
   },
   "activity.absence-removed": {
-    "note": "Activity log entry, after the household started: a head removed days away planned for {subject}, a member without an account. {actor} and {subject} are names, or “a former member”. Never the days.",
+    "note": "Activity log entry, after the household started: a head removed days away planned for {subject}, a member without an account. {actor} and {subject} are names, or “a former member”. Never the days. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
     "needsReview": ["nl"]
   }
 }
