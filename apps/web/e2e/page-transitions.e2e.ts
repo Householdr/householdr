@@ -4,7 +4,12 @@ import { expect, forceFlags, signIn, test } from './fixtures';
 // Pages slide by depth (ADR-0008 §7, clarification), never under reduced motion (UI-13). Behind
 // its flag (CODE-20).
 
-const flags = { 'sign-in': true, 'activity-log': true, 'page-transitions': true };
+const flags = {
+  'sign-in': true,
+  onboarding: true,
+  'activity-log': true,
+  'page-transitions': true,
+};
 
 /** Keeps every direction a page transition takes on this page, in order. */
 const directions = async (page: Page) => {
