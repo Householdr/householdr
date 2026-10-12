@@ -4,6 +4,7 @@ import {
   inHousehold,
   members,
   passkeys,
+  profileGuardians,
   shareChanges,
   type Database,
 } from '@householdr/db';
@@ -184,6 +185,28 @@ describe('householdShares (ADR-0001 §4, ADR-0018 §4)', () => {
       mayChange: false,
       temporaryDays: { earliest: '2026-10-05', latest: '2027-10-08' },
     });
+  });
+
+  it('shows a guardian their own child’s share too, which they can’t change (ADR-0012 §3)', async () => {
+    const { adult, alex, kim } = await household();
+    // Alex is Kim's guardian: their account has parental responsibility for Kim (ADR-0010 §1).
+    const [account] = await inHousehold(db, adult.householdId, (tx) =>
+      tx.select({ id: members.accountId }).from(members).where(eq(members.id, alex)),
+    );
+    const accountId = account?.id;
+    if (!accountId) throw new Error('No account');
+    await inHousehold(db, adult.householdId, (tx) =>
+      tx
+        .insert(profileGuardians)
+        .values({ householdId: adult.householdId, memberId: kim, accountId }),
+    );
+    const result = await householdShares(adult);
+    if (!result.ok) throw new Error('Not shown');
+    expect(result.shares.map((share) => [share.id, share.percent])).toEqual([
+      [alex, 100],
+      [kim, 29],
+    ]);
+    expect(result.mayChange).toBe(false);
   });
 
   it('moves a child’s share on at the week of their birthday, in the household’s time zone', async () => {

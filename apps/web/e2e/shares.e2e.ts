@@ -272,6 +272,25 @@ test('without head powers, a member sees only their own share', async ({
   await expectAccessible(page);
 });
 
+test('a guardian also sees their own child’s share, which they can’t change', async ({
+  page,
+  accounts,
+  account,
+}, testInfo) => {
+  const id = await accounts.addHousehold(account.email, 'Ash Lane');
+  const alex = { email: `${testInfo.testId}-alex@example.org`, password: account.password };
+  await accounts.add(alex);
+  await accounts.addMember(alex.email, id, 'Alex');
+  await accounts.addChild(id, 'Kim', '2016-03-01', alex.email);
+  await accounts.addProfile(id, 'Sam');
+  await signIn(page, alex, `/households/${id}`);
+  await page.getByRole('link', { name: 'Shares' }).click();
+  // Not Robin's, a head's, nor Sam's (ADR-0012 §3, ADR-0018 §4).
+  await expect(items(page)).toHaveText([/^Alex \(you\)/, /^Kim.*this week, by age/]);
+  await expect(page.getByRole('spinbutton')).toHaveCount(0);
+  await expectAccessible(page);
+});
+
 test('the page isn’t there while its flag is off', async ({
   page,
   context,
