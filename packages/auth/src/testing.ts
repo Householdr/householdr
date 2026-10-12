@@ -27,6 +27,7 @@ import {
   members,
   passkeys,
   plans,
+  profileGuardians,
   sessions,
   type Database,
   type JobQueue,
@@ -251,6 +252,27 @@ export async function testAccounts(url: string) {
             .insert(absences)
             .values({ householdId, memberId: profile.id, firstDay, lastDay });
         }
+      });
+    },
+    /**
+     * Adds a child's profile named `name` to household `householdId`, born `birthDate` as
+     * `YYYY-MM-DD`, whose guardian is the account at `guardian` (ADR-0010 §1).
+     */
+    addChild: async (householdId: string, name: string, birthDate: string, guardian: string) => {
+      const [account] = await db
+        .select({ id: accounts.id })
+        .from(accounts)
+        .where(eq(accounts.email, guardian));
+      if (!account) throw new Error('No such account');
+      await inHousehold(db, householdId, async (tx) => {
+        const [child] = await tx
+          .insert(members)
+          .values({ householdId, name, role: 'child', birthDate })
+          .returning({ id: members.id });
+        if (!child) throw new Error('No child');
+        await tx
+          .insert(profileGuardians)
+          .values({ householdId, memberId: child.id, accountId: account.id });
       });
     },
     /** Sets the share of the account at `email` in household `householdId`, in percent. */

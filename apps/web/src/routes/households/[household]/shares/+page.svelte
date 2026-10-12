@@ -86,7 +86,14 @@
   <p>{m['shares.intro']()}</p>
   <!-- Shares can reveal illness or disability, so nobody else sees them (ADR-0018 §4). -->
   <p class="text-sm text-muted-foreground">
-    {data.mayChange ? m['shares.private-heads']() : m['shares.private']()}
+    {#if data.mayChange}
+      {m['shares.private-heads']()}
+    {:else if data.shares.find(({ id }) => id === data.you)?.role === 'child'}
+      <!-- Their guardians see it too (ADR-0012 §3). -->
+      {m['shares.private-child']()}
+    {:else}
+      {m['shares.private']()}
+    {/if}
   </p>
 
   <!-- A new summary for every attempt, so it takes the focus again. -->

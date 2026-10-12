@@ -1,4 +1,11 @@
-import { atVersion, inHousehold, members, nextVersion } from '@householdr/db';
+import {
+  atVersion,
+  inHousehold,
+  members,
+  nextVersion,
+  profileGuardians,
+  type Transaction,
+} from '@householdr/db';
 import { can, setShares, temporaryShareDays, type Role } from '@householdr/domain';
 import { eq } from 'drizzle-orm';
 import * as v from 'valibot';
@@ -20,9 +27,19 @@ type HouseholdSharesResult =
     }
   | { ok: false; error: 'not-allowed' };
 
+/** The members whose guardian the reader's account is, by id (ADR-0010 §1). */
+async function guardedBy(tx: Transaction, reader: string): Promise<Set<string>> {
+  const rows = await tx
+    .select({ memberId: profileGuardians.memberId })
+    .from(profileGuardians)
+    .innerJoin(members, eq(members.accountId, profileGuardians.accountId))
+    .where(eq(members.id, reader));
+  return new Set(rows.map((row) => row.memberId));
+}
+
 /**
- * The shares the reader may see: their own, and every member's for a head (ADR-0018 §4, ADR-0012
- * §3), as they stand this plan week.
+ * The shares the reader may see: their own, every member's for a head, and their own children's
+ * for a guardian (ADR-0018 §4, ADR-0012 §3), as they stand this plan week.
  */
 export async function householdShares(context: HouseholdContext): Promise<HouseholdSharesResult> {
   if (!can(context.member, { action: 'household.view' })) {
@@ -31,8 +48,13 @@ export async function householdShares(context: HouseholdContext): Promise<Househ
   return inHousehold(context.db, context.householdId, async (tx) => {
     const now = await thisWeek(tx, context);
     const rows = await tx.select(shareColumns).from(members);
+    const guarded = await guardedBy(tx, context.member.id);
     const visible = rows.filter((row) =>
-      can(context.member, { action: 'share.view', member: seen(row) }),
+      can(context.member, {
+        action: 'share.view',
+        member: seen(row),
+        guardian: guarded.has(row.id),
+      }),
     );
     const shares = (await sharesOf(tx, visible, now)).sort(
       (a, b) => roleOrder[a.role] - roleOrder[b.role] || a.name.localeCompare(b.name),

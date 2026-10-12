@@ -103,6 +103,30 @@ describe('can, for actions on a member (ADR-0017 §2)', () => {
   }
 });
 
+describe('can, as a guardian (ADR-0012 §3)', () => {
+  // The same columns, with the actor the guardian of each member.
+  const asGuardian = (actor: Member, action: MemberAction) =>
+    [actor, ...others]
+      .map((m) => (can(actor, { action, member: m, guardian: true }) ? 'Y' : '.'))
+      .join('');
+
+  it('sees their own child’s share, with an account or without, but never changes it', () => {
+    expect(asGuardian(actors.adult, 'share.view')).toBe('Y...YY');
+    expect(asGuardian(actors.adult, 'share.edit')).toBe('......');
+  });
+
+  it('sees no adult’s share for being called their guardian, and nothing else of a child’s', () => {
+    expect(asGuardian(actors.adult, 'share.view').slice(0, 4)).toBe('Y...');
+    expect(asGuardian(actors.adult, 'email.view')).toBe('Y.....');
+    expect(asGuardian(actors.adult, 'burdens.view')).toBe('Y.....');
+  });
+
+  it('acts only with an account, as anyone', () => {
+    const profile = member('me', 'adult', false, false);
+    expect(asGuardian(profile, 'share.view')).toBe('......');
+  });
+});
+
 describe('can, for the household (ADR-0017 §2)', () => {
   for (const [action, expected] of Object.entries(householdMatrix)) {
     it(action, () => {

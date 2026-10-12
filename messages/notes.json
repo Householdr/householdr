@@ -1146,6 +1146,10 @@
     "note": "Shown to members who aren't heads: who sees their share (ADR-0018 §4).",
     "needsReview": ["nl"]
   },
+  "shares.private-child": {
+    "note": "Shown to children: who sees their share (ADR-0018 §4, ADR-0012 §3). 'Parents' are the members with parental responsibility for the child.",
+    "needsReview": ["nl"]
+  },
   "shares.default": {
     "note": "A member's share this week, which is the default for an adult. {share} is a formatted percentage, such as 100%.",
     "needsReview": ["nl"]
