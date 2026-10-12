@@ -198,6 +198,13 @@ on, each feature-detected with a working fallback:
 | **Web Share** | Sharing an invitation link |
 | **Temporal** and **Intl** | Time-zone arithmetic and localised formatting (§11, §6) |
 
+> **Clarification (2026-10-12):** **View Transitions** move pages by the depth of their path. Going
+> deeper, the new page comes in over the current one from the end side (the left in a right-to-left
+> language), over the last 30% of the way only, fast to slow; going back up, the current page slides
+> off to the end side over the first 30%, slow to fast, and the page below shows. Each fades as it
+> moves. Between pages at the same depth, nothing moves. Under `prefers-reduced-motion`, and where a
+> browser has no View Transitions, pages just change.
+
 Which notification uses which channel, and the e-mail fallback, belong to the notifications ADR.
 
 ### 8. Authentication: password and passkey, 2FA recommended

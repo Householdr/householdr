@@ -105,3 +105,45 @@
     @apply font-sans;
   }
 }
+
+/*
+ * Page transitions by depth (ADR-0008 §7, clarification), which use-page-transitions.svelte.ts
+ * starts. A deeper page comes in over this one from the end side, over the last 30% of the way,
+ * fast to slow; going back up, this one leaves to the end side over the first 30%, slow to fast.
+ * Each fades too, so the 70% that doesn't move never shows two pages on top of each other. Never
+ * under prefers-reduced-motion (UI-13, ADR-0011).
+ */
+@media (prefers-reduced-motion: no-preference) {
+  :root {
+    --page-shift: 30%;
+  }
+  :root:dir(rtl) {
+    --page-shift: -30%;
+  }
+  :root[data-transition]::view-transition-old(root),
+  :root[data-transition]::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+  :root[data-transition='deeper']::view-transition-new(root) {
+    animation: page-enter 250ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  :root[data-transition='shallower']::view-transition-old(root) {
+    z-index: 1;
+    animation: page-leave 250ms cubic-bezier(0.8, 0, 0.8, 0.2) both;
+  }
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    translate: var(--page-shift) 0;
+  }
+}
+
+@keyframes page-leave {
+  to {
+    opacity: 0;
+    translate: var(--page-shift) 0;
+  }
+}
