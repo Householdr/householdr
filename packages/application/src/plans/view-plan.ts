@@ -1,35 +1,73 @@
 import {
   assignments,
+  completionCredits,
+  completions,
   households,
   inHousehold,
   members,
   occurrences,
   plans,
   tasks,
+  type Transaction,
 } from '@householdr/db';
 import {
   can,
   planTimes,
   planWeek,
+  type Member,
   type PlanStatus,
   type Reason,
   type Role,
   type UnassignedCause,
 } from '@householdr/domain';
-import { eq, inArray } from 'drizzle-orm';
+import { asc, eq, inArray } from 'drizzle-orm';
+import { inPlanWeek } from '../completions/completion-week';
 import type { HouseholdContext } from '../households/membership';
 import { planningOf } from './planning';
+
+/** A member a completion names, by id and name. */
+interface Named {
+  id: string;
+  name: string;
+}
+
+/** How an occurrence was completed, as the member viewing it may see it (ADR-0006 §4). */
+export interface PlanCompletion {
+  id: string;
+  /** The day it was done, in the household's time zone, which every member sees. */
+  day: Temporal.PlainDate;
+  /**
+   * When exactly, for the members it credits only: anyone else sees the day (ADR-0018 §3). Tasks
+   * with a fixed window, whose times everyone sees, don't exist yet.
+   */
+  at: Temporal.ZonedDateTime | null;
+  /** Who did it, by name. */
+  doers: Named[];
+  /** Who logged it, one of them or someone on their behalf. */
+  loggedBy: Named;
+  /** Whether the member viewing may undo it now: within its plan week (ADR-0006 §4). */
+  mayUndo: boolean;
+}
 
 /** An occurrence in a plan, as the plan's page shows it. */
 interface PlanItem {
   /** Its assignment's id. */
   id: string;
+  /** Its occurrence's id, which completing it names. */
+  occurrence: string;
   /** Its task's name, as typed (ADR-0016 §6). */
   task: string;
   /** Its schedule date. */
   date: Temporal.PlainDate;
   /** When it can be done in this plan, in the household's time zone. */
   window: { start: Temporal.ZonedDateTime; end: Temporal.ZonedDateTime };
+  /**
+   * Whether the member viewing may complete it now: still open, in this plan week's published
+   * plan (ADR-0006 §4).
+   */
+  completable: boolean;
+  /** Its completion, once it is done. */
+  completion: PlanCompletion | null;
 }
 
 /** An occurrence given to a member, and why (ADR-0001 §7). */
@@ -123,7 +161,12 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
     // Only heads see a draft until it is published (ADR-0006 §2, clarification).
     const visible = found.filter((plan) => plan.status === 'published' || mayPublish);
     const people = await tx
-      .select({ id: members.id, name: members.name, role: members.role })
+      .select({
+        id: members.id,
+        name: members.name,
+        role: members.role,
+        accountId: members.accountId,
+      })
       .from(members);
     people.sort((a, b) => roleOrder[a.role] - roleOrder[b.role] || a.name.localeCompare(b.name));
     const items =
@@ -139,6 +182,8 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
               cause: assignments.unassignedCause,
               windowStart: assignments.windowStart,
               windowEnd: assignments.windowEnd,
+              occurrence: occurrences.id,
+              status: occurrences.status,
               date: occurrences.date,
               task: tasks.name,
             })
@@ -153,11 +198,59 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
             );
     const zoned = (at: Date) =>
       Temporal.Instant.fromEpochMilliseconds(at.getTime()).toZonedDateTimeISO(timeZone);
-    const item = (row: (typeof items)[number]): PlanItem => ({
+    const completed = await completionsOf(
+      tx,
+      items.filter((row) => row.status === 'done').map((row) => row.occurrence),
+    );
+    const named = new Map(people.map((person) => [person.id, person]));
+    // Completions name members of the household only, whose profiles their keys keep.
+    const personOf = (id: string) => {
+      const person = named.get(id);
+      if (!person) throw new Error('A completion names a member who is gone.');
+      return person;
+    };
+    const nameOf = (id: string): Named => ({ id, name: personOf(id).name });
+    // As permissions see them: their own second factor plays no part in who sees what.
+    const asMember = (id: string): Member => {
+      const { role, accountId } = personOf(id);
+      return { id, role, hasAccount: accountId !== null, twoFactor: false };
+    };
+    const completionOf = (occurrence: string): PlanCompletion | null => {
+      const done = completed.get(occurrence);
+      if (!done) return null;
+      const at = zoned(done.at);
+      const credited = done.doers.map(asMember);
+      const { loggedBy } = done;
+      return {
+        id: done.id,
+        day: at.toPlainDate(),
+        at: credited.some((member) => can(context.member, { action: 'exactTimes.view', member }))
+          ? at
+          : null,
+        doers: done.doers.map(nameOf),
+        loggedBy: nameOf(loggedBy),
+        mayUndo: can(context.member, {
+          action: 'completion.undo',
+          loggedBy,
+          credited: done.doers,
+          inPlanWeek: inPlanWeek(done, today),
+        }),
+      };
+    };
+    // Only this plan week's published plan is done from (ADR-0006 §4).
+    const mayLog = can(context.member, { action: 'completion.log', member: context.member });
+    const item = (row: (typeof items)[number], plan: (typeof visible)[number]): PlanItem => ({
       id: row.id,
+      occurrence: row.occurrence,
       task: row.task,
       date: Temporal.PlainDate.from(row.date),
       window: { start: zoned(row.windowStart), end: zoned(row.windowEnd) },
+      completable:
+        mayLog &&
+        row.status === 'open' &&
+        plan.status === 'published' &&
+        plan.weekStart === current.start.toString(),
+      completion: row.status === 'done' ? completionOf(row.occurrence) : null,
     });
     const inOrder = (a: PlanItem, b: PlanItem) =>
       Temporal.ZonedDateTime.compare(a.window.start, b.window.start) ||
@@ -179,15 +272,17 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
           plan.status === 'draft' && Temporal.PlainDate.compare(today, start) < 0
             ? planTimes({ start, end }, calendar, timings).publish.toZonedDateTimeISO(timeZone)
             : null,
-        members: people.map((person) => ({
-          ...person,
+        members: people.map(({ id, name, role }) => ({
+          id,
+          name,
+          role,
           assignments: own
-            .filter((row) => row.memberId === person.id)
+            .filter((row) => row.memberId === id)
             .map((row) => {
               if (row.reason === null) throw new Error('An assignment without a reason.');
               return {
-                ...item(row),
-                cost: person.id === context.member.id ? row.cost : null,
+                ...item(row, plan),
+                cost: id === context.member.id ? row.cost : null,
                 reason: row.reason,
               };
             })
@@ -195,7 +290,9 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
         })),
         unassigned: mayPublish
           ? own
-              .flatMap((row) => (row.cause === null ? [] : [{ ...item(row), cause: row.cause }]))
+              .flatMap((row) =>
+                row.cause === null ? [] : [{ ...item(row, plan), cause: row.cause }],
+              )
               .sort(inOrder)
           : [],
       };
@@ -209,4 +306,53 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
       mayPublish,
     };
   });
+}
+
+/**
+ * The completions of `occurrenceIds`, by occurrence: when, who logged it, whom it credits by id,
+ * and the days of the plan week it was done in.
+ */
+async function completionsOf(tx: Transaction, occurrenceIds: string[]) {
+  if (occurrenceIds.length === 0) return new Map<string, Completed>();
+  const rows = await tx
+    .select({
+      id: completions.id,
+      occurrence: completions.occurrenceId,
+      at: completions.at,
+      loggedBy: completions.loggedBy,
+      weekStart: plans.weekStart,
+      weekEnd: plans.weekEnd,
+    })
+    .from(completions)
+    .innerJoin(plans, eq(plans.id, completions.planId))
+    .where(inArray(completions.occurrenceId, occurrenceIds));
+  const credits = await tx
+    .select({ completion: completionCredits.completionId, member: completionCredits.memberId })
+    .from(completionCredits)
+    .innerJoin(members, eq(members.id, completionCredits.memberId))
+    .where(
+      inArray(
+        completionCredits.completionId,
+        rows.map((row) => row.id),
+      ),
+    )
+    .orderBy(asc(members.name), asc(members.id));
+  return new Map(
+    rows.map((row): [string, Completed] => [
+      row.occurrence,
+      { ...row, doers: credits.filter((c) => c.completion === row.id).map((c) => c.member) },
+    ]),
+  );
+}
+
+/** A completion as `completionsOf` reads it. */
+interface Completed {
+  id: string;
+  at: Date;
+  loggedBy: string;
+  /** Whom it credits, by id, by name. */
+  doers: string[];
+  /** The plan week it was done in, as `YYYY-MM-DD`. */
+  weekStart: string;
+  weekEnd: string;
 }

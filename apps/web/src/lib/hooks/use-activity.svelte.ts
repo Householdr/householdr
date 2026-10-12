@@ -8,6 +8,7 @@ export interface ActivityEntryData {
   at: number;
   actor: string | null;
   action: ActivityEntry['action'];
+  subject: string | null;
   setBeforeStart: SetBeforeStartNames | null;
 }
 
@@ -20,13 +21,16 @@ export interface ShownEntry {
 }
 
 /**
- * What the activity page needs besides its data (CODE-9): each entry in words, who did what
- * (ADR-0018 §5), never a value; a former member without a name (ADR-0012 §6); and the day only,
+ * What the activity page needs besides its data (CODE-9): each entry in words, who did what to
+ * whom (ADR-0018 §5), never a value; a former member without a name (ADR-0012 §6); and the day only,
  * never the time, since when someone is active isn't shared (ADR-0018 §3).
  */
 export function useActivity(
   data: () => { timeZone: string; locale: string; entries: ActivityEntryData[] },
 ) {
+  /** Whom an entry names, or a former member (ADR-0012 §6). */
+  const subjectOf = (entry: ActivityEntryData) => entry.subject ?? m['activity.a-former-member']();
+
   const said = (entry: ActivityEntryData) => {
     const actor = entry.actor ?? m['activity.former-member']();
     switch (entry.action) {
@@ -40,6 +44,13 @@ export function useActivity(
         return m['activity.household-language']({ actor });
       case 'household.started':
         return m['activity.household-started']({ actor });
+      // To whom, never a value such as the task's points (ADR-0018 §5).
+      case 'completion.logged':
+        return m['activity.completion-logged']({ actor, subject: subjectOf(entry) });
+      case 'completion.undone':
+        return m['activity.completion-undone']({ actor, subject: subjectOf(entry) });
+      case 'completion.picked-up':
+        return m['activity.completion-picked-up']({ actor, subject: subjectOf(entry) });
     }
   };
 

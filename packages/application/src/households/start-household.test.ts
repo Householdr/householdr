@@ -311,6 +311,7 @@ describe('the start entry of the activity log (ADR-0007 §2, ADR-0018 §5, clari
         at: '2026-10-08T08:00:00Z',
         actor: 'Robin',
         action: 'household.started',
+        subject: null,
         setBeforeStart: { shares: ['Alex', 'Robin', 'Sam'], daysAway: ['Kim', 'Sam'] },
       },
     ]);
