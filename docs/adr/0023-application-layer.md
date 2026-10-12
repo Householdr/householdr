@@ -106,6 +106,12 @@ context:
   hides it (PRIN-1, PRIN-2).
 - A new port is added only when a second implementation exists or a test needs one.
 
+> **Clarification (2026-10-12):** two more ports are in the context, each with a second
+> implementation: **`random`**, the system's generator in the app and fixed draws in tests (TEST-2),
+> for anything a use case draws, such as the comparison game's pairs; and **`logger`**, lines on
+> stdout in the app ([ADR-0008](0008-tech-stack.md) §13) and recorded lines in tests, for operational
+> events, which name accounts by ID only ([ADR-0017](0017-security-baseline.md) §7).
+
 ### 4. The context
 
 Every use case receives a **context**: the acting member (or the system, for jobs), their household,
