@@ -2,6 +2,7 @@ import { inHousehold, members, temporaryShares } from '@householdr/db';
 import { can, setShares, temporaryShareDays } from '@householdr/domain';
 import { and, eq, gte, lte } from 'drizzle-orm';
 import * as v from 'valibot';
+import { changeLog } from '../households/change-log';
 import type { HouseholdContext } from '../households/membership';
 import {
   seen,
@@ -86,8 +87,8 @@ type AddTemporaryShareResult =
  * Adds a temporary share for a member, by a head (ADR-0001 §4): on the days it covers, it is their
  * share instead of the one set or the default, and it never overlaps another of theirs
  * (clarification), which the member's lock makes sure of. No reason is asked or kept (ADR-0012 §2).
- * The household is still in setup, so the activity log shows nothing yet (ADR-0007 §2, ADR-0018 §5,
- * clarifications).
+ * Once the household has started, the activity log shows that one was planned for the member, never
+ * its days or share (ADR-0018 §5); before, the start entry lists it (ADR-0007 §2, clarification).
  */
 export async function addTemporaryShare(
   context: HouseholdContext,
@@ -97,6 +98,7 @@ export async function addTemporaryShare(
   if (!v.is(id, memberId)) return { ok: false, error: 'not-found' };
   const { householdId } = context;
   return inHousehold(context.db, householdId, async (tx): Promise<AddTemporaryShareResult> => {
+    const log = await changeLog(tx, context);
     const [row] = await tx
       .select(shareColumns)
       .from(members)
@@ -133,6 +135,7 @@ export async function addTemporaryShare(
     if (overlapping) return { ok: false, error: 'overlap', overlapping };
     const { percent } = parsed.output;
     await tx.insert(temporaryShares).values({ householdId, memberId, firstDay, lastDay, percent });
+    await log('temporary-share.added', memberId);
     const [share] = await sharesOf(tx, [row], now);
     if (!share) throw new Error('No share for a member.');
     return { ok: true, share };
@@ -144,7 +147,10 @@ type RemoveTemporaryShareResult =
   | { ok: false; error: 'not-allowed' }
   | { ok: false; error: 'not-found' };
 
-/** Removes a member's temporary share, by a head (ADR-0001 §4). */
+/**
+ * Removes a member's temporary share, by a head (ADR-0001 §4). Once the household has started, the
+ * activity log shows that one of the member's was removed, never which (ADR-0018 §5).
+ */
 export async function removeTemporaryShare(
   context: HouseholdContext,
   input: { id: unknown },
@@ -152,6 +158,7 @@ export async function removeTemporaryShare(
   const shareId = input.id;
   if (!v.is(id, shareId)) return { ok: false, error: 'not-found' };
   return inHousehold(context.db, context.householdId, async (tx) => {
+    const log = await changeLog(tx, context);
     const [row] = await tx
       .select(shareColumns)
       .from(temporaryShares)
@@ -163,6 +170,7 @@ export async function removeTemporaryShare(
       return { ok: false as const, error: 'not-allowed' as const };
     }
     await tx.delete(temporaryShares).where(eq(temporaryShares.id, shareId));
+    await log('temporary-share.removed', row.id);
     const [share] = await sharesOf(tx, [row], await thisWeek(tx, context));
     if (!share) throw new Error('No share for a member.');
     return { ok: true as const, share };

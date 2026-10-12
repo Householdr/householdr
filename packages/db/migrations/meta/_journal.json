@@ -204,6 +204,13 @@
       "when": 1791813345191,
       "tag": "0028_share-changes-and-joins",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1791817366701,
+      "tag": "0029_start-logging",
+      "breakpoints": true
     }
   ]
 }

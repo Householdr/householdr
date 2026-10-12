@@ -1,9 +1,20 @@
-import { absences, accounts, inHousehold, members, passkeys, type Database } from '@householdr/db';
+import {
+  absences,
+  accounts,
+  activityLog,
+  inHousehold,
+  members,
+  passkeys,
+  type Database,
+} from '@householdr/db';
 import { testDatabase } from '@householdr/db/testing';
 import type { Member, Role } from '@householdr/domain';
+import { asc, ne } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { householdActivity } from '../households/activity';
 import { createHousehold } from '../households/create-household';
 import { membership, type HouseholdContext } from '../households/membership';
+import { startHousehold } from '../households/start-household';
 import { settableClock } from '../testing';
 import {
   addAbsence,
@@ -515,5 +526,120 @@ describe('addAwayPeriod and removeAwayPeriod (ADR-0005 §5)', () => {
     household.clock.advance({ hours: 48 });
     expect(await together(household.head)).toMatchObject({ periods: [] });
     expect(await together(other.head)).toMatchObject({ periods: ['2026-10-12/2026-10-13'] });
+  });
+});
+
+describe('days away in the activity log (ADR-0018 §5)', () => {
+  /** Starts the household on the week start day, by its head (ADR-0007 §2 step 7). */
+  const start = async (head: HouseholdContext) => {
+    const result = await startHousehold(head, { when: 'week start' });
+    if (!result.ok) throw new Error(`Not started: ${result.error}`);
+  };
+
+  /** The household's activity log as stored, whole rows, besides its start entry, oldest first. */
+  const logged = (householdId: string) =>
+    inHousehold(db, householdId, (tx) =>
+      tx
+        .select()
+        .from(activityLog)
+        .where(ne(activityLog.action, 'household.started'))
+        .orderBy(asc(activityLog.at)),
+    );
+
+  /** Plans an absence as `context` and returns its id. */
+  const planned = async (context: HouseholdContext, member: string, from: string, to: string) => {
+    const result = await addAbsence(context, days(member, from, to));
+    if (!result.ok) throw new Error(`Not planned: ${result.error}`);
+    return result.absenceId;
+  };
+
+  it('logs a head acting for a profile without an account after Start, never the days', async () => {
+    const household = await founded();
+    const { head, householdId, clock } = household;
+    const sam = await household.add('Sam', 'adult', false);
+    const noa = await household.add('Noa', 'child', false);
+    await start(head);
+    const entry = (action: string, subjectId: string) => {
+      clock.advance({ minutes: 1 });
+      return {
+        id: expect.any(String) as string,
+        householdId,
+        at: new Date(clock.now().epochMilliseconds),
+        actorId: head.member.id,
+        action,
+        setBeforeStart: null,
+        subjectId,
+      };
+    };
+    const first = entry('absence.added', sam.id);
+    const sams = await planned(head, sam.id, '2026-10-12', '2026-10-16');
+    const second = entry('absence.added', noa.id);
+    await planned(head, noa.id, '2026-10-20', '2026-10-20');
+    const third = entry('absence.removed', sam.id);
+    expect(await removeAbsence(head, { absence: sams })).toEqual({ ok: true });
+    expect(await logged(householdId)).toEqual([first, second, third]);
+    // Every member sees them, by name (ADR-0018 §5).
+    const alex = signedIn(await household.add('Alex', 'adult', true));
+    const shown = await householdActivity(alex);
+    if (!shown.ok) throw new Error(shown.error);
+    expect(shown.entries.map(({ actor, action, subject }) => [actor, action, subject])).toEqual([
+      ['Robin', 'absence.removed', 'Sam'],
+      ['Robin', 'absence.added', 'Noa'],
+      ['Robin', 'absence.added', 'Sam'],
+      ['Robin', 'household.started', null],
+    ]);
+  });
+
+  it('logs nothing before Start, whose entry lists them instead (ADR-0007 §2)', async () => {
+    const household = await founded();
+    const sam = await household.add('Sam', 'adult', false);
+    const noa = await household.add('Noa', 'child', false);
+    await planned(household.head, sam.id, '2026-10-12', '2026-10-16');
+    const noas = await planned(household.head, noa.id, '2026-10-12', '2026-10-16');
+    await removeAbsence(household.head, { absence: noas });
+    expect(await logged(household.householdId)).toEqual([]);
+    await start(household.head);
+    expect(await householdActivity(household.head)).toMatchObject({
+      entries: [{ action: 'household.started', setBeforeStart: { daysAway: ['Sam'] } }],
+    });
+  });
+
+  it('logs nobody’s own days away, which affect nobody else', async () => {
+    const household = await founded();
+    const alex = await household.add('Alex', 'adult', true);
+    const kim = await household.add('Kim', 'child', true);
+    await start(household.head);
+    for (const someone of [household.head, signedIn(alex), signedIn(kim)]) {
+      const own = await planned(someone, someone.member.id, '2026-10-12', '2026-10-16');
+      expect(await removeAbsence(someone, { absence: own })).toEqual({ ok: true });
+    }
+    // A head planning for a child with an account isn't acting for a profile without one.
+    const kims = await planned(household.head, kim.id, '2026-10-12', '2026-10-16');
+    expect(await removeAbsence(household.head, { absence: kims })).toEqual({ ok: true });
+    expect(await logged(household.householdId)).toEqual([]);
+  });
+
+  it('logs nothing that isn’t done', async () => {
+    const household = await founded();
+    const alex = await household.add('Alex', 'adult', true);
+    const sam = await household.add('Sam', 'adult', false);
+    await start(household.head);
+    expect(
+      await addAbsence(signedIn(alex), days(sam.id, '2026-10-12', '2026-10-16')),
+    ).toMatchObject({ error: 'not-allowed' });
+    expect(
+      await addAbsence(household.head, days(sam.id, '2026-10-16', '2026-10-12')),
+    ).toMatchObject({ error: 'invalid' });
+    const sams = await planned(household.head, sam.id, '2026-10-12', '2026-10-16');
+    expect(await removeAbsence(signedIn(alex), { absence: sams })).toMatchObject({
+      error: 'not-allowed',
+    });
+    const before = await logged(household.householdId);
+    expect(before).toHaveLength(1);
+    expect(await removeAbsence(household.head, { absence: sams })).toEqual({ ok: true });
+    expect(await removeAbsence(household.head, { absence: sams })).toMatchObject({
+      error: 'not-found',
+    });
+    expect(await logged(household.householdId)).toHaveLength(2);
   });
 });

@@ -2,6 +2,7 @@ import { atVersion, inHousehold, members, nextVersion } from '@householdr/db';
 import { can, setShares, temporaryShareDays, type Role } from '@householdr/domain';
 import { eq } from 'drizzle-orm';
 import * as v from 'valibot';
+import { changeLog } from '../households/change-log';
 import type { HouseholdContext } from '../households/membership';
 import { planningOf } from '../plans/planning';
 import { seen, shareColumns, sharesOf, thisWeek, type MemberShare } from './member-share';
@@ -81,8 +82,8 @@ type ChangeShareResult =
  * head (ADR-0001 §4), from the version they saw (ADR-0019 §5). Once the household has started, it
  * applies from the next unpublished plan, and the week it applies from is kept, so settling each
  * week uses that week's share (ADR-0002 §1, clarification). No reason is asked or kept (ADR-0012
- * §2). The household is still in setup, so the activity log shows nothing yet: what heads set for
- * others before Start is one entry at Start (ADR-0007 §2, ADR-0018 §5, clarifications).
+ * §2). Once the household has started, the activity log shows that it changed, a head's own
+ * included, never to what (ADR-0018 §4–§5); before, the start entry lists it (ADR-0007 §2).
  */
 export async function changeShare(
   context: HouseholdContext,
@@ -91,6 +92,7 @@ export async function changeShare(
   const id = input.member;
   if (!v.is(memberId, id)) return { ok: false, error: 'not-found' };
   return inHousehold(context.db, context.householdId, async (tx) => {
+    const log = await changeLog(tx, context);
     const [row] = await tx
       .select(shareColumns)
       .from(members)
@@ -126,6 +128,7 @@ export async function changeShare(
       previous: row.sharePercent,
       percent,
     });
+    await log('share.changed', id);
     return { ok: true as const, share: await shareNow(updated) };
   });
 }
