@@ -26,6 +26,7 @@
     values,
     plannable,
     attempt,
+    locale,
   }: {
     /** Whose days: `household`, or a member's id; the forms send it back as `member`. */
     owner: string;
@@ -45,9 +46,11 @@
     plannable: { from: string; to: string };
     /** The answer to the last form sent, so a new error summary takes the focus again. */
     attempt: unknown;
+    /** The locale days are written in: the page's language, the account's conventions. */
+    locale: string;
   } = $props();
 
-  const absences = useAbsences();
+  const absences = useAbsences(() => locale);
   /** The heading, which takes the focus once a removed period takes its button with it. */
   let headingElement = $state<HTMLElement>();
 

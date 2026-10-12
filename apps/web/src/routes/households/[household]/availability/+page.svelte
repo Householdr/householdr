@@ -51,6 +51,7 @@
       values={valuesOf('household')}
       plannable={data.plannable}
       attempt={form}
+      locale={data.locale}
     />
   </section>
 
@@ -73,6 +74,7 @@
         values={valuesOf(member.id)}
         plannable={data.plannable}
         attempt={form}
+        locale={data.locale}
       />
     </section>
   {/each}

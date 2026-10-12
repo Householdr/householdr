@@ -28,7 +28,7 @@
       <ErrorSummary heading={m['task.remove-failed']()} message={m['task.remove-conflict']()} />
       <section aria-labelledby="current" class="flex flex-col gap-2 rounded-lg border p-4">
         <h2 id="current" class="font-semibold">{m['task.current']()}</h2>
-        <TaskDetails task={form.conflict.current} full />
+        <TaskDetails task={form.conflict.current} full locale={data.locale} />
       </section>
     {/if}
   {/key}

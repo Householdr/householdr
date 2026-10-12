@@ -1,7 +1,6 @@
 <script lang="ts">
   import { dayText, minutesText } from '#lib/intl.js';
   import { m } from '#lib/paraglide/messages.js';
-  import { getLocale } from '#lib/paraglide/runtime.js';
   import { frequencyWords, onMissWords } from '#lib/task-words.js';
   import type { Frequency, PlanTask } from '@householdr/domain';
 
@@ -12,6 +11,7 @@
   let {
     task,
     full = false,
+    locale,
   }: {
     task: {
       name: string;
@@ -22,8 +22,9 @@
       onMiss: PlanTask['onMiss'];
     };
     full?: boolean;
+    /** The locale values are written in: the page's language, the account's conventions (ADR-0008 §6). */
+    locale: string;
   } = $props();
-  const locale = getLocale();
 </script>
 
 <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
