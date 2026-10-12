@@ -306,10 +306,18 @@ describe('the start entry of the activity log (ADR-0007 §2, ADR-0018 §5, clari
     // Every member sees it, by name, the reader apart as "you" (ADR-0018 §5, clarification).
     const shown = await householdActivity(h.adult);
     if (!shown.ok) throw new Error(shown.error);
-    expect(shown.entries.map(({ at, ...entry }) => ({ ...entry, at: at.toString() }))).toEqual([
+    const said = shown.entries.map(({ at, day, ...entry }) => ({
+      ...entry,
+      at: at.toString(),
+      day: day.toString(),
+    }));
+    expect(said).toEqual([
       {
         id: expect.any(String) as string,
         at: '2026-10-08T08:00:00Z',
+        // The day only, read the same day (ADR-0008 §6, ADR-0018 §3).
+        day: '2026-10-08',
+        when: 'today',
         actor: 'Robin',
         action: 'household.started',
         subject: null,

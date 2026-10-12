@@ -601,8 +601,8 @@
     }
   ],
   "plan.you": "jou",
-  "plan.done": "Gedaan op {day} door {doers}.",
-  "plan.done-at": "Gedaan op {day} om {time} door {doers}.",
+  "plan.done": "Gedaan {day} door {doers}.",
+  "plan.done-at": "Gedaan {day} om {time} door {doers}.",
   "plan.logged-by": "Afgevinkt door {name}.",
   "plan.undo": "Ongedaan maken",
   "plan.undo-label": "Ongedaan maken: {task}, {day}",
@@ -728,5 +728,13 @@
         "who=*": "{actor} heeft dagen weg van {subject} verwijderd."
       }
     }
-  ]
+  ],
+  "past.today": "Vandaag",
+  "past.yesterday": "Gisteren",
+  "past.some-days-ago": "Enkele dagen geleden",
+  "past.last-week": "Vorige week",
+  "past.some-weeks-ago": "Enkele weken geleden",
+  "plan.done-today": "vandaag",
+  "plan.done-yesterday": "gisteren",
+  "plan.done-on": "op {weekday}"
 }

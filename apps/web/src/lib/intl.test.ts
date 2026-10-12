@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dayOf, formattingLocale, timeZoneName } from './intl';
+import { dayText, formattingLocale, fullDay, timeZoneName } from './intl';
 
 // 8 October 2026, 10:00 in Brussels.
 const at = Date.UTC(2026, 9, 8, 8);
@@ -21,19 +21,14 @@ describe('the locale values are written in (ADR-0008 §6)', () => {
   });
 
   it('writes a day with the culture’s conventions, in the page’s language', () => {
-    expect(dayOf(at, 'Europe/Brussels', formattingLocale('en', 'nl-BE'))).toBe('8 October 2026');
-    expect(dayOf(at, 'Europe/Brussels', formattingLocale('en', 'en-US'))).toBe('October 8, 2026');
-    expect(dayOf(at, 'Europe/Brussels', formattingLocale('nl', 'nl-BE'))).toBe('8 oktober 2026');
+    expect(dayText('2026-10-08', formattingLocale('en', 'nl-BE'))).toBe('8 October 2026');
+    expect(dayText('2026-10-08', formattingLocale('en', 'en-US'))).toBe('October 8, 2026');
+    expect(dayText('2026-10-08', formattingLocale('nl', 'nl-BE'))).toBe('8 oktober 2026');
   });
-});
 
-describe('the day of a moment', () => {
-  it('is the day in the household’s time zone', () => {
-    // 23:30 on 8 October in UTC is already the 9th in Brussels.
-    const lateEvening = Date.UTC(2026, 9, 8, 23, 30);
-    expect(dayOf(lateEvening, 'Europe/Brussels', 'en-BE')).toBe('9 October 2026');
-    expect(dayOf(lateEvening, 'Atlantic/Canary', 'en-BE')).toBe('9 October 2026');
-    expect(dayOf(lateEvening, 'America/Cayenne', 'en-BE')).toBe('8 October 2026');
+  it('writes a day in full, as a vague day’s tooltip does (ADR-0008 §6, clarification)', () => {
+    expect(fullDay('2026-10-08', 'en-BE')).toBe('Thursday, 8 October 2026');
+    expect(fullDay('2026-10-08', 'nl-BE')).toBe('donderdag 8 oktober 2026');
   });
 });
 

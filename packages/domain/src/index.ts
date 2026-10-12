@@ -124,6 +124,7 @@ export {
   type Interval,
   type SinceLastDone,
 } from './schedules/since-last-done';
+export { pastDay, type PastDay } from './schedules/past-day';
 export { changeStartDay, planWeek, type HouseholdCalendar, type PlanWeek } from './schedules/week';
 export { intervalTimesPerYear, timesPerYear } from './schedules/yearly';
 export { fairFractions, type PortionBasis } from './shares/fair-portion';

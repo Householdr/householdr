@@ -1,7 +1,8 @@
-import { activityLog, households, inHousehold, members, type ActivityAction } from '@householdr/db';
-import { can } from '@householdr/domain';
+import { activityLog, inHousehold, members, type ActivityAction } from '@householdr/db';
+import { can, pastDay, type PastDay } from '@householdr/domain';
 import { desc, eq } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
+import { thisWeek } from '../shares/member-share';
 import type { HouseholdContext } from './membership';
 
 /** How many entries the log shows, newest first. */
@@ -23,6 +24,10 @@ export interface SetBeforeStartNames {
 export interface ActivityEntry {
   id: string;
   at: Temporal.Instant;
+  /** The day it was, in the household's time zone. */
+  day: Temporal.PlainDate;
+  /** How long ago that day was, never finer than the day (ADR-0008 §6, ADR-0018 §3). */
+  when: PastDay;
   /** The name of who did it, or null for a former member (ADR-0012 §6). */
   actor: string | null;
   action: ActivityAction;
@@ -55,8 +60,7 @@ export async function householdActivity(
     return { ok: false, error: 'not-allowed' };
   }
   return inHousehold(context.db, context.householdId, async (tx) => {
-    const [household] = await tx.select({ timeZone: households.timeZone }).from(households);
-    if (!household) throw new Error('The household of a member is gone.');
+    const { today, calendar } = await thisWeek(tx, context);
     const subjects = alias(members, 'subjects');
     const rows = await tx
       .select({
@@ -89,22 +93,28 @@ export async function householdActivity(
         .filter((id) => id !== reader)
         .map((id) => names.get(id) ?? null)
         .sort((a, b) => (a === b ? 0 : a === null ? 1 : b === null ? -1 : a.localeCompare(b)));
-    const entries = rows.map(({ at, setBeforeStart, actorId, subjectId, ...row }) => ({
-      ...row,
-      at: Temporal.Instant.fromEpochMilliseconds(at.getTime()),
-      setBeforeStart: setBeforeStart && {
-        shares: named(setBeforeStart.shares),
-        daysAway: named(setBeforeStart.daysAway),
-        reader: {
-          shares: setBeforeStart.shares.includes(reader),
-          daysAway: setBeforeStart.daysAway.includes(reader),
+    const entries = rows.map(({ at, setBeforeStart, actorId, subjectId, ...row }) => {
+      const instant = Temporal.Instant.fromEpochMilliseconds(at.getTime());
+      const day = instant.toZonedDateTimeISO(calendar.timeZone).toPlainDate();
+      return {
+        ...row,
+        at: instant,
+        day,
+        when: pastDay(day, today, calendar),
+        setBeforeStart: setBeforeStart && {
+          shares: named(setBeforeStart.shares),
+          daysAway: named(setBeforeStart.daysAway),
+          reader: {
+            shares: setBeforeStart.shares.includes(reader),
+            daysAway: setBeforeStart.daysAway.includes(reader),
+          },
         },
-      },
-      byReader: actorId === reader,
-      toReader: subjectId === reader,
-      // A former member's ids are gone, so whether they acted on themselves is no longer known.
-      toActor: actorId !== null && actorId === subjectId,
-    }));
-    return { ok: true as const, timeZone: household.timeZone, entries };
+        byReader: actorId === reader,
+        toReader: subjectId === reader,
+        // A former member's ids are gone, so whether they acted on themselves is no longer known.
+        toActor: actorId !== null && actorId === subjectId,
+      };
+    });
+    return { ok: true as const, timeZone: calendar.timeZone, entries };
   });
 }

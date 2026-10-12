@@ -72,7 +72,8 @@ describe('the activity page (ADR-0018 §5)', () => {
       entries: [
         {
           id: expect.any(String) as string,
-          at: test.context.clock.now().epochMilliseconds,
+          day: '2026-10-08',
+          when: 'today',
           actor: 'Robin',
           action: 'household.name',
           subject: null,
@@ -129,10 +130,8 @@ describe('the activity page (ADR-0018 §5)', () => {
     const sam = await addAdult(context, { name: 'Sam' });
     if (!sam.ok) throw new Error('No profile');
     await startHousehold(context, { when: 'week start' });
-    const started = test.context.clock.now().epochMilliseconds;
     test.context.clock.advance({ hours: 1 });
     await changeShare(context, { member: sam.memberId, percent: 50, version: 1 });
-    const changed = test.context.clock.now().epochMilliseconds;
     test.context.clock.advance({ hours: 1 });
     const today = test.context.clock.now().toZonedDateTimeISO('Europe/Brussels').toPlainDate();
     const day = today.add({ days: 1 }).toString();
@@ -143,7 +142,8 @@ describe('the activity page (ADR-0018 §5)', () => {
       entries: [
         {
           id: expect.any(String) as string,
-          at: test.context.clock.now().epochMilliseconds,
+          day: '2026-10-08',
+          when: 'today',
           actor: 'Robin',
           action: 'absence.added',
           subject: 'Sam',
@@ -154,7 +154,8 @@ describe('the activity page (ADR-0018 §5)', () => {
         },
         {
           id: expect.any(String) as string,
-          at: changed,
+          day: '2026-10-08',
+          when: 'today',
           actor: 'Robin',
           action: 'share.changed',
           subject: 'Sam',
@@ -165,7 +166,8 @@ describe('the activity page (ADR-0018 §5)', () => {
         },
         {
           id: expect.any(String) as string,
-          at: started,
+          day: '2026-10-08',
+          when: 'today',
           actor: 'Robin',
           action: 'household.started',
           subject: null,

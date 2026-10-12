@@ -72,9 +72,9 @@ const household = async (
   return { id, alex };
 };
 
-// The day of a completion, as “Friday, 9 October”, and its time, as “18:30”, in the page's language
-// with the account's conventions (ADR-0008 §6).
-const day = String.raw`[\w ,]+?`;
+// A completion's time, as “18:30”, in the page's language with the account's conventions (ADR-0008
+// §6). Its day is “today”, as these tests mark tasks done the day they read them (ADR-0008 §6,
+// clarification).
 const time = String.raw`\d{1,2}:\d{2}(?:\s?[AP]M)?`;
 
 for (const javaScriptEnabled of [true, false]) {
@@ -99,7 +99,7 @@ for (const javaScriptEnabled of [true, false]) {
 
       await expect(week.getByRole('status')).toHaveText('Dishes is marked done.');
       // The time for whom it credits (ADR-0018 §3).
-      await expect(own).toContainText(new RegExp(`Done on ${day} at ${time} by you\\.`));
+      await expect(own).toContainText(new RegExp(`Done today at ${time} by you\\.`));
       await expect(box).toBeChecked();
       await expect(box).toBeEnabled();
       await expect(own.getByRole('button', { name: /^Undo: / })).toHaveCount(0);
@@ -117,9 +117,9 @@ for (const javaScriptEnabled of [true, false]) {
           .getByRole('region', { name: 'Robin' })
           .getByRole('listitem')
           .first();
-        await expect(seen).toContainText(new RegExp(`Done on ${day} by Robin\\.`));
+        await expect(seen).toContainText(new RegExp(`Done today by Robin\\.`));
         await expect(seen).not.toContainText(new RegExp(` at ${time}`));
-        await expect(seen.getByRole('button')).toHaveCount(0);
+        await expect(seen.getByRole('button', { name: /^Undo: / })).toHaveCount(0);
         await expect(seen.getByRole('checkbox')).toHaveCount(0);
         if (javaScriptEnabled) await expectAccessible(other, 'done, as another member sees it');
       } finally {
@@ -128,7 +128,7 @@ for (const javaScriptEnabled of [true, false]) {
 
       await box.click();
       await expect(week.getByRole('status')).toHaveText('Dishes is open again.');
-      await expect(own).not.toContainText('Done on');
+      await expect(own).not.toContainText('Done today');
       await expect(box).not.toBeChecked();
       if (javaScriptEnabled) {
         await expect(box).toBeFocused();
@@ -165,7 +165,7 @@ for (const javaScriptEnabled of [true, false]) {
       await who.getByRole('checkbox', { name: 'Alex' }).check();
       await own.getByRole('button', { name: /^Mark as done: Dishes, / }).click();
       await expect(week.getByRole('status')).toHaveText('Dishes is marked done.');
-      await expect(own).toContainText(new RegExp(`Done on ${day} at ${time} by Alex and you\\.`));
+      await expect(own).toContainText(new RegExp(`Done today at ${time} by Alex and you\\.`));
       await expect(own).toContainText('Logged by you.');
 
       // Alex is credited too, so sees the time, and may undo it (ADR-0006 §4, clarification).
@@ -177,9 +177,7 @@ for (const javaScriptEnabled of [true, false]) {
           .getByRole('region', { name: 'Robin' })
           .getByRole('listitem')
           .first();
-        await expect(seen).toContainText(
-          new RegExp(`Done on ${day} at ${time} by you and Robin\\.`),
-        );
+        await expect(seen).toContainText(new RegExp(`Done today at ${time} by you and Robin\\.`));
         await expect(seen).toContainText('Logged by Robin.');
         await expect(seen.getByRole('button', { name: /^Undo: Dishes, / })).toBeVisible();
         // Who did what to whom, never a value (ADR-0018 §5).
@@ -224,7 +222,7 @@ test('of two members marking a task done at once, the second is told who did it 
     await who.getByRole('checkbox', { name: 'Robin' }).uncheck();
     await who.getByRole('checkbox', { name: 'Alex (you)' }).check();
     await seen.getByRole('button', { name: /^Mark as done: Dishes, / }).click();
-    await expect(seen).toContainText(new RegExp(`Done on ${day} at ${time} by you\\.`));
+    await expect(seen).toContainText(new RegExp(`Done today at ${time} by you\\.`));
   } finally {
     await theirs.close();
   }
@@ -234,7 +232,7 @@ test('of two members marking a task done at once, the second is told who did it 
   await expect(summary).toBeFocused();
   await expect(summary).toContainText('Dishes is done already, by Alex.');
   // The page now shows it done by Alex, on the day only, which a head may still undo.
-  await expect(own).toContainText(new RegExp(`Done on ${day} by Alex\\.`));
+  await expect(own).toContainText(new RegExp(`Done today by Alex\\.`));
   await expect(box).toBeChecked();
   await expect(box).toBeEnabled();
   await expectAccessible(page, 'done by someone else first');
@@ -276,7 +274,7 @@ test('a member’s own task done by someone else shows ticked, and they may not 
   await who.getByRole('checkbox', { name: 'Alex' }).uncheck();
   await who.getByRole('checkbox', { name: 'Robin (you)' }).check();
   await picked.getByRole('button', { name: /^Mark as done: Dishes, / }).click();
-  await expect(picked).toContainText(new RegExp(`Done on ${day} at ${time} by you\\.`));
+  await expect(picked).toContainText(new RegExp(`Done today at ${time} by you\\.`));
 
   // Alex sees their task ticked, but neither logged it nor did it, so can't untick it.
   const theirs = await deviceOf(browser, testInfo, 'alex');
@@ -287,7 +285,7 @@ test('a member’s own task done by someone else shows ticked, and they may not 
       .getByRole('region', { name: 'Alex (you)' })
       .getByRole('listitem')
       .first();
-    await expect(own).toContainText(new RegExp(`Done on ${day} by Robin\\.`));
+    await expect(own).toContainText(new RegExp(`Done today by Robin\\.`));
     const box = own.getByRole('checkbox', { name: /^Done: Dishes, / });
     await expect(box).toBeChecked();
     await expect(box).toBeDisabled();
@@ -322,7 +320,7 @@ test('what next week’s draft takes over is still this week’s to do, and done
   await week.getByRole('checkbox', { name: /^Done: Windows, / }).click();
   await expect(week.getByRole('status')).toHaveText('Windows is marked done.');
   // Next week shows it done, and as no work of its own there.
-  await expect(carried).toContainText(new RegExp(`Done on ${day} at ${time} by you\\.`));
+  await expect(carried).toContainText(new RegExp(`Done today at ${time} by you\\.`));
   await expect(carried).not.toContainText('Points');
   await expect(carried.getByRole('checkbox', { name: /^Done: Windows, / })).toBeChecked();
   await expect(next.getByRole('listitem').filter({ hasText: 'Dishes' }).first()).toContainText(

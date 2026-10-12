@@ -12,9 +12,11 @@ import {
 } from '@householdr/db';
 import {
   can,
+  pastDay,
   planTimes,
   planWeek,
   type Member,
+  type PastDay,
   type PlanStatus,
   type Reason,
   type Role,
@@ -36,6 +38,8 @@ export interface PlanCompletion {
   id: string;
   /** The day it was done, in the household's time zone, which every member sees. */
   day: Temporal.PlainDate;
+  /** How long ago that day was, never finer than the day (ADR-0008 §6, ADR-0018 §3). */
+  when: PastDay;
   /**
    * When exactly, for the members it credits only: anyone else sees the day (ADR-0018 §3). Tasks
    * with a fixed window, whose times everyone sees, don't exist yet.
@@ -229,9 +233,11 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
       const at = zoned(done.at);
       const credited = done.doers.map(asMember);
       const { loggedBy } = done;
+      const day = at.toPlainDate();
       return {
         id: done.id,
-        day: at.toPlainDate(),
+        day,
+        when: pastDay(day, today, calendar),
         at: credited.some((member) => can(context.member, { action: 'exactTimes.view', member }))
           ? at
           : null,
