@@ -7,8 +7,8 @@ import {
   type Window,
 } from '../schedules/occurrence';
 import type { Schedule } from '../schedules/schedule';
-import { dueDate, type AwayPeriod, type Interval } from '../schedules/since-last-done';
-import { planWeek, type HouseholdCalendar } from '../schedules/week';
+import { dueDate, isAway, type AwayPeriod, type Interval } from '../schedules/since-last-done';
+import { planWeek, type HouseholdCalendar, type PlanWeek } from '../schedules/week';
 import { intervalTimesPerYear, timesPerYear } from '../schedules/yearly';
 
 /** How a task produces occurrences (ADR-0004). */
@@ -72,24 +72,15 @@ export interface WeekOccurrences {
 export function weekOccurrences(input: WeekInput): WeekOccurrences {
   const { calendar } = input;
   const { start, end } = planWeek(input.week, calendar);
-  const isAway = (day: Temporal.PlainDate) =>
-    input.away.some(
-      (p) =>
-        Temporal.PlainDate.compare(p.from, day) <= 0 && Temporal.PlainDate.compare(day, p.to) <= 0,
-    );
-  const awayThrough = (from: Temporal.PlainDate, until: Temporal.PlainDate) => {
-    for (let day = from; Temporal.PlainDate.compare(day, until) < 0; day = day.add({ days: 1 })) {
-      if (!isAway(day)) return false;
-    }
-    return true;
-  };
+  const awayThrough = (from: Temporal.PlainDate, until: Temporal.PlainDate) =>
+    awayThroughout({ start: from, end: until }, input.away);
   if (awayThrough(start, end)) return { planned: false, occurrences: [], missed: [], skipped: [] };
 
   const week = window(start, end, calendar);
   const minutes = new Map(input.tasks.map((t) => [t.id, t.duration]));
   const cost = (o: PlannedOccurrence) => minutes.get(o.task) ?? 0;
   const planned = (task: string, o: Occurrence): PlannedOccurrence => ({
-    id: `${task}@${o.date.toString()}`,
+    id: occurrenceId(task, o.date),
     task,
     date: o.date,
     window: o.window,
@@ -169,7 +160,7 @@ export function weekOccurrences(input: WeekInput): WeekOccurrences {
   let total = [...due, ...kept].reduce((sum, o) => sum + cost(o), 0);
   let daysHome = 0;
   for (let day = start; Temporal.PlainDate.compare(day, end) < 0; day = day.add({ days: 1 })) {
-    if (!isAway(day)) daysHome++;
+    if (!isAway(day, input.away)) daysHome++;
   }
   const target = (averageWeeklyMinutes(input.tasks, start) * daysHome) / 7;
   const laterPlan = (w: Window) => {
@@ -205,6 +196,29 @@ export function weekOccurrences(input: WeekInput): WeekOccurrences {
       (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
   );
   return { planned: true, occurrences: all, missed: missed.sort(), skipped: skipped.sort() };
+}
+
+/**
+ * What an occurrence is known by across drafts and weeks: its task and its schedule date, as
+ * `placedEarlier` and the ids this function gives name it.
+ */
+export function occurrenceId(task: string, date: Temporal.PlainDate): string {
+  return `${task}@${date.toString()}`;
+}
+
+/**
+ * Whether the household is away on every day from `start` up to `end`: a plan week entirely away
+ * gets no plan (ADR-0005 §5).
+ */
+export function awayThroughout(days: PlanWeek, away: readonly AwayPeriod[]): boolean {
+  for (
+    let day = days.start;
+    Temporal.PlainDate.compare(day, days.end) < 0;
+    day = day.add({ days: 1 })
+  ) {
+    if (!isAway(day, away)) return false;
+  }
+  return true;
 }
 
 /**

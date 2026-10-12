@@ -34,6 +34,7 @@ export {
 export { inRandomOrder, nextPair } from './burdens/next-pair';
 export {
   completionCredits,
+  defaultRebalance,
   rebalanceRates,
   settleWeek,
   type CostedTask,
@@ -70,7 +71,17 @@ export {
   type SignInMethods,
 } from './permissions/two-factors';
 export {
+  defaultPlanTimings,
+  duePlanStep,
+  nextPlanWeek,
+  planTimes,
+  type PlanStatus,
+  type PlanStep,
+  type PlanTimings,
+} from './plans/plan-times';
+export {
   averageWeeklyMinutes,
+  occurrenceId,
   weekOccurrences,
   type PlanTask,
   type Recurrence,

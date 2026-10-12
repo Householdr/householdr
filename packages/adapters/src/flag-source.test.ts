@@ -1,6 +1,6 @@
 import { defaultFlags } from '@householdr/application';
 import { describe, expect, it } from 'vitest';
-import { flagSource } from './flags';
+import { flagSource } from './flag-source';
 
 describe('flagSource (ADR-0015 §2, §4)', () => {
   it('takes the registry defaults on an instance without Flipt', () => {

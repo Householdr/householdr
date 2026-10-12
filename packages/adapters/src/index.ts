@@ -9,4 +9,4 @@ export { scrub, stdoutLogger } from './stdout-logger';
 export { checkBreachedPassword, type BreachCheck } from './breached-passwords';
 export { systemClock } from './system-clock';
 export { systemRandom } from './system-random';
-export { fliptFlags, type FliptSettings } from './flipt-flags';
+export { flagSource } from './flag-source';

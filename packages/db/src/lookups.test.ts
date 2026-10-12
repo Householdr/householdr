@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { accounts } from './auth-schema';
 import { inHousehold, type Database } from './connection';
-import { accountHouseholds, invitationHousehold } from './lookups';
+import { accountHouseholds, invitationHousehold, startedHouseholds } from './lookups';
 import { households, invitations, members } from './schema';
 import { testDatabase } from './testing';
 
@@ -101,6 +101,19 @@ describe('invitationHousehold (ADR-0010 §5)', () => {
   });
 });
 
+describe('startedHouseholds (ADR-0007 §2, ADR-0008 §10)', () => {
+  it('finds the households past setup, and none in setup', async () => {
+    const inSetup = await newHousehold();
+    const started = await newHousehold();
+    await inHousehold(db, started, (tx) =>
+      tx.update(households).set({ firstPlanWeek: '2026-10-12' }),
+    );
+    const found = await db.transaction((tx) => startedHouseholds(tx));
+    expect(found).toContain(started);
+    expect(found).not.toContain(inSetup);
+  });
+});
+
 describe('the lookup functions (ADR-0008 §9, clarification)', () => {
   it('are these, and no others, so a new one is reviewed', async () => {
     const { rows } = await db.execute<{ name: string }>(sql`
@@ -108,7 +121,11 @@ describe('the lookup functions (ADR-0008 §9, clarification)', () => {
       from pg_proc p join pg_namespace n on n.oid = p.pronamespace
       where n.nspname in ('public', 'auth') and p.prosecdef
       order by name`);
-    expect(rows.map((row) => row.name)).toEqual(['account_households', 'invitation_household']);
+    expect(rows.map((row) => row.name)).toEqual([
+      'account_households',
+      'invitation_household',
+      'started_households',
+    ]);
   });
 
   it('return household ids, and nothing else', async () => {
@@ -116,9 +133,10 @@ describe('the lookup functions (ADR-0008 §9, clarification)', () => {
       select p.proname as name, pg_get_function_result(p.oid) as result
       from pg_proc p join pg_namespace n on n.oid = p.pronamespace
       where n.nspname = 'public' and p.prosecdef`);
-    expect(rows).toEqual([
+    expect(rows.sort((a, b) => a.name.localeCompare(b.name))).toEqual([
       { name: 'account_households', result: 'SETOF uuid' },
       { name: 'invitation_household', result: 'SETOF uuid' },
+      { name: 'started_households', result: 'SETOF uuid' },
     ]);
   });
 });

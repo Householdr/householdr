@@ -6,12 +6,14 @@ import {
   sign,
   type KeyObject,
 } from 'node:crypto';
-import { addTask, createHousehold, membership } from '@householdr/application';
+import { addTask, createHousehold, draftPlan, membership } from '@householdr/application';
 import { settableClock } from '@householdr/application/testing';
 import {
+  absences,
   accountEmails,
   accounts,
   connect,
+  households,
   inHousehold,
   members,
   passkeys,
@@ -63,6 +65,16 @@ export async function createTestAccount(
     password: await internal.password.hash(password),
   });
   return user.id;
+}
+
+/**
+ * Takes household `householdId` out of setup, with its first plan week starting on `firstWeek`,
+ * as Start will (ADR-0007 §2, §3). Until Start exists, this is how a household gets plans.
+ */
+export async function startTestHousehold(db: Database, householdId: string, firstWeek: string) {
+  await inHousehold(db, householdId, (tx) =>
+    tx.update(households).set({ firstPlanWeek: firstWeek }),
+  );
 }
 
 /**
@@ -166,6 +178,64 @@ export async function testAccounts(url: string) {
         );
         if (!result.ok) throw new Error(`No task: ${result.error}`);
       }
+    },
+    /**
+     * Adds a task to household `householdId`, starting today, as its head with two factors would
+     * (ADR-0004 §3).
+     */
+    addTask: async (
+      householdId: string,
+      task: { name: string; duration: number; frequency: string; onMiss?: string },
+    ) => {
+      const [found] = await inHousehold(db, householdId, (tx) =>
+        tx.select({ id: members.id }).from(members).where(eq(members.role, 'head')),
+      );
+      if (!found) throw new Error('No head');
+      const head = { id: found.id, role: 'head' as const, hasAccount: true, twoFactor: true };
+      const clock = { now: () => Temporal.Now.instant() };
+      const context = { db, clock, householdId, member: head };
+      const result = await addTask(context, { onMiss: 'roll over', ...task });
+      if (!result.ok) throw new Error(`No task: ${result.error}`);
+    },
+    /**
+     * Plans an absence for the account at `email` in household `householdId`, both days included,
+     * as `YYYY-MM-DD` (ADR-0005 §2).
+     */
+    absent: async (householdId: string, email: string, firstDay: string, lastDay: string) => {
+      const [account] = await db
+        .select({ id: accounts.id })
+        .from(accounts)
+        .where(eq(accounts.email, email));
+      if (!account) throw new Error('No such account');
+      await inHousehold(db, householdId, async (tx) => {
+        const [member] = await tx
+          .select({ id: members.id })
+          .from(members)
+          .where(eq(members.accountId, account.id));
+        if (!member) throw new Error('Not a member');
+        await tx.insert(absences).values({ householdId, memberId: member.id, firstDay, lastDay });
+      });
+    },
+    /**
+     * Takes household `householdId` out of setup from this plan week on, and drafts next week's
+     * plan as the scheduler does at its draft time (ADR-0006 §2, ADR-0007 §2). Returns the next
+     * week's first day.
+     */
+    draftNextWeek: async (householdId: string) => {
+      const today = Temporal.Now.plainDateISO('Europe/Brussels');
+      // Weeks start on Mondays in Brussels, as `addHousehold` makes them.
+      const monday = today.subtract({ days: today.dayOfWeek - 1 });
+      const week = monday.add({ weeks: 1 }).toString();
+      await startTestHousehold(db, householdId, monday.toString());
+      const scheduler = {
+        db,
+        clock: { now: () => Temporal.Now.instant() },
+        householdId,
+        member: 'scheduler' as const,
+      };
+      const result = await draftPlan(scheduler, { week });
+      if (!result.ok) throw new Error(`No draft: ${result.error}`);
+      return week;
     },
     /** Makes every sign-in of the account at `email` 11 minutes old (ADR-0010 §6). */
     signedInLongAgo: async (email: string) => {
