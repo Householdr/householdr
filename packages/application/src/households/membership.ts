@@ -8,6 +8,7 @@ import {
   members,
   passkeys,
   type Database,
+  type Transaction,
 } from '@householdr/db';
 import {
   can,
@@ -35,7 +36,7 @@ const householdId = v.pipe(v.string(), v.uuid());
  * `withoutPasskey`, as it would once that passkey is gone.
  */
 async function signInMethods(
-  db: Database,
+  db: Database | Transaction,
   accountId: string,
   withoutPasskey?: string,
 ): Promise<SignInMethods> {
@@ -122,28 +123,32 @@ async function headAnywhere(context: HouseholdsContext, accountId: string) {
 
 /**
  * Whether the account may turn TOTP off: a head of any of its households must keep two factors,
- * so one without a passkey is refused (ADR-0010 §3).
+ * so one without a passkey is refused (ADR-0010 §3). Its sign-in methods are read in `tx`, the
+ * transaction that turns it off, once it holds the account's row.
  */
 export async function mayTurnOffTwoFactor(
   context: HouseholdsContext,
   accountId: string,
+  tx: Transaction,
 ): Promise<boolean> {
   const head = await headAnywhere(context, accountId);
-  return mayTurnOffTotp(await signInMethods(context.db, accountId), head);
+  return mayTurnOffTotp(await signInMethods(tx, accountId), head);
 }
 
 /**
  * Whether the account may remove its passkey `passkeyId`: a head of any of its households must keep
  * two factors, so one left with neither another passkey nor a password with TOTP is refused
- * (ADR-0010 §3, clarification).
+ * (ADR-0010 §3, clarification). Its sign-in methods are read in `tx`, the transaction that removes
+ * it, once it holds the account's row.
  */
 export async function mayRemoveAccountPasskey(
   context: HouseholdsContext,
   accountId: string,
   passkeyId: string,
+  tx: Transaction,
 ): Promise<boolean> {
   const head = await headAnywhere(context, accountId);
-  return mayRemovePasskey(await signInMethods(context.db, accountId, passkeyId), head);
+  return mayRemovePasskey(await signInMethods(tx, accountId, passkeyId), head);
 }
 
 /** A member of the household, as the member viewing it sees them (ADR-0018 §3). */

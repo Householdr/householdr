@@ -14,6 +14,7 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createAuth } from './auth';
 import type { Cookie } from './cookies';
+import { accountPasskeys, removePasskey } from './passkeys';
 import { currentSession, sessionCookie, type Session } from './sessions';
 import { signInWithPassword } from './sign-in';
 import {
@@ -343,6 +344,45 @@ describe('turning two-factor off (ADR-0010 §2, §3)', () => {
     // With a passkey, the head keeps two factors without it.
     expect(await addTestPasskey(context, on.session, on.cookie, client)).toEqual({ ok: true });
     expect(await turnOffTwoFactor(context, on.session)).toEqual({ ok: true });
+  });
+});
+
+describe('a head’s two factors, changed twice at once (ADR-0010 §3)', () => {
+  it('keeps one: removing the last passkey and turning TOTP off wait for each other', async () => {
+    const person = await signedIn();
+    const on = await turnOnTestTwoFactor(context, person.session, person.cookie);
+    expect(await addTestPasskey(context, on.session, on.cookie, client)).toEqual({ ok: true });
+    const created = await createHousehold(
+      {
+        db: test.context.db,
+        actor: { account: person.session.accountId, twoFactor: true },
+        account: { id: person.session.accountId, managed: false, guardians: [] },
+      },
+      {
+        name: 'Ash Lane',
+        headName: 'Robin',
+        country: 'BE',
+        timeZone: 'Europe/Brussels',
+        language: 'en',
+        weekStartDay: 1,
+        adult: true,
+      },
+    );
+    expect(created.ok).toBe(true);
+    const [passkey] = await accountPasskeys(context, on.session);
+    if (!passkey) throw new Error('No passkey');
+    // Each alone is allowed, as the other factor stays; both at once, only the first.
+    const results = await Promise.all([
+      removePasskey(context, on.session, { passkey: passkey.id }),
+      turnOffTwoFactor(context, on.session),
+    ]);
+    expect(results.filter((result) => result.ok)).toHaveLength(1);
+    expect(results).toContainEqual({ ok: false, error: 'head' });
+    const left = {
+      passkeys: (await accountPasskeys(context, on.session)).length,
+      totp: (await accountTwoFactor(context, on.session))?.on,
+    };
+    expect(left.passkeys === 1 || left.totp === true).toBe(true);
   });
 });
 

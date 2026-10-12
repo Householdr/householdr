@@ -7,9 +7,9 @@ import * as v from 'valibot';
 import { queueAccountEmail } from './account-emails';
 import type { Auth } from './auth';
 import { cookiesFrom, type Cookie } from './cookies';
-import { signedInRecently, type PasskeysContext } from './passkeys';
+import { holdAccount, signedInRecently, type PasskeysContext } from './passkeys';
 import { currentSession, type Session } from './sessions';
-import { appCode, twoFactorOn } from './two-factor-sign-in';
+import { appCode } from './two-factor-sign-in';
 
 /**
  * What turning two-factor on and off needs from the app: the same as changing passkeys, which
@@ -224,20 +224,21 @@ export async function turnOffTwoFactor(
   session: Session,
 ): Promise<TurnOffResult> {
   if (!(await signedInRecently(context, session))) return { ok: false, error: 'confirm' };
-  // Already off: nothing changes, and nobody is e-mailed again.
-  if (!(await twoFactorOn(context, session.accountId))) return { ok: true };
-  if (!(await mayTurnOffTwoFactor(context, session.accountId))) {
-    return { ok: false, error: 'head' };
-  }
-  await context.db.transaction(async (tx) => {
+  return context.db.transaction(async (tx) => {
+    const { totp } = await holdAccount(tx, session.accountId);
+    // Already off: nothing changes, and nobody is e-mailed again.
+    if (!totp) return { ok: true } as const;
+    if (!(await mayTurnOffTwoFactor(context, session.accountId, tx))) {
+      return { ok: false, error: 'head' } as const;
+    }
     await tx.delete(twoFactors).where(eq(twoFactors.userId, session.accountId));
     await tx
       .update(accounts)
       .set({ twoFactorEnabled: false, updatedAt: new Date() })
       .where(eq(accounts.id, session.accountId));
     await queueAccountEmail(tx, context.queue, session.accountId, 'two-factor-off');
+    return { ok: true } as const;
   });
-  return { ok: true };
 }
 
 type RecoveryCodesResult =
