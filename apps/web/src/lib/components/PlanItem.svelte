@@ -7,8 +7,9 @@
 
   /**
    * A task in a week's plan: its day, its points for the reader, and why (ADR-0007 §5); once done,
-   * by whom, on which day, and undoing it; while it can be, marking it done with one tap, or
-   * choosing who did it (ADR-0006 §4).
+   * by whom, on which day, and undoing it; while it can be, choosing who did it (ADR-0006 §4). The
+   * reader's own task has a box at the end of its name that ticks it done with one tap, or unticks
+   * it to undo it.
    */
   let {
     item,
@@ -23,13 +24,64 @@
   } = $props();
 
   const { key } = $derived(item);
-  /** Once it is done: Undo, or what says who did it. Once undone: Done, or the choice of who. */
-  const afterDone = $derived([`${key}-undo`, `${key}-done`]);
-  const afterUndo = $derived([`${key}-complete`, `${key}-summary`]);
+  /** Once it is done: the box, Undo, or what says who did it. Once undone: the box, or the choice. */
+  const afterDone = $derived([`${key}-check`, `${key}-undo`, `${key}-done`]);
+  const afterUndo = $derived([`${key}-check`, `${key}-summary`]);
 </script>
 
 <li class="flex flex-col gap-2 p-4">
-  <span class="font-medium wrap-break-word">{item.task}</span>
+  <div class="flex items-start justify-between gap-3">
+    <span class="font-medium wrap-break-word">{item.task}</span>
+    {#if item.check && submit}
+      {@const check = item.check}
+      <form
+        method="POST"
+        action={check.action === 'undo' ? '?/undo' : '?/complete'}
+        use:enhance={submit(...(check.action === 'undo' ? afterUndo : afterDone))}
+      >
+        <input type="hidden" name="occurrence" value={item.occurrence} />
+        {#if check.completion}
+          <input type="hidden" name="completion" value={check.completion} />
+        {/if}
+        <!--
+          A button announced as a checkbox, as a native one can't send its form without JavaScript
+          (CODE-13, UI-5); its visible "Done" starts its name (UI-10). At the end of the line, the
+          left in a right-to-left language (UI-17), and 44 px square at least (UI-8). Disabled when
+          the reader may not undo it.
+        -->
+        <button
+          id="{key}-check"
+          type="submit"
+          role="checkbox"
+          aria-checked={check.checked}
+          aria-label={check.label}
+          disabled={check.action === null}
+          class="-me-2 -mt-2.5 flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center gap-2 rounded-md px-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:cursor-default disabled:opacity-70"
+        >
+          {m['plan.done-button']()}
+          <span
+            aria-hidden="true"
+            class={[
+              'flex size-5 items-center justify-center rounded border-2',
+              check.checked ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
+            ]}
+          >
+            {#if check.checked}
+              <svg
+                viewBox="0 0 16 16"
+                class="size-3.5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <path d="M3 8.5l3.5 3.5L13 4.5" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            {/if}
+          </span>
+        </button>
+      </form>
+    {/if}
+  </div>
   <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
     <dt class="text-muted-foreground">{m['plan.day']()}</dt>
     <dd>
@@ -53,7 +105,7 @@
     {#if item.done.loggedBy}
       <p class="text-sm wrap-break-word text-muted-foreground">{item.done.loggedBy}</p>
     {/if}
-    {#if item.done.undo && submit}
+    {#if item.done.undo && !item.check && submit}
       <form method="POST" action="?/undo" use:enhance={submit(...afterUndo)}>
         <input type="hidden" name="occurrence" value={item.occurrence} />
         <input type="hidden" name="completion" value={item.done.undo.completion} />
@@ -65,14 +117,6 @@
   {/if}
 
   {#if item.complete && submit}
-    {#if item.complete.own}
-      <form method="POST" action="?/complete" use:enhance={submit(...afterDone)}>
-        <input type="hidden" name="occurrence" value={item.occurrence} />
-        <Button id="{key}-complete" type="submit" class="w-full" aria-label={item.complete.own}>
-          {m['plan.done-button']()}
-        </Button>
-      </form>
-    {/if}
     <!-- Open when the choice needs changing, so the problem shows next to it (UI-10). -->
     <details open={item.complete.problem !== null}>
       <!-- Its own marker shows it opens, not leaves, and the padding makes it 44 px high (UI-8). -->
