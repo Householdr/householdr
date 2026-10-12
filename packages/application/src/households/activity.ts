@@ -10,11 +10,13 @@ const shown = 100;
 /**
  * The members a start entry lists, by name, or null for each former member (ADR-0012 §6): whose
  * share was set before the start, and for which profiles without an account days away were planned
- * (ADR-0007 §2, clarification). Never a value.
+ * (ADR-0007 §2, clarification). Never a value. The reader isn't among the names: whether they are
+ * listed is said apart, since the log calls them "you" (ADR-0018 §5, clarification).
  */
 export interface SetBeforeStartNames {
   shares: (string | null)[];
   daysAway: (string | null)[];
+  reader: { shares: boolean; daysAway: boolean };
 }
 
 /** An entry of the activity log, as every member sees it (ADR-0018 §5). */
@@ -31,6 +33,12 @@ export interface ActivityEntry {
   subject: string | null;
   /** For the start entry, what was set before, the starter's own share included; null for any other. */
   setBeforeStart: SetBeforeStartNames | null;
+  /** Whether the reader did it, so the log says "you" (ADR-0018 §5, clarification). */
+  byReader: boolean;
+  /** Whether it was done to the reader. */
+  toReader: boolean;
+  /** Whether it was done by whom it was done to, such as a head changing their own share. */
+  toActor: boolean;
 }
 
 type HouseholdActivityResult =
@@ -54,8 +62,10 @@ export async function householdActivity(
       .select({
         id: activityLog.id,
         at: activityLog.at,
+        actorId: activityLog.actorId,
         actor: members.name,
         action: activityLog.action,
+        subjectId: activityLog.subjectId,
         subject: subjects.name,
         setBeforeStart: activityLog.setBeforeStart,
       })
@@ -72,18 +82,28 @@ export async function householdActivity(
           ]),
         )
       : new Map<string, string>();
+    const reader = context.member.id;
     // By name, former members last: an id whose profile is gone names nobody.
     const named = (ids: string[]) =>
       ids
+        .filter((id) => id !== reader)
         .map((id) => names.get(id) ?? null)
         .sort((a, b) => (a === b ? 0 : a === null ? 1 : b === null ? -1 : a.localeCompare(b)));
-    const entries = rows.map(({ at, setBeforeStart, ...row }) => ({
+    const entries = rows.map(({ at, setBeforeStart, actorId, subjectId, ...row }) => ({
       ...row,
       at: Temporal.Instant.fromEpochMilliseconds(at.getTime()),
       setBeforeStart: setBeforeStart && {
         shares: named(setBeforeStart.shares),
         daysAway: named(setBeforeStart.daysAway),
+        reader: {
+          shares: setBeforeStart.shares.includes(reader),
+          daysAway: setBeforeStart.daysAway.includes(reader),
+        },
       },
+      byReader: actorId === reader,
+      toReader: subjectId === reader,
+      // A former member's ids are gone, so whether they acted on themselves is no longer known.
+      toActor: actorId !== null && actorId === subjectId,
     }));
     return { ok: true as const, timeZone: household.timeZone, entries };
   });

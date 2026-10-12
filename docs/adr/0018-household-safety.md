@@ -120,6 +120,11 @@ Entries say who did what to whom, never a value hidden from the reader: no share
 > their behalf: it changes whose work it was. The entry at Start also lists the founding head's own
 > share, if they set it before Start (§4; [ADR-0007](0007-onboarding.md) §2, clarification).
 
+> **Clarification (2026-10-12):** entries call the reader **"you"**, whether they did it, it was done
+> to them, or both ("You changed Sam's share", "Robin changed your share", "You changed your share"),
+> also in the lists of the entry at Start. Someone acting on themselves isn't named twice ("Robin
+> changed their share"). What an entry says happened is the same for every reader.
+
 The log can't be edited or deleted by anyone in the household, and is kept as long as the ledger.
 Members notice what is done in their name; disputes have a record.
 

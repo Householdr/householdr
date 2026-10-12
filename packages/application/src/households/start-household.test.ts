@@ -303,7 +303,7 @@ describe('the start entry of the activity log (ADR-0007 §2, ADR-0018 §5, clari
         },
       },
     ]);
-    // Every member sees it, by name (ADR-0018 §5).
+    // Every member sees it, by name, the reader apart as "you" (ADR-0018 §5, clarification).
     const shown = await householdActivity(h.adult);
     if (!shown.ok) throw new Error(shown.error);
     expect(shown.entries.map(({ at, ...entry }) => ({ ...entry, at: at.toString() }))).toEqual([
@@ -313,7 +313,14 @@ describe('the start entry of the activity log (ADR-0007 §2, ADR-0018 §5, clari
         actor: 'Robin',
         action: 'household.started',
         subject: null,
-        setBeforeStart: { shares: ['Alex', 'Robin', 'Sam'], daysAway: ['Kim', 'Sam'] },
+        setBeforeStart: {
+          shares: ['Robin', 'Sam'],
+          daysAway: ['Kim', 'Sam'],
+          reader: { shares: true, daysAway: false },
+        },
+        byReader: false,
+        toReader: false,
+        toActor: false,
       },
     ]);
   });
@@ -330,12 +337,23 @@ describe('the start entry of the activity log (ADR-0007 §2, ADR-0018 §5, clari
       },
     ]);
     expect(await householdActivity(h.head)).toMatchObject({
-      entries: [{ actor: 'Robin', setBeforeStart: { shares: ['Robin'], daysAway: [] } }],
+      entries: [
+        {
+          actor: 'Robin',
+          byReader: true,
+          setBeforeStart: { shares: [], daysAway: [], reader: { shares: true, daysAway: false } },
+        },
+      ],
     });
     const birch = await inSetup();
     await started(birch, 'week start');
     expect(await householdActivity(birch.head)).toMatchObject({
-      entries: [{ actor: 'Robin', setBeforeStart: { shares: [], daysAway: [] } }],
+      entries: [
+        {
+          actor: 'Robin',
+          setBeforeStart: { shares: [], daysAway: [], reader: { shares: false, daysAway: false } },
+        },
+      ],
     });
   });
 
@@ -348,7 +366,7 @@ describe('the start entry of the activity log (ADR-0007 §2, ADR-0018 §5, clari
     // Profiles are deleted by a use case not built yet; the owner stands in for it here.
     await owner.delete(members).where(eq(members.id, sam));
     expect(await householdActivity(h.adult)).toMatchObject({
-      entries: [{ setBeforeStart: { shares: ['Alex'], daysAway: [null] } }],
+      entries: [{ setBeforeStart: { shares: [], daysAway: [null], reader: { shares: true } } }],
     });
   });
 });

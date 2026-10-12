@@ -11,10 +11,11 @@ const flags = {
 };
 
 /**
- * The entry of a renamed household, on the day it was made as the test accounts read it: English
- * with Belgium's conventions, so the day before the month, such as “8 October 2026” (ADR-0008 §6).
+ * The entry of a renamed household, as the head who renamed it reads it (ADR-0018 §5,
+ * clarification), on the day it was made as the test accounts read it: English with Belgium's
+ * conventions, so the day before the month, such as “8 October 2026” (ADR-0008 §6).
  */
-const renamed = /Robin changed the household’s name\.\s*\d{1,2} [A-Z][a-z]+ \d{4}\s*$/;
+const renamed = /You changed the household’s name\.\s*\d{1,2} [A-Z][a-z]+ \d{4}\s*$/;
 
 test.beforeEach(async ({ context, baseURL }) => {
   await forceFlags(context, baseURL, flags);

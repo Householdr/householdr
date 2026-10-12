@@ -339,10 +339,46 @@
   "activity.intro": "What was done that affects others in the household. Everyone in the household sees it, and nobody can change or delete it.",
   "activity.none": "Nothing yet.",
   "activity.former-member": "A former member",
-  "activity.household-name": "{actor} changed the household’s name.",
-  "activity.household-country": "{actor} changed the household’s country.",
-  "activity.household-time-zone": "{actor} changed the household’s time zone.",
-  "activity.household-language": "{actor} changed the household’s language.",
+  "activity.household-name": [
+    {
+      "declarations": ["input who", "input actor"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You changed the household’s name.",
+        "who=*": "{actor} changed the household’s name."
+      }
+    }
+  ],
+  "activity.household-country": [
+    {
+      "declarations": ["input who", "input actor"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You changed the household’s country.",
+        "who=*": "{actor} changed the household’s country."
+      }
+    }
+  ],
+  "activity.household-time-zone": [
+    {
+      "declarations": ["input who", "input actor"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You changed the household’s time zone.",
+        "who=*": "{actor} changed the household’s time zone."
+      }
+    }
+  ],
+  "activity.household-language": [
+    {
+      "declarations": ["input who", "input actor"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You changed the household’s language.",
+        "who=*": "{actor} changed the household’s language."
+      }
+    }
+  ],
   "time-zone.name": "{city} ({zone})",
   "household.shares": "Shares",
   "shares.page-title": "Shares · Householdr",
@@ -512,11 +548,21 @@
   "household.start-intro": "Once everyone and the tasks are in, start the household: it then gets a plan every week.",
   "household.start": "Start the household",
   "household.started": "Your household has started. Its first plan is for the week from {week}: you can check its draft from {draft}, and everyone sees it from {publish}.",
-  "activity.household-started": "{actor} started the household.",
+  "activity.household-started": [
+    {
+      "declarations": ["input who", "input actor"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You started the household.",
+        "who=*": "{actor} started the household."
+      }
+    }
+  ],
   "activity.set-before-start": "Set before the start: shares for {shares}; days away for {daysAway}.",
   "activity.set-before-start-shares": "Set before the start: shares for {shares}.",
   "activity.set-before-start-days-away": "Set before the start: days away for {daysAway}.",
   "activity.a-former-member": "a former member",
+  "activity.you": "you",
   "plan.draft-heads-publish": "This is a draft. Only heads see it until one of them publishes it.",
   "start.page-title": "Start · Householdr",
   "start.title": "Start your household",
@@ -531,8 +577,28 @@
   "start.invalid": "Choose when to start.",
   "start.already-started": "Someone else started the household just now, so nothing changed.",
   "start.started": "Your household has started.",
-  "activity.completion-logged": "{actor} marked a task done for {subject}.",
-  "activity.completion-undone": "{actor} undid a task marked done for {subject}.",
+  "activity.completion-logged": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You marked a task done for {subject}.",
+        "who=to-you": "{actor} marked a task done for you.",
+        "who=*": "{actor} marked a task done for {subject}."
+      }
+    }
+  ],
+  "activity.completion-undone": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You undid a task marked done for {subject}.",
+        "who=to-you": "{actor} undid a task marked done for you.",
+        "who=*": "{actor} undid a task marked done for {subject}."
+      }
+    }
+  ],
   "plan.you": "you",
   "plan.done": "Done on {day} by {doers}.",
   "plan.done-at": "Done on {day} at {time} by {doers}.",
@@ -556,7 +622,17 @@
   "plan.undone-already": "{task} isn’t done any more: it was undone already.",
   "plan.completed": "{task} is marked done.",
   "plan.reopened": "{task} is open again.",
-  "activity.completion-picked-up": "{actor} picked up a task of {subject}’s.",
+  "activity.completion-picked-up": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You picked up a task of {subject}’s.",
+        "who=to-you": "{actor} picked up a task of yours.",
+        "who=*": "{actor} picked up a task of {subject}’s."
+      }
+    }
+  ],
   "household.balances": "Balances",
   "balances.page-title": "Balances · Householdr",
   "balances.title": "Balances",
@@ -593,9 +669,63 @@
   "plan.redrafted": "The draft is made again, with everyone in the household.",
   "plan.redraft-failed": "Drafting it again didn’t work",
   "plan.redraft-gone": "This draft can’t be made again any more: it was published in the meantime.",
-  "activity.share-changed": "{actor} changed {subject}’s share.",
-  "activity.temporary-share-added": "{actor} planned a temporary share for {subject}.",
-  "activity.temporary-share-removed": "{actor} removed a temporary share of {subject}’s.",
-  "activity.absence-added": "{actor} planned days away for {subject}.",
-  "activity.absence-removed": "{actor} removed days away of {subject}’s."
+  "activity.share-changed": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You changed {subject}’s share.",
+        "who=to-you": "{actor} changed your share.",
+        "who=yourself": "You changed your share.",
+        "who=themselves": "{actor} changed their share.",
+        "who=*": "{actor} changed {subject}’s share."
+      }
+    }
+  ],
+  "activity.temporary-share-added": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You planned a temporary share for {subject}.",
+        "who=to-you": "{actor} planned a temporary share for you.",
+        "who=yourself": "You planned a temporary share for yourself.",
+        "who=themselves": "{actor} planned a temporary share for themselves.",
+        "who=*": "{actor} planned a temporary share for {subject}."
+      }
+    }
+  ],
+  "activity.temporary-share-removed": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You removed a temporary share of {subject}’s.",
+        "who=to-you": "{actor} removed a temporary share of yours.",
+        "who=yourself": "You removed a temporary share of your own.",
+        "who=themselves": "{actor} removed a temporary share of their own.",
+        "who=*": "{actor} removed a temporary share of {subject}’s."
+      }
+    }
+  ],
+  "activity.absence-added": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You planned days away for {subject}.",
+        "who=*": "{actor} planned days away for {subject}."
+      }
+    }
+  ],
+  "activity.absence-removed": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You removed days away of {subject}’s.",
+        "who=*": "{actor} removed days away of {subject}’s."
+      }
+    }
+  ]
 }
