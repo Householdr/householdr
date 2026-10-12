@@ -7,6 +7,7 @@ import {
   closeScheduledOccurrences,
   draftScheduledPlan,
   publishScheduledPlan,
+  settleScheduledWeek,
   tickPlans,
   type PlansContext,
 } from './plans';
@@ -74,6 +75,9 @@ export async function workQueues(context: WorkerContext) {
   });
   await queue.work<Jobs['plan-close']>('plan-close', async (jobs) => {
     for (const job of jobs) await closeScheduledOccurrences(context, job.data);
+  });
+  await queue.work<Jobs['plan-settle']>('plan-settle', async (jobs) => {
+    for (const job of jobs) await settleScheduledWeek(context, job.data);
   });
   return queue;
 }

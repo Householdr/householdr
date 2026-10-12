@@ -1937,5 +1937,77 @@
   "activity.completion-picked-up": {
     "note": "Activity log entry: {actor} did a task the plan gave to {subject}, so it became their work (a pick-up). {actor} and {subject} are names, or “a former member”; the task and its points are never shown.",
     "needsReview": ["nl"]
+  },
+  "household.balances": {
+    "note": "Link from the household page to the balances page, for every member.",
+    "needsReview": ["nl"]
+  },
+  "balances.page-title": {
+    "note": "Browser tab title of the balances page. Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "balances.title": {
+    "note": "Heading of the page with every member's balance (ADR-0002 §6): how far ahead of or behind their fair portion of the work each member is, in points.",
+    "needsReview": ["nl"]
+  },
+  "balances.intro": {
+    "note": "Explains a balance (ADR-0002 §1): what someone did compared with their fair portion of the work. Neutral words: being behind is never a fault (UI-24).",
+    "needsReview": ["nl"]
+  },
+  "balances.evening-out": {
+    "note": "Explains catching up (ADR-0002 §3): the coming plans give a bit more to whoever is behind and a bit less to whoever is ahead.",
+    "needsReview": ["nl"]
+  },
+  "balances.rate-fast": {
+    "note": "The household's rebalance rate, set by a head (ADR-0002 §3): fast. 'Them' are the balances.",
+    "needsReview": ["nl"]
+  },
+  "balances.rate-normal": {
+    "note": "The household's rebalance rate, set by a head (ADR-0002 §3): normal, the default. 'Them' are the balances.",
+    "needsReview": ["nl"]
+  },
+  "balances.rate-slow": {
+    "note": "The household's rebalance rate, set by a head (ADR-0002 §3): slow. 'Them' are the balances.",
+    "needsReview": ["nl"]
+  },
+  "balances.points": {
+    "note": "A balance, or what one week changed it by, in whole points (ADR-0001 §5). {points} is the number with its sign, such as “+12”, “-30” or “0”; {count} picks the plural.",
+    "needsReview": ["nl"]
+  },
+  "balances.history": {
+    "note": "Caption of a member's table of weeks, newest first, each with what it changed their balance by.",
+    "needsReview": ["nl"]
+  },
+  "balances.week": {
+    "note": "Column heading: the plan week, such as “12–18 October 2026”.",
+    "needsReview": ["nl"]
+  },
+  "balances.change": {
+    "note": "Column heading: what that week changed the balance by, in points.",
+    "needsReview": ["nl"]
+  },
+  "balances.no-history": {
+    "note": "Shown instead of the table of weeks until the household's first week is over and counted.",
+    "needsReview": ["nl"]
+  },
+  "plan.joined-since": {
+    "note": "For heads, on a draft: who joined the household after the draft was made, by name as a list (count is how many), so the draft gives them no tasks and they owe nothing for that week (ADR-0002 §1, clarification). It suggests drafting it again.",
+    "needsReview": ["nl"]
+  },
+  "plan.redraft": {
+    "note": "Button under plan.joined-since: a head makes the draft again, which replaces it and shares the work with everyone in the household now.",
+    "needsReview": ["nl"]
+  },
+  "plan.redrafted": {
+    "note": "Status once a head made a draft again.",
+    "needsReview": ["nl"]
+  },
+  "plan.redraft-failed": {
+    "note": "Heading of the summary when making a draft again didn't go through; plan.redraft-gone says why.",
+    "needsReview": ["nl"]
+  },
+  "plan.redraft-gone": {
+    "note": "Why a head couldn't make a draft again: another head published it meanwhile.",
+    "needsReview": ["nl"]
   }
 }

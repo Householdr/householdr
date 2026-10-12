@@ -116,6 +116,50 @@ for (const javaScriptEnabled of [true, false]) {
   });
 }
 
+for (const javaScriptEnabled of [true, false]) {
+  test.describe(javaScriptEnabled ? 'with JavaScript' : 'without JavaScript (CODE-13)', () => {
+    test.use({ javaScriptEnabled });
+
+    test('tells a head who joined after the draft, and drafts it again for them (ADR-0002 §1)', async ({
+      page,
+      accounts,
+      account,
+    }, testInfo) => {
+      await accounts.addSecondFactor(account.email);
+      const id = await accounts.addHousehold(account.email, 'Ash Lane');
+      await accounts.addTask(id, { name: 'Dishes', duration: 20, frequency: 'daily' });
+      await accounts.draftNextWeek(id);
+      // Alex joins after next week's draft was made: it gives them nothing.
+      const alex = { email: `${testInfo.testId}-alex@example.org`, password: account.password };
+      await accounts.add(alex);
+      await accounts.addMember(alex.email, id, 'Alex');
+      await signIn(page, account, `/households/${id}`);
+      await openPlan(page, id);
+      const week = page.getByRole('region', { name: /^Next week: / });
+      await expect(week.getByRole('region', { name: 'Alex' })).toContainText('Nothing this week.');
+      await expect(
+        week.getByText(
+          'Alex joined after this draft was made, so it gives them no tasks. Draft it again to share the work with them too.',
+        ),
+      ).toBeVisible();
+      if (javaScriptEnabled) await expectAccessible(page, 'joined after the draft');
+
+      await week.getByRole('button', { name: 'Draft it again' }).click();
+      await expect(week.getByRole('status')).toHaveText(
+        'The draft is made again, with everyone in the household.',
+      );
+      await expect(week.getByRole('button', { name: 'Draft it again' })).toHaveCount(0);
+      await expect(
+        week.getByRole('region', { name: 'Alex' }).getByRole('listitem'),
+      ).not.toHaveCount(0);
+      if (javaScriptEnabled) {
+        await expect(week.getByRole('heading', { level: 2 })).toBeFocused();
+        await expectAccessible(page, 'drafted again');
+      }
+    });
+  });
+}
+
 test('shows heads what nobody could take, and why', async ({ page, accounts, account }) => {
   await accounts.addSecondFactor(account.email);
   const id = await accounts.addHousehold(account.email, 'Ash Lane');

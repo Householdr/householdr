@@ -137,6 +137,12 @@ export const members = pgTable(
      * share; none for the default (ADR-0001 §4). Never a reason for it (ADR-0012 §2).
      */
     sharePercent: smallint(),
+    /**
+     * When the profile was added to the household, which is when the member joined: a plan drafted
+     * before it doesn't include them, so they owe nothing for its week (ADR-0005 §4, ADR-0002 §1,
+     * clarifications). The members added before this was kept have the epoch, before any plan.
+     */
+    joinedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     /** For versioned updates (CODE-14, ADR-0023 §1). */
     version: integer().notNull().default(1),
   },
@@ -269,6 +275,39 @@ export const temporaryShares = pgTable(
     index('temporary_shares_member').on(t.householdId, t.memberId, t.firstDay),
     check('temporary_shares_days', sql`${t.firstDay} <= ${t.lastDay}`),
     check('temporary_shares_percent', sql`${t.percent} between 0 and 100`),
+  ],
+);
+
+/**
+ * The share a member had from a plan week on (ADR-0001 §4): a change applies from the next
+ * unpublished plan, and settling a week uses the share of that week (ADR-0002 §1, clarification).
+ * Kept once the household has started: the first change also keeps the share before it, from the
+ * household's first plan week. `members.share_percent` stays the share set now.
+ */
+export const shareChanges = pgTable(
+  'share_changes',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    memberId: uuid().notNull(),
+    /** The first day of the plan week it applies from. */
+    fromWeek: date().notNull(),
+    /** As `members.share_percent`: none for the default by role and age. */
+    percent: smallint(),
+  },
+  (t) => [
+    householdOnly(t.householdId),
+    // A member of its own household: foreign keys are checked past row-level security (CODE-17).
+    foreignKey({
+      name: 'share_changes_member',
+      columns: [t.householdId, t.memberId],
+      foreignColumns: [members.householdId, members.id],
+    }).onDelete('cascade'),
+    // One share from each week on: a second change before that week replaces the first.
+    uniqueIndex('share_changes_week').on(t.householdId, t.memberId, t.fromWeek),
+    check('share_changes_percent', sql`${t.percent} between 0 and 100`),
   ],
 );
 
@@ -807,5 +846,60 @@ export const completionCredits = pgTable(
       foreignColumns: [members.householdId, members.id],
     }),
     check('completion_credits_points', sql`${t.points} >= 0`),
+  ],
+);
+
+/**
+ * What a ledger entry records (ADR-0002 §7). For now only a plan week's settlement; a head's
+ * correction and a child's completion approved after its week was settled (ADR-0002 §1, ADR-0006
+ * §4) come with the slices that build them.
+ */
+export type LedgerKind = 'settlement';
+
+/**
+ * A change to a member's balance, in points (ADR-0002 §7): the balance is the sum of the member's
+ * entries, and their history is the list of them. A settlement is one plan week's done − owed for a
+ * member (§1), posted once the week is over: one per member and week. Neither what they owed nor
+ * what they did is kept, as both would tell their share and how hard they find their tasks
+ * (ADR-0018 §4, ADR-0003 §5). An entry never changes and is never deleted while the household
+ * exists: the app's role may only add and read them (`migrate.ts`).
+ */
+export const ledgerEntries = pgTable(
+  'ledger_entries',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    memberId: uuid().notNull(),
+    kind: text().$type<LedgerKind>().notNull(),
+    /** The first day of the plan week it settles. */
+    week: date().notNull(),
+    /** What the balance changes by, in points: positive is ahead of the fair portion (§1). */
+    change: doublePrecision().notNull(),
+    /** When it was posted. */
+    at: timestamp({ withTimezone: true }).notNull(),
+  },
+  (t) => [
+    householdOnly(t.householdId),
+    // A member of the entry's own household, and a plan week of it: foreign keys are checked past
+    // row-level security, so each includes the household.
+    foreignKey({
+      name: 'ledger_entries_member',
+      columns: [t.householdId, t.memberId],
+      foreignColumns: [members.householdId, members.id],
+    }),
+    foreignKey({
+      name: 'ledger_entries_week',
+      columns: [t.householdId, t.week],
+      foreignColumns: [plans.householdId, plans.weekStart],
+    }),
+    // A plan week is settled once for each member, so settling it again changes nothing (CODE-19).
+    uniqueIndex('ledger_entries_settled_once')
+      .on(t.householdId, t.week, t.memberId)
+      .where(sql`${t.kind} = 'settlement'`),
+    // The household's balances and their history, whatever the kind of entry.
+    index('ledger_entries_member_week').on(t.householdId, t.memberId, t.week),
+    check('ledger_entries_kind', sql`${t.kind} in ('settlement')`),
   ],
 );

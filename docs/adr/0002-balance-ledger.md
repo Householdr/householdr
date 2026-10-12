@@ -49,6 +49,25 @@ balance(m) += done(m) − owed(m)
 - A skipped occurrence simply isn't in `done`. That is the whole consequence. There is no penalty
   multiplier, no streak loss, no public shaming. The member is in deficit by that task's cost.
 
+> **Clarification (2026-10-12):** a week is settled with what applied to that week.
+>
+> - **Shares:** a change to a share applies from the next unpublished plan
+>   ([ADR-0001](0001-domain-model-and-weekly-allocation.md) §4), and is kept with the plan week it
+>   applies from. Settling a week uses that week's share, also when the change was made before the
+>   week was settled.
+> - **Joining:** a member owes nothing for a plan week whose plan was drafted before they joined,
+>   whether they joined during the week or between its draft and its start
+>   ([ADR-0005](0005-membership-and-availability.md) §4): they weren't given any of its work. What
+>   they do that week still counts in `done`. While such a plan is still a draft, its heads see who
+>   joined after it was made, with the suggestion to draft it again so it shares the work with them.
+> - **Days before the draft:** a plan drafted once its week had begun, as when a household starts
+>   now or the scheduler catches up ([ADR-0006](0006-plan-lifecycle-and-completion.md) §2), is for
+>   the days left. The days before it count as days away, in its settlement as in its draft
+>   ([ADR-0007](0007-onboarding.md) §3).
+> - **Every week:** while balances are on, every plan week that has ended with a published plan is
+>   settled, once, also the weeks the scheduler missed while it was down. A week without a published
+>   plan has nothing to settle.
+
 ### 2. What happens to a missed occurrence
 
 Each task has an **on-miss policy**:
@@ -100,6 +119,10 @@ The household's **rebalance rate** is a head-level setting with three presets:
 Because the catch-up is proportional, large balances settle faster in absolute terms and nobody gets a
 punishing week from one bad week.
 
+> **Clarification (2026-10-12):** drafting a week uses the balances settled up to the week before
+> last. The week underway, whose plan the draft follows on, isn't settled until it ends, so its work
+> counts from the draft after.
+
 ### 4. Credit for extra work
 
 A member can log work beyond their assignment:
@@ -140,11 +163,20 @@ household's plan allows, [ADR-0013](0013-monetisation.md) §3). Fairness that ca
 and the ledger is a record of work done, not of anything private. (What stays private is *why* a task is
 hard for someone: see [ADR-0003](0003-burden-estimation.md) §5.)
 
+> **Clarification (2026-10-12):** balances and their changes are written in whole points with their
+> sign, as the reader's language writes it through the shared formatting
+> ([ADR-0016](0016-localisation.md)): "-80 points" behind, "+20 points" ahead.
+
 ### 7. Ledger entries are append-only
 
 Every change to a balance is an entry (week settlement, manual correction by the head) with who, what
 and why. The balance is the sum of entries. This gives a history the household can inspect, makes
 disputes resolvable, and lets the head correct a mistake without editing history.
+
+> **Clarification (2026-10-12):** every entry stays tied to its member. A member with entries who
+> leaves or is removed keeps their member record as a **former member**
+> ([ADR-0005](0005-membership-and-availability.md) §4, clarification), so their balance and history
+> stay their own, apart from any other former member's.
 
 ## Alternatives considered
 

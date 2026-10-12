@@ -22,6 +22,11 @@ export interface Jobs {
    * day of the week (ADR-0002 §2).
    */
   'plan-close': PlanJob;
+  /**
+   * Settles a household's plan week into its members' balances once it is over: its id, and the
+   * first day of the week (ADR-0002 §1, §7).
+   */
+  'plan-settle': PlanJob;
 }
 
 /** A step for one household's plan week: the household's id, and the week's first day. */
@@ -44,6 +49,7 @@ const queues: Record<QueueName, Parameters<PgBoss['createQueue']>[1]> = {
   'plan-draft': { policy: 'exclusive', retryLimit: 0 },
   'plan-publish': { policy: 'exclusive', retryLimit: 0 },
   'plan-close': { policy: 'exclusive', retryLimit: 0 },
+  'plan-settle': { policy: 'exclusive', retryLimit: 0 },
 };
 
 /**
@@ -54,6 +60,7 @@ const keys: { [Q in QueueName]?: (data: Jobs[Q]) => string } = {
   'plan-draft': ({ household, week }) => `${household}/${week}`,
   'plan-publish': ({ household, week }) => `${household}/${week}`,
   'plan-close': ({ household, week }) => `${household}/${week}`,
+  'plan-settle': ({ household, week }) => `${household}/${week}`,
 };
 
 /**

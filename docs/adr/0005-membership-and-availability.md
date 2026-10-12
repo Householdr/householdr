@@ -85,6 +85,15 @@ account.
 > as head once they sign in with two factors; the last such adult is warned that leaving closes the
 > household ([ADR-0018](0018-household-safety.md) §2).
 
+> **Clarification (2026-10-12):** a member **joins** when their profile is added to the household,
+> and that moment is kept: a plan drafted before it doesn't include them, so they owe nothing for its
+> week ([ADR-0002](0002-balance-ledger.md) §1, clarification).
+>
+> A member who **leaves or is removed** after any ledger entry keeps their member record as a
+> **former member**: no account, share or place in any plan, and shown as "Former member" unless they
+> chose to appear under their name ([ADR-0012](0012-privacy-and-data-protection.md) §6). Their
+> balance stays frozen and theirs alone, so two former members' histories never mix.
+
 ### 5. The household is away
 
 When everyone is away together (a family holiday), member absences alone aren't enough: schedules would

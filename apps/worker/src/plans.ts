@@ -3,6 +3,7 @@ import {
   draftPlan,
   publishPlan,
   queueDuePlanSteps,
+  settlePlanWeek,
   type Clock,
   type Database,
   type Flags,
@@ -45,6 +46,15 @@ export async function publishScheduledPlan(context: PlansContext, job: Jobs['pla
 export async function closeScheduledOccurrences(context: PlansContext, job: Jobs['plan-close']) {
   if (!context.flags.isOn('plans')) return;
   await closeDueOccurrences(scheduler(context, job.household));
+}
+
+/**
+ * Settles a household's plan week into its members' balances once it is over (ADR-0002 §1, §7),
+ * while the balances' release flag is on.
+ */
+export async function settleScheduledWeek(context: PlansContext, job: Jobs['plan-settle']) {
+  if (!context.flags.isOn('balances')) return;
+  await settlePlanWeek(scheduler(context, job.household), { week: job.week });
 }
 
 const scheduler = ({ db, clock }: PlansContext, householdId: string) => ({

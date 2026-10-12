@@ -8,12 +8,14 @@
 
   /**
    * One week's plan: who does what, each with why it went to them (ADR-0007 §5), and for heads, a
-   * draft's note, what nobody could take, and publishing it early (ADR-0006 §2).
+   * draft's note, what nobody could take, and publishing it early (ADR-0006 §2), or drafting it
+   * again for those who joined after it was made (ADR-0002 §1, clarification).
    */
   let {
     week,
     status,
     problem,
+    redraftProblem,
     taskProblem,
     attempt,
     publish,
@@ -25,6 +27,8 @@
     status: string;
     /** Why publishing it didn't go through, if it didn't. */
     problem: string;
+    /** Why drafting it again didn't go through, if it didn't. */
+    redraftProblem: string;
     /** Why marking one of its tasks done, or undoing it, didn't go through, if it didn't. */
     taskProblem: {
       heading: string;
@@ -55,6 +59,28 @@
 
 {#if week.draft}
   <p class="rounded-lg border p-4">{week.draft}</p>
+{/if}
+
+<!-- A new summary for every attempt, so it takes the focus again. -->
+{#key attempt}
+  {#if redraftProblem}
+    <ErrorSummary heading={m['plan.redraft-failed']()} message={redraftProblem} />
+  {/if}
+{/key}
+
+{#if week.redraft}
+  <form
+    method="POST"
+    action="?/redraft"
+    use:enhance={publish}
+    class="flex flex-col gap-3 rounded-lg border p-4"
+  >
+    <p id="{week.id}-joined" class="wrap-break-word">{week.redraft.said}</p>
+    <input type="hidden" name="week" value={week.redraft.week} />
+    <Button type="submit" variant="outline" class="w-full" aria-describedby="{week.id}-joined">
+      {m['plan.redraft']()}
+    </Button>
+  </form>
 {/if}
 
 {#if week.publish}

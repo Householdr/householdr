@@ -117,6 +117,8 @@ export async function addChild(context: AddChildContext, input: unknown): Promis
         name: parsed.output.name,
         role: 'child',
         birthDate: parsed.output.birthDate.toString(),
+        // When they joined (ADR-0005 §4, clarification).
+        joinedAt: new Date(now.epochMilliseconds),
       })
       .returning({ id: members.id });
     if (!child) throw new Error('No child was added.');

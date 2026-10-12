@@ -3,6 +3,7 @@ import {
   completeOccurrence,
   createHousehold,
   draftPlan,
+  householdBalances,
   publishPlan,
   viewPlan,
   type Database,
@@ -12,7 +13,12 @@ import { recordingMailer, settableClock, settableFlags } from '@householdr/appli
 import { createTestAccount, startTestHousehold, testSignInContext } from '@householdr/auth/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { workQueues, type WorkerContext } from './index';
-import { closeScheduledOccurrences, draftScheduledPlan, tickPlans } from './plans';
+import {
+  closeScheduledOccurrences,
+  draftScheduledPlan,
+  settleScheduledWeek,
+  tickPlans,
+} from './plans';
 
 // The plans' jobs, from the tick to a published plan (ADR-0006 §2, ADR-0008 §10), on a real
 // database and queue (TEST-11), behind the plans' flag (CODE-20).
@@ -132,5 +138,61 @@ describe('the plans’ jobs (ADR-0006 §2, ADR-0008 §10)', () => {
     const on = settableFlags({ plans: true });
     await closeScheduledOccurrences({ ...test.context, clock, flags: on }, job);
     expect(await complete()).toEqual({ ok: false, error: 'closed' });
+  });
+
+  it('settle a week from the tick once it is over', async () => {
+    const clock = settableClock(Temporal.Instant.from('2026-10-08T08:00:00Z'));
+    const context: WorkerContext = {
+      ...test.context,
+      clock,
+      mailer: recordingMailer(),
+      flags: settableFlags({ plans: true, balances: true }),
+    };
+    const { householdId, head } = await started(context.db, clock);
+    const scheduler = { db: head.db, clock, householdId, member: 'scheduler' as const };
+    await draftPlan(scheduler, { week: '2026-10-12' });
+    await publishPlan(scheduler, { week: '2026-10-12' });
+    // Monday 19 October in Brussels: week 1 is over.
+    clock.advance({ hours: 11 * 24 });
+    const queue = await workQueues(context);
+    const settledWeeks = async () => {
+      const result = await householdBalances(head);
+      return result.ok
+        ? result.members.flatMap((m) => m.history.map((w) => w.start.toString()))
+        : [];
+    };
+    try {
+      await queue.send('plan-tick', {});
+      await expect.poll(settledWeeks, { timeout: 10_000 }).toEqual(['2026-10-12']);
+    } finally {
+      await queue.stop({ graceful: false });
+    }
+  }, 30_000);
+
+  it('settle a week once it is over, while the balances’ flag is on', async () => {
+    const clock = settableClock(Temporal.Instant.from('2026-10-08T08:00:00Z'));
+    const { householdId, head } = await started(test.context.db, clock);
+    await addTask(head, {
+      name: 'Vacuum',
+      duration: 30,
+      frequency: 'weekly',
+      start: '2026-10-14',
+      onMiss: 'roll over',
+    });
+    const scheduler = { db: head.db, clock, householdId, member: 'scheduler' as const };
+    await draftPlan(scheduler, { week: '2026-10-12' });
+    await publishPlan(scheduler, { week: '2026-10-12' });
+    // Monday 19 October in Brussels: week 1 is over, and nobody vacuumed.
+    clock.advance({ hours: 11 * 24 });
+    const job = { household: householdId, week: '2026-10-12' };
+    const balance = async () => {
+      const result = await householdBalances(head);
+      return result.ok ? result.members.map((m) => [m.balance, m.history.length]) : result.error;
+    };
+    await settleScheduledWeek({ ...test.context, clock, flags: settableFlags() }, job);
+    expect(await balance()).toEqual([[0, 0]]);
+    const on = settableFlags({ balances: true });
+    await settleScheduledWeek({ ...test.context, clock, flags: on }, job);
+    expect(await balance()).toEqual([[-30, 1]]);
   });
 });

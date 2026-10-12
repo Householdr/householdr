@@ -44,6 +44,8 @@ export interface WeekData {
     assignments: (ItemData & { cost: number | null; reason: Reason })[];
   }[];
   unassigned: (ItemData & { cause: UnassignedCause })[];
+  /** For heads, while it is a draft: who joined after it was made. */
+  joinedSince: Named[];
 }
 
 /** A member the reader can say did a task, and whether the form starts with them chosen. */
@@ -112,6 +114,11 @@ export interface ShownWeek {
   draft: string | null;
   /** What publishing it early sends, for a head who may. */
   publish: { week: string; version: number } | null;
+  /**
+   * For heads, while it is a draft that gives some members nothing as they joined after it was
+   * made: who, in words, and what drafting it again sends (ADR-0002 §1, clarification).
+   */
+  redraft: { said: string; week: string } | null;
   members: { id: string; heading: string; items: ShownItem[] }[];
   unassigned: ShownItem[];
 }
@@ -271,6 +278,19 @@ export function usePlan(
           : m['plan.draft']({ when: dayAndTime(week.publishAt, timeZone, locale) })
         : null,
       publish: draft && mayPublish ? { week: week.start, version: week.version } : null,
+      redraft:
+        draft && mayPublish && week.joinedSince.length > 0
+          ? {
+              said: m['plan.joined-since']({
+                count: week.joinedSince.length,
+                names: listOf(
+                  week.joinedSince.map(({ name }) => name),
+                  locale,
+                ),
+              }),
+              week: week.start,
+            }
+          : null,
       members: week.members.map((member) => {
         const yours = member.id === you;
         return {

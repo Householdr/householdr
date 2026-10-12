@@ -3,7 +3,9 @@ import { can, setShares, temporaryShareDays, type Role } from '@householdr/domai
 import { eq } from 'drizzle-orm';
 import * as v from 'valibot';
 import type { HouseholdContext } from '../households/membership';
+import { planningOf } from '../plans/planning';
 import { seen, shareColumns, sharesOf, thisWeek, type MemberShare } from './member-share';
+import { keepShareChange } from './share-changes';
 
 type HouseholdSharesResult =
   | {
@@ -76,7 +78,9 @@ type ChangeShareResult =
 
 /**
  * Sets a member's share, or puts it back to the default by role and age (`percent: null`), by a
- * head (ADR-0001 §4), from the version they saw (ADR-0019 §5). No reason is asked or kept (ADR-0012
+ * head (ADR-0001 §4), from the version they saw (ADR-0019 §5). Once the household has started, it
+ * applies from the next unpublished plan, and the week it applies from is kept, so settling each
+ * week uses that week's share (ADR-0002 §1, clarification). No reason is asked or kept (ADR-0012
  * §2). The household is still in setup, so the activity log shows nothing yet: what heads set for
  * others before Start is one entry at Start (ADR-0007 §2, ADR-0018 §5, clarifications).
  */
@@ -116,6 +120,12 @@ export async function changeShare(
       .returning(shareColumns);
     // The row is locked, so it is still at the version read.
     if (!updated) throw new Error('A locked member changed.');
+    await keepShareChange(tx, await planningOf(tx), context.clock.now(), {
+      householdId: context.householdId,
+      memberId: id,
+      previous: row.sharePercent,
+      percent,
+    });
     return { ok: true as const, share: await shareNow(updated) };
   });
 }
