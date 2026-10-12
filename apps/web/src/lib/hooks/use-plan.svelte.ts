@@ -1,7 +1,6 @@
 import type { SubmitFunction } from '$app/forms';
 import { calendarDays, dayAndTime, weekDay } from '#lib/intl.js';
 import { m } from '#lib/paraglide/messages.js';
-import { getLocale } from '#lib/paraglide/runtime.js';
 import type { Reason, UnassignedCause } from '@householdr/application';
 
 /** A task of a week's plan, as page data. */
@@ -82,27 +81,27 @@ const causes: Record<UnassignedCause, () => string> = {
 
 /**
  * What the plan's page needs besides its data (CODE-9): this week's and next week's plans in the
- * reader's words, with days in their language and times in the household's time zone (UI-22), and
- * the focus kept once publishing takes its button with it (UI-7).
+ * reader's words, with days in `locale`, the page's language with the account's conventions
+ * (ADR-0008 §6), and times in the household's time zone (UI-22), and the focus kept once publishing
+ * takes its button with it (UI-7).
  */
 export function usePlan(
   data: () => {
     timeZone: string;
+    locale: string;
     you: string;
     mayPublish: boolean;
     thisWeek: WeekData | null;
     nextWeek: WeekData | null;
   },
 ) {
-  const locale = getLocale();
-
   const shown = (
     week: WeekData,
     id: string,
     heading: (days: string) => string,
     anyDay: () => string,
   ): ShownWeek => {
-    const { timeZone, you, mayPublish } = data();
+    const { timeZone, locale, you, mayPublish } = data();
     const draft = week.status === 'draft';
     // A task from an earlier week, carried over or floating on, can be done any day of this one:
     // its own date, in a week gone by, would only confuse (ADR-0002 §2, ADR-0004 §4).

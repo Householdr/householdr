@@ -1,4 +1,5 @@
 import type { Browser, Page, TestInfo } from '@playwright/test';
+import { calendarDays } from '../src/lib/intl';
 import { expect, expectAccessible, forceFlags, signIn, test } from './fixtures';
 import { ownNetwork } from './proxy';
 
@@ -125,6 +126,9 @@ test('shows heads what nobody could take, and why', async ({ page, accounts, acc
   await accounts.draftNextWeek(id);
   await signIn(page, account, `/households/${id}`);
   await openPlan(page, id);
+  // Days in the page's language with the account's conventions: Robin's are Belgian (ADR-0008 §6).
+  const days = calendarDays(monday.toString(), monday.add({ days: 6 }).toString(), 'en-BE');
+  await expect(page.getByRole('heading', { level: 2, name: `Next week: ${days}` })).toBeVisible();
   const nobody = page.getByRole('region', { name: 'Not given to anyone' });
   await expect(nobody.getByRole('listitem')).toHaveText([
     /^\s*Vacuum\s*Day\s*.+\s*Why\s*Nobody can do it then: everyone is away, or not allowed to do it\.\s*$/,
