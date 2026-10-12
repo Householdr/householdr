@@ -76,12 +76,23 @@ export interface ShownItem {
     undo: { completion: string; label: string } | null;
   } | null;
   /**
-   * While it can be marked done: one tap for the reader's own task, and the choice of who did it,
-   * starting with its assignee, or the reader for a task nobody has.
+   * On the reader's own task, while it can be marked done or once it is: the box that says whether
+   * it is, which ticks it with one tap or unticks it to undo it, when the reader may (ADR-0006 §4).
+   */
+  check: {
+    checked: boolean;
+    /** Its name, which says the task and its day whether it is ticked or not. */
+    label: string;
+    /** What ticking or unticking it sends; none when the reader may not undo it. */
+    action: 'complete' | 'undo' | null;
+    /** The completion unticking it undoes. */
+    completion: string | null;
+  } | null;
+  /**
+   * While it can be marked done: the choice of who did it, starting with its assignee, or the
+   * reader for a task nobody has.
    */
   complete: {
-    /** The one-tap button's name, on the reader's own task only. */
-    own: string | null;
     summary: string;
     label: string;
     choices: Choice[];
@@ -211,6 +222,20 @@ export function usePlan(
       // its own date, in a week gone by, would only confuse (ADR-0002 §2, ADR-0004 §4).
       const earlier = row.date < week.start;
       const day = earlier ? anyDay() : weekDay(row.date, locale);
+      const own = assignee === you;
+      const label = m['plan.done-label']({ task: row.task, day });
+      const check: ShownItem['check'] = !own
+        ? null
+        : row.completion
+          ? {
+              checked: true,
+              label,
+              action: row.completion.mayUndo ? 'undo' : null,
+              completion: row.completion.id,
+            }
+          : row.completable
+            ? { checked: false, label, action: 'complete', completion: null }
+            : null;
       return {
         id: row.id,
         key: `${id}-${row.occurrence}`,
@@ -220,10 +245,10 @@ export function usePlan(
         day,
         anyDay: earlier,
         done: row.completion && doneOf(row.completion, row.task, day),
+        check,
         complete: row.completable
           ? {
-              own: assignee === you ? m['plan.done-label']({ task: row.task, day }) : null,
-              summary: assignee === you ? m['plan.done-with-others']() : m['plan.mark-done'](),
+              summary: own ? m['plan.done-with-others']() : m['plan.mark-done'](),
               label: m['plan.mark-done-label']({ task: row.task, day }),
               choices: people.map((person) => ({
                 ...person,
@@ -350,7 +375,8 @@ export function usePlan(
     },
     /**
      * Sends a task's form, then, once it went through, moves the focus to the first of `targets`,
-     * by id, that replaced the control used: Undo after marking it done, Done after undoing (UI-7).
+     * by id, that is there: the box itself on the reader's own task, else Undo after marking it
+     * done, or the choice of who did it after undoing (UI-7).
      * When it didn't go through, the summary of why takes the focus instead, and the plan shows
      * what is there now, such as who did it already (ADR-0019 §6), as it does without JavaScript.
      */

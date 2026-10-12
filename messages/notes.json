@@ -1859,7 +1859,7 @@
     "needsReview": ["nl"]
   },
   "plan.undo": {
-    "note": "Button under a task that is done, which marks it as not done again. Shown to whoever marked it done, those who did it, and heads, until the end of the week (ADR-0006 §4).",
+    "note": "Button under someone else's task that is done, which marks it as not done again. Shown to whoever marked it done, those who did it, and heads, until the end of the week (ADR-0006 §4). The reader's own task unticks its box instead.",
     "needsReview": ["nl"]
   },
   "plan.undo-label": {
@@ -1867,11 +1867,11 @@
     "needsReview": ["nl"]
   },
   "plan.done-button": {
-    "note": "Button on the reader's own task in this week's plan, which marks it done with one tap (ADR-0006 §4). Short, as it says the reader did it.",
+    "note": "Visible text next to the box at the end of the reader's own task in this week's plan, which ticks it done with one tap and unticks it to undo it (ADR-0006 §4). Short, as it says the reader did it.",
     "needsReview": ["nl"]
   },
   "plan.done-label": {
-    "note": "What screen readers call the Done button: it starts with plan.done-button, then names the task and its day (weekday, day and month).",
+    "note": "What screen readers call the box on the reader's own task, ticked or not: it starts with plan.done-button, then names the task and its day (weekday, day and month).",
     "needsReview": ["nl"]
   },
   "plan.done-with-others": {
