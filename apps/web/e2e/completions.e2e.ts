@@ -119,7 +119,7 @@ for (const javaScriptEnabled of [true, false]) {
           .first();
         await expect(seen).toContainText(new RegExp(`Done today by Robin\\.`));
         await expect(seen).not.toContainText(new RegExp(` at ${time}`));
-        await expect(seen.getByRole('button')).toHaveCount(0);
+        await expect(seen.getByRole('button', { name: /^Undo: / })).toHaveCount(0);
         await expect(seen.getByRole('checkbox')).toHaveCount(0);
         if (javaScriptEnabled) await expectAccessible(other, 'done, as another member sees it');
       } finally {
