@@ -28,9 +28,10 @@ async function completionContext(locals: App.Locals) {
 }
 
 /** A completion as page data: its day as `YYYY-MM-DD`, its moment as epoch milliseconds. */
-const completionData = ({ id, day, at, doers, loggedBy, mayUndo }: PlanCompletion) => ({
+const completionData = ({ id, day, when, at, doers, loggedBy, mayUndo }: PlanCompletion) => ({
   id,
   day: day.toString(),
+  when,
   at: at?.epochMilliseconds ?? null,
   doers,
   loggedBy,

@@ -174,6 +174,15 @@ conventions.
 > Once its language is offered, this is the full culture. A page nobody is signed in to formats with
 > its language alone.
 
+> **Clarification (2026-10-12):** a **day in the past** is said vaguely, by the household's calendar,
+> and never finer than the day, so it gives away no time of activity
+> ([ADR-0018](0018-household-safety.md) §3): "Today", "Yesterday", "Some days ago" (two to six days),
+> "Last week" (the rest of the plan week before this one), "Some weeks ago" (less than five weeks),
+> then the date itself. The exact day shows in a tooltip that opens on hover, keyboard focus and a
+> tap, and that screen readers announce as the day's description. A completion on the plan says
+> "today", "yesterday" or the weekday, since its plan week is this one. Times for one's own
+> completions stay as they are (§3 of ADR-0018); days to come are always exact.
+
 ### 7. A Progressive Web App on modern web APIs
 
 One responsive web app, installable on the home screen; no native apps. The platform APIs it builds

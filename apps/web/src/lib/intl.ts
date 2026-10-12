@@ -46,11 +46,6 @@ export function weekdayName(day: number, locale: string) {
   return new Intl.DateTimeFormat(locale, { weekday: 'long', timeZone: 'UTC' }).format(date);
 }
 
-/** The day of `at` (epoch milliseconds) in `timeZone`, in `locale`, such as “8 October 2026”. */
-export function dayOf(at: number, timeZone: string, locale: string) {
-  return new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone }).format(at);
-}
-
 /**
  * The time zone `timeZone`, an IANA name, by its city and its name in `locale`, such as
  * “Brussels (Central European Time)”; where Intl has no name for a zone, its offset, such as
@@ -100,6 +95,11 @@ export function dayText(day: string, locale: string) {
   return new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' }).format(
     Date.UTC(year, month - 1, date),
   );
+}
+
+/** A day of the calendar, `YYYY-MM-DD`, in full in `locale`, such as “Monday 12 October 2026”. */
+export function fullDay(day: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, { dateStyle: 'full', timeZone: 'UTC' }).format(utc(day));
 }
 
 /** The calendar day `date` (`YYYY-MM-DD`) in `locale`, with its weekday, such as “Wednesday 14 October”. */

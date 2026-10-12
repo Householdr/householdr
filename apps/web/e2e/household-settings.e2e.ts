@@ -12,10 +12,9 @@ const flags = {
 
 /**
  * The entry of a renamed household, as the head who renamed it reads it (ADR-0018 §5,
- * clarification), on the day it was made as the test accounts read it: English with Belgium's
- * conventions, so the day before the month, such as “8 October 2026” (ADR-0008 §6).
+ * clarification), on the day it was made, said vaguely (ADR-0008 §6, clarification).
  */
-const renamed = /You changed the household’s name\.\s*\d{1,2} [A-Z][a-z]+ \d{4}\s*$/;
+const renamed = /You changed the household’s name\.\s*Today\s*$/;
 
 test.beforeEach(async ({ context, baseURL }) => {
   await forceFlags(context, baseURL, flags);
@@ -128,7 +127,7 @@ test('the settings are only for heads with two factors', async ({ page, accounts
   expect((await page.goto(`/households/${id}/settings`))?.status()).toBe(403);
 });
 
-test('signed in with a passkey, the activity log writes days the account’s way (ADR-0008 §6)', async ({
+test('signed in with a passkey, the activity log writes the exact day the account’s way (ADR-0008 §6)', async ({
   page,
   context,
   baseURL,
@@ -158,7 +157,11 @@ test('signed in with a passkey, the activity log writes days the account’s way
   await page.getByRole('button', { name: 'Sign in with a passkey' }).click();
   await expect(page).toHaveURL(`/households/${id}`);
   await page.getByRole('link', { name: 'Activity' }).click();
-  await expect(page.getByRole('list', { name: 'Activity' }).getByRole('listitem')).toHaveText([
-    renamed,
-  ]);
+  const log = page.getByRole('list', { name: 'Activity' });
+  await expect(log.getByRole('listitem')).toHaveText([renamed]);
+  // The exact day, on focus, as the test accounts read it: English with Belgium's conventions, so
+  // the day before the month, such as “Thursday, 8 October 2026”.
+  const today = log.getByRole('button', { name: 'Today' });
+  await today.focus();
+  await expect(today).toHaveAccessibleDescription(/^[A-Z][a-z]+, \d{1,2} [A-Z][a-z]+ \d{4}$/);
 });

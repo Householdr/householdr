@@ -113,6 +113,24 @@ describe('householdSettings and changeHouseholdSettings (ADR-0007 §2)', () => {
     expect(activity.entries[0]?.at).toEqual(Temporal.Instant.from('2026-10-08T09:00:00Z'));
   });
 
+  it('says how long ago each entry was, by the day only, as the days go by', async () => {
+    const head = await household();
+    await changeHouseholdSettings(head, { ...settings, name: 'Birch Court', version: 1 });
+    const when = async () => {
+      const activity = await householdActivity(head);
+      if (!activity.ok) throw new Error('No activity');
+      return activity.entries.map(({ day, when }) => [day.toString(), when]);
+    };
+    // Never finer than the day (ADR-0008 §6, clarification; ADR-0018 §3).
+    expect(await when()).toEqual([['2026-10-08', 'today']]);
+    head.clock.advance({ hours: 24 });
+    expect(await when()).toEqual([['2026-10-08', 'yesterday']]);
+    head.clock.advance({ hours: 3 * 24 });
+    expect(await when()).toEqual([['2026-10-08', 'some-days-ago']]);
+    head.clock.advance({ hours: 40 * 24 });
+    expect(await when()).toEqual([['2026-10-08', 'older']]);
+  });
+
   it('saves nothing from a version that has moved on, and says who changed it last', async () => {
     const head = await household();
     await changeHouseholdSettings(head, { ...settings, name: 'Birch Court', version: 1 });

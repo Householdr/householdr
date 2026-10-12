@@ -1855,11 +1855,11 @@
     "needsReview": ["nl"]
   },
   "plan.done": {
-    "note": "Under a task that is done: the day it was done (weekday, day and month) and who did it, a list such as 'Alex' or 'you and Kim'. Others see the day only, never the time (ADR-0018 §3).",
+    "note": "Under a task that is done: when it was done and who did it. {day} is 'today', 'yesterday' or 'on Monday' (see plan.done-today and the next ones); {doers} is a list such as 'Alex' or 'you and Kim'. Others see the day only, never the time (ADR-0018 §3).",
     "needsReview": ["nl"]
   },
   "plan.done-at": {
-    "note": "Under a task that is done, for those who did it only: the day, the time of day in the household's time zone, and who did it, a list such as 'you' or 'you and Kim' (ADR-0018 §3).",
+    "note": "Under a task that is done, for those who did it only: when it was done, the time of day in the household's time zone, and who did it. {day} is 'today', 'yesterday' or 'on Monday', as in plan.done; {doers} is a list such as 'you' or 'you and Kim' (ADR-0018 §3).",
     "needsReview": ["nl"]
   },
   "plan.logged-by": {
@@ -2036,6 +2036,38 @@
   },
   "activity.absence-removed": {
     "note": "Activity log entry, after the household started: a head removed days away planned for {subject}, a member without an account. {actor} and {subject} are names, or “a former member”. Never the days. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
+    "needsReview": ["nl"]
+  },
+  "past.today": {
+    "note": "The day something happened: today. One step of the scale of how long ago a day was (ADR-0008 §6, clarification), never finer than the day (ADR-0018 §3); the exact day shows in a tooltip. Starts with a capital, as it stands alone.",
+    "needsReview": ["nl"]
+  },
+  "past.yesterday": {
+    "note": "The day something happened: yesterday. One step of the scale of how long ago a day was (ADR-0008 §6, clarification), never finer than the day (ADR-0018 §3); the exact day shows in a tooltip. Starts with a capital, as it stands alone.",
+    "needsReview": ["nl"]
+  },
+  "past.some-days-ago": {
+    "note": "The day something happened: two to six days ago. One step of the scale of how long ago a day was (ADR-0008 §6, clarification), never finer than the day (ADR-0018 §3); the exact day shows in a tooltip. Starts with a capital, as it stands alone.",
+    "needsReview": ["nl"]
+  },
+  "past.last-week": {
+    "note": "The day something happened: in the household's plan week before this one, a week or more ago. One step of the scale of how long ago a day was (ADR-0008 §6, clarification), never finer than the day (ADR-0018 §3); the exact day shows in a tooltip. Starts with a capital, as it stands alone.",
+    "needsReview": ["nl"]
+  },
+  "past.some-weeks-ago": {
+    "note": "The day something happened: before last week, less than five weeks ago; longer ago, the date itself shows. One step of the scale of how long ago a day was (ADR-0008 §6, clarification), never finer than the day (ADR-0018 §3); the exact day shows in a tooltip. Starts with a capital, as it stands alone.",
+    "needsReview": ["nl"]
+  },
+  "plan.done-today": {
+    "note": "{day} in 'Done {day} by …' when it was done today. Lower case, as it sits in the sentence; the exact day shows in a tooltip.",
+    "needsReview": ["nl"]
+  },
+  "plan.done-yesterday": {
+    "note": "{day} in 'Done {day} by …' when it was done yesterday. Lower case, as it sits in the sentence.",
+    "needsReview": ["nl"]
+  },
+  "plan.done-on": {
+    "note": "{day} in 'Done {day} by …' earlier this plan week. {weekday} is the day of the week, such as 'Monday'.",
     "needsReview": ["nl"]
   }
 }

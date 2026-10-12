@@ -601,8 +601,8 @@
     }
   ],
   "plan.you": "you",
-  "plan.done": "Done on {day} by {doers}.",
-  "plan.done-at": "Done on {day} at {time} by {doers}.",
+  "plan.done": "Done {day} by {doers}.",
+  "plan.done-at": "Done {day} at {time} by {doers}.",
   "plan.logged-by": "Logged by {name}.",
   "plan.undo": "Undo",
   "plan.undo-label": "Undo: {task}, {day}",
@@ -728,5 +728,13 @@
         "who=*": "{actor} removed days away of {subject}’s."
       }
     }
-  ]
+  ],
+  "past.today": "Today",
+  "past.yesterday": "Yesterday",
+  "past.some-days-ago": "Some days ago",
+  "past.last-week": "Last week",
+  "past.some-weeks-ago": "Some weeks ago",
+  "plan.done-today": "today",
+  "plan.done-yesterday": "yesterday",
+  "plan.done-on": "on {weekday}"
 }

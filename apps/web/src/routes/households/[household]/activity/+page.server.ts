@@ -14,6 +14,18 @@ export const load = (async ({ locals }) => {
   if (!result.ok) error(403);
   return {
     timeZone: result.timeZone,
-    entries: result.entries.map(({ at, ...entry }) => ({ ...entry, at: at.epochMilliseconds })),
+    // The day only, never the moment: when someone was active isn't shared (ADR-0018 §3).
+    entries: result.entries.map((entry) => ({
+      id: entry.id,
+      day: entry.day.toString(),
+      when: entry.when,
+      actor: entry.actor,
+      action: entry.action,
+      subject: entry.subject,
+      setBeforeStart: entry.setBeforeStart,
+      byReader: entry.byReader,
+      toReader: entry.toReader,
+      toActor: entry.toActor,
+    })),
   };
 }) satisfies PageServerLoad;

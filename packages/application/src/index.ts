@@ -88,9 +88,10 @@ export type { TaskField } from './tasks/task-fields';
 export { taskToEdit, type EditableTask } from './tasks/task-to-edit';
 // The household member as permissions see them, which the web app's guard keeps per request; why an
 // occurrence went where it did, which the plan's page puts in words; and how fast balances even
-// out, which the balances page does.
+// out, which the balances page does; and how long ago a day was, which pages say vaguely.
 export type {
   Member,
+  PastDay,
   Reason,
   RebalancePreset,
   Role,

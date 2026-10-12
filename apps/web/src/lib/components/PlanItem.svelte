@@ -1,6 +1,7 @@
 <script lang="ts">
   import { enhance, type SubmitFunction } from '$app/forms';
   import FieldProblem from '#lib/components/FieldProblem.svelte';
+  import PastDay from '#lib/components/PastDay.svelte';
   import { Button } from '#lib/components/ui/button/index.js';
   import type { ShownItem } from '#lib/hooks/use-plan.svelte.js';
   import { m } from '#lib/paraglide/messages.js';
@@ -101,7 +102,9 @@
 
   {#if item.done}
     <!-- The day only for others, the time too for those it credits (ADR-0018 §3). -->
-    <p id="{key}-done" tabindex="-1" class="font-medium wrap-break-word">{item.done.said}</p>
+    <p id="{key}-done" tabindex="-1" class="font-medium wrap-break-word">
+      {item.done.said.before}<PastDay {...item.done.said.day} />{item.done.said.after}
+    </p>
     {#if item.done.loggedBy}
       <p class="text-sm wrap-break-word text-muted-foreground">{item.done.loggedBy}</p>
     {/if}

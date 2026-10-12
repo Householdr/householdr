@@ -1,11 +1,13 @@
-import { dayOf, listOf } from '#lib/intl.js';
+import { listOf } from '#lib/intl.js';
 import { m } from '#lib/paraglide/messages.js';
-import type { ActivityEntry, SetBeforeStartNames } from '@householdr/application';
+import { pastDayWords, type PastDayWords } from '#lib/past-day.js';
+import type { ActivityEntry, PastDay, SetBeforeStartNames } from '@householdr/application';
 
-/** An entry of the activity log, as page data: when it was, in epoch milliseconds. */
+/** An entry of the activity log, as page data: the day it was, as `YYYY-MM-DD`, and how long ago. */
 export interface ActivityEntryData {
   id: string;
-  at: number;
+  day: string;
+  when: PastDay;
   actor: string | null;
   action: ActivityEntry['action'];
   subject: string | null;
@@ -20,18 +22,16 @@ export interface ShownEntry {
   id: string;
   said: string;
   detail: string | null;
-  day: string;
+  day: PastDayWords;
 }
 
 /**
  * What the activity page needs besides its data (CODE-9): each entry in words, who did what to
  * whom (ADR-0018 §5), never a value, with the reader as "you" (ADR-0018 §5, clarification); a former
  * member without a name (ADR-0012 §6); and the day only, never the time, since when someone is
- * active isn't shared (ADR-0018 §3).
+ * active isn't shared (ADR-0018 §3), said vaguely, such as “Last week” (ADR-0008 §6, clarification).
  */
-export function useActivity(
-  data: () => { timeZone: string; locale: string; entries: ActivityEntryData[] },
-) {
+export function useActivity(data: () => { locale: string; entries: ActivityEntryData[] }) {
   /** Whom an entry names, or a former member (ADR-0012 §6). */
   const subjectOf = (entry: ActivityEntryData) => entry.subject ?? m['activity.a-former-member']();
 
@@ -102,12 +102,12 @@ export function useActivity(
   };
 
   const entries = $derived.by((): ShownEntry[] => {
-    const { timeZone, locale, entries: list } = data();
+    const { locale, entries: list } = data();
     return list.map((entry) => ({
       id: entry.id,
       said: said(entry),
       detail: detail(entry.setBeforeStart, locale),
-      day: dayOf(entry.at, timeZone, locale),
+      day: pastDayWords(entry.when, entry.day, locale),
     }));
   });
 

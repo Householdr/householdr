@@ -1,8 +1,17 @@
 import type { SubmitFunction } from '$app/forms';
 import { tick } from 'svelte';
-import { calendarDays, dayAndTime, listOf, timeOf, weekDay } from '#lib/intl.js';
+import {
+  calendarDays,
+  dayAndTime,
+  fullDay,
+  listOf,
+  timeOf,
+  weekDay,
+  weekdayName,
+} from '#lib/intl.js';
 import { m } from '#lib/paraglide/messages.js';
-import type { Reason, UnassignedCause } from '@householdr/application';
+import type { PastDayWords } from '#lib/past-day.js';
+import type { PastDay, Reason, UnassignedCause } from '@householdr/application';
 
 /** A member a completion names. */
 interface Named {
@@ -23,6 +32,8 @@ interface ItemData {
     id: string;
     /** `YYYY-MM-DD`. */
     day: string;
+    /** How long ago that day was. */
+    when: PastDay;
     /** Epoch milliseconds, for those it credits only (ADR-0018 §3). */
     at: number | null;
     doers: Named[];
@@ -73,7 +84,8 @@ export interface ShownItem {
   why: string;
   /** Who did it and when, who logged it if not only they did, and undoing it, if the reader may. */
   done: {
-    said: string;
+    /** What it says, around the day, which shows the exact day in a tooltip (ADR-0008 §6). */
+    said: { before: string; day: PastDayWords; after: string };
     loggedBy: string | null;
     undo: { completion: string; label: string } | null;
   } | null;
@@ -151,6 +163,9 @@ const reasons: Record<Reason, { other: (name: string) => string; you: () => stri
   linked: { other: (name) => m['plan.reason.linked']({ name }), you: m['plan.reason.linked-you'] },
 };
 
+/** Stands for the day in a sentence, to split it there: a character no message has. */
+const mark = '\uE000';
+
 /** Why nobody has an occurrence, for heads (ADR-0001 §7, clarification). */
 const causes: Record<UnassignedCause, () => string> = {
   'nobody eligible': m['plan.cause.nobody-eligible'],
@@ -185,14 +200,29 @@ export function usePlan(
   /** Who did it and when: the time for those it credits only (ADR-0018 §3). */
   const doneOf = (done: NonNullable<ItemData['completion']>, task: string, day: string) => {
     const { timeZone, locale, you } = data();
-    const when = weekDay(done.day, locale);
     const doers = names(done.doers);
     const alone = done.doers.length === 1 && done.doers[0]?.id === done.loggedBy.id;
+    // Today, yesterday, or which day of this plan week (ADR-0008 §6, clarification).
+    const when =
+      done.when === 'today'
+        ? m['plan.done-today']()
+        : done.when === 'yesterday'
+          ? m['plan.done-yesterday']()
+          : m['plan.done-on']({
+              weekday: weekdayName(Temporal.PlainDate.from(done.day).dayOfWeek, locale),
+            });
+    // The sentence around the day, so the day alone carries the tooltip.
+    const sentence =
+      done.at === null
+        ? m['plan.done']({ day: mark, doers })
+        : m['plan.done-at']({ day: mark, time: timeOf(done.at, timeZone, locale), doers });
+    const [before = '', after = ''] = sentence.split(mark);
     return {
-      said:
-        done.at === null
-          ? m['plan.done']({ day: when, doers })
-          : m['plan.done-at']({ day: when, time: timeOf(done.at, timeZone, locale), doers }),
+      said: {
+        before,
+        day: { said: when, exact: fullDay(done.day, locale), datetime: done.day },
+        after,
+      },
       loggedBy: alone
         ? null
         : m['plan.logged-by']({

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
+  import PastDay from '#lib/components/PastDay.svelte';
   import { useActivity } from '#lib/hooks/use-activity.svelte.js';
   import { m } from '#lib/paraglide/messages.js';
   import type { PageProps } from './$types';
@@ -25,7 +26,7 @@
             <span class="wrap-break-word">{entry.detail}</span>
           {/if}
           <!-- The day only, never the time: when someone is active isn't shared (ADR-0018 §3). -->
-          <span class="text-sm text-muted-foreground">{entry.day}</span>
+          <span class="text-sm text-muted-foreground"><PastDay {...entry.day} /></span>
         </li>
       {/each}
     </ul>
