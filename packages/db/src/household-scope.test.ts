@@ -603,6 +603,18 @@ describe('absences (ADR-0005 §2, ADR-0018 §3)', () => {
     ).toBe(refusedByRowSecurity);
   });
 
+  it('never belong to another household’s member', async () => {
+    // Foreign keys are checked past row-level security, so the key includes the household.
+    const sam = await headOf(birch);
+    expect(
+      await refusal(
+        inHousehold(db, ash, (tx) =>
+          tx.insert(absences).values({ householdId: ash, memberId: sam, ...days }),
+        ),
+      ),
+    ).toBe('absences_member_household');
+  });
+
   it('cannot be removed by another household', async () => {
     const sam = await headOf(birch);
     await inHousehold(db, birch, (tx) =>

@@ -585,14 +585,18 @@ export const absences = pgTable(
     householdId: uuid()
       .notNull()
       .references(() => households.id, { onDelete: 'cascade' }),
-    memberId: uuid()
-      .notNull()
-      .references(() => members.id, { onDelete: 'cascade' }),
+    memberId: uuid().notNull(),
     firstDay: date().notNull(),
     lastDay: date().notNull(),
   },
   (t) => [
     householdOnly(t.householdId),
+    // A member of its own household: foreign keys are checked past row-level security (CODE-17).
+    foreignKey({
+      name: 'absences_member_household',
+      columns: [t.householdId, t.memberId],
+      foreignColumns: [members.householdId, members.id],
+    }).onDelete('cascade'),
     // Who is away in a range of days: those whose last day is in or after it (ADR-0001 §6).
     index('absences_household_days').on(t.householdId, t.lastDay, t.firstDay),
     // For a member's absences to go with their profile without reading the whole table.
