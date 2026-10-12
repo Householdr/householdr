@@ -3,7 +3,13 @@ import { flagSource, smtpMailer, stdoutLogger, systemClock } from '@householdr/a
 import { connect, jobQueue, type Jobs } from '@householdr/application';
 import { createAuth, deleteExpiredSignUpLinks } from '@householdr/auth';
 import { deliverAccountEmail, type DeliveryContext } from './account-emails';
-import { draftScheduledPlan, publishScheduledPlan, tickPlans, type PlansContext } from './plans';
+import {
+  closeScheduledOccurrences,
+  draftScheduledPlan,
+  publishScheduledPlan,
+  tickPlans,
+  type PlansContext,
+} from './plans';
 
 /**
  * What the worker's jobs need: sending account e-mails, the time for the deletion jobs and the
@@ -65,6 +71,9 @@ export async function workQueues(context: WorkerContext) {
   });
   await queue.work<Jobs['plan-publish']>('plan-publish', async (jobs) => {
     for (const job of jobs) await publishScheduledPlan(context, job.data);
+  });
+  await queue.work<Jobs['plan-close']>('plan-close', async (jobs) => {
+    for (const job of jobs) await closeScheduledOccurrences(context, job.data);
   });
   return queue;
 }

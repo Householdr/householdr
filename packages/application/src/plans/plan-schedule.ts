@@ -9,6 +9,7 @@ import {
 import { duePlanStep, householdDate, nextPlanWeek, planWeek } from '@householdr/domain';
 import { eq } from 'drizzle-orm';
 import type { Clock } from '../ports';
+import { dueToClose } from './closing';
 import { awayIn, planningOf } from './planning';
 
 /** What the scheduler needs: the database, the time, and the queue it puts the steps on. */
@@ -21,11 +22,12 @@ export interface ScheduleContext {
 /**
  * Queues the plan steps that are due now (ADR-0006 §2, ADR-0008 §10): for each household past
  * setup, drafting its next plan week once the draft time has come, and publishing that draft once
- * the publish time has come, in the household's own time zone and week. It catches up on the
- * week that has begun too (§2, clarification): if the scheduler missed its times, as when it was
- * down, that week is drafted, and its draft published, as soon as it runs again. Each step is
- * queued by its household and week, so a tick that runs twice queues it once. Returns how many it
- * queued.
+ * the publish time has come; and, once a plan week has begun, closing as missed what its plan
+ * doesn't carry over (ADR-0002 §2, clarifications). It catches up on the week that has begun too
+ * (ADR-0006 §2, clarification): if the scheduler missed its times, as when it was down, that week
+ * is drafted, and its draft published, as soon as it runs again. All in the household's own time
+ * zone and week. Each step is queued by its household and week, so a tick that runs twice queues
+ * it once. Returns how many it queued.
  */
 export async function queueDuePlanSteps(context: ScheduleContext): Promise<number> {
   const now = context.clock.now();
@@ -48,6 +50,11 @@ export async function queueDuePlanSteps(context: ScheduleContext): Promise<numbe
         if (!step) continue;
         const job = { household: householdId, week: week.start.toString() };
         await queueJob(context.queue, tx, step === 'draft' ? 'plan-draft' : 'plan-publish', job);
+        queued++;
+      }
+      if ((await dueToClose(tx, now, calendar.timeZone)).length > 0) {
+        const job = { household: householdId, week: thisWeek.start.toString() };
+        await queueJob(context.queue, tx, 'plan-close', job);
         queued++;
       }
     });

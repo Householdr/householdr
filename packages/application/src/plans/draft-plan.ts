@@ -36,6 +36,7 @@ import { and, eq, gte, inArray, lt, notExists, sql } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import * as v from 'valibot';
 import { basisOf } from '../shares/member-share';
+import { closeDue } from './closing';
 import { scheduleOf } from '../tasks/stored-schedule';
 import {
   awayIn,
@@ -65,11 +66,13 @@ type DraftPlanResult =
 /**
  * Drafts the household's plan for the plan week of `week`, any of its days (ADR-0001 §7, ADR-0006
  * §2): the week's occurrences, with those still open from earlier weeks and the floating ones it
- * places, each given to a member or left unassigned for the heads. What the week closes as missed
- * by its task's on-miss policy, it closes (ADR-0002 §2). The scheduler drafts a week once; a head
- * drafting it again while it is a draft replaces it. A week the household is away for entirely gets
- * no plan (ADR-0005 §5); one drafted again once it has begun, such as the week a household started
- * in, is planned for the days left (ADR-0007 §3).
+ * places, each given to a member or left unassigned for the heads. Those still open from earlier
+ * weeks that it doesn't carry over, by their tasks' on-miss policy, it marks to close as missed when
+ * its week begins, not before: until then they are their own week's work (ADR-0002 §2,
+ * clarifications). The scheduler drafts a week once; a head drafting it again while it is a draft
+ * replaces it. A week the household is away for entirely gets no plan (ADR-0005 §5); one drafted
+ * again once it has begun, such as the week a household started in, is planned for the days left
+ * (ADR-0007 §3).
  */
 export async function draftPlan(context: PlanContext, input: unknown): Promise<DraftPlanResult> {
   if (!mayDraft(context)) return { ok: false, error: 'not-allowed' };
@@ -106,15 +109,34 @@ export async function draftPlan(context: PlanContext, input: unknown): Promise<D
 }
 
 /**
- * Undoes what drafting plan `planId` did, so it can be drafted again: the occurrences it closed are
- * open again, and its assignments are gone. Those no plan holds any more go once it is drafted.
+ * Undoes what drafting plan `planId` did, so it can be drafted again: what it marked to close isn't
+ * marked any more, and its assignments are gone. What it closed already, once its week began, stays
+ * closed. Those no plan holds any more go once it is drafted.
  */
 async function undoDraft(tx: Transaction, planId: string) {
   await tx
     .update(occurrences)
-    .set({ status: 'open', closedByPlan: null })
-    .where(eq(occurrences.closedByPlan, planId));
+    .set({ closedByPlan: null })
+    .where(
+      and(eq(occurrences.closedByPlan, planId), inArray(occurrences.status, ['open', 'done'])),
+    );
   await tx.delete(assignments).where(eq(assignments.planId, planId));
+}
+
+/**
+ * Removes draft `planId` of a week the household turned out to be away for entirely (ADR-0005 §5).
+ * What it closed as its week began, it closed for a week that now has no plan: those are open
+ * again, for the next planned week to carry over or close, as anything open when a period away
+ * starts follows its on-miss policy.
+ */
+async function removeDraft(tx: Transaction, planId: string) {
+  await tx
+    .update(occurrences)
+    .set({ status: 'open', closedByPlan: null })
+    .where(
+      and(eq(occurrences.closedByPlan, planId), inArray(occurrences.status, ['missed', 'away'])),
+    );
+  await tx.delete(plans).where(eq(plans.id, planId));
 }
 
 /** What drafting a week takes. */
@@ -138,6 +160,8 @@ export async function draftWeek(tx: Transaction, draft: Draft): Promise<string |
   const { householdId, planning, week } = draft;
   const { calendar } = planning;
   const today = householdDate(draft.now, calendar.timeZone);
+  // What earlier weeks close by now isn't in the pool any more.
+  await closeDue(tx, draft.now, calendar.timeZone);
   const away = await awayIn(tx, week);
   const household = await tasksOf(tx);
   const earlier = await earlierOccurrences(tx, week, calendar.timeZone);
@@ -151,7 +175,7 @@ export async function draftWeek(tx: Transaction, draft: Draft): Promise<string |
     today,
   });
   if (!weekResult.planned) {
-    if (draft.replacing) await tx.delete(plans).where(eq(plans.id, draft.replacing));
+    if (draft.replacing) await removeDraft(tx, draft.replacing);
     await removeUnplanned(tx);
     return undefined;
   }
@@ -217,16 +241,19 @@ export async function draftWeek(tx: Transaction, draft: Draft): Promise<string |
   }
   await removeUnplanned(tx);
 
-  // What the week closes as missed (ADR-0002 §2). Only an occurrence whose whole window falls
-  // while the household is away is skipped (ADR-0005 §5): a flexible window is its whole week,
-  // which then has no plan, and a floating one is never skipped. Fixed windows bring the first.
+  // What the week doesn't carry over closes as missed when it begins, if nobody did it by then
+  // (ADR-0002 §2, clarifications): now, for a week begun already. Only an occurrence whose whole
+  // window falls while the household is away is skipped (ADR-0005 §5): a flexible window is its
+  // whole week, which then has no plan, and a floating one is never skipped. Fixed windows bring
+  // the first.
   if (weekResult.skipped.length > 0) throw new Error('Skipped occurrences are not stored yet.');
   const missed = weekResult.missed.map(rowOf);
   if (missed.length > 0) {
     await tx
       .update(occurrences)
-      .set({ status: 'missed', closedByPlan: planId })
+      .set({ closedByPlan: planId })
       .where(inArray(occurrences.id, missed));
+    await closeDue(tx, draft.now, calendar.timeZone);
   }
   return planId;
 }
