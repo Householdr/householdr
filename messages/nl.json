@@ -736,5 +736,25 @@
   "past.some-weeks-ago": "Enkele weken geleden",
   "plan.done-today": "vandaag",
   "plan.done-yesterday": "gisteren",
-  "plan.done-on": "op {weekday}"
+  "plan.done-on": "op {weekday}",
+  "activity.away-added": [
+    {
+      "declarations": ["input who", "input actor"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je hebt het huishouden als weg aangeduid.",
+        "who=*": "{actor} heeft het huishouden als weg aangeduid."
+      }
+    }
+  ],
+  "activity.away-removed": [
+    {
+      "declarations": ["input who", "input actor"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je hebt een tijd dat het huishouden weg is verwijderd.",
+        "who=*": "{actor} heeft een tijd dat het huishouden weg is verwijderd."
+      }
+    }
+  ]
 }

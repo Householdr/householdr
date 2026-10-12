@@ -736,5 +736,25 @@
   "past.some-weeks-ago": "Some weeks ago",
   "plan.done-today": "today",
   "plan.done-yesterday": "yesterday",
-  "plan.done-on": "on {weekday}"
+  "plan.done-on": "on {weekday}",
+  "activity.away-added": [
+    {
+      "declarations": ["input who", "input actor"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You marked the household away.",
+        "who=*": "{actor} marked the household away."
+      }
+    }
+  ],
+  "activity.away-removed": [
+    {
+      "declarations": ["input who", "input actor"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You removed a time the household is away.",
+        "who=*": "{actor} removed a time the household is away."
+      }
+    }
+  ]
 }

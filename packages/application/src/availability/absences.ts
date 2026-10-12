@@ -1,5 +1,6 @@
 import {
   absences,
+  activityLog,
   awayPeriods,
   households,
   inHousehold,
@@ -280,6 +281,24 @@ export async function viewAvailability(context: HouseholdContext): Promise<ViewA
   });
 }
 
+/**
+ * Logs that a head marked the household away, or removed a time it is away: an entry of the
+ * activity log without a subject or any day (ADR-0018 §5, clarification). Like the household's
+ * settings, it affects everyone, so it is logged before the start too.
+ */
+async function logAway(
+  tx: Transaction,
+  context: HouseholdContext,
+  action: 'away.added' | 'away.removed',
+) {
+  await tx.insert(activityLog).values({
+    householdId: context.householdId,
+    at: new Date(context.clock.now().epochMilliseconds),
+    actorId: context.member.id,
+    action,
+  });
+}
+
 type AddAwayPeriodResult =
   | { ok: true; periodId: string }
   /** Only heads mark the household away (ADR-0005 §5), once signed in with two factors. */
@@ -290,7 +309,8 @@ type AddAwayPeriodResult =
 /**
  * Marks a period when the whole household is away together, by a head (ADR-0005 §5). Its days are
  * planned like an absence's: from today up to a year ahead. It may overlap another: plans take
- * their union.
+ * their union. The activity log says a head marked the household away, never which days
+ * (ADR-0018 §5, clarification).
  */
 export async function addAwayPeriod(
   context: HouseholdContext,
@@ -315,6 +335,7 @@ export async function addAwayPeriod(
       })
       .returning({ id: awayPeriods.id });
     if (!added) throw new Error('No period away was added.');
+    await logAway(tx, context, 'away.added');
     return { ok: true, periodId: added.id };
   });
 }
@@ -325,7 +346,10 @@ type RemoveAwayPeriodResult =
   /** No current or upcoming period away with that id in the household: it may be removed already. */
   | { ok: false; error: 'not-found' };
 
-/** Removes a current or upcoming period when the household is away, by a head (ADR-0005 §5). */
+/**
+ * Removes a current or upcoming period when the household is away, by a head (ADR-0005 §5), which
+ * the activity log shows as marking it is, never the days (ADR-0018 §5, clarification).
+ */
 export async function removeAwayPeriod(
   context: HouseholdContext,
   input: unknown,
@@ -342,8 +366,8 @@ export async function removeAwayPeriod(
       .delete(awayPeriods)
       .where(and(eq(awayPeriods.id, period), gte(awayPeriods.lastDay, date.toString())))
       .returning({ id: awayPeriods.id });
-    return removed.length > 0
-      ? { ok: true as const }
-      : { ok: false as const, error: 'not-found' as const };
+    if (removed.length === 0) return { ok: false as const, error: 'not-found' as const };
+    await logAway(tx, context, 'away.removed');
+    return { ok: true as const };
   });
 }

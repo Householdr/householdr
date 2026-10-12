@@ -2069,5 +2069,13 @@
   "plan.done-on": {
     "note": "{day} in 'Done {day} by …' earlier this plan week. {weekday} is the day of the week, such as 'Monday'.",
     "needsReview": ["nl"]
+  },
+  "activity.away-added": {
+    "note": "Activity log entry: a head marked the whole household away for a time, such as a family holiday ('Time away together' on the availability page; ADR-0005 §5). {actor} is a name, or “A former member”. Never the days. {who} picks the wording: 'you' when the reader did it, '*' otherwise (ADR-0018 §5, clarification).",
+    "needsReview": ["nl"]
+  },
+  "activity.away-removed": {
+    "note": "Activity log entry: a head removed a time the whole household is away. {actor} is a name, or “A former member”. Never the days. {who} picks the wording: 'you' when the reader did it, '*' otherwise (ADR-0018 §5, clarification).",
+    "needsReview": ["nl"]
   }
 }

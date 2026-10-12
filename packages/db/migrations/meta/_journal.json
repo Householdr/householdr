@@ -218,6 +218,13 @@
       "when": 1791840314515,
       "tag": "0030_absences-member-household",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1791840837031,
+      "tag": "0031_household-away-log",
+      "breakpoints": true
     }
   ]
 }

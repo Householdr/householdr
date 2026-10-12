@@ -347,7 +347,14 @@ export type ActivityAction =
    */
   | 'absence.added'
   /** Once it has started, a head removed days away of its subject's, a profile without an account. */
-  | 'absence.removed';
+  | 'absence.removed'
+  /**
+   * A head marked the whole household away for a time, never which days (ADR-0005 §5, ADR-0018 §5,
+   * clarification).
+   */
+  | 'away.added'
+  /** A head removed a time the whole household is away, never which days. */
+  | 'away.removed';
 
 /** The actions whose entries name whom they were done to (ADR-0018 §5). */
 const toWhom = sql.raw(`'completion.logged', 'completion.undone', 'completion.picked-up',
@@ -408,7 +415,8 @@ export const activityLog = pgTable(
       sql`${t.action} in ('household.name', 'household.timeZone', 'household.language',
         'household.country', 'household.started', 'completion.logged', 'completion.undone',
         'completion.picked-up', 'share.changed', 'temporary-share.added',
-        'temporary-share.removed', 'absence.added', 'absence.removed')`,
+        'temporary-share.removed', 'absence.added', 'absence.removed', 'away.added',
+        'away.removed')`,
     ),
     // Only the actions done to someone name them. One way only: a subject whose profile goes
     // leaves the entry without them.
