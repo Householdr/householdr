@@ -25,7 +25,8 @@
   <time {datetime}>{said}</time>
 {:else}
   <Tooltip.Provider delayDuration={300}>
-    <!-- A click doesn't close it, so a tap can toggle it. -->
+    <!-- A click doesn't close it, so a tap can toggle it. Nothing between the trigger and the rest:
+         a space there would show after the day, in the middle of a sentence. -->
     <Tooltip.Root bind:open disableCloseOnTriggerClick>
       <!-- At least 44 × 44 px to press (UI-8), without moving the text around it. -->
       <Tooltip.Trigger
@@ -36,11 +37,8 @@
         }}
         onclick={() => {
           if (touch) open = !open;
-        }}
-      >
-        <time {datetime}>{said}</time>
-      </Tooltip.Trigger>
-      <Tooltip.Portal>
+        }}><time {datetime}>{said}</time></Tooltip.Trigger
+      ><Tooltip.Portal>
         <Tooltip.Content
           sideOffset={4}
           class="z-50 rounded-md bg-foreground px-3 py-1.5 text-sm text-balance text-background"
