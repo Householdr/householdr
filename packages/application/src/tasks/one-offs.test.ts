@@ -1,6 +1,6 @@
-import { activityLog, tasks, type Database } from '@householdr/db';
+import { activityLog, assignments, tasks, type Database } from '@householdr/db';
 import { testDatabase } from '@householdr/db/testing';
-import { eq } from 'drizzle-orm';
+import { eq, isNotNull } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { completeOccurrence } from '../completions/complete-occurrence';
 import { householdActivity } from '../households/activity';
@@ -454,5 +454,66 @@ describe('oneOffToEdit (ADR-0006 §3, clarification)', () => {
         error: 'not-found',
       });
     }
+  });
+});
+
+describe('a one-off added once its week has a plan (ADR-0006 §3)', () => {
+  /** Ash Lane with dishes on weekdays, its first week published, on Wednesday 14 October. */
+  const published = async () => {
+    const h = await plannedHousehold(db);
+    await h.task('Dishes', 20, 'daily', '2026-10-12');
+    await draftPlan(h.scheduler, { week: week1 });
+    await publishPlan(h.scheduler, { week: week1 });
+    h.clock.advance({ hours: 6 * 24 });
+    return h;
+  };
+  const given = async (h: PlannedHousehold, week = week1) =>
+    (await h.plan(week))?.rows.map(({ task, date, member }) => `${task}@${date} ${member ?? '–'}`);
+
+  it('is allocated into this week’s published plan on its own, leaving the rest as it was', async () => {
+    const h = await published();
+    const before = await given(h);
+    await added(h.adult, { ...shelf, date: '2026-10-14' });
+    const after = await given(h);
+    expect(after?.filter((row) => !row.startsWith('Fix the shelf'))).toEqual(before);
+    const [row] = (await h.plan(week1))?.rows.filter((r) => r.task === 'Fix the shelf') ?? [];
+    expect(row).toMatchObject({ date: '2026-10-14', status: 'open', cost: 30 });
+    expect(['Robin', 'Alex']).toContain(row?.member);
+    // It can be done this week, as any task of the plan.
+    expect(await completeOccurrence(h.adult, { occurrence: row?.occurrence })).toMatchObject({
+      ok: true,
+    });
+  });
+
+  it('goes to whoever has the least to do this week, counting what is assigned already', async () => {
+    const h = await published();
+    // Everything this week is Alex's, so the one-off goes to Robin.
+    await h.inIt((tx) =>
+      tx.update(assignments).set({ memberId: h.alex }).where(isNotNull(assignments.memberId)),
+    );
+    await added(h.adult, { ...shelf, duration: 10 });
+    const [row] = (await h.plan(week1))?.rows.filter((r) => r.task === 'Fix the shelf') ?? [];
+    expect(row?.member).toBe('Robin');
+  });
+
+  it('is allocated into next week’s draft too, which moves on to a new version', async () => {
+    const h = await published();
+    await draftPlan(h.scheduler, { week: '2026-10-19' });
+    const version = (await h.plan('2026-10-19'))?.version ?? 0;
+    await added(h.adult, { ...shelf, date: '2026-10-20' });
+    expect(await h.plan('2026-10-19')).toMatchObject({
+      version: version + 1,
+      rows: expect.arrayContaining([expect.objectContaining({ task: 'Fix the shelf' })]) as unknown,
+    });
+  });
+
+  it('floats up to a deadline in a later week, which the drafts place (ADR-0004 §4)', async () => {
+    const h = await published();
+    const before = await given(h);
+    await added(h.adult, { ...shelf, deadline: '2026-10-30' });
+    expect(await given(h)).toEqual(before);
+    // One whose deadline is in its own week is this week's.
+    await added(h.adult, { ...shelf, name: 'Post the parcel', deadline: '2026-10-16' });
+    expect((await given(h))?.filter((row) => row.startsWith('Post the parcel'))).toHaveLength(1);
   });
 });

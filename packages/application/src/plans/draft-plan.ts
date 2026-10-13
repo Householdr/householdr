@@ -18,8 +18,6 @@ import {
   planWeek,
   rebalanceRates,
   weekOccurrences,
-  type Absence,
-  type AllocationMember,
   type AllocationTask,
   type PlannedOccurrence,
   type PlanTask,
@@ -29,11 +27,10 @@ import {
 } from '@householdr/domain';
 import { and, eq, gte, inArray, lt, notExists, sql } from 'drizzle-orm';
 import * as v from 'valibot';
-import { balancesOf } from '../ledger/balances';
 import { closeDue } from './closing';
 import { lastDoneOf } from '../tasks/last-done';
 import { scheduleOf } from '../tasks/stored-schedule';
-import { fairPortions } from './fair-portions';
+import { membersOf } from './allocation-members';
 import {
   awayIn,
   awaySince,
@@ -472,40 +469,6 @@ async function earlierOccurrences(tx: Transaction, week: PlanWeek, timeZone: str
     rows: new Map(open.map((row) => [idOf(row), row.id])),
     placed: new Set(placed.map(idOf)),
   };
-}
-
-/**
- * The members as the allocator sees them (ADR-0001 §6–§7): their fair portion of the week, over
- * the days the household is at home (ADR-0005 §5); a child's birth date; their balance, which the
- * plan catches up on (ADR-0002 §3), as settled up to the week before last; and the tasks they had in
- * last week's plan.
- */
-async function membersOf(
-  tx: Transaction,
-  planning: Planning,
-  week: PlanWeek,
-  away: readonly Absence[],
-): Promise<AllocationMember[]> {
-  const portions = await fairPortions(tx, planning.calendar, week, away);
-  // Up to the week before last: the week before this one is underway as it is drafted, and its work
-  // counts from the draft after (ADR-0002 §3, clarification).
-  const lastWeekStart = planWeek(week.start.subtract({ days: 1 }), planning.calendar).start;
-  const balances = await balancesOf(tx, { before: lastWeekStart });
-  const lastWeek = await tx
-    .select({ memberId: assignments.memberId, taskId: occurrences.taskId })
-    .from(assignments)
-    .innerJoin(plans, eq(plans.id, assignments.planId))
-    .innerJoin(occurrences, eq(occurrences.id, assignments.occurrenceId))
-    .where(eq(plans.weekEnd, week.start.toString()));
-  return portions.map(({ id, birthDate, availability, fairFraction }) => ({
-    id,
-    fairFraction,
-    availability,
-    ...(birthDate === undefined ? {} : { birthDate }),
-    balance: balances.get(id) ?? 0,
-    load: 0,
-    lastWeek: new Set(lastWeek.filter((a) => a.memberId === id).map((a) => a.taskId)),
-  }));
 }
 
 /**
