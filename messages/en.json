@@ -653,6 +653,8 @@
   "plan.any-day-next-week": "Any day next week",
   "plan.points-label": "Points",
   "plan.why": "Why",
+  "plan.times-label": "Set times",
+  "plan.times": "From {from} until {to}",
   "plan.nothing": "Nothing this week.",
   "plan.unassigned": "Not given to anyone",
   "plan.unassigned-intro": "If one is still not given to anyone when the plan is published, it moves on to the next week or is dropped, as its task says. Nobody’s balance is charged for it.",

@@ -653,6 +653,8 @@
   "plan.any-day-next-week": "Een dag naar keuze volgende week",
   "plan.points-label": "Punten",
   "plan.why": "Waarom",
+  "plan.times-label": "Vaste tijden",
+  "plan.times": "Van {from} tot {to}",
   "plan.nothing": "Niets deze week.",
   "plan.unassigned": "Bij niemand",
   "plan.unassigned-intro": "Staat er bij het publiceren nog een bij niemand, dan schuift ze door naar de volgende week of vervalt ze, zoals de taak zegt. Niemands saldo wordt ervoor aangerekend.",

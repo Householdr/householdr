@@ -130,6 +130,16 @@ export function listOf(items: readonly string[], locale: string) {
   return new Intl.ListFormat(locale, { style: 'long', type: 'conjunction' }).format(items);
 }
 
+/** The weekday and time of `at` (epoch milliseconds) in `timeZone`, in `locale`, such as “Tuesday 18:00”. */
+export function dayTime(at: number, timeZone: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
+    weekday: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone,
+  }).format(at);
+}
+
 /** The time of day of `at` (epoch milliseconds) in `timeZone`, in `locale`, such as “18:30”. */
 export function timeOf(at: number, timeZone: string, locale: string) {
   return new Intl.DateTimeFormat(locale, { timeStyle: 'short', timeZone }).format(at);

@@ -92,6 +92,11 @@
         <time datetime={item.date}>{item.day}</time>
       {/if}
     </dd>
+    {#if item.times}
+      <!-- Set times, which everyone sees (ADR-0004 §4, ADR-0018 §3). -->
+      <dt class="text-muted-foreground">{m['plan.times-label']()}</dt>
+      <dd>{m['plan.times'](item.times)}</dd>
+    {/if}
     {#if item.points !== null}
       <dt class="text-muted-foreground">{m['plan.points-label']()}</dt>
       <dd>{item.points}</dd>

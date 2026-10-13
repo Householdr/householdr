@@ -41,8 +41,8 @@ export interface PlanCompletion {
   /** How long ago that day was, never finer than the day (ADR-0008 §6, ADR-0018 §3). */
   when: PastDay;
   /**
-   * When exactly, for the members it credits only: anyone else sees the day (ADR-0018 §3). Tasks
-   * with a fixed window, whose times everyone sees, don't exist yet.
+   * When exactly, for the members it credits, and for everyone on a task at set times, where the
+   * window is the point: anyone else sees the day (ADR-0018 §3).
    */
   at: Temporal.ZonedDateTime | null;
   /** Who did it, by name. */
@@ -65,6 +65,11 @@ interface PlanItem {
   date: Temporal.PlainDate;
   /** When it can be done in this plan, in the household's time zone. */
   window: { start: Temporal.ZonedDateTime; end: Temporal.ZonedDateTime };
+  /**
+   * Whether its task is done at set times, whose window everyone sees, rather than any time that
+   * week (ADR-0004 §4, ADR-0018 §3).
+   */
+  fixed: boolean;
   /**
    * Whether the member viewing may complete it now: still open, in this plan week's published
    * plan (ADR-0006 §4).
@@ -203,6 +208,7 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
               status: occurrences.status,
               date: occurrences.date,
               task: tasks.name,
+              timing: tasks.timing,
             })
             .from(assignments)
             .innerJoin(occurrences, eq(occurrences.id, assignments.occurrenceId))
@@ -232,7 +238,7 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
       const { role, accountId } = personOf(id);
       return { id, role, hasAccount: accountId !== null, twoFactor: false };
     };
-    const completionOf = (occurrence: string): PlanCompletion | null => {
+    const completionOf = (occurrence: string, fixed: boolean): PlanCompletion | null => {
       const done = completed.get(occurrence);
       if (!done) return null;
       const at = zoned(done.at);
@@ -243,9 +249,11 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
         id: done.id,
         day,
         when: pastDay(day, today, calendar),
-        at: credited.some((member) => can(context.member, { action: 'exactTimes.view', member }))
-          ? at
-          : null,
+        at:
+          fixed ||
+          credited.some((member) => can(context.member, { action: 'exactTimes.view', member }))
+            ? at
+            : null,
         doers: done.doers.map(nameOf),
         loggedBy: nameOf(loggedBy),
         mayUndo: can(context.member, {
@@ -264,12 +272,14 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
       task: row.task,
       date: Temporal.PlainDate.from(row.date),
       window: { start: zoned(row.windowStart), end: zoned(row.windowEnd) },
+      fixed: row.timing === 'fixed',
       completable:
         mayLog &&
         row.status === 'open' &&
         plan.status === 'published' &&
         plan.weekStart === current.start.toString(),
-      completion: row.status === 'done' ? completionOf(row.occurrence) : null,
+      completion:
+        row.status === 'done' ? completionOf(row.occurrence, row.timing === 'fixed') : null,
     });
     const inOrder = (a: PlanItem, b: PlanItem) =>
       Temporal.ZonedDateTime.compare(a.window.start, b.window.start) ||

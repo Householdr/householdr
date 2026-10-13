@@ -6,6 +6,7 @@ import {
   completions,
   members,
   occurrences,
+  tasks,
   type Database,
 } from '@householdr/db';
 import { testDatabase } from '@householdr/db/testing';
@@ -475,6 +476,36 @@ describe('viewPlan, with completions (ADR-0006 §4, ADR-0018 §3)', () => {
       completable: false,
       completion: { ...shown, at: null, mayUndo: false },
     });
+  });
+
+  it('shows the exact time to everyone on a task at set times', async () => {
+    const h = await household();
+    const occurrence = await occurrenceOf(h, 'Robin');
+    await completed(h.head, occurrence);
+    expect(await itemOf(h.adult, occurrence)).toMatchObject({
+      fixed: false,
+      completion: { at: null },
+    });
+    // Its task is now done at set times: the window is the point (ADR-0018 §3).
+    await h.inIt(async (tx) => {
+      const [row] = await tx
+        .select({ task: occurrences.taskId })
+        .from(occurrences)
+        .where(eq(occurrences.id, occurrence));
+      if (!row) throw new Error('No occurrence');
+      await tx
+        .update(tasks)
+        .set({
+          timing: 'fixed',
+          windowFromDay: 0,
+          windowFromTime: '08:00',
+          windowToDay: 0,
+          windowToTime: '22:00',
+        })
+        .where(eq(tasks.id, row.task));
+    });
+    const at = Temporal.ZonedDateTime.from('2026-10-14T10:00:00+02:00[Europe/Brussels]');
+    expect(await itemOf(h.adult, occurrence)).toMatchObject({ fixed: true, completion: { at } });
   });
 
   it('offers to complete what is open in this week’s published plan only', async () => {
