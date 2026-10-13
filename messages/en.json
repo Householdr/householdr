@@ -447,6 +447,68 @@
   "tasks.invalid-frequency": "Choose how often it’s done.",
   "tasks.invalid-start": "Choose a day from today up to a year from now.",
   "tasks.invalid-on-miss": "Choose what happens if it isn’t done in time.",
+  "tasks.since-last-done": "Counted from when it was last done",
+  "tasks.every": "Due again after",
+  "tasks.every-count": "How many",
+  "tasks.every-unit": "Days, weeks or months",
+  "tasks.unit-days": "days",
+  "tasks.unit-weeks": "weeks",
+  "tasks.unit-months": "months",
+  "tasks.first-due-hint": "The first time it’s due. After that, it’s counted from when it was last done.",
+  "tasks.every-days": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "About every day, counted from when it was last done",
+        "countPlural=other": "About every {count} days, counted from when it was last done"
+      }
+    }
+  ],
+  "tasks.every-weeks": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "About every week, counted from when it was last done",
+        "countPlural=other": "About every {count} weeks, counted from when it was last done"
+      }
+    }
+  ],
+  "tasks.every-months": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "About every month, counted from when it was last done",
+        "countPlural=other": "About every {count} months, counted from when it was last done"
+      }
+    }
+  ],
+  "tasks.how-due": "How due",
+  "tasks.due-today": "Due today",
+  "tasks.due-in": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Due in {count} day",
+        "countPlural=other": "Due in {count} days"
+      }
+    }
+  ],
+  "tasks.overdue": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} day overdue",
+        "countPlural=other": "{count} days overdue"
+      }
+    }
+  ],
+  "tasks.invalid-every-count": "Enter how many, a whole number from 1 up to a year: 365 days, 52 weeks or 12 months.",
+  "tasks.invalid-every-unit": "Choose days, weeks or months.",
   "comparisons.title": "What’s hard for you",
   "comparisons.page-title": "What’s hard for you · {household} · Householdr",
   "comparisons.why": "The app learns which tasks each of you finds hard, so plans can give each task to whoever minds it least. Nobody else sees your answers, not even the household’s heads.",

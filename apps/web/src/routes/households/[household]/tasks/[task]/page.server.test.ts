@@ -90,7 +90,7 @@ describe('a task’s page (ADR-0001 §2)', () => {
     // The test clock reads 10:00 on 8 October 2026 in Brussels.
     expect(await opened({ ...on, membership }, taskId)).toEqual({
       household: 'Ash Lane',
-      task: { ...vacuum, id: taskId, duration: 30, version: 1 },
+      task: { ...vacuum, id: taskId, duration: 30, everyCount: '', everyUnit: 'weeks', version: 1 },
       starts: { earliest: '2026-10-08', latest: '2027-10-08' },
     });
   });
@@ -101,6 +101,28 @@ describe('a task’s page (ADR-0001 §2)', () => {
     expect(await saved({ ...on, membership }, taskId, changed)).toEqual({ saved: true });
     expect(await opened({ ...on, membership }, taskId)).toMatchObject({
       task: { name: 'Hoover', frequency: 'monthly', version: 2 },
+    });
+  });
+
+  it('saves a task as counted from when it was last done, and shows its interval (ADR-0004 §8)', async () => {
+    const { membership, taskId } = await founded();
+    const counted = {
+      ...vacuum,
+      frequency: 'since-last-done',
+      everyCount: '6',
+      everyUnit: 'weeks',
+      version: '1',
+    };
+    expect(await saved({ ...on, membership }, taskId, counted)).toEqual({ saved: true });
+    expect(await opened({ ...on, membership }, taskId)).toMatchObject({
+      task: {
+        frequency: 'since-last-done',
+        every: { count: 6, unit: 'weeks' },
+        everyCount: '6',
+        everyUnit: 'weeks',
+        onMiss: 'roll over',
+        version: 2,
+      },
     });
   });
 

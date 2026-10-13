@@ -14,8 +14,16 @@ async function householdContext(locals: App.Locals) {
   return { db, clock, ...locals.membership };
 }
 
-/** A task as the page shows it, its first time as `YYYY-MM-DD`. */
-const shown = (task: EditableTask) => ({ ...task, start: task.start.toString() });
+/**
+ * A task as the page shows it, its first time as `YYYY-MM-DD`, and its interval, if it is counted
+ * from when it was last done, as its form's fields have it.
+ */
+const shown = (task: EditableTask) => ({
+  ...task,
+  start: task.start.toString(),
+  everyCount: task.every ? String(task.every.count) : '',
+  everyUnit: task.every?.unit ?? 'weeks',
+});
 
 /** The task, for a head to change (ADR-0001 §2), from the version it is at now (ADR-0019 §5). */
 export const load = (async ({ locals, params }) => {
@@ -44,6 +52,8 @@ export const actions = {
       name: text(form, 'name'),
       duration: text(form, 'duration'),
       frequency: text(form, 'frequency'),
+      everyCount: text(form, 'everyCount'),
+      everyUnit: text(form, 'everyUnit'),
       start: text(form, 'start'),
       onMiss: text(form, 'onMiss'),
       version: Number(form.get('version')),
@@ -52,6 +62,10 @@ export const actions = {
       ...values,
       taskId: params.task,
       duration: Number(values.duration),
+      // Only the fields that were sent: a form without scripts sends both kinds (ADR-0004 §8).
+      everyCount: values.everyCount ? Number(values.everyCount) : undefined,
+      everyUnit: values.everyUnit || undefined,
+      onMiss: values.onMiss || undefined,
     });
     if (result.ok) return { saved: true };
     if (result.error === 'not-allowed') error(403);

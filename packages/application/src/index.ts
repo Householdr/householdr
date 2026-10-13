@@ -84,7 +84,7 @@ export { addTask } from './tasks/add-task';
 export { editTask } from './tasks/edit-task';
 export { listTasks, type TaskSummary } from './tasks/list-tasks';
 export { removeTask } from './tasks/remove-task';
-export type { TaskField } from './tasks/task-fields';
+export { sinceLastDone, type Repeat, type TaskField } from './tasks/task-fields';
 export { taskToEdit, type EditableTask } from './tasks/task-to-edit';
 // The household member as permissions see them, which the web app's guard keeps per request; why an
 // occurrence went where it did, which the plan's page puts in words; and how fast balances even

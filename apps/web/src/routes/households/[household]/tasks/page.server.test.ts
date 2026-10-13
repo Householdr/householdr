@@ -117,6 +117,33 @@ describe('a household’s tasks page (ADR-0001 §1)', () => {
     });
   });
 
+  it('adds a task counted from when it was last done, from a form that sent both kinds of field (ADR-0004 §8)', async () => {
+    const membership = await founded();
+    // Without scripts, the form sends the interval and what happens if it isn't done alike.
+    const oven = {
+      ...vacuum,
+      name: 'Oven',
+      frequency: 'since-last-done',
+      everyCount: '6',
+      everyUnit: 'weeks',
+      start: '2026-10-08',
+    };
+    expect(await add({ ...on, membership }, oven)).toEqual({ added: 'Oven' });
+    expect(await opened({ ...on, membership })).toMatchObject({
+      tasks: [
+        {
+          name: 'Oven',
+          frequency: 'since-last-done',
+          every: { count: 6, unit: 'weeks' },
+          dueness: { daysUntilDue: 0, progress: 1 },
+          onMiss: 'roll over',
+        },
+      ],
+    });
+    const refused = await add({ ...on, membership }, { ...oven, everyCount: '' });
+    expect(isActionFailure(refused) && refused.data).toMatchObject({ invalid: ['everyCount'] });
+  });
+
   it('starts a task today when no day is sent', async () => {
     const membership = await founded();
     expect(await add({ ...on, membership }, { ...vacuum, start: '' })).toEqual({

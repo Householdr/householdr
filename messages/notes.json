@@ -1390,6 +1390,74 @@
     "note": "Why adding or saving a task didn't work: neither choice for what happens to a time that isn't done was picked.",
     "needsReview": ["nl"]
   },
+  "tasks.since-last-done": {
+    "note": "A choice under 'How often', next to the fixed frequencies: the task is due a while after it was last done, not on set dates (for example cleaning the oven).",
+    "needsReview": ["nl"]
+  },
+  "tasks.every": {
+    "note": "Heading over the two fields that say how long after the last time a task counted from when it was last done is due again.",
+    "needsReview": ["nl"]
+  },
+  "tasks.every-count": {
+    "note": "Label of the number in 'Due again after', such as the 6 in 'every 6 weeks'.",
+    "needsReview": ["nl"]
+  },
+  "tasks.every-unit": {
+    "note": "Label of the choice of unit in 'Due again after'.",
+    "needsReview": ["nl"]
+  },
+  "tasks.unit-days": {
+    "note": "A unit to choose in 'Due again after', after the number.",
+    "needsReview": ["nl"]
+  },
+  "tasks.unit-weeks": {
+    "note": "A unit to choose in 'Due again after', after the number.",
+    "needsReview": ["nl"]
+  },
+  "tasks.unit-months": {
+    "note": "A unit to choose in 'Due again after', after the number.",
+    "needsReview": ["nl"]
+  },
+  "tasks.first-due-hint": {
+    "note": "Hint under 'First time' for a task counted from when it was last done.",
+    "needsReview": ["nl"]
+  },
+  "tasks.every-days": {
+    "note": "How often a task counted from when it was last done is due, in the list of tasks. 'About' because it follows when it's really done.",
+    "needsReview": ["nl"]
+  },
+  "tasks.every-weeks": {
+    "note": "As tasks.every-days, in weeks.",
+    "needsReview": ["nl"]
+  },
+  "tasks.every-months": {
+    "note": "As tasks.every-days, in months.",
+    "needsReview": ["nl"]
+  },
+  "tasks.how-due": {
+    "note": "Label in the list of tasks, next to a bar from 'just done' to 'due' and its state in words.",
+    "needsReview": ["nl"]
+  },
+  "tasks.due-today": {
+    "note": "The state next to the bar: the task is due today.",
+    "needsReview": ["nl"]
+  },
+  "tasks.due-in": {
+    "note": "The state next to the bar: days until the task is due. Days the household is away don't count.",
+    "needsReview": ["nl"]
+  },
+  "tasks.overdue": {
+    "note": "The state next to the bar: days since the task became due.",
+    "needsReview": ["nl"]
+  },
+  "tasks.invalid-every-count": {
+    "note": "Why adding or saving a task didn't work: the number in 'Due again after' is not a whole number from 1 up to a year.",
+    "needsReview": ["nl"]
+  },
+  "tasks.invalid-every-unit": {
+    "note": "Why adding or saving a task didn't work: no unit was chosen in 'Due again after'.",
+    "needsReview": ["nl"]
+  },
   "tasks.edit": {
     "note": "Link next to each task in the list, for heads, to the page that changes or removes it. Screen readers read it with the task's name after it.",
     "needsReview": ["nl"]

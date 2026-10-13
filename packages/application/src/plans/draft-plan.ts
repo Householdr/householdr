@@ -1,6 +1,5 @@
 import {
   assignments,
-  completions,
   inHousehold,
   nextVersion,
   occurrences,
@@ -27,10 +26,11 @@ import {
   type Schedule,
   type Window,
 } from '@householdr/domain';
-import { and, eq, gte, inArray, lt, max, notExists, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, lt, notExists, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { balancesOf } from '../ledger/balances';
 import { closeDue } from './closing';
+import { lastDoneOf } from '../tasks/last-done';
 import { scheduleOf } from '../tasks/stored-schedule';
 import { fairPortions } from './fair-portions';
 import {
@@ -397,27 +397,6 @@ async function tasksOf(tx: Transaction, timeZone: string): Promise<HouseholdTask
       },
     };
   });
-}
-
-/**
- * The day each task was last done on, in `timeZone`, by its latest completion: any completion of
- * it resets a "since last done" clock (ADR-0004 §8).
- */
-async function lastDoneOf(tx: Transaction, timeZone: string) {
-  const rows = await tx
-    .select({ taskId: occurrences.taskId, at: max(completions.at) })
-    .from(completions)
-    .innerJoin(occurrences, eq(occurrences.id, completions.occurrenceId))
-    .groupBy(occurrences.taskId);
-  const days = new Map<string, Temporal.PlainDate>();
-  for (const { taskId, at } of rows) {
-    if (at)
-      days.set(
-        taskId,
-        householdDate(Temporal.Instant.fromEpochMilliseconds(at.getTime()), timeZone),
-      );
-  }
-  return days;
 }
 
 /** The earliest day a "since last done" clock counts from: a last completion or a start. */

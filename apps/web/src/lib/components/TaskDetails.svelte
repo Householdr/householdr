@@ -1,12 +1,14 @@
 <script lang="ts">
   import { dayText, minutesText } from '#lib/intl.js';
   import { m } from '#lib/paraglide/messages.js';
-  import { frequencyWords, onMissWords } from '#lib/task-words.js';
-  import type { Frequency, PlanTask } from '@householdr/domain';
+  import { duenessWords, howOften, onMissWords } from '#lib/task-words.js';
+  import type { Repeat } from '@householdr/application';
+  import type { Dueness, Interval, PlanTask } from '@householdr/domain';
 
   /**
-   * A task in words (ADR-0004 §3): how often, how long and what happens if it isn't done; `full`,
-   * with its name and its first time too, as its form has them.
+   * A task in words (ADR-0004 §3, §8): how often, how long and what happens if it isn't done;
+   * `full`, with its name and its first time too, as its form has them. A "since last done" task
+   * shows how due it is, as a bar from "just done" to "due" and in words, never by the bar alone.
    */
   let {
     task,
@@ -16,7 +18,9 @@
     task: {
       name: string;
       duration: number;
-      frequency: Frequency;
+      frequency: Repeat;
+      every?: Interval | undefined;
+      dueness?: Dueness | undefined;
       /** `YYYY-MM-DD`. */
       start?: string;
       onMiss: PlanTask['onMiss'];
@@ -25,6 +29,9 @@
     /** The locale values are written in: the page's language, the account's conventions (ADR-0008 §6). */
     locale: string;
   } = $props();
+
+  /** Ties the bar to its label, among the tasks of a list. */
+  const uid = $props.id();
 </script>
 
 <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
@@ -33,7 +40,14 @@
     <dd class="wrap-break-word">{task.name}</dd>
   {/if}
   <dt class="text-muted-foreground">{m['tasks.how-often']()}</dt>
-  <dd>{frequencyWords[task.frequency]()}</dd>
+  <dd>{howOften(task)}</dd>
+  {#if task.dueness}
+    <dt id="how-due-{uid}" class="text-muted-foreground">{m['tasks.how-due']()}</dt>
+    <dd class="flex flex-wrap items-center gap-2">
+      <meter aria-labelledby="how-due-{uid}" min={0} max={1} value={task.dueness.progress}></meter>
+      <span>{duenessWords(task.dueness)}</span>
+    </dd>
+  {/if}
   <dt class="text-muted-foreground">{m['tasks.how-long']()}</dt>
   <dd>{minutesText(task.duration, locale)}</dd>
   {#if full && task.start}

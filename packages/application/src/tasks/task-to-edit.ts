@@ -1,34 +1,23 @@
 import { households, inHousehold, schedules, tasks, type Transaction } from '@householdr/db';
-import {
-  can,
-  changedStartRange,
-  frequencyOf,
-  type Frequency,
-  type PlanTask,
-} from '@householdr/domain';
+import { can, changedStartRange } from '@householdr/domain';
 import { eq } from 'drizzle-orm';
 import * as v from 'valibot';
 import type { HouseholdContext } from '../households/membership';
-import { scheduleOf } from './stored-schedule';
+import { repeatColumns, repeatOf, type TaskRepeat } from './stored-task';
 import { taskReference } from './task-fields';
 
 /** A task as the form that changes it shows it, with the version it is changed from (ADR-0019 §5). */
-export interface EditableTask {
+export interface EditableTask extends TaskRepeat {
   id: string;
   name: string;
   /** In minutes. */
   duration: number;
-  frequency: Frequency;
-  /** The day its schedule's rule starts on: its first time (ADR-0004 §3). */
-  start: Temporal.PlainDate;
-  /** What happens to an occurrence that isn't done (ADR-0002 §2). */
-  onMiss: PlanTask['onMiss'];
   version: number;
 }
 
 /**
- * The task `taskId` of the household `tx` works in, and the id and version of its schedule, or
- * nothing if the household has no such task.
+ * The task `taskId` of the household `tx` works in, and the id and version of its schedule if it
+ * has one, or nothing if the household has no such task.
  */
 export async function readTask(tx: Transaction, taskId: string) {
   const [row] = await tx
@@ -36,34 +25,22 @@ export async function readTask(tx: Transaction, taskId: string) {
       id: tasks.id,
       name: tasks.name,
       duration: tasks.duration,
-      onMiss: tasks.onMiss,
       version: tasks.version,
       scheduleId: schedules.id,
       scheduleVersion: schedules.version,
-      rules: schedules.rules,
-      extraDates: schedules.extraDates,
-      exceptionDates: schedules.exceptionDates,
+      ...repeatColumns,
     })
     .from(tasks)
-    .innerJoin(schedules, eq(schedules.id, tasks.scheduleId))
+    .leftJoin(schedules, eq(schedules.id, tasks.scheduleId))
     .where(eq(tasks.id, taskId));
   if (!row) return undefined;
-  const { id, name, duration, onMiss, version, scheduleId, scheduleVersion, ...stored } = row;
-  const schedule = scheduleOf(stored);
-  const frequency = frequencyOf(schedule);
-  const [rule] = schedule.rules;
-  // Only simple frequencies are written until the advanced editor comes (ADR-0004 §3).
-  if (!frequency || !rule) throw new Error(`Task ${id} isn't on a simple frequency.`);
-  const task: EditableTask = {
-    id,
-    name,
-    duration,
-    frequency,
-    start: rule.start,
-    onMiss,
-    version,
-  };
-  return { task, schedule: { id: scheduleId, version: scheduleVersion } };
+  const { id, name, duration, version, scheduleId, scheduleVersion } = row;
+  const task: EditableTask = { id, name, duration, version, ...repeatOf(id, row) };
+  const schedule =
+    scheduleId === null || scheduleVersion === null
+      ? undefined
+      : { id: scheduleId, version: scheduleVersion };
+  return { task, schedule };
 }
 
 type TaskToEditResult =
