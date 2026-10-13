@@ -1,6 +1,6 @@
 # ADR-0027: Feature branches, with end-to-end tests only on the way into `main`
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Date:** 2026-10-13
 - **Deciders:** Jens
 - **Related:** [ADR-0009](0009-development-workflow-and-releases.md) §1–§3 (branches, pull requests,
@@ -31,6 +31,9 @@ the end-to-end tests for pull requests that didn't start out against `main`, a w
 
 - A large feature, one that takes more than a few pull requests, gets a **feature branch** from
   `main`, named `feat/<area>` (`feat/tasks`), following PROC-8.
+- **One feature branch for each area**, never one for several, so a finished feature lands without
+  waiting for the others. For the MVP's next work: `feat/tasks`, `feat/notifications` and
+  `feat/members`, at one end-to-end run each.
 - Its slices are pull requests **into the feature branch**, stacked on each other where one needs the
   last. The bottom of a stack always targets the feature branch, never `main`. Each slice is the
   same small, reviewable pull request as before (PROC-9, PROC-10), and is squash merged into the
@@ -92,9 +95,3 @@ This replaces the "ready for review" row of ADR-0009 §3's table:
   lets a stack target `main`, and why its last step is landing an empty stack.
 - Amends ADR-0009 §1 and §3, and PROC-8 and PROC-13, which summarise them.
 
-## Open questions
-
-- **One feature branch for each area, or one for all three?** One for each of tasks, notifications
-  and members (recommended) lets a finished feature land without waiting for the others, at three
-  end-to-end runs. One for all three costs a single run, but nothing reaches `main` until all three
-  are done, and the branch drifts the furthest from `main`.
