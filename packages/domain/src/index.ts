@@ -142,6 +142,8 @@ export {
   defaultOnMiss,
   isStartDay,
   isTaskDuration,
+  isTaskInterval,
   startRange,
   taskDuration,
+  taskInterval,
 } from './tasks/task';

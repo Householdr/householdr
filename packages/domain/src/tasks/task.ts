@@ -1,4 +1,5 @@
 import type { PlanTask } from '../plans/week-occurrences';
+import type { Interval } from '../schedules/since-last-done';
 
 /**
  * How long one occurrence of a task takes, in whole minutes (ADR-0001 §5): at least a minute, and at
@@ -11,6 +12,19 @@ export const taskDuration = { min: 1, max: 24 * 60 } as const;
 /** Whether `minutes` can be a task's duration: a whole number within `taskDuration`. */
 export function isTaskDuration(minutes: number): boolean {
   return Number.isInteger(minutes) && minutes >= taskDuration.min && minutes <= taskDuration.max;
+}
+
+/**
+ * The longest interval of a "since last done" task in each unit: a year, as for its first time
+ * (ADR-0004 §8). A chore that comes round less often than that has a date of its own.
+ */
+export const taskInterval = { days: 365, weeks: 52, months: 12 } as const;
+
+/** Whether `every` can be a "since last done" task's interval: a whole number from 1 up to a year. */
+export function isTaskInterval(every: Interval): boolean {
+  return (
+    Number.isInteger(every.count) && every.count >= 1 && every.count <= taskInterval[every.unit]
+  );
 }
 
 /**

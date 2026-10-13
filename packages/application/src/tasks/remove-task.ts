@@ -50,6 +50,8 @@ export async function removeTask(
         : { ok: false, error: 'not-found' };
     }
     const { scheduleId } = removed;
+    // A "since last done" task has none (ADR-0004 §8).
+    if (scheduleId === null) return { ok: true };
     await tx
       .delete(schedules)
       .where(

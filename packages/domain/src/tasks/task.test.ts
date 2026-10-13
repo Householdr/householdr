@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { changedStartRange, isStartDay, isTaskDuration, startRange } from './task';
+import { changedStartRange, isStartDay, isTaskDuration, isTaskInterval, startRange } from './task';
 
 // What a new or changed task may be (ADR-0001 §5, ADR-0004 §3), from examples (TEST-1).
 
@@ -10,6 +10,31 @@ describe('isTaskDuration (ADR-0001 §5)', () => {
     for (const minutes of [1, 5, 30, 90, 1440]) expect(isTaskDuration(minutes)).toBe(true);
     for (const minutes of [0, -5, 1441, 2.5, 0.5, Number.NaN, Number.POSITIVE_INFINITY]) {
       expect(isTaskDuration(minutes)).toBe(false);
+    }
+  });
+});
+
+describe('isTaskInterval (ADR-0004 §8)', () => {
+  it('takes whole numbers from 1 up to a year in each unit', () => {
+    for (const every of [
+      { count: 1, unit: 'days' },
+      { count: 365, unit: 'days' },
+      { count: 6, unit: 'weeks' },
+      { count: 52, unit: 'weeks' },
+      { count: 12, unit: 'months' },
+    ] as const) {
+      expect(isTaskInterval(every)).toBe(true);
+    }
+    for (const every of [
+      { count: 0, unit: 'days' },
+      { count: 366, unit: 'days' },
+      { count: 53, unit: 'weeks' },
+      { count: 13, unit: 'months' },
+      { count: 1.5, unit: 'weeks' },
+      { count: -1, unit: 'months' },
+      { count: Number.NaN, unit: 'days' },
+    ] as const) {
+      expect(isTaskInterval(every)).toBe(false);
     }
   });
 });
