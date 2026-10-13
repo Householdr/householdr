@@ -14,6 +14,7 @@ import {
   householdDate,
   occurrenceId,
   occurrences as occurrencesOf,
+  oneOffOccurrence,
   planWeek,
   rebalanceRates,
   weekOccurrences,
@@ -345,8 +346,9 @@ interface HouseholdTask {
 }
 
 /**
- * The household's tasks, each with its timing and on-miss policy (ADR-0004): on its schedule, or
- * "since last done", with the day in `timeZone` it was last done on, if ever (§8).
+ * The household's tasks, each with its timing and on-miss policy (ADR-0004): on its schedule;
+ * "since last done", with the day in `timeZone` it was last done on, if ever (§8); or one-off, on
+ * its date and up to its deadline, if it has one (§4).
  */
 async function tasksOf(tx: Transaction, timeZone: string): Promise<HouseholdTask[]> {
   const rows = await tx
@@ -358,6 +360,8 @@ async function tasksOf(tx: Transaction, timeZone: string): Promise<HouseholdTask
       everyCount: tasks.everyCount,
       everyUnit: tasks.everyUnit,
       start: tasks.start,
+      once: tasks.once,
+      deadline: tasks.deadline,
       rules: schedules.rules,
       extraDates: schedules.extraDates,
       exceptionDates: schedules.exceptionDates,
@@ -366,7 +370,15 @@ async function tasksOf(tx: Transaction, timeZone: string): Promise<HouseholdTask
     .leftJoin(schedules, eq(schedules.id, tasks.scheduleId));
   const lastDone = await lastDoneOf(tx, timeZone);
   return rows.map(({ id, duration, timing, onMiss, everyCount, everyUnit, start, ...stored }) => {
-    const { rules, extraDates, exceptionDates } = stored;
+    const { once, deadline, rules, extraDates, exceptionDates } = stored;
+    if (once !== null) {
+      const recurrence = {
+        kind: 'oneOff' as const,
+        date: Temporal.PlainDate.from(once),
+        ...(deadline !== null && { deadline: Temporal.PlainDate.from(deadline) }),
+      };
+      return { task: { id, duration, onMiss, recurrence } };
+    }
     if (rules && extraDates && exceptionDates) {
       const schedule = scheduleOf({ rules, extraDates, exceptionDates });
       return {
@@ -494,12 +506,15 @@ async function membersOf(
 
 /**
  * A new occurrence's own window, as `occurrences` gives it: for a floating one, the weeks it may
- * float over, not the part of them in this week (ADR-0004 §4). Any other is due this week, with
- * its own window.
+ * float over, not the part of them in this week; for a one-off, its week or up to its deadline
+ * (ADR-0004 §4). Any other is due this week, with its own window.
  */
 function ownWindow(o: PlannedOccurrence, task: HouseholdTask | undefined, planning: Planning) {
   if (!task) throw new Error(`No task ${o.task}.`);
   const { recurrence } = task.task;
+  if (recurrence.kind === 'oneOff') {
+    return oneOffOccurrence(recurrence.date, recurrence.deadline, planning.calendar).window;
+  }
   if (recurrence.kind !== 'schedule' || recurrence.timing.kind !== 'floating') return o.window;
   const [own] = occurrencesOf(
     recurrence.schedule,

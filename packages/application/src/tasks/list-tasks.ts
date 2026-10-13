@@ -7,7 +7,7 @@ import {
   type Interval,
   type PlanTask,
 } from '@householdr/domain';
-import { eq, gte } from 'drizzle-orm';
+import { eq, gte, isNull } from 'drizzle-orm';
 import type { HouseholdContext } from '../households/membership';
 import { lastDoneOf } from './last-done';
 import { repeatColumns, repeatOf } from './stored-task';
@@ -58,7 +58,9 @@ export async function listTasks(context: HouseholdContext): Promise<ListTasksRes
     const rows = await tx
       .select({ id: tasks.id, name: tasks.name, duration: tasks.duration, ...repeatColumns })
       .from(tasks)
-      .leftJoin(schedules, eq(schedules.id, tasks.scheduleId));
+      .leftJoin(schedules, eq(schedules.id, tasks.scheduleId))
+      // One-off tasks are listed once members can add them.
+      .where(isNull(tasks.once));
     const repeats = rows.map((row) => ({ row, repeat: repeatOf(row.id, row) }));
     const counted = repeats.filter(({ repeat }) => repeat.every);
     const lastDone =

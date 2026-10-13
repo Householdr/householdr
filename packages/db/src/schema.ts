@@ -500,10 +500,10 @@ export const schedules = pgTable(
 /**
  * A chore of the household (ADR-0001 §1): its name, how long one occurrence takes, where its dates
  * come from, how a date becomes an occurrence window, and what happens to an occurrence that isn't
- * done. Its dates come from a schedule (ADR-0004 §2), or, for a "since last done" task, from its
- * last completion, `every` so long after it, and from `start` while it was never done (§8). Fixed
- * windows, one-off dates, areas, minimum ages and same-person links come with the slices that use
- * them, as columns of their own.
+ * done. Its dates come from a schedule (ADR-0004 §2); for a "since last done" task, from its last
+ * completion, `every` so long after it, and from `start` while it was never done (§8); or, for a
+ * one-off task, from its one date (§4). Fixed windows, areas, minimum ages and same-person links
+ * come with the slices that use them, as columns of their own.
  */
 export const tasks = pgTable(
   'tasks',
@@ -523,6 +523,14 @@ export const tasks = pgTable(
     everyUnit: text().$type<Interval['unit']>(),
     /** For a "since last done" task: when it is due while it was never done (ADR-0004 §8). */
     start: date(),
+    /** For a one-off task: its date, and the last day it can be done on, if any (ADR-0004 §4). */
+    once: date(),
+    deadline: date(),
+    /**
+     * For a one-off task: the member who added it, who may change or remove it until it is done
+     * (ADR-0006 §3, clarification).
+     */
+    addedBy: uuid(),
     /** ADR-0004 §4; a "since last done" task is flexible within the week it is due in (§8). */
     timing: text().$type<Exclude<Timing['kind'], 'fixed'>>().notNull(),
     /** ADR-0002 §2. */
@@ -545,16 +553,32 @@ export const tasks = pgTable(
     check('tasks_duration', sql`${t.duration} between 1 and 1440`),
     check('tasks_timing', sql`${t.timing} in ('flexible', 'floating')`),
     check('tasks_on_miss', sql`${t.onMiss} in ('roll over', 'lapse')`),
-    // On a schedule, or "since last done": flexible, always rolling over, within a year (§8).
+    // On a schedule; "since last done": flexible, always rolling over, within a year (§8); or a
+    // one-off, flexible within its week or up to its deadline (§4), added by a member.
     check(
       'tasks_recurrence',
       sql`(${t.scheduleId} is not null and ${t.everyCount} is null and ${t.everyUnit} is null
-          and ${t.start} is null)
+          and ${t.start} is null and ${t.once} is null)
         or (${t.scheduleId} is null and ${t.timing} = 'flexible' and ${t.onMiss} = 'roll over'
+          and ${t.once} is null
           and ${t.start} is not null and (${t.everyUnit} = 'days' and ${t.everyCount} between 1 and 365
             or ${t.everyUnit} = 'weeks' and ${t.everyCount} between 1 and 52
-            or ${t.everyUnit} = 'months' and ${t.everyCount} between 1 and 12))`,
+            or ${t.everyUnit} = 'months' and ${t.everyCount} between 1 and 12))
+        or (${t.scheduleId} is null and ${t.everyCount} is null and ${t.everyUnit} is null
+          and ${t.start} is null and ${t.timing} = 'flexible' and ${t.once} is not null
+          and ${t.addedBy} is not null)`,
     ),
+    check('tasks_deadline', sql`${t.deadline} is null or ${t.once} <= ${t.deadline}`),
+    // Only a one-off task has a deadline or a member who added it.
+    check(
+      'tasks_one_off',
+      sql`${t.once} is not null or (${t.deadline} is null and ${t.addedBy} is null)`,
+    ),
+    foreignKey({
+      name: 'tasks_added_by',
+      columns: [t.householdId, t.addedBy],
+      foreignColumns: [members.householdId, members.id],
+    }),
   ],
 );
 

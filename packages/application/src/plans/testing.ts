@@ -140,6 +140,36 @@ export async function plannedHousehold(
         if (!row) throw new Error('No task');
         return row.id;
       }),
+    /**
+     * Adds a one-off task on `date`, flexible within its week or up to `deadline` (ADR-0004 §4), as
+     * Alex added it, and returns its id.
+     */
+    oneOff: (
+      name: string,
+      duration: number,
+      date: string,
+      {
+        deadline,
+        onMiss = 'roll over',
+      }: { deadline?: string; onMiss?: 'roll over' | 'lapse' } = {},
+    ) =>
+      inIt(async (tx) => {
+        const [row] = await tx
+          .insert(tasks)
+          .values({
+            householdId,
+            name,
+            duration,
+            once: date,
+            deadline,
+            addedBy: adult.member.id,
+            timing: 'flexible',
+            onMiss,
+          })
+          .returning({ id: tasks.id });
+        if (!row) throw new Error('No task');
+        return row.id;
+      }),
     /** Plans an absence for a member, both days included. */
     absent: (memberId: string, firstDay: string, lastDay: string) =>
       inIt((tx) => tx.insert(absences).values({ householdId, memberId, firstDay, lastDay })),
@@ -191,6 +221,7 @@ export async function plannedHousehold(
             date: occurrences.date,
             status: occurrences.status,
             closedByPlan: occurrences.closedByPlan,
+            windowEnd: occurrences.windowEnd,
           })
           .from(occurrences)
           .innerJoin(tasks, eq(tasks.id, occurrences.taskId))
