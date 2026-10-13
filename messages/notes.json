@@ -1578,6 +1578,114 @@
     "note": "The exception dates of an advanced schedule, after its rules, separated by a semicolon. {dates} lists days.",
     "needsReview": ["nl"]
   },
+  "schedule.rules": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Legend of the group of rules.",
+    "needsReview": ["nl"]
+  },
+  "schedule.rules-hint": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Hint under the rules' legend.",
+    "needsReview": ["nl"]
+  },
+  "schedule.rule": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Legend of one rule; {number} counts from 1.",
+    "needsReview": ["nl"]
+  },
+  "schedule.kind": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Label of the choice of what kind of rule it is.",
+    "needsReview": ["nl"]
+  },
+  "schedule.kind-weeks": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). A kind of rule.",
+    "needsReview": ["nl"]
+  },
+  "schedule.kind-months": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). A kind of rule: it repeats on the day of the month of its first time.",
+    "needsReview": ["nl"]
+  },
+  "schedule.kind-weekdays-of-month": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). A kind of rule, such as the 2nd and 4th Tuesday.",
+    "needsReview": ["nl"]
+  },
+  "schedule.kind-year": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). A kind of rule: it repeats on the day and month of its first time.",
+    "needsReview": ["nl"]
+  },
+  "schedule.every": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Label of the number of weeks or months between dates; 1 is every week or month.",
+    "needsReview": ["nl"]
+  },
+  "schedule.days": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Legend of the weekdays a rule every few weeks falls on.",
+    "needsReview": ["nl"]
+  },
+  "schedule.which": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Legend of the choice of 1st, 2nd, 3rd, 4th or last of a weekday.",
+    "needsReview": ["nl"]
+  },
+  "schedule.weekday": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Label of the weekday of a rule on a weekday of the month.",
+    "needsReview": ["nl"]
+  },
+  "schedule.start": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Label of the first date of a rule.",
+    "needsReview": ["nl"]
+  },
+  "schedule.start-hint": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Hint under a rule's first time.",
+    "needsReview": ["nl"]
+  },
+  "schedule.remove-rule": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Button that removes one rule.",
+    "needsReview": ["nl"]
+  },
+  "schedule.add-rule": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Button that adds a rule.",
+    "needsReview": ["nl"]
+  },
+  "schedule.extra-dates": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Legend of the days the schedule adds.",
+    "needsReview": ["nl"]
+  },
+  "schedule.extra-dates-hint": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Hint under the extra dates' legend.",
+    "needsReview": ["nl"]
+  },
+  "schedule.extra-date": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Label of one extra date; {number} counts from 1.",
+    "needsReview": ["nl"]
+  },
+  "schedule.remove-extra": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Button that removes one extra date.",
+    "needsReview": ["nl"]
+  },
+  "schedule.add-extra": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Button that adds an extra date.",
+    "needsReview": ["nl"]
+  },
+  "schedule.exception-dates": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Legend of the days the schedule leaves out.",
+    "needsReview": ["nl"]
+  },
+  "schedule.exception-dates-hint": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Hint under the dates to leave out.",
+    "needsReview": ["nl"]
+  },
+  "schedule.exception-date": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Label of one date to leave out; {number} counts from 1.",
+    "needsReview": ["nl"]
+  },
+  "schedule.remove-exception": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Button that removes one date to leave out.",
+    "needsReview": ["nl"]
+  },
+  "schedule.add-exception": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Button that adds a date to leave out.",
+    "needsReview": ["nl"]
+  },
+  "schedule.in-words": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). The schedule read back in plain words, under the editor; {words} is a sentence such as 'Every Wednesday; not on 11 November 2026'.",
+    "needsReview": ["nl"]
+  },
   "tasks.invalid-rules": {
     "note": "Why the rules of an advanced schedule were refused (ADR-0004 §3).",
     "needsReview": ["nl"]

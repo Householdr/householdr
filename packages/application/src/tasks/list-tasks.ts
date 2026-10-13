@@ -13,6 +13,7 @@ import {
   can,
   dueness,
   planWeek,
+  scheduleDateRange,
   startRange,
   type AdvancedSchedule,
   type Dueness,
@@ -76,6 +77,8 @@ type ListTasksResult =
       mayChangeTasks: boolean;
       /** The days a new task can start on, from today in the household's time zone. */
       starts: { earliest: Temporal.PlainDate; latest: Temporal.PlainDate };
+      /** The days a new task's extra and exception dates can be on (ADR-0004 §3, clarification). */
+      dates: { earliest: Temporal.PlainDate; latest: Temporal.PlainDate };
     }
   | { ok: false; error: 'not-allowed' };
 
@@ -152,6 +155,7 @@ export async function listTasks(context: HouseholdContext): Promise<ListTasksRes
       mayAddOneOffs: can(context.member, { action: 'oneOff.add' }),
       mayChangeTasks: can(context.member, { action: 'household.tasks' }),
       starts: startRange(today),
+      dates: scheduleDateRange(today),
     };
   });
 }

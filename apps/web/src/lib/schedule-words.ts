@@ -4,7 +4,7 @@ import { m } from '#lib/paraglide/messages.js';
 import type { RuleData, ScheduleData } from '#lib/task-schedule.js';
 
 /** Which of a weekday in its month, in words, such as “2nd” or “last”. */
-const whichWords: Record<WeekdayOfMonth, () => string> = {
+export const whichWords: Record<WeekdayOfMonth, () => string> = {
   1: m['schedule.first'],
   2: m['schedule.second'],
   3: m['schedule.third'],

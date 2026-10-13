@@ -1,10 +1,11 @@
 <script lang="ts">
-  import { enhance, type SubmitFunction } from '$app/forms';
+  import { enhance } from '$app/forms';
   import { page } from '$app/state';
   import ErrorSummary from '#lib/components/ErrorSummary.svelte';
   import TaskDetails from '#lib/components/TaskDetails.svelte';
   import TaskFields from '#lib/components/TaskFields.svelte';
   import { Button } from '#lib/components/ui/button/index.js';
+  import { scheduleChanges } from '#lib/hooks/use-schedule-editor.svelte.js';
   import { m } from '#lib/paraglide/messages.js';
   import { taskProblems } from '#lib/task-words.js';
   import type { PageProps } from './$types';
@@ -23,10 +24,7 @@
    * Saves without emptying the form, which shows the task as saved, and loads the task again after
    * a refusal too, as the page does without JavaScript.
    */
-  const save: SubmitFunction =
-    () =>
-    ({ update }) =>
-      update({ reset: false, refreshAll: true });
+  const save = scheduleChanges({ reset: false, refreshAll: true });
 </script>
 
 <svelte:head>
@@ -59,7 +57,12 @@
       {invalid}
       {problems}
       starts={data.starts}
+      dates={data.dates}
+      today={data.today}
       startingOnMiss={data.task.onMiss}
+      action="?/save"
+      submit={m['task.save']()}
+      locale={data.locale}
     />
     <Button type="submit" class="w-full">{m['task.save']()}</Button>
   </form>
