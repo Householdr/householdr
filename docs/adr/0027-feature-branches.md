@@ -55,14 +55,18 @@ This replaces the "ready for review" row of ADR-0009 §3's table:
 |---|---|
 | Ready pull request **into `main`** | Title check + the full pipeline: Bundle, Verify and E2E |
 | Ready pull request **into any other branch**, such as a feature branch | Title check + Bundle and Verify; no E2E |
-| A pull request's **base is changed** (for example retargeted to `main`) | The pipeline again, as for its new base |
 
 - The pipeline decides by the pull request's base branch, with a job-level condition (ADR-0009 §3).
-- `🚦 Pipeline: Result` keeps passing when a job was skipped by its condition and failing otherwise
-  ([ADR-0024](0024-public-core-from-stage-0.md) §2).
-- A change of base starts the pipeline again, so a pull request retargeted to `main` gets its
-  end-to-end run. This is a second guard: by §1, nothing but the feature branch's own pull request
-  targets `main`.
+- Only a run against `main` reports `🚦 Pipeline: Result`, the check `main` requires
+  ([ADR-0024](0024-public-core-from-stage-0.md) §2); a run against any other branch reports
+  `🚦 Pipeline: Result (feature)`. Both keep passing when a job was skipped by its condition and
+  failing otherwise.
+- So a pull request retargeted to `main` has no result `main` accepts until a run against `main`
+  reports one: the next push to it starts that run, end-to-end tests included. This is a second
+  guard: by §1, nothing but the feature branch's own pull request targets `main`.
+- Changing a pull request's base starts no run of its own. An `edited` trigger would also fire on
+  every title or description edit, and its skipped jobs would report as passed, turning a failed
+  result green.
 - While building a slice, the author runs the end-to-end test files it touches locally.
 
 ## Alternatives considered
@@ -90,8 +94,6 @@ This replaces the "ready for review" row of ADR-0009 §3's table:
   becomes a new pull request rather than a plain revert.
 - The longer a feature branch lives, the further it drifts from `main`; merging `main` in often keeps
   conflicts small.
-- A pull request retargeted to `main` keeps its old `🚦 Pipeline: Result` until the new run's result
-  job reports, after the end-to-end tests. Auto-merge could merge it in that gap. That is why §1 never
-  lets a stack target `main`, and why its last step is landing an empty stack.
+- A pull request retargeted to `main` waits for a push before it can merge (§2).
 - Amends ADR-0009 §1 and §3, and PROC-8 and PROC-13, which summarise them.
 
