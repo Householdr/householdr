@@ -95,10 +95,10 @@ touches it, and how people exercise their rights.
 
 > **Clarification (2026-10-13):** a **push subscription** is kept with the account and the session
 > of the device it was made on, and deleted when that session ends or the push service says it is
-> gone ([ADR-0014](0014-notifications-and-reminders.md) §7, clarification). A **count of pushes**
-> sent to an account each day, which the daily ceiling needs (ADR-0014 §4, clarification), is
-> account data on the basis of the contract (b), with nothing about what was sent, and is
-> forgotten after two days.
+> gone ([ADR-0014](0014-notifications-and-reminders.md) §7, clarification). **When pushes were
+> sent** to an account, which the daily ceiling counts (ADR-0014 §4, clarification), is account
+> data on the basis of the contract (b), with nothing about what was sent or from which household,
+> and is forgotten after two days.
 
 What is deliberately **not** stored:
 
