@@ -3,6 +3,11 @@ name: '🚦 Pipeline'
 
 on:
   workflow_call:
+    inputs:
+      e2e:
+        description: 'Whether to run the end-to-end tests: only for what goes into `main` (ADR-0027 §2).'
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -157,6 +162,7 @@ jobs:
   e2e:
     name: '🧪 Test: E2E'
     needs: bundle
+    if: inputs.e2e
     runs-on: ubuntu-24.04
     # The suite runs about 9–10 minutes (ADR-0009 §4: a little above its normal duration).
     timeout-minutes: 15
