@@ -1,5 +1,6 @@
 import {
   assignments,
+  completions,
   inHousehold,
   nextVersion,
   occurrences,
@@ -26,7 +27,7 @@ import {
   type Schedule,
   type Window,
 } from '@householdr/domain';
-import { and, eq, gte, inArray, lt, notExists, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, lt, max, notExists, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { balancesOf } from '../ledger/balances';
 import { closeDue } from './closing';
@@ -34,6 +35,7 @@ import { scheduleOf } from '../tasks/stored-schedule';
 import { fairPortions } from './fair-portions';
 import {
   awayIn,
+  awaySince,
   mayDraft,
   planningOf,
   weekInput,
@@ -157,15 +159,24 @@ export async function draftWeek(tx: Transaction, draft: Draft): Promise<string |
   // What earlier weeks close by now isn't in the pool any more.
   await closeDue(tx, draft.now, calendar.timeZone);
   const away = await awayIn(tx, week);
-  const household = await tasksOf(tx);
+  const household = await tasksOf(tx, calendar.timeZone);
   const earlier = await earlierOccurrences(tx, week, calendar.timeZone);
+  // A "since last done" task keeps its one open occurrence by its due date, which the domain gives
+  // again each week until it is done, so it isn't carried over as well (ADR-0004 §8).
+  const sinceLastDone = new Set(
+    household
+      .filter(({ task }) => task.recurrence.kind === 'sinceLastDone')
+      .map(({ task }) => task.id),
+  );
   const weekResult = weekOccurrences({
     week: week.start,
     calendar,
     tasks: household.map(({ task }) => task),
-    open: earlier.open,
+    open: earlier.open.filter((o) => !sinceLastDone.has(o.task)),
     placedEarlier: earlier.placed,
-    away,
+    // Days away since a "since last done" clock started don't count towards it (§8): those periods
+    // too, which end before the week and change nothing else about it.
+    away: await awaySince(tx, clocksFrom(household) ?? week.start, week),
     today,
   });
   if (!weekResult.planned) {
@@ -327,38 +338,98 @@ async function removeUnplanned(tx: Transaction) {
     );
 }
 
-/** A task as planning sees it, with its schedule. */
+/** A task as planning sees it, with its schedule if it has one. */
 interface HouseholdTask {
   task: PlanTask;
-  schedule: Schedule;
+  schedule?: Schedule;
 }
 
-/** The household's tasks, each on its schedule, with its timing and on-miss policy (ADR-0004). */
-async function tasksOf(tx: Transaction): Promise<HouseholdTask[]> {
+/**
+ * The household's tasks, each with its timing and on-miss policy (ADR-0004): on its schedule, or
+ * "since last done", with the day in `timeZone` it was last done on, if ever (§8).
+ */
+async function tasksOf(tx: Transaction, timeZone: string): Promise<HouseholdTask[]> {
   const rows = await tx
     .select({
       id: tasks.id,
       duration: tasks.duration,
       timing: tasks.timing,
       onMiss: tasks.onMiss,
+      everyCount: tasks.everyCount,
+      everyUnit: tasks.everyUnit,
+      start: tasks.start,
       rules: schedules.rules,
       extraDates: schedules.extraDates,
       exceptionDates: schedules.exceptionDates,
     })
     .from(tasks)
-    .innerJoin(schedules, eq(schedules.id, tasks.scheduleId));
-  return rows.map(({ id, duration, timing, onMiss, ...stored }) => {
-    const schedule = scheduleOf(stored);
+    .leftJoin(schedules, eq(schedules.id, tasks.scheduleId));
+  const lastDone = await lastDoneOf(tx, timeZone);
+  return rows.map(({ id, duration, timing, onMiss, everyCount, everyUnit, start, ...stored }) => {
+    const { rules, extraDates, exceptionDates } = stored;
+    if (rules && extraDates && exceptionDates) {
+      const schedule = scheduleOf({ rules, extraDates, exceptionDates });
+      return {
+        task: {
+          id,
+          duration,
+          onMiss,
+          recurrence: { kind: 'schedule', schedule, timing: { kind: timing } },
+        },
+        schedule,
+      };
+    }
+    if (everyCount === null || everyUnit === null || start === null) {
+      throw new Error(`Task ${id} has neither a schedule nor an interval.`);
+    }
+    const done = lastDone.get(id);
     return {
       task: {
         id,
         duration,
         onMiss,
-        recurrence: { kind: 'schedule', schedule, timing: { kind: timing } },
+        recurrence: {
+          kind: 'sinceLastDone',
+          every: { count: everyCount, unit: everyUnit },
+          start: Temporal.PlainDate.from(start),
+          ...(done && { lastDone: done }),
+        },
       },
-      schedule,
     };
   });
+}
+
+/**
+ * The day each task was last done on, in `timeZone`, by its latest completion: any completion of
+ * it resets a "since last done" clock (ADR-0004 §8).
+ */
+async function lastDoneOf(tx: Transaction, timeZone: string) {
+  const rows = await tx
+    .select({ taskId: occurrences.taskId, at: max(completions.at) })
+    .from(completions)
+    .innerJoin(occurrences, eq(occurrences.id, completions.occurrenceId))
+    .groupBy(occurrences.taskId);
+  const days = new Map<string, Temporal.PlainDate>();
+  for (const { taskId, at } of rows) {
+    if (at)
+      days.set(
+        taskId,
+        householdDate(Temporal.Instant.fromEpochMilliseconds(at.getTime()), timeZone),
+      );
+  }
+  return days;
+}
+
+/** The earliest day a "since last done" clock counts from: a last completion or a start. */
+function clocksFrom(household: readonly HouseholdTask[]) {
+  let earliest: Temporal.PlainDate | undefined;
+  for (const { task } of household) {
+    const r = task.recurrence;
+    if (r.kind !== 'sinceLastDone') continue;
+    const from = r.lastDone ?? r.start;
+    if (!earliest || Temporal.PlainDate.compare(from, earliest) < 0) earliest = from;
+  }
+  return earliest;
 }
 
 /**
@@ -451,7 +522,13 @@ function ownWindow(o: PlannedOccurrence, task: HouseholdTask | undefined, planni
   if (!task) throw new Error(`No task ${o.task}.`);
   const { recurrence } = task.task;
   if (recurrence.kind !== 'schedule' || recurrence.timing.kind !== 'floating') return o.window;
-  const [own] = occurrencesOf(task.schedule, recurrence.timing, o.date, o.date, planning.calendar);
+  const [own] = occurrencesOf(
+    recurrence.schedule,
+    recurrence.timing,
+    o.date,
+    o.date,
+    planning.calendar,
+  );
   if (!own) throw new Error(`Task ${o.task} has no occurrence on ${o.date.toString()}.`);
   return own.window;
 }

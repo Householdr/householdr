@@ -2,6 +2,7 @@ import {
   defaultPlanTimings,
   defaultRebalance,
   type HouseholdCalendar,
+  type Interval,
   type PlanStatus,
   type PlanTask,
   type Reason,
@@ -497,10 +498,12 @@ export const schedules = pgTable(
 );
 
 /**
- * A chore of the household (ADR-0001 §1): its name, how long one occurrence takes, the schedule its
- * dates come from, how a date becomes an occurrence window, and what happens to an occurrence that
- * isn't done. Fixed windows, "since last done" intervals, one-off dates, areas, minimum ages and
- * same-person links come with the slices that use them, as columns of their own.
+ * A chore of the household (ADR-0001 §1): its name, how long one occurrence takes, where its dates
+ * come from, how a date becomes an occurrence window, and what happens to an occurrence that isn't
+ * done. Its dates come from a schedule (ADR-0004 §2), or, for a "since last done" task, from its
+ * last completion, `every` so long after it, and from `start` while it was never done (§8). Fixed
+ * windows, one-off dates, areas, minimum ages and same-person links come with the slices that use
+ * them, as columns of their own.
  */
 export const tasks = pgTable(
   'tasks',
@@ -513,8 +516,14 @@ export const tasks = pgTable(
     name: text().notNull(),
     /** Whole minutes for one occurrence, within the domain's `taskDuration` (ADR-0001 §5). */
     duration: integer().notNull(),
-    scheduleId: uuid().notNull(),
-    /** ADR-0004 §4. */
+    /** None for a "since last done" task. */
+    scheduleId: uuid(),
+    /** For a "since last done" task: how long after its last completion it is due (ADR-0004 §8). */
+    everyCount: integer(),
+    everyUnit: text().$type<Interval['unit']>(),
+    /** For a "since last done" task: when it is due while it was never done (ADR-0004 §8). */
+    start: date(),
+    /** ADR-0004 §4; a "since last done" task is flexible within the week it is due in (§8). */
     timing: text().$type<Exclude<Timing['kind'], 'fixed'>>().notNull(),
     /** ADR-0002 §2. */
     onMiss: text().$type<PlanTask['onMiss']>().notNull(),
@@ -536,6 +545,16 @@ export const tasks = pgTable(
     check('tasks_duration', sql`${t.duration} between 1 and 1440`),
     check('tasks_timing', sql`${t.timing} in ('flexible', 'floating')`),
     check('tasks_on_miss', sql`${t.onMiss} in ('roll over', 'lapse')`),
+    // On a schedule, or "since last done": flexible, always rolling over, within a year (§8).
+    check(
+      'tasks_recurrence',
+      sql`(${t.scheduleId} is not null and ${t.everyCount} is null and ${t.everyUnit} is null
+          and ${t.start} is null)
+        or (${t.scheduleId} is null and ${t.timing} = 'flexible' and ${t.onMiss} = 'roll over'
+          and ${t.start} is not null and (${t.everyUnit} = 'days' and ${t.everyCount} between 1 and 365
+            or ${t.everyUnit} = 'weeks' and ${t.everyCount} between 1 and 52
+            or ${t.everyUnit} = 'months' and ${t.everyCount} between 1 and 12))`,
+    ),
   ],
 );
 

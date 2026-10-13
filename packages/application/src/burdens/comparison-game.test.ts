@@ -4,6 +4,7 @@ import {
   inHousehold,
   members,
   passkeys,
+  tasks,
   type Database,
 } from '@householdr/db';
 import { testDatabase } from '@householdr/db/testing';
@@ -208,6 +209,28 @@ describe('comparisonGame (ADR-0003 §3a)', () => {
     await answer(head, Ironing ?? '', Dishes ?? '', 2);
     // Weighing by how often a task occurs rescales all of them alike, so it never reorders them.
     expect(orderOf(await played(head))).toEqual(['Ironing', 'Windows', 'Dishes']);
+  });
+
+  it('asks about "since last done" tasks too (ADR-0004 §8)', async () => {
+    const head = await founded();
+    const { Dishes } = await withTasks(head, 'Dishes');
+    const [oven] = await inHousehold(db, head.householdId, (tx) =>
+      tx
+        .insert(tasks)
+        .values({
+          householdId: head.householdId,
+          name: 'Oven',
+          duration: 40,
+          everyCount: 6,
+          everyUnit: 'weeks',
+          start: '2026-10-14',
+          timing: 'flexible',
+          onMiss: 'roll over',
+        })
+        .returning({ id: tasks.id }),
+    );
+    const result = await played(head);
+    expect(result.pair?.map((task) => task.id).sort()).toEqual([Dishes, oven?.id].sort());
   });
 
   it('lets every member with an account play for themselves', async () => {

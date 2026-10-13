@@ -3,6 +3,7 @@ import {
   can,
   estimateBurdens,
   inRandomOrder,
+  intervalTimesPerYear,
   nextPair,
   timesPerYear,
   type Evidence,
@@ -86,24 +87,34 @@ export async function comparisonGame(
       .select({
         id: tasks.id,
         name: tasks.name,
+        everyCount: tasks.everyCount,
+        everyUnit: tasks.everyUnit,
         rules: schedules.rules,
         extraDates: schedules.extraDates,
         exceptionDates: schedules.exceptionDates,
       })
       .from(tasks)
-      .innerJoin(schedules, eq(schedules.id, tasks.scheduleId));
+      .leftJoin(schedules, eq(schedules.id, tasks.scheduleId));
     // Row-level security keeps other households out, but not the other members: the member's own
     // answers only (ADR-0003 §5, ADR-0018 §4).
     const answers = await tx
       .select({ harder: comparisons.harderTaskId, easier: comparisons.easierTaskId })
       .from(comparisons)
       .where(eq(comparisons.memberId, self.id));
+    // How often a task comes round in a year: by its schedule, or 365 / N for a "since last done"
+    // task (ADR-0004 §7–§8).
+    const weightOf = ({ id, everyCount, everyUnit, ...schedule }: (typeof rows)[number]) => {
+      const { rules, extraDates, exceptionDates } = schedule;
+      if (rules && extraDates && exceptionDates) {
+        return timesPerYear(scheduleOf({ rules, extraDates, exceptionDates }), today);
+      }
+      if (everyCount === null || everyUnit === null) {
+        throw new Error(`Task ${id} has neither a schedule nor an interval.`);
+      }
+      return intervalTimesPerYear({ count: everyCount, unit: everyUnit });
+    };
     const estimates = estimateBurdens(
-      rows.map(({ id, ...schedule }) => ({
-        id,
-        prior: 1,
-        weight: timesPerYear(scheduleOf(schedule), today),
-      })),
+      rows.map((row) => ({ id: row.id, prior: 1, weight: weightOf(row) })),
       answers.map(({ harder, easier }): Evidence => ({ kind: 'comparison', harder, easier })),
     );
     const named = new Map(rows.map(({ id, name }) => [id, { id, name }]));

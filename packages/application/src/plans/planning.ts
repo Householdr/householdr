@@ -77,6 +77,27 @@ export async function awayIn(tx: Transaction, week: PlanWeek) {
   }));
 }
 
+/**
+ * The household's periods away from `from` up to the end of `week`: those that touch the week, and,
+ * for a `from` before it, those since, which a "since last done" clock skips (ADR-0004 §8).
+ */
+export async function awaySince(tx: Transaction, from: Temporal.PlainDate, week: PlanWeek) {
+  const since = Temporal.PlainDate.compare(from, week.start) < 0 ? from : week.start;
+  const rows = await tx
+    .select({ from: awayPeriods.firstDay, to: awayPeriods.lastDay })
+    .from(awayPeriods)
+    .where(
+      and(
+        gte(awayPeriods.lastDay, since.toString()),
+        lt(awayPeriods.firstDay, week.end.toString()),
+      ),
+    );
+  return rows.map((row) => ({
+    from: Temporal.PlainDate.from(row.from),
+    to: Temporal.PlainDate.from(row.to),
+  }));
+}
+
 /** A day of the calendar as `YYYY-MM-DD`: one that exists, unlike 30 February. */
 const day = v.pipe(
   v.string(),
