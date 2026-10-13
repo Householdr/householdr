@@ -297,6 +297,14 @@
         {m['plan.title']()}
       </a>
     {/if}
+    {#if data.flags.notifications}
+      <a
+        href="/households/{page.params.household}/notifications"
+        class="underline underline-offset-4"
+      >
+        {m['household.notifications']()}
+      </a>
+    {/if}
     {#if data.flags['household-settings'] && data.mayChangeSettings}
       <a href="/households/{page.params.household}/settings" class="underline underline-offset-4">
         {m['household.settings']()}
