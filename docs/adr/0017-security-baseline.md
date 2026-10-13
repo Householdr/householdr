@@ -156,6 +156,12 @@ types, [ADR-0013](0013-monetisation.md) §2), **Web Push** (an endpoint the brow
 Calendar feeds are fetched and parsed **only in the worker**, with limits on the number of events
 parsed. The hosting ADR adds an egress firewall on the containers as a second line.
 
+> **Clarification (2026-10-13):** the **known push services** are those of the browsers people
+> use: Apple (`web.push.apple.com`), Google (`fcm.googleapis.com`), Mozilla
+> (`updates.push.services.mozilla.com`) and Microsoft (any host under `notify.windows.com`). A
+> subscription is saved only with an `https` endpoint on one of them, and a push is sent only to an
+> endpoint that still is. The list is part of the code and changes by pull request.
+
 ### 7. Secrets and logs
 
 - Secrets (session and encryption keys, VAPID keys, the Flipt token, SMTP credentials) come from the
