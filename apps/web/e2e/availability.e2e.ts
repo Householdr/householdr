@@ -17,9 +17,14 @@ test.beforeEach(async ({ context, baseURL }) => {
 const fromToday = (days: number) =>
   Temporal.Now.plainDateISO('Europe/Brussels').add({ days }).toString();
 
-/** The days as the page writes them, in English. */
+/**
+ * The days as the page writes them for the test accounts: in English, with Belgium's conventions
+ * (ADR-0008 §6, clarification).
+ */
 const shown = (first: string, last: string) =>
-  new RegExp(`First day\\s*${calendarDay(first, 'en')}\\s*Last day\\s*${calendarDay(last, 'en')}`);
+  new RegExp(
+    `First day\\s*${calendarDay(first, 'en-BE')}\\s*Last day\\s*${calendarDay(last, 'en-BE')}`,
+  );
 
 /** Opens the page of who is away from the household's page. */
 async function openAvailability(page: Page, household: string) {

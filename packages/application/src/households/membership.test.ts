@@ -138,6 +138,12 @@ describe('membership (ADR-0017 §2)', () => {
   });
 });
 
+// Each check reads the sign-in methods in the transaction that makes the change (ADR-0010 §3).
+const turnOff = (account: string) =>
+  db.transaction((tx) => mayTurnOffTwoFactor({ db }, account, tx));
+const removing = (account: string, passkey: string) =>
+  db.transaction((tx) => mayRemoveAccountPasskey({ db }, account, passkey, tx));
+
 describe('mayTurnOffTwoFactor (ADR-0010 §3)', () => {
   /** An account with a password and TOTP on, as anyone who can turn TOTP off has. */
   const withTotp = async () => {
@@ -150,22 +156,22 @@ describe('mayTurnOffTwoFactor (ADR-0010 §3)', () => {
   it('refuses a head without a passkey, whose password would be left on its own', async () => {
     const robin = await withTotp();
     await household(robin);
-    expect(await mayTurnOffTwoFactor({ db }, robin)).toBe(false);
+    expect(await turnOff(robin)).toBe(false);
     await addPasskey(robin);
-    expect(await mayTurnOffTwoFactor({ db }, robin)).toBe(true);
+    expect(await turnOff(robin)).toBe(true);
   });
 
   it('refuses a head of any of the account’s households', async () => {
     const robin = await withTotp();
     const sam = await newAccount();
     await addMembers(await household(sam), { name: 'Robin', role: 'adult', accountId: robin });
-    expect(await mayTurnOffTwoFactor({ db }, robin)).toBe(true);
+    expect(await turnOff(robin)).toBe(true);
     await household(robin, 'Birch Court');
-    expect(await mayTurnOffTwoFactor({ db }, robin)).toBe(false);
+    expect(await turnOff(robin)).toBe(false);
   });
 
   it('lets an account that heads no household turn it off', async () => {
-    expect(await mayTurnOffTwoFactor({ db }, await withTotp())).toBe(true);
+    expect(await turnOff(await withTotp())).toBe(true);
   });
 });
 
@@ -174,11 +180,11 @@ describe('mayRemoveAccountPasskey (ADR-0010 §3, clarification)', () => {
     const robin = await newAccount();
     await household(robin);
     const passkey = await addPasskey(robin);
-    expect(await mayRemoveAccountPasskey({ db }, robin, passkey)).toBe(false);
+    expect(await removing(robin, passkey)).toBe(false);
     await addPassword(robin);
-    expect(await mayRemoveAccountPasskey({ db }, robin, passkey)).toBe(false);
+    expect(await removing(robin, passkey)).toBe(false);
     await setTotp(robin, true);
-    expect(await mayRemoveAccountPasskey({ db }, robin, passkey)).toBe(true);
+    expect(await removing(robin, passkey)).toBe(true);
   });
 
   it('lets a head remove a passkey while another one is left', async () => {
@@ -186,10 +192,10 @@ describe('mayRemoveAccountPasskey (ADR-0010 §3, clarification)', () => {
     await household(robin);
     const first = await addPasskey(robin);
     const second = await addPasskey(robin);
-    expect(await mayRemoveAccountPasskey({ db }, robin, first)).toBe(true);
-    expect(await mayRemoveAccountPasskey({ db }, robin, second)).toBe(true);
+    expect(await removing(robin, first)).toBe(true);
+    expect(await removing(robin, second)).toBe(true);
     await db.delete(passkeys).where(eq(passkeys.id, first));
-    expect(await mayRemoveAccountPasskey({ db }, robin, second)).toBe(false);
+    expect(await removing(robin, second)).toBe(false);
   });
 
   it('refuses a head of any of the account’s households', async () => {
@@ -197,14 +203,14 @@ describe('mayRemoveAccountPasskey (ADR-0010 §3, clarification)', () => {
     const passkey = await addPasskey(robin);
     const sam = await newAccount();
     await addMembers(await household(sam), { name: 'Robin', role: 'adult', accountId: robin });
-    expect(await mayRemoveAccountPasskey({ db }, robin, passkey)).toBe(true);
+    expect(await removing(robin, passkey)).toBe(true);
     await household(robin, 'Birch Court');
-    expect(await mayRemoveAccountPasskey({ db }, robin, passkey)).toBe(false);
+    expect(await removing(robin, passkey)).toBe(false);
   });
 
   it('lets an account that heads no household remove its last passkey', async () => {
     const robin = await newAccount();
-    expect(await mayRemoveAccountPasskey({ db }, robin, await addPasskey(robin))).toBe(true);
+    expect(await removing(robin, await addPasskey(robin))).toBe(true);
   });
 });
 

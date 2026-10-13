@@ -1,5 +1,5 @@
 import { mayRemoveAccountPasskey } from '@householdr/application';
-import { accounts, passkeys, sessions } from '@householdr/db';
+import { accounts, passkeys, sessions, type Transaction } from '@householdr/db';
 import { isAPIError } from 'better-auth/api';
 import { and, eq } from 'drizzle-orm';
 import * as v from 'valibot';
@@ -14,6 +14,22 @@ import { appCode, signInWithCode, twoFactorOn } from './two-factor-sign-in';
 
 /** What adding and removing passkeys needs from the app: signing in, and the job queue. */
 export type PasskeysContext = Omit<PasswordResetContext, 'checkBreach'>;
+
+/**
+ * Holds the account's row until the transaction `tx` ends, and says whether its TOTP is on. Every
+ * change that can take away a second factor holds it first and checks in the same transaction, so
+ * two at once wait for each other: removing a head's passkey and turning their TOTP off together
+ * can't leave them with neither (ADR-0010 §3).
+ */
+export async function holdAccount(tx: Transaction, accountId: string) {
+  const [account] = await tx
+    .select({ totp: accounts.twoFactorEnabled })
+    .from(accounts)
+    .where(eq(accounts.id, accountId))
+    .for('update');
+  if (!account) throw new Error('A session without an account.');
+  return account;
+}
 
 /** A passkey of the account, as the security page lists it (ADR-0010 §2). */
 interface Passkey {
@@ -217,10 +233,11 @@ export async function removePasskey(
   const parsed = v.safeParse(passkeyToRemove, input);
   if (!parsed.success) return { ok: false, error: 'not-found' };
   if (!(await signedInRecently(context, session))) return { ok: false, error: 'confirm' };
-  if (!(await mayRemoveAccountPasskey(context, session.accountId, parsed.output.passkey))) {
-    return { ok: false, error: 'head' };
-  }
   return context.db.transaction(async (tx) => {
+    await holdAccount(tx, session.accountId);
+    if (!(await mayRemoveAccountPasskey(context, session.accountId, parsed.output.passkey, tx))) {
+      return { ok: false, error: 'head' } as const;
+    }
     const removed = await tx
       .delete(passkeys)
       .where(and(eq(passkeys.id, parsed.output.passkey), eq(passkeys.userId, session.accountId)))

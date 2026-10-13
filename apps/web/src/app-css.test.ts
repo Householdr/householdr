@@ -20,8 +20,8 @@ function tokensAfter(from: string): Record<string, string> {
 }
 
 const light = tokensAfter(':root');
-const dark = { ...light, ...tokensAfter('(prefers-color-scheme: dark)') };
-const more = tokensAfter('(prefers-contrast: more)');
+const dark = { ...light, ...tokensAfter('@media (prefers-color-scheme: dark) {') };
+const more = tokensAfter('@media (prefers-contrast: more) {');
 const themes = {
   light,
   dark,
@@ -40,8 +40,8 @@ function oklch(theme: Record<string, string>, token: string): [number, number, n
   return [Number(parts[1]), Number(parts[2]), Number(parts[3])];
 }
 
-/** WCAG relative luminance of an OKLCH colour, through linear sRGB. */
-function luminance([l, c, h]: [number, number, number]) {
+/** An OKLCH colour in linear sRGB, clipped to its gamut. */
+function linear([l, c, h]: [number, number, number]): [number, number, number] {
   const a = c * Math.cos((h * Math.PI) / 180);
   const b = c * Math.sin((h * Math.PI) / 180);
   const lms = [
@@ -55,13 +55,31 @@ function luminance([l, c, h]: [number, number, number]) {
     -1.2684380046 * x + 2.6097574011 * y - 0.3413193965 * z,
     -0.0041960863 * x - 0.7034186147 * y + 1.707614701 * z,
   ].map((channel) => Math.min(Math.max(channel, 0), 1));
-  return 0.2126 * (rgb[0] ?? 0) + 0.7152 * (rgb[1] ?? 0) + 0.0722 * (rgb[2] ?? 0);
+  return rgb as [number, number, number];
 }
 
-function contrast(theme: Record<string, string>, front: string, back: string) {
-  const [lighter, darker] = [luminance(oklch(theme, front)), luminance(oklch(theme, back))].sort(
-    (p, q) => q - p,
-  ) as [number, number];
+/** WCAG relative luminance of a colour in linear sRGB. */
+const luminance = ([r, g, b]: [number, number, number]) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+const encoded = (v: number) => (v <= 0.0031308 ? 12.92 * v : 1.055 * v ** (1 / 2.4) - 0.055);
+const decoded = (v: number) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+
+/** `front` at `alpha` over `back`, mixed as browsers do, in encoded sRGB. */
+const over = (front: [number, number, number], back: [number, number, number], alpha: number) =>
+  front.map((v, i) => decoded(alpha * encoded(v) + (1 - alpha) * encoded(back[i] ?? 0))) as [
+    number,
+    number,
+    number,
+  ];
+
+/** The contrast of `front` on `back`, or on `front` at `tint` over `back` when given. */
+function contrast(theme: Record<string, string>, front: string, back: string, tint?: number) {
+  const fore = linear(oklch(theme, front));
+  const behind = linear(oklch(theme, back));
+  const [lighter, darker] = [
+    luminance(fore),
+    luminance(tint === undefined ? behind : over(fore, behind, tint)),
+  ].sort((p, q) => q - p) as [number, number];
   return (lighter + 0.05) / (darker + 0.05);
 }
 
@@ -76,6 +94,20 @@ const text: [string, string][] = [
   ['--accent-foreground', '--accent'],
   ['--destructive', '--background'],
 ];
+/**
+ * Text on a tint of its own colour, as the destructive button is, at rest and hovered: the
+ * opacities of its classes in components/ui/button, per theme.
+ */
+const tinted: Record<'light' | 'dark', [string, string, number][]> = {
+  light: [
+    ['--destructive', '--background', 0.1],
+    ['--destructive', '--background', 0.2],
+  ],
+  dark: [
+    ['--destructive', '--background', 0.2],
+    ['--destructive', '--background', 0.25],
+  ],
+};
 const controls: [string, string][] = [
   ['--input', '--background'],
   ['--ring', '--background'],
@@ -87,6 +119,12 @@ describe('the design tokens (ADR-0011 §4)', () => {
       for (const [front, back] of text) {
         expect(contrast(theme, front, back), `${front} on ${back}`).toBeGreaterThanOrEqual(4.5);
       }
+      for (const [front, back, tint] of tinted[name.startsWith('dark') ? 'dark' : 'light']) {
+        expect(
+          contrast(theme, front, back, tint),
+          `${front} on ${String(tint)} of it`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
     });
 
     it(`give the borders of controls and the focus ring 3:1 in ${name}`, () => {
@@ -95,6 +133,11 @@ describe('the design tokens (ADR-0011 §4)', () => {
       }
     });
   }
+
+  it('reads each theme’s own tokens', () => {
+    expect(dark['--background']).not.toBe(light['--background']);
+    expect(more['--input']).toBe('var(--foreground)');
+  });
 
   it('measures contrast the way WCAG does', () => {
     const blackOnWhite = { '--a': 'oklch(0 0 0)', '--b': 'oklch(1 0 0)' };

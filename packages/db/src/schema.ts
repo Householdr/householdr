@@ -347,7 +347,14 @@ export type ActivityAction =
    */
   | 'absence.added'
   /** Once it has started, a head removed days away of its subject's, a profile without an account. */
-  | 'absence.removed';
+  | 'absence.removed'
+  /**
+   * A head marked the whole household away for a time, never which days (ADR-0005 §5, ADR-0018 §5,
+   * clarification).
+   */
+  | 'away.added'
+  /** A head removed a time the whole household is away, never which days. */
+  | 'away.removed';
 
 /** The actions whose entries name whom they were done to (ADR-0018 §5). */
 const toWhom = sql.raw(`'completion.logged', 'completion.undone', 'completion.picked-up',
@@ -408,7 +415,8 @@ export const activityLog = pgTable(
       sql`${t.action} in ('household.name', 'household.timeZone', 'household.language',
         'household.country', 'household.started', 'completion.logged', 'completion.undone',
         'completion.picked-up', 'share.changed', 'temporary-share.added',
-        'temporary-share.removed', 'absence.added', 'absence.removed')`,
+        'temporary-share.removed', 'absence.added', 'absence.removed', 'away.added',
+        'away.removed')`,
     ),
     // Only the actions done to someone name them. One way only: a subject whose profile goes
     // leaves the entry without them.
@@ -585,14 +593,18 @@ export const absences = pgTable(
     householdId: uuid()
       .notNull()
       .references(() => households.id, { onDelete: 'cascade' }),
-    memberId: uuid()
-      .notNull()
-      .references(() => members.id, { onDelete: 'cascade' }),
+    memberId: uuid().notNull(),
     firstDay: date().notNull(),
     lastDay: date().notNull(),
   },
   (t) => [
     householdOnly(t.householdId),
+    // A member of its own household: foreign keys are checked past row-level security (CODE-17).
+    foreignKey({
+      name: 'absences_member_household',
+      columns: [t.householdId, t.memberId],
+      foreignColumns: [members.householdId, members.id],
+    }).onDelete('cascade'),
     // Who is away in a range of days: those whose last day is in or after it (ADR-0001 §6).
     index('absences_household_days').on(t.householdId, t.lastDay, t.firstDay),
     // For a member's absences to go with their profile without reading the whole table.
