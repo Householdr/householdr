@@ -49,6 +49,7 @@ const on = {
   completions: false,
   balances: false,
   'page-transitions': false,
+  notifications: false,
 };
 let next = 0;
 

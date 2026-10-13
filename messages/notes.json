@@ -1038,6 +1038,10 @@
     "note": "Link to the household's activity log, for every member.",
     "needsReview": ["nl"]
   },
+  "household.notifications": {
+    "note": "Link to the member's own notifications from the household (ADR-0014 §7).",
+    "needsReview": ["nl"]
+  },
   "settings.page-title": {
     "note": "Browser tab title of the household settings page.",
     "needsReview": ["nl"]
@@ -2076,6 +2080,30 @@
   },
   "activity.away-removed": {
     "note": "Activity log entry: a head removed a time the whole household is away. {actor} is a name, or “A former member”. Never the days. {who} picks the wording: 'you' when the reader did it, '*' otherwise (ADR-0018 §5, clarification).",
+    "needsReview": ["nl"]
+  },
+  "notifications.page-title": {
+    "note": "Browser tab title of a member's notifications from a household. {household} is the household's name; Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "notifications.title": {
+    "note": "Heading of a member's own notifications from a household (ADR-0014 §7).",
+    "needsReview": ["nl"]
+  },
+  "notifications.intro": {
+    "note": "Under the heading of a member's notifications. {household} is the household's name. Says that nobody else sees them and that they are deleted after 90 days (ADR-0014 §7).",
+    "needsReview": ["nl"]
+  },
+  "notifications.none": {
+    "note": "Shown instead of the list when the member has no notifications from the household.",
+    "needsReview": ["nl"]
+  },
+  "notifications.plan-drafted": {
+    "note": "A notification for heads: a week's draft plan is ready for review (ADR-0014 §2). {days} is the week's first and last day, such as “12–18 October 2026”. A link to the plan.",
+    "needsReview": ["nl"]
+  },
+  "notifications.plan-published": {
+    "note": "A notification for each member with tasks in a week's plan: it is published, so everyone sees it (ADR-0014 §2). {days} is the week's first and last day, such as “12–18 October 2026”. A link to the plan.",
     "needsReview": ["nl"]
   }
 }

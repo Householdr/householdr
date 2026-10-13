@@ -323,6 +323,7 @@
   "household.more": "Meer over het huishouden",
   "household.settings": "Instellingen",
   "household.activity": "Activiteit",
+  "household.notifications": "Meldingen",
   "settings.page-title": "Instellingen van het huishouden · Householdr",
   "settings.title": "Instellingen van het huishouden",
   "settings.country-hint": "Het land bepaalt vanaf welke leeftijd een kind een eigen account kan hebben.",
@@ -756,5 +757,11 @@
         "who=*": "{actor} heeft een tijd dat het huishouden weg is verwijderd."
       }
     }
-  ]
+  ],
+  "notifications.page-title": "Meldingen · {household} · Householdr",
+  "notifications.title": "Meldingen",
+  "notifications.intro": "Meldingen voor jou uit {household}, het nieuwste eerst. Alleen jij ziet ze, en elke melding verdwijnt na 90 dagen.",
+  "notifications.none": "Nog niets.",
+  "notifications.plan-drafted": "Het ontwerp van de planning voor {days} staat klaar om na te kijken.",
+  "notifications.plan-published": "Je planning voor {days} is gepubliceerd."
 }

@@ -323,6 +323,7 @@
   "household.more": "More about the household",
   "household.settings": "Settings",
   "household.activity": "Activity",
+  "household.notifications": "Notifications",
   "settings.page-title": "Household settings · Householdr",
   "settings.title": "Household settings",
   "settings.country-hint": "The country sets the age from which a child can have an account of their own.",
@@ -756,5 +757,11 @@
         "who=*": "{actor} removed a time the household is away."
       }
     }
-  ]
+  ],
+  "notifications.page-title": "Notifications · {household} · Householdr",
+  "notifications.title": "Notifications",
+  "notifications.intro": "Notifications for you from {household}, newest first. Only you see them, and each one goes after 90 days.",
+  "notifications.none": "Nothing yet.",
+  "notifications.plan-drafted": "The draft plan for {days} is ready for you to check.",
+  "notifications.plan-published": "Your plan for {days} is published."
 }

@@ -105,6 +105,13 @@ export const flags = {
     owner: 'Jens',
     expires: '2027-03-31',
   },
+  notifications: {
+    kind: 'release',
+    description:
+      'A member’s own notifications from a household, in a list linked from the household’s page, newest first (ADR-0014 §1, §7, clarification).',
+    owner: 'Jens',
+    expires: '2027-03-31',
+  },
 } as const satisfies Record<string, Flag>;
 
 export type FlagKey = keyof typeof flags;

@@ -7,6 +7,7 @@ import { draftPlan } from '../plans/draft-plan';
 import { publishPlan } from '../plans/publish-plan';
 import { plannedHousehold, type PlannedHousehold } from '../plans/testing';
 import { deleteExpiredNotifications } from './expired';
+import { householdNotifications } from './household-notifications';
 
 // Notifications are written with the change that causes them, for whom the catalogue says
 // (ADR-0014 §2, §7, clarifications), and deleted after 90 days, on a real database (TEST-11).
@@ -160,5 +161,78 @@ describe('deleteExpiredNotifications (ADR-0014 §7, ADR-0012 §5)', () => {
     expect(await kept(other)).toEqual([]);
     await deleteExpiredNotifications(at(91.5));
     expect(await kept(h)).toEqual([]);
+  });
+});
+
+describe('householdNotifications (ADR-0014 §7, clarification)', () => {
+  it('lists the member’s own, newest first, with the day they came and the plan’s week', async () => {
+    const h = await household();
+    await draftPlan(h.scheduler, { week });
+    // Published on Sunday, and read on Monday.
+    h.clock.advance({ hours: 72 });
+    await publishPlan(h.scheduler, { week });
+    h.clock.advance({ hours: 24 });
+    const days = {
+      first: Temporal.PlainDate.from(week),
+      last: Temporal.PlainDate.from('2026-10-18'),
+    };
+    expect(await householdNotifications(h.head)).toEqual({
+      ok: true,
+      household: 'Ash Lane',
+      notifications: [
+        {
+          id: expect.any(String) as string,
+          kind: 'plan.published',
+          day: Temporal.PlainDate.from('2026-10-11'),
+          when: 'yesterday',
+          week: days,
+        },
+        {
+          id: expect.any(String) as string,
+          kind: 'plan.drafted',
+          day: Temporal.PlainDate.from('2026-10-08'),
+          when: 'some-days-ago',
+          week: days,
+        },
+      ],
+    });
+    // Alex, no head, hears of the published plan only.
+    expect(await householdNotifications(h.adult)).toMatchObject({
+      ok: true,
+      notifications: [{ kind: 'plan.published', when: 'yesterday', week: days }],
+    });
+  });
+
+  it('says the day in the household’s time zone', async () => {
+    const h = await household({ timeZone: 'Europe/Helsinki', country: 'FI' });
+    // At 22:00 UTC on Thursday 8 October, it is Friday the 9th in Helsinki.
+    h.clock.advance({ hours: 14 });
+    await draftPlan(h.scheduler, { week });
+    expect(await householdNotifications(h.head)).toMatchObject({
+      notifications: [{ day: Temporal.PlainDate.from('2026-10-09'), when: 'today' }],
+    });
+  });
+
+  it('gives nobody else’s, nor any from another household (TEST-4)', async () => {
+    const [h, other] = [await household(), await household()];
+    await draftPlan(h.scheduler, { week });
+    await draftPlan(other.scheduler, { week });
+    expect(await householdNotifications(h.adult)).toEqual({
+      ok: true,
+      household: 'Ash Lane',
+      notifications: [],
+    });
+    expect(
+      await householdNotifications({ ...h.head, householdId: other.householdId }),
+    ).toMatchObject({ ok: true, notifications: [] });
+  });
+
+  it('is for members with an account only, who are the ones told (ADR-0017 §2)', async () => {
+    const h = await household();
+    const profile = { ...h.adult.member, hasAccount: false };
+    expect(await householdNotifications({ ...h.adult, member: profile })).toEqual({
+      ok: false,
+      error: 'not-allowed',
+    });
   });
 });

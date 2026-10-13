@@ -60,6 +60,10 @@ export { undoCompletion } from './completions/undo-completion';
 export { householdBalances, type MemberBalance, type SettledWeek } from './ledger/balances';
 export { settlePlanWeek } from './ledger/settle-plan-week';
 export { deleteExpiredNotifications } from './notifications/expired';
+export {
+  householdNotifications,
+  type HouseholdNotification,
+} from './notifications/household-notifications';
 export { closeDueOccurrences } from './plans/closing';
 export { draftPlan } from './plans/draft-plan';
 export { queueDuePlanSteps, type ScheduleContext } from './plans/plan-schedule';
@@ -89,9 +93,11 @@ export type { TaskField } from './tasks/task-fields';
 export { taskToEdit, type EditableTask } from './tasks/task-to-edit';
 // The household member as permissions see them, which the web app's guard keeps per request; why an
 // occurrence went where it did, which the plan's page puts in words; and how fast balances even
-// out, which the balances page does; and how long ago a day was, which pages say vaguely.
+// out, which the balances page does; how long ago a day was, which pages say vaguely; and what a
+// notification says happened, which the notifications page puts in words.
 export type {
   Member,
+  NotificationKind,
   PastDay,
   Reason,
   RebalancePreset,
