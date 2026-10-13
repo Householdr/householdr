@@ -71,6 +71,13 @@ Product news and offers are a separate, opt-in category with their own rules (§
 **Never sent**, by design: anyone's miss, anyone else's balance changes, "you're falling behind"
 messages, re-engagement nudges ("we miss you"), and promotional **push** notifications.
 
+> **Clarification (2026-10-13):** notifications go only to members **with an account**, and never to
+> the member whose own action caused them: a head who publishes a plan early, or starts the household
+> now, isn't told about it. *Your week's plan is published* goes to each member with an occurrence
+> in that plan. *Draft ready for review* goes to every head when a week's draft is **first made**, by
+> the scheduler or by starting now ([ADR-0007](0007-onboarding.md) §3); a head drafting it again
+> tells nobody, since the heads know about that draft already.
+
 ### 3. Preferences
 
 - Each member chooses, for each category, **how they receive it**: by push, by e-mail, both, or only
@@ -88,6 +95,13 @@ messages, re-engagement nudges ("we miss you"), and promotional **push** notific
   the fallback of §5 doesn't apply.
 - Preferences belong to the account, so a member of two households sets them once; each notification
   names the household it comes from.
+
+> **Clarification (2026-10-13):** the settings page is the **account's own**, like its security page,
+> and is where the quiet hours (§4) and the e-mail fallback (§5) are set too. It lists every
+> category the app sends so far, each with a line saying what it is and who gets it, such as
+> "heads"; a row of §2 adds its category with its first notification. Every account sees every
+> category, so a choice still holds when the account becomes a head. Preferences are kept with the
+> account, apart from any household ([ADR-0008](0008-tech-stack.md) §9, clarification).
 
 ### 4. Timing: quiet hours and limits
 
@@ -159,6 +173,14 @@ home screen) at the moments it would have helped, at most once a week.
   and DMARC. SMTP keeps the provider replaceable; which provider is chosen with the hosting ADR. A
   self-hosted instance uses its own SMTP server ([ADR-0021](0021-self-hosted-edition.md) §5).
 - In-app notifications are kept **90 days**, then deleted.
+
+> **Clarification (2026-10-13):** the in-app list is **per household**: each household has the
+> member's own notifications from it, newest first, each a link to where it can be acted on, such as
+> the plan. Nobody else sees them. A notification is stored as what happened and what it is about,
+> such as a plan's week, never as text: it is written in the reader's language when it is shown
+> (§6). One about a draft goes with the draft if the draft is removed, as for a week the household
+> turns out to be away for ([ADR-0005](0005-membership-and-availability.md) §5). A daily job deletes
+> those older than 90 days.
 
 > **Clarification (2026-10-08):** **account e-mails** (a sign-up's verification, a password reset,
 > security notices; §2) belong to no household, so their rows live in the `auth` schema
