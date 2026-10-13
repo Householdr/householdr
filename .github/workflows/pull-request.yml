@@ -1,7 +1,10 @@
 # What runs on a pull request's code (ADR-0009 §3): the pipeline only for a pull request that is
-# ready for review and changes more than documentation. `🚦 Pipeline: Result` reports the outcome as
-# one check that always runs, so it can be required whether the pipeline ran or was skipped
-# (ADR-0024 §2). The title has a workflow of its own, so editing it never replaces that result.
+# ready for review and changes more than documentation, with end-to-end tests only into `main`
+# (ADR-0027 §2). `🚦 Pipeline: Result` reports the outcome as one check that always runs, so it can be
+# required whether the pipeline ran or was skipped (ADR-0024 §2). Into any other branch, such as a
+# feature branch, it is `🚦 Pipeline: Result (feature)`, so a pull request retargeted to `main` has no
+# result `main` accepts until a run against `main` reports one. The title has a workflow of its own,
+# so editing it never replaces that result; nor does a change of base, which starts no run.
 name: '🔀 Pull request'
 
 on:
@@ -47,10 +50,12 @@ jobs:
       && needs.changes.outputs.code-changed == 'true'
       && !startsWith(github.head_ref, 'release-please--')
     uses: ./.github/workflows/pipeline.yml
+    with:
+      e2e: ${{ github.base_ref == 'main' }}
 
   # Runs even when the pipeline failed or was cancelled, so a missing result can never count as a pass.
   result:
-    name: '🚦 Pipeline: Result'
+    name: "${{ github.base_ref == 'main' && '🚦 Pipeline: Result' || '🚦 Pipeline: Result (feature)' }}"
     needs: [changes, pipeline]
     if: ${{ always() }}
     runs-on: ubuntu-24.04
