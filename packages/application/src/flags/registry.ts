@@ -98,6 +98,13 @@ export const flags = {
     owner: 'Jens',
     expires: '2027-03-31',
   },
+  'page-transitions': {
+    kind: 'release',
+    description:
+      'Pages sliding in from the end side when going deeper, and off to it when going back up, where the browser has View Transitions and motion isn’t reduced (ADR-0008 §7, clarification).',
+    owner: 'Jens',
+    expires: '2027-03-31',
+  },
 } as const satisfies Record<string, Flag>;
 
 export type FlagKey = keyof typeof flags;
