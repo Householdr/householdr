@@ -643,3 +643,55 @@ describe('days away in the activity log (ADR-0018 §5)', () => {
     expect(await logged(household.householdId)).toHaveLength(2);
   });
 });
+
+describe('the household’s time away in the activity log (ADR-0018 §5, clarification)', () => {
+  /** The household's activity log as stored, whole rows, oldest first. */
+  const logged = (householdId: string) =>
+    inHousehold(db, householdId, (tx) =>
+      tx.select().from(activityLog).orderBy(asc(activityLog.at)),
+    );
+
+  it('logs a head marking the household away, and removing it, never the days', async () => {
+    const household = await founded();
+    const { head, householdId, clock } = household;
+    const alex = signedIn(await household.add('Alex', 'adult', true));
+    const added = await addAwayPeriod(head, { firstDay: '2026-12-24', lastDay: '2027-01-02' });
+    if (!added.ok) throw new Error('Not added');
+    clock.advance({ minutes: 1 });
+    expect(await removeAwayPeriod(head, { period: added.periodId })).toEqual({ ok: true });
+    // Like the household's settings, before the start too: it affects everyone.
+    expect(await logged(householdId)).toEqual(
+      ['away.added', 'away.removed'].map((action) => ({
+        id: expect.any(String) as string,
+        householdId,
+        at: expect.any(Date) as Date,
+        actorId: head.member.id,
+        action,
+        subjectId: null,
+        setBeforeStart: null,
+      })),
+    );
+    // Every member sees them.
+    const shown = await householdActivity(alex);
+    if (!shown.ok) throw new Error(shown.error);
+    expect(shown.entries.map(({ actor, action }) => [actor, action])).toEqual([
+      ['Robin', 'away.removed'],
+      ['Robin', 'away.added'],
+    ]);
+  });
+
+  it('logs nothing that isn’t done', async () => {
+    const household = await founded();
+    const alex = signedIn(await household.add('Alex', 'adult', true));
+    expect(
+      await addAwayPeriod(alex, { firstDay: '2026-12-24', lastDay: '2027-01-02' }),
+    ).toMatchObject({ error: 'not-allowed' });
+    expect(
+      await addAwayPeriod(household.head, { firstDay: '2027-01-02', lastDay: '2026-12-24' }),
+    ).toMatchObject({ error: 'invalid' });
+    expect(await removeAwayPeriod(household.head, { period: crypto.randomUUID() })).toMatchObject({
+      error: 'not-found',
+    });
+    expect(await logged(household.householdId)).toEqual([]);
+  });
+});

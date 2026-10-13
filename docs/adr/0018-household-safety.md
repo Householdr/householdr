@@ -125,6 +125,11 @@ Entries say who did what to whom, never a value hidden from the reader: no share
 > also in the lists of the entry at Start. Someone acting on themselves isn't named twice ("Robin
 > changed their share"). What an entry says happened is the same for every reader.
 
+> **Clarification (2026-10-12):** a head **marking the household away** for a time
+> ([ADR-0005](0005-membership-and-availability.md) §5), and removing such a time, is logged too, never
+> its days: "Robin marked the household away". Like a change to the household's settings, it affects
+> everyone, so it is logged before the household starts as well.
+
 The log can't be edited or deleted by anyone in the household, and is kept as long as the ledger.
 Members notice what is done in their name; disputes have a record.
 
