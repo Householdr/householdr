@@ -55,6 +55,11 @@ ADR.
 The **occurrence** is the unit of allocation, not the task. A daily task is split across members over
 the week by default, which makes balancing easier.
 
+> **Clarification (2026-10-13):** **removing a task** that has been in a plan hides it: it leaves the
+> task list and is never planned again. Its open occurrences go: those in drafts and in weeks to come,
+> and one not yet done in this week's published plan. Done work, the balances and past plans keep it,
+> by its name, so nothing a member already earned changes.
+
 ### 2. Roles
 
 - **Heads** administer the household: invite and remove members, edit tasks, schedules, shares,

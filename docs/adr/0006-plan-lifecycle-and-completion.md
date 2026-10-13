@@ -79,6 +79,11 @@ current loads of the week as its starting point.
 > task, while a draft is open or after publishing. A member edits or removes only one-offs they
 > added, until one is done; heads can edit or remove any.
 
+> **Clarification (2026-10-13):** members add one-off tasks on the tasks page, with the household's
+> other tasks, and for the current plan week also from the plan page. A one-off task stays in the
+> task list once it is done, marked done, until the next plan week begins; then it leaves the list.
+> The plan and the balances keep it as done work.
+
 ### 4. Completion
 
 - An occurrence is completed with **one tap** by the assignee, or by anyone on their behalf; the
