@@ -499,6 +499,20 @@
   "availability.household-intro": "Voor als iedereen samen weg is, zoals op gezinsvakantie. Weken waarin jullie helemaal weg zijn, krijgen geen planning, taken die vallen terwijl jullie allemaal weg zijn, vervallen, saldo's veranderen niet en niemand krijgt herinneringen. Alleen hoofden plannen dit.",
   "availability.household-none": "Geen tijd samen weg gepland.",
   "availability.household-plan": "Tijd samen weg plannen",
+  "availability.cant-legend": "Lukt het vandaag niet?",
+  "availability.cant-intro": "Komt er iets tussen? Zeg het hier, tot het einde van vandaag of een latere dag deze week. Voor de tijd dat je niet kunt, raak je niet achter. De anderen zien alleen tot welke dag, nooit waarom.",
+  "availability.cant-last-day": "Tot het einde van",
+  "availability.cant-today-option": "Vandaag",
+  "availability.i-cant": "Ik kan niet",
+  "availability.they-cant": "{name} kan niet",
+  "availability.cant-today": "Kan vandaag niet.",
+  "availability.cant-until": "Kan niet tot het einde van {day}.",
+  "availability.i-can": "Ik kan toch",
+  "availability.they-can": "{name} kan toch",
+  "availability.unavailable": "Genoteerd. De anderen zien tot welke dag, nooit waarom.",
+  "availability.available": "Genoteerd: kan toch.",
+  "availability.already-available": "Dat was al voorbij.",
+  "availability.cant-invalid-day": "Kies vandaag of een latere dag van deze week.",
   "plan.title": "Planning",
   "plan.page-title": "Planning · {household} · Householdr",
   "plan.intro": "Wie doet wat, week na week. Bij elke taak staat waarom ze bij die persoon terechtkwam.",
@@ -726,6 +740,26 @@
       "match": {
         "who=you": "Je hebt dagen weg van {subject} verwijderd.",
         "who=*": "{actor} heeft dagen weg van {subject} verwijderd."
+      }
+    }
+  ],
+  "activity.unavailable-reported": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je hebt gezegd dat {subject} vandaag niet kan.",
+        "who=*": "{actor} heeft gezegd dat {subject} vandaag niet kan."
+      }
+    }
+  ],
+  "activity.unavailable-ended": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je hebt gezegd dat {subject} toch kan.",
+        "who=*": "{actor} heeft gezegd dat {subject} toch kan."
       }
     }
   ],

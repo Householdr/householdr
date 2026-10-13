@@ -75,6 +75,7 @@ const on = {
   tasks: false,
   comparisons: false,
   availability: false,
+  unavailability: false,
   plans: false,
   completions: false,
   balances: false,

@@ -25,6 +25,7 @@ export {
   type AvailabilityPattern,
 } from './availability/availability';
 export { plannableDays, unplannableEnds, type AbsenceEnd } from './availability/planned-absence';
+export { suddenUnavailability, unavailableDays } from './availability/sudden-unavailability';
 export {
   estimateBurdens,
   type BurdenEstimate,

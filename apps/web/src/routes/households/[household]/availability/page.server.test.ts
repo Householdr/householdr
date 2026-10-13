@@ -90,16 +90,25 @@ describe('the page of who is away (ADR-0005 §2, ADR-0018 §3)', () => {
     expect(page).toEqual({
       household: { periods: [], mayManage: true },
       members: [
-        { id: head.member.id, name: 'Robin', role: 'head', absences: [], mayManage: true },
+        {
+          id: head.member.id,
+          name: 'Robin',
+          role: 'head',
+          absences: [],
+          unavailableUntil: null,
+          mayManage: true,
+        },
         {
           id: sam,
           name: 'Sam',
           role: 'adult',
           absences: [{ id: expect.any(String) as string, from: '2026-10-12', to: '2026-10-16' }],
+          unavailableUntil: null,
           mayManage: true,
         },
       ],
       plannable: { from: '2026-10-08', to: '2027-10-08' },
+      unavailableDays: ['2026-10-08', '2026-10-09', '2026-10-10', '2026-10-11'],
       you: head.member.id,
     });
   });
@@ -239,5 +248,65 @@ describe('the household away together (ADR-0005 §5)', () => {
     expect(
       await send('removeAway', locals, { period: crypto.randomUUID(), member: 'household' }),
     ).toBe(403);
+  });
+});
+
+describe('"I can\'t today" (ADR-0005 §3)', () => {
+  const both = { ...on, unavailability: true };
+
+  it('says until which day a member can’t, then that they can after all', async () => {
+    const { head, sam } = await founded();
+    const locals = { flags: both, membership: head };
+    expect(await send('unavailable', locals, { member: sam, lastDay: '2026-10-09' })).toEqual({
+      done: 'unavailable',
+      member: sam,
+    });
+    const page = await opened(locals);
+    expect(typeof page === 'object' && page.members[1]).toMatchObject({
+      name: 'Sam',
+      unavailableUntil: '2026-10-09',
+    });
+    expect(await send('available', locals, { member: sam })).toEqual({
+      done: 'available',
+      member: sam,
+    });
+    // A second tap, or one after someone else's, finds it ended.
+    expect(await send('available', locals, { member: sam })).toEqual({
+      done: 'already-available',
+      member: sam,
+    });
+  });
+
+  it('refuses a day it can’t last to as a form error', async () => {
+    const { head, sam } = await founded();
+    const refused = await send(
+      'unavailable',
+      { flags: both, membership: head },
+      { member: sam, lastDay: '2026-10-12' },
+    );
+    expect(isActionFailure(refused) && refused).toMatchObject({
+      status: 400,
+      data: { member: sam, unavailableDay: true },
+    });
+  });
+
+  it('is forbidden for a member the member acting doesn’t manage, and missing for another', async () => {
+    const { head } = await founded();
+    const other = await founded();
+    const locals = { flags: both, membership: other.head };
+    expect(
+      await send('unavailable', locals, { member: head.member.id, lastDay: '2026-10-08' }),
+    ).toBe(404);
+    const profile = { ...other.head, member: { ...other.head.member, hasAccount: false } };
+    const day = { member: other.sam, lastDay: '2026-10-08' };
+    expect(await send('unavailable', { flags: both, membership: profile }, day)).toBe(403);
+    expect(await send('available', { flags: both, membership: profile }, day)).toBe(403);
+  });
+
+  it('is not found until its own flag is on (CODE-20)', async () => {
+    const { head, sam } = await founded();
+    const locals = { flags: on, membership: head };
+    expect(await send('unavailable', locals, { member: sam, lastDay: '2026-10-08' })).toBe(404);
+    expect(await send('available', locals, { member: sam })).toBe(404);
   });
 });

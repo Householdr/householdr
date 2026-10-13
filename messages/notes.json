@@ -1598,6 +1598,62 @@
     "note": "Legend of the form where a head plans time when the whole household is away.",
     "needsReview": ["nl"]
   },
+  "availability.cant-legend": {
+    "note": "Legend of the form, under a member's name, where they say they can't today (ADR-0005 §3): for yourself, or as a head for a child or a member without an account.",
+    "needsReview": ["nl"]
+  },
+  "availability.cant-intro": {
+    "note": "Explains “I can't today” (ADR-0005 §3): the fair portion shrinks by that time, so it's an absence, not a deficit (ADR-0002 §1); others see only the days (ADR-0018 §3). No reason is asked. Kind and plain, never guilt (UI-24).",
+    "needsReview": ["nl"]
+  },
+  "availability.cant-last-day": {
+    "note": "Label of the choice of the last day someone can't: today, or a later day of this plan week, each written as a weekday and date. Read together with the chosen day.",
+    "needsReview": ["nl"]
+  },
+  "availability.cant-today-option": {
+    "note": "The first choice of the last day someone can't, chosen to begin with: the end of today.",
+    "needsReview": ["nl"]
+  },
+  "availability.i-cant": {
+    "note": "Button that says you can't, until the end of the day chosen (ADR-0005 §3). One tap, so short.",
+    "needsReview": ["nl"]
+  },
+  "availability.they-cant": {
+    "note": "Button with which a head says a child or a member without an account, {name}, can't, until the end of the day chosen (ADR-0005 §3).",
+    "needsReview": ["nl"]
+  },
+  "availability.cant-today": {
+    "note": "Under a member's name, which everyone sees: they said they can't, until the end of today. Never why (ADR-0018 §3).",
+    "needsReview": ["nl"]
+  },
+  "availability.cant-until": {
+    "note": "Under a member's name, which everyone sees: they said they can't, up to the end of {day}, a weekday and date such as “Friday 9 October”. Never why (ADR-0018 §3).",
+    "needsReview": ["nl"]
+  },
+  "availability.i-can": {
+    "note": "Button that ends your “I can't” now (ADR-0005 §3, clarification).",
+    "needsReview": ["nl"]
+  },
+  "availability.they-can": {
+    "note": "Button with which a head ends the “can't” of a child or a member without an account, {name}, now.",
+    "needsReview": ["nl"]
+  },
+  "availability.unavailable": {
+    "note": "Status message once someone said they can't (ADR-0005 §3, ADR-0018 §3).",
+    "needsReview": ["nl"]
+  },
+  "availability.available": {
+    "note": "Status message once someone said they can after all.",
+    "needsReview": ["nl"]
+  },
+  "availability.already-available": {
+    "note": "Status message when the “can't” had ended by itself, or someone else ended it a moment earlier.",
+    "needsReview": ["nl"]
+  },
+  "availability.cant-invalid-day": {
+    "note": "Why the last day wasn't accepted, next to its field: usually one that passed while the page was open.",
+    "needsReview": ["nl"]
+  },
   "plan.title": {
     "note": "Heading of the page with the week's plan, and the link to it on the household's page (ADR-0006).",
     "needsReview": ["nl"]
@@ -2036,6 +2092,14 @@
   },
   "activity.absence-removed": {
     "note": "Activity log entry, after the household started: a head removed days away planned for {subject}, a member without an account. {actor} and {subject} are names, or “a former member”. Never the days. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
+    "needsReview": ["nl"]
+  },
+  "activity.unavailable-reported": {
+    "note": "Activity log entry, after the household started: a head said {subject}, a member without an account, can't today, acting for them (ADR-0005 §3, ADR-0018 §5). “Can't today” as on the availability page, also when it lasts to a later day. {actor} and {subject} are names, or “a former member”. Never until when or why. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
+    "needsReview": ["nl"]
+  },
+  "activity.unavailable-ended": {
+    "note": "Activity log entry, after the household started: a head said {subject}, a member without an account, can after all, ending their “can't today” (ADR-0005 §3, clarification; ADR-0018 §5). {actor} and {subject} are names, or “a former member”. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
     "needsReview": ["nl"]
   },
   "past.today": {

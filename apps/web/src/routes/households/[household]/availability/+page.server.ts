@@ -1,8 +1,10 @@
 import {
   addAbsence,
   addAwayPeriod,
+  endUnavailable,
   removeAbsence,
   removeAwayPeriod,
+  reportUnavailable,
   viewAvailability,
 } from '@householdr/application';
 import { error, fail } from '@sveltejs/kit';
@@ -48,11 +50,13 @@ export const load = (async ({ locals }) => {
       periods: result.household.periods.map(days),
       mayManage: result.household.mayManage,
     },
-    members: result.members.map(({ absences, ...member }) => ({
+    members: result.members.map(({ absences, unavailableUntil, ...member }) => ({
       ...member,
       absences: absences.map(days),
+      unavailableUntil: unavailableUntil?.toString() ?? null,
     })),
     plannable: { from: result.plannable.from.toString(), to: result.plannable.to.toString() },
+    unavailableDays: result.unavailableDays.map((day) => day.toString()),
     you: context.member.id,
   };
 }) satisfies PageServerLoad;
@@ -84,6 +88,30 @@ export const actions = {
     if (result.error === 'not-allowed') error(403);
     // Removed a moment ago by someone else: the page then shows what is left.
     return { done: 'already-removed' as const, member };
+  },
+  // "I can't today" (ADR-0005 §3), behind its own release flag (CODE-20).
+  unavailable: async ({ locals, request }) => {
+    const context = await householdContext(locals);
+    if (!locals.flags.unavailability) error(404);
+    const form = await request.formData();
+    const input = { member: text(form.get('member')), lastDay: text(form.get('lastDay')) };
+    const result = await reportUnavailable(context, input);
+    if (result.ok) return { done: 'unavailable' as const, member: input.member };
+    if (result.error === 'not-allowed') error(403);
+    if (result.error === 'not-found') error(404);
+    // Only a day the page didn't offer, such as one that has passed since it was loaded.
+    return fail(400, { member: input.member, unavailableDay: true });
+  },
+  // "I can after all" (ADR-0005 §3, clarification).
+  available: async ({ locals, request }) => {
+    const context = await householdContext(locals);
+    if (!locals.flags.unavailability) error(404);
+    const member = text((await request.formData()).get('member'));
+    const result = await endUnavailable(context, { member });
+    if (result.ok) return { done: 'available' as const, member };
+    if (result.error === 'not-allowed') error(403);
+    // Ended a moment ago, or over by now: the page then shows that they can.
+    return { done: 'already-available' as const, member };
   },
   // Marks the whole household away (ADR-0005 §5); `member` is the household's own form.
   addAway: async ({ locals, request }) => {

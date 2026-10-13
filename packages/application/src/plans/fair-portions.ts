@@ -1,4 +1,10 @@
-import { absences, members, temporaryShares, type Transaction } from '@householdr/db';
+import {
+  absences,
+  members,
+  temporaryShares,
+  unavailabilities,
+  type Transaction,
+} from '@householdr/db';
 import {
   availabilityInWeek,
   fairFractions,
@@ -7,8 +13,9 @@ import {
   type Availability,
   type HouseholdCalendar,
   type PlanWeek,
+  type Window,
 } from '@householdr/domain';
-import { and, gte, lt } from 'drizzle-orm';
+import { and, gt, gte, lt } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { basisOf } from '../shares/member-share';
 import { sharesInWeek } from '../shares/share-changes';
@@ -20,7 +27,10 @@ export interface FairPortion {
   id: string;
   /** A child's; none for an adult (ADR-0012 §2). */
   birthDate: Temporal.PlainDate | undefined;
-  /** Their absences in the week, and the days the household is away, which are nobody's. */
+  /**
+   * Their absences and times they couldn't in the week, and the days the household is away, which
+   * are nobody's.
+   */
   availability: Availability;
   /** Their fraction of the week's work: all members' add up to 1, or are all 0. */
   fairFraction: number;
@@ -59,6 +69,23 @@ export async function fairPortions(
     .select({ memberId: absences.memberId, from: absences.firstDay, to: absences.lastDay })
     .from(absences)
     .where(inWeek(absences.firstDay, absences.lastDay));
+  // "I can't today" as it ended up: until its day's end, or until they could after all (ADR-0005
+  // §3, ADR-0002 §1).
+  const midnight = (day: Temporal.PlainDate) =>
+    new Date(day.toZonedDateTime({ timeZone: calendar.timeZone }).epochMilliseconds);
+  const unavailable = await tx
+    .select({
+      memberId: unavailabilities.memberId,
+      startsAt: unavailabilities.startsAt,
+      endsAt: unavailabilities.endsAt,
+    })
+    .from(unavailabilities)
+    .where(
+      and(
+        gt(unavailabilities.endsAt, midnight(week.start)),
+        lt(unavailabilities.startsAt, midnight(week.end)),
+      ),
+    );
   const temporary = await tx
     .select({
       memberId: temporaryShares.memberId,
@@ -69,6 +96,8 @@ export async function fairPortions(
     .from(temporaryShares)
     .where(inWeek(temporaryShares.firstDay, temporaryShares.lastDay));
   const day = (iso: string) => Temporal.PlainDate.from(iso);
+  const zoned = (at: Date) =>
+    Temporal.Instant.fromEpochMilliseconds(at.getTime()).toZonedDateTimeISO(calendar.timeZone);
   const people = rows.map((row) => {
     const percent = kept.has(row.id) ? (kept.get(row.id) ?? null) : row.sharePercent;
     const joinedLater = draftedAt !== undefined && row.joinedAt > draftedAt;
@@ -95,7 +124,9 @@ export async function fairPortions(
         // home, with fair portions over those days (ADR-0005 §5).
         ...away,
       ],
-      unavailable: [],
+      unavailable: unavailable
+        .filter((u) => u.memberId === row.id)
+        .map((u): Window => ({ start: zoned(u.startsAt), end: zoned(u.endsAt) })),
     };
     return { row, share, availability };
   });
