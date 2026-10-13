@@ -36,9 +36,25 @@ export function suddenUnavailability(
 }
 
 /**
+ * What is left at `now` of an occurrence's `window`, to re-allocate it after publishing (ADR-0005
+ * §3–§4, clarifications): none once it has passed, as nobody can do it then.
+ */
+export function windowLeft(
+  window: Window,
+  now: Temporal.Instant,
+  calendar: HouseholdCalendar,
+): Window | undefined {
+  const from = now.toZonedDateTimeISO(calendar.timeZone);
+  if (Temporal.ZonedDateTime.compare(window.end, from) <= 0) return undefined;
+  return Temporal.ZonedDateTime.compare(window.start, from) > 0
+    ? window
+    : { ...window, start: from };
+}
+
+/**
  * What is left at `now` of an occurrence's `window` that a member with `availability` can no
  * longer do, to re-allocate (ADR-0005 §3, clarification): none when they are available during any
- * part of it, so it stays theirs, nor once the window has passed, as nobody can do it then.
+ * part of it, so it stays theirs, nor once the window has passed.
  */
 export function windowToReallocate(
   availability: Availability,
@@ -46,9 +62,6 @@ export function windowToReallocate(
   now: Temporal.Instant,
   calendar: HouseholdCalendar,
 ): Window | undefined {
-  const from = now.toZonedDateTimeISO(calendar.timeZone);
-  if (Temporal.ZonedDateTime.compare(window.end, from) <= 0) return undefined;
-  const left =
-    Temporal.ZonedDateTime.compare(window.start, from) > 0 ? window : { ...window, start: from };
-  return isAvailableDuring(availability, left, calendar) ? undefined : left;
+  const left = windowLeft(window, now, calendar);
+  return left && !isAvailableDuring(availability, left, calendar) ? left : undefined;
 }

@@ -1,10 +1,14 @@
 import {
+  absences,
   assignments,
   completionCredits,
   completions,
   inHousehold,
   ledgerEntries,
+  members,
   plans,
+  temporaryShares,
+  unavailabilities,
 } from '@householdr/db';
 import {
   goneDays,
@@ -14,7 +18,7 @@ import {
   weekHasBegun,
   type Points,
 } from '@householdr/domain';
-import { and, eq, lt, notExists } from 'drizzle-orm';
+import { and, eq, inArray, lt, notExists } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import * as v from 'valibot';
 import { fairPortions } from '../plans/fair-portions';
@@ -140,6 +144,16 @@ export async function settlePlanWeek(
         at,
       })),
     );
+    // A former member's absences, times they couldn't and temporary shares were kept for the
+    // settlement of the week they left only: no later week counts them (ADR-0005 §4, clarification).
+    const weekEnd = new Date(week.end.toZonedDateTime(calendar.timeZone).epochMilliseconds);
+    const formerByNow = tx
+      .select({ id: members.id })
+      .from(members)
+      .where(lt(members.leftAt, weekEnd));
+    await tx.delete(absences).where(inArray(absences.memberId, formerByNow));
+    await tx.delete(unavailabilities).where(inArray(unavailabilities.memberId, formerByNow));
+    await tx.delete(temporaryShares).where(inArray(temporaryShares.memberId, formerByNow));
     return { ok: true, settled: true };
   });
 }

@@ -10,7 +10,12 @@ export const isCurrentMember = isNull(members.leftAt);
 
 /**
  * A member's name as the household sees it, from `table`, `members` or an alias of it: none for a
- * former member, who shows as "Former member" (ADR-0012 §6, ADR-0018 §2, clarifications).
+ * former member, who shows as "Former member", unless they chose their name (ADR-0012 §6, ADR-0018
+ * §2, clarifications).
  */
-export const shownName = (table: { name: AnyPgColumn; leftAt: AnyPgColumn } = members) =>
-  sql<string | null>`case when ${table.leftAt} is null then ${table.name} end`;
+export const shownName = (
+  table: { name: AnyPgColumn; leftAt: AnyPgColumn; showsName: AnyPgColumn } = members,
+) =>
+  sql<
+    string | null
+  >`case when ${table.leftAt} is null or ${table.showsName} then ${table.name} end`;
