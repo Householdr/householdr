@@ -1458,6 +1458,74 @@
     "note": "Why adding or saving a task didn't work: no unit was chosen in 'Due again after'.",
     "needsReview": ["nl"]
   },
+  "tasks.when": {
+    "note": "Legend of the choice between doing a task any time in its plan week or at set times around each date (ADR-0004 §4).",
+    "needsReview": ["nl"]
+  },
+  "tasks.when-week": {
+    "note": "Choice: the task can be done any day of the plan week its date falls in.",
+    "needsReview": ["nl"]
+  },
+  "tasks.when-set": {
+    "note": "Choice: the task is done within a window of set times around each date, such as putting the bins out the evening before collection.",
+    "needsReview": ["nl"]
+  },
+  "tasks.window": {
+    "note": "Legend of a task's set times, and their label in its details.",
+    "needsReview": ["nl"]
+  },
+  "tasks.window-hint": {
+    "note": "Hint under the set times, with the example of bins collected on a Wednesday morning.",
+    "needsReview": ["nl"]
+  },
+  "tasks.window-from-day": {
+    "note": "Label of the day the window starts on, relative to the task's date: “the day before”, “the day itself”…",
+    "needsReview": ["nl"]
+  },
+  "tasks.window-from-time": {
+    "note": "Label of the time the window starts at.",
+    "needsReview": ["nl"]
+  },
+  "tasks.window-to-day": {
+    "note": "Label of the day the window ends on, relative to the task's date.",
+    "needsReview": ["nl"]
+  },
+  "tasks.window-to-time": {
+    "note": "Label of the time the window ends at; it ends before this time.",
+    "needsReview": ["nl"]
+  },
+  "tasks.day-itself": {
+    "note": "A window's day: the task's date itself. Lower case, as it is also used inside “From {from} at …”.",
+    "needsReview": ["nl"]
+  },
+  "tasks.day-before": {
+    "note": "A window's day: the day before the task's date. Lower case.",
+    "needsReview": ["nl"]
+  },
+  "tasks.day-after": {
+    "note": "A window's day: the day after the task's date. Lower case.",
+    "needsReview": ["nl"]
+  },
+  "tasks.days-before": {
+    "note": "A window's day: {count} (2 or 3) days before the task's date. Lower case.",
+    "needsReview": ["nl"]
+  },
+  "tasks.days-after": {
+    "note": "A window's day: {count} (2 or 3) days after the task's date. Lower case.",
+    "needsReview": ["nl"]
+  },
+  "tasks.window-words": {
+    "note": "A task's set times in words. {from} and {to} are days such as “the day before”; {fromTime} and {toTime} are times as HH:MM.",
+    "needsReview": ["nl"]
+  },
+  "tasks.invalid-when": {
+    "note": "Problem: neither choice of when the task is done was sent.",
+    "needsReview": ["nl"]
+  },
+  "tasks.invalid-window": {
+    "note": "Problem with a task's set times: missing, more than 3 days from its date, or ending before they start.",
+    "needsReview": ["nl"]
+  },
   "tasks.edit": {
     "note": "Link next to each task in the list, for heads, to the page that changes or removes it. Screen readers read it with the task's name after it.",
     "needsReview": ["nl"]

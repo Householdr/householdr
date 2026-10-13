@@ -1,5 +1,5 @@
 import { atVersion, households, inHousehold, nextVersion, schedules, tasks } from '@householdr/db';
-import { can } from '@householdr/domain';
+import { can, type WindowEdge } from '@householdr/domain';
 import { and, eq, notExists } from 'drizzle-orm';
 import * as v from 'valibot';
 import type { HouseholdContext } from '../households/membership';
@@ -32,8 +32,9 @@ type EditTaskResult =
  * first time rewrites the single rule of the task's own schedule (ADR-0004 §3), and the timing
  * follows the frequency, as when it was added (§4). Counted from when it was last done instead, it
  * has no schedule: its own goes, and comes back new if it returns to a frequency (§8). A task that
- * has started keeps its first time, or moves to a day from today on (`isStartDay`). Saved
- * unchanged, the task keeps its version.
+ * has started keeps its first time, or moves to a day from today on (`isStartDay`). On a schedule,
+ * it is done any time that week or at set times (§4, clarification). Saved unchanged, the task
+ * keeps its version.
  */
 export async function editTask(context: HouseholdContext, input: unknown): Promise<EditTaskResult> {
   if (!can(context.member, { action: 'household.tasks' })) {
@@ -74,8 +75,15 @@ export async function editTask(context: HouseholdContext, input: unknown): Promi
       next.start.equals(current.start) &&
       (next.frequency !== sinceLastDone ||
         (next.everyCount === current.every?.count && next.everyUnit === current.every.unit));
+    const nextWindow = next.frequency === sinceLastDone ? undefined : next.window;
+    const sameWindow =
+      nextWindow === undefined || current.window === undefined
+        ? nextWindow === current.window
+        : sameEdge(nextWindow.from, current.window.from) &&
+          sameEdge(nextWindow.to, current.window.to);
     const changed =
       !sameRepeat ||
+      !sameWindow ||
       next.name !== current.name ||
       next.duration !== current.duration ||
       columns.onMiss !== current.onMiss;
@@ -130,3 +138,7 @@ export async function editTask(context: HouseholdContext, input: unknown): Promi
     return { ok: true };
   });
 }
+
+/** Whether two edges of a fixed window are the same day and time (ADR-0004 §4). */
+const sameEdge = (a: WindowEdge, b: WindowEdge) =>
+  a.dayOffset === b.dayOffset && a.time.equals(b.time);

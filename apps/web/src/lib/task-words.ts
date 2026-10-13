@@ -63,6 +63,8 @@ export const taskProblems: Record<TaskField, () => string> = {
   everyUnit: m['tasks.invalid-every-unit'],
   start: m['tasks.invalid-start'],
   onMiss: m['tasks.invalid-on-miss'],
+  when: m['tasks.invalid-when'],
+  window: m['tasks.invalid-window'],
 };
 
 /** Why the server refused a field of a one-off task's form, in words (CODE-13). */
@@ -76,3 +78,28 @@ export const oneOffProblems: Record<OneOffField, () => string> = {
 
 /** The id of a one-off task's field, apart from those of the form for other tasks. */
 export const oneOffFieldId = (field: OneOffField) => `one-off-${field}`;
+
+/** The days a window's edge can be on, around the schedule date (ADR-0004 §4, clarification). */
+export const edgeDays = [-3, -2, -1, 0, 1, 2, 3] as const;
+
+/** A day around the schedule date in words, such as “the day before”. */
+export function edgeDayWords(dayOffset: number) {
+  if (dayOffset === 0) return m['tasks.day-itself']();
+  if (dayOffset === -1) return m['tasks.day-before']();
+  if (dayOffset === 1) return m['tasks.day-after']();
+  if (dayOffset < 0) return m['tasks.days-before']({ count: -dayOffset });
+  return m['tasks.days-after']({ count: dayOffset });
+}
+
+/** A fixed window in words: “from the day before at 18:00 to the day itself at 07:00”. */
+export function windowWords(window: {
+  from: { dayOffset: number; time: string };
+  to: { dayOffset: number; time: string };
+}) {
+  return m['tasks.window-words']({
+    from: edgeDayWords(window.from.dayOffset),
+    fromTime: window.from.time,
+    to: edgeDayWords(window.to.dayOffset),
+    toTime: window.to.time,
+  });
+}

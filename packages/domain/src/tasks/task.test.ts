@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   changedStartRange,
+  isFixedWindow,
   isOneOffDeadline,
   isStartDay,
   isTaskDuration,
@@ -122,5 +123,28 @@ describe('changedStartRange (ADR-0004 §3)', () => {
 
   it('reaches a first time past a year from today, as a later time zone can leave it', () => {
     expect(range('2027-10-09')).toEqual(['2026-10-08', '2027-10-09']);
+  });
+});
+
+describe('isFixedWindow (ADR-0004 §4, clarification)', () => {
+  const edge = (dayOffset: number, time: string) => ({
+    dayOffset,
+    time: Temporal.PlainTime.from(time),
+  });
+
+  it('takes a window that ends after it starts, its edges within 3 days of the date', () => {
+    // The bins: out the evening before, in the evening after collection.
+    expect(isFixedWindow(edge(-1, '18:00'), edge(0, '07:00'))).toBe(true);
+    expect(isFixedWindow(edge(0, '12:00'), edge(0, '22:00'))).toBe(true);
+    expect(isFixedWindow(edge(-3, '00:00'), edge(3, '23:59'))).toBe(true);
+    for (const [from, to] of [
+      [edge(0, '07:00'), edge(0, '07:00')],
+      [edge(0, '08:00'), edge(0, '07:00')],
+      [edge(-4, '18:00'), edge(0, '07:00')],
+      [edge(0, '18:00'), edge(4, '07:00')],
+      [edge(0.5, '18:00'), edge(1, '07:00')],
+    ] as const) {
+      expect(isFixedWindow(from, to)).toBe(false);
+    }
   });
 });

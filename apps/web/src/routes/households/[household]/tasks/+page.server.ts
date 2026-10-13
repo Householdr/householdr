@@ -1,6 +1,7 @@
 import { addOneOff, addTask, listTasks } from '@householdr/application';
 import { error, fail } from '@sveltejs/kit';
 import { authContext } from '#lib/server/auth.js';
+import { windowData, windowInput } from '#lib/task-window.js';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
@@ -25,7 +26,11 @@ export const load = (async ({ locals, url }) => {
   const { earliest, latest } = result.starts;
   return {
     household: result.household,
-    tasks: result.tasks,
+    // A window's times as `HH:MM`.
+    tasks: result.tasks.map(({ window, ...task }) => ({
+      ...task,
+      window: window && windowData(window),
+    })),
     // Days as `YYYY-MM-DD`.
     oneOffs: result.oneOffs.map(({ date, deadline, ...oneOff }) => ({
       ...oneOff,
@@ -59,6 +64,11 @@ export const actions = {
       everyUnit: text(form, 'everyUnit'),
       start: text(form, 'start'),
       onMiss: text(form, 'onMiss'),
+      when: text(form, 'when'),
+      fromDay: text(form, 'fromDay'),
+      fromTime: text(form, 'fromTime'),
+      toDay: text(form, 'toDay'),
+      toTime: text(form, 'toTime'),
     };
     const result = await addTask(context, {
       ...values,
@@ -69,6 +79,7 @@ export const actions = {
       onMiss: values.onMiss || undefined,
       // Without a day, it starts today.
       start: values.start || undefined,
+      ...windowInput(values),
     });
     if (result.ok) return { added: result.name };
     if (result.error === 'not-allowed') error(403);

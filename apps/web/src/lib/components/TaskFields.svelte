@@ -5,7 +5,7 @@
   import { NativeSelect, NativeSelectOption } from '#lib/components/ui/native-select/index.js';
   import { useTaskRepeat } from '#lib/hooks/use-task-repeat.svelte.js';
   import { m } from '#lib/paraglide/messages.js';
-  import { onMissWords, repeatWords, unitWords } from '#lib/task-words.js';
+  import { edgeDays, edgeDayWords, onMissWords, repeatWords, unitWords } from '#lib/task-words.js';
   import type { Repeat, TaskField } from '@householdr/application';
   import { taskDuration, taskInterval, type Interval, type PlanTask } from '@householdr/domain';
 
@@ -13,7 +13,8 @@
    * The fields of the form that adds or changes a task (ADR-0001 §1, ADR-0002 §2, ADR-0004 §3,
    * §8), showing `values`, with the `problems` of the fields the server refused (UI-10). The first
    * time is offered within `starts`; a reset form goes back to `startingOnMiss`. Counted from when
-   * it was last done, a task has an interval instead of a choice of what happens if it isn't done.
+   * it was last done, a task has an interval instead of a choice of what happens if it isn't done,
+   * and of when it is done: any time that week, or at set times around each date (§4).
    */
   let {
     values,
@@ -30,6 +31,11 @@
       everyUnit: string;
       start: string;
       onMiss: string;
+      when: string;
+      fromDay: string;
+      fromTime: string;
+      toDay: string;
+      toTime: string;
     };
     invalid: readonly TaskField[];
     problems: Record<TaskField, () => string>;
@@ -41,11 +47,17 @@
   const repeats = Object.keys(repeatWords) as Repeat[];
   const units = Object.keys(unitWords) as Interval['unit'][];
 
-  const repeat = useTaskRepeat(() => values.frequency);
+  const whenChoices = ['week', 'set'] as const;
+  const repeat = useTaskRepeat(
+    () => values.frequency,
+    () => values.when,
+  );
   let select = $state<HTMLSelectElement | null>(null);
   $effect(() => (select ? repeat.resetWith(select) : undefined));
   /** Whether the fields of one kind apply: always, until the page runs scripts. */
   const applies = (counted: boolean) => !repeat.running || repeat.counted === counted;
+  /** Whether the window applies: always, until the page runs scripts. */
+  const windowApplies = $derived(!repeat.running || repeat.atSetTimes);
 
   const problemOf = (field: TaskField) => (invalid.includes(field) ? problems[field]() : undefined);
 
@@ -191,4 +203,77 @@
     </label>
   {/each}
   <FieldProblem id="onMiss-problem" problem={problemOf('onMiss')} />
+</fieldset>
+<fieldset
+  class="flex min-w-0 flex-col gap-1"
+  hidden={!applies(false)}
+  disabled={!applies(false)}
+  aria-describedby={problemOf('when') ? 'when-problem' : undefined}
+>
+  <legend class="mb-1 text-sm font-medium">{m['tasks.when']()}</legend>
+  {#each whenChoices as choice, i (choice)}
+    <label class="flex min-h-11 items-center gap-3">
+      <input
+        id={i === 0 ? 'when' : undefined}
+        type="radio"
+        name="when"
+        value={choice}
+        required={repeat.running}
+        checked={values.when === choice}
+        defaultChecked={choice === 'week'}
+        onchange={repeat.chooseWhen}
+        class="size-5 shrink-0 accent-primary"
+      />
+      {choice === 'week' ? m['tasks.when-week']() : m['tasks.when-set']()}
+    </label>
+  {/each}
+  <FieldProblem id="when-problem" problem={problemOf('when')} />
+</fieldset>
+<!-- The window around each date, for a task at set times (ADR-0004 §4, clarification). -->
+<fieldset
+  class="flex min-w-0 flex-col gap-2"
+  hidden={!windowApplies}
+  disabled={!windowApplies}
+  aria-describedby={['window-hint', problemOf('window') ? 'window-problem' : '']
+    .filter(Boolean)
+    .join(' ')}
+>
+  <legend class="mb-1 text-sm font-medium">{m['tasks.window']()}</legend>
+  <p id="window-hint" class="text-sm text-muted-foreground">{m['tasks.window-hint']()}</p>
+  {#each [{ edge: 'from', day: 'fromDay', time: 'fromTime' }, { edge: 'to', day: 'toDay', time: 'toTime' }] as const as row (row.edge)}
+    <div class="flex flex-wrap gap-3">
+      <div class="flex flex-col gap-2">
+        <!-- The summary's link to the window leads to its first field. -->
+        <Label for={row.edge === 'from' ? 'window' : row.day}>
+          {row.edge === 'from' ? m['tasks.window-from-day']() : m['tasks.window-to-day']()}
+        </Label>
+        <NativeSelect
+          id={row.edge === 'from' ? 'window' : row.day}
+          name={row.day}
+          required={repeat.running}
+          value={values[row.day]}
+          aria-invalid={invalid.includes('window') || undefined}
+        >
+          {#each edgeDays as day (day)}
+            <NativeSelectOption value={String(day)}>{edgeDayWords(day)}</NativeSelectOption>
+          {/each}
+        </NativeSelect>
+      </div>
+      <div class="flex flex-col gap-2">
+        <Label for={row.time}>
+          {row.edge === 'from' ? m['tasks.window-from-time']() : m['tasks.window-to-time']()}
+        </Label>
+        <Input
+          id={row.time}
+          name={row.time}
+          type="time"
+          required={repeat.running}
+          class="w-fit"
+          value={values[row.time]}
+          aria-invalid={invalid.includes('window') || undefined}
+        />
+      </div>
+    </div>
+  {/each}
+  <FieldProblem id="window-problem" problem={problemOf('window')} />
 </fieldset>
