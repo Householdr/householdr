@@ -143,6 +143,12 @@ export const members = pgTable(
      * clarifications). The members added before this was kept have the epoch, before any plan.
      */
     joinedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    /**
+     * When the member left or was removed, which made them a former member: the record stays for
+     * the household's history, without an account, share or place in any plan (ADR-0005 §4,
+     * clarifications).
+     */
+    leftAt: timestamp({ withTimezone: true }),
     /** For versioned updates (CODE-14, ADR-0023 §1). */
     version: integer().notNull().default(1),
   },
@@ -157,6 +163,11 @@ export const members = pgTable(
     check('members_role', sql`${t.role} in ('head', 'adult', 'child')`),
     check('members_birth_date', sql`(${t.role} = 'child') = (${t.birthDate} is not null)`),
     check('members_share_percent', sql`${t.sharePercent} between 0 and 100`),
+    // A former member has no account and no share of their own.
+    check(
+      'members_former',
+      sql`${t.leftAt} is null or (${t.accountId} is null and ${t.sharePercent} is null)`,
+    ),
   ],
 );
 

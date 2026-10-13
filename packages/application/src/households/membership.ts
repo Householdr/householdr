@@ -26,6 +26,7 @@ import { and, eq, isNotNull, ne } from 'drizzle-orm';
 import * as v from 'valibot';
 import { planningOf, type Planning } from '../plans/planning';
 import type { HouseholdContext, HouseholdsContext } from './context';
+import { isCurrentMember } from './former-members';
 
 export type { HouseholdContext, HouseholdsContext } from './context';
 
@@ -213,7 +214,8 @@ export async function viewHousehold(context: HouseholdContext): Promise<ViewHous
       })
       .from(members)
       .leftJoin(accounts, eq(accounts.id, members.accountId))
-      .leftJoin(invitations, eq(invitations.memberId, members.id));
+      .leftJoin(invitations, eq(invitations.memberId, members.id))
+      .where(isCurrentMember);
     const mayInvite = can(context.member, { action: 'household.invite' });
     const now = context.clock.now();
     const list = rows.map((row): HouseholdMember => {

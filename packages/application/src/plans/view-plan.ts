@@ -24,13 +24,14 @@ import {
 } from '@householdr/domain';
 import { asc, eq, inArray } from 'drizzle-orm';
 import { inPlanWeek } from '../completions/completion-week';
+import { shownName } from '../households/former-members';
 import type { HouseholdContext } from '../households/membership';
 import { planningOf } from './planning';
 
-/** A member a completion names, by id and name. */
+/** A member a completion names, by id and name: none for a former member (ADR-0012 §6). */
 interface Named {
   id: string;
-  name: string;
+  name: string | null;
 }
 
 /** How an occurrence was completed, as the member viewing it may see it (ADR-0006 §4). */
@@ -121,7 +122,7 @@ export interface WeekPlan {
    * For heads, while it is a draft: the members who joined after it was drafted, so it gives them
    * nothing, and drafting it again would (ADR-0002 §1, clarification). Empty for anyone else.
    */
-  joinedSince: Named[];
+  joinedSince: { id: string; name: string }[];
 }
 
 type ViewPlanResult =
@@ -178,6 +179,8 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
         role: members.role,
         accountId: members.accountId,
         joinedAt: members.joinedAt,
+        shownName: shownName(),
+        leftAt: members.leftAt,
       })
       .from(members);
     people.sort((a, b) => roleOrder[a.role] - roleOrder[b.role] || a.name.localeCompare(b.name));
@@ -221,7 +224,7 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
       if (!person) throw new Error('A completion names a member who is gone.');
       return person;
     };
-    const nameOf = (id: string): Named => ({ id, name: personOf(id).name });
+    const nameOf = (id: string): Named => ({ id, name: personOf(id).shownName });
     // As permissions see them: their own second factor plays no part in who sees what.
     const asMember = (id: string): Member => {
       const { role, accountId } = personOf(id);
@@ -294,22 +297,25 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
           plan.status === 'draft' && Temporal.PlainDate.compare(today, start) < 0
             ? planTimes({ start, end }, calendar, timings).publish.toZonedDateTimeISO(timeZone)
             : null,
-        members: people.map(({ id, name, role }) => ({
-          id,
-          name,
-          role,
-          assignments: own
-            .filter((row) => row.memberId === id)
-            .map((row) => {
-              if (row.reason === null) throw new Error('An assignment without a reason.');
-              return {
-                ...item(row, plan),
-                cost: id === context.member.id && !doneBefore(row) ? row.cost : null,
-                reason: row.reason,
-              };
-            })
-            .sort(inOrder),
-        })),
+        // A former member has no place in any plan (ADR-0005 §4, clarification).
+        members: people
+          .filter((person) => person.leftAt === null)
+          .map(({ id, name, role }) => ({
+            id,
+            name,
+            role,
+            assignments: own
+              .filter((row) => row.memberId === id)
+              .map((row) => {
+                if (row.reason === null) throw new Error('An assignment without a reason.');
+                return {
+                  ...item(row, plan),
+                  cost: id === context.member.id && !doneBefore(row) ? row.cost : null,
+                  reason: row.reason,
+                };
+              })
+              .sort(inOrder),
+          })),
         unassigned: mayPublish
           ? own
               .flatMap((row) =>
@@ -320,7 +326,7 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
         joinedSince:
           mayPublish && plan.status === 'draft'
             ? people
-                .filter((person) => person.joinedAt > plan.draftedAt)
+                .filter((person) => person.leftAt === null && person.joinedAt > plan.draftedAt)
                 .map(({ id, name }) => ({ id, name }))
             : [],
       };

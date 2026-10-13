@@ -14,6 +14,7 @@ import { can, completionCredits as creditsOf, type Member } from '@householdr/do
 import { and, eq, inArray } from 'drizzle-orm';
 import * as v from 'valibot';
 import type { HouseholdContext } from '../households/context';
+import { isCurrentMember } from '../households/former-members';
 import { creditedMembers, thisPlanWeek } from './completion-week';
 
 const id = v.pipe(v.string(), v.uuid());
@@ -24,10 +25,10 @@ const completeInput = v.object({
   doers: v.optional(v.pipe(v.array(id), v.minLength(1), v.maxLength(100))),
 });
 
-/** A member it names, by id and name. */
+/** A member it names, by id and name: none for a former member (ADR-0012 §6). */
 interface Named {
   id: string;
-  name: string;
+  name: string | null;
 }
 
 type CompleteOccurrenceResult =
@@ -162,7 +163,7 @@ async function membersOf(tx: Transaction, ids: readonly string[]): Promise<Membe
   const rows = await tx
     .select({ id: members.id, role: members.role, accountId: members.accountId })
     .from(members)
-    .where(inArray(members.id, [...ids]));
+    .where(and(inArray(members.id, [...ids]), isCurrentMember));
   // Their own second factor plays no part in who may log for them.
   return rows.map((row) => ({
     id: row.id,

@@ -1918,6 +1918,10 @@
     "note": "Stands for the reader in the lists of who did a task and who logged it, as in 'Done on Thursday 15 October by you and Alex'. Lower case, as it sits in a sentence after 'by'.",
     "needsReview": ["nl"]
   },
+  "plan.a-former-member": {
+    "note": "Someone who did or logged a task and has since left the household, in the middle of a sentence such as 'Done today by a former member.' (ADR-0012 §6).",
+    "needsReview": ["nl"]
+  },
   "plan.done": {
     "note": "Under a task that is done: when it was done and who did it. {day} is 'today', 'yesterday' or 'on Monday' (see plan.done-today and the next ones); {doers} is a list such as 'Alex' or 'you and Kim'. Others see the day only, never the time (ADR-0018 §3).",
     "needsReview": ["nl"]

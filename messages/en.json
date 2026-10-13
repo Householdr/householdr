@@ -617,6 +617,7 @@
     }
   ],
   "plan.you": "you",
+  "plan.a-former-member": "a former member",
   "plan.done": "Done {day} by {doers}.",
   "plan.done-at": "Done {day} at {time} by {doers}.",
   "plan.logged-by": "Logged by {name}.",

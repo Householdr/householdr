@@ -617,6 +617,7 @@
     }
   ],
   "plan.you": "jou",
+  "plan.a-former-member": "een voormalig lid",
   "plan.done": "Gedaan {day} door {doers}.",
   "plan.done-at": "Gedaan {day} om {time} door {doers}.",
   "plan.logged-by": "Afgevinkt door {name}.",

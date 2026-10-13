@@ -20,6 +20,7 @@ import {
 import { and, asc, eq, gt, gte } from 'drizzle-orm';
 import * as v from 'valibot';
 import { changeLog } from '../households/change-log';
+import { isCurrentMember } from '../households/former-members';
 import type { HouseholdContext } from '../households/membership';
 import { planningOf } from '../plans/planning';
 import { asMember, memberOf, profile, today } from './whose';
@@ -220,7 +221,10 @@ export async function viewAvailability(context: HouseholdContext): Promise<ViewA
   return inHousehold(context.db, context.householdId, async (tx) => {
     const { calendar } = await planningOf(tx);
     const date = householdDate(context.clock.now(), calendar.timeZone);
-    const list = await tx.select({ ...profile, name: members.name }).from(members);
+    const list = await tx
+      .select({ ...profile, name: members.name })
+      .from(members)
+      .where(isCurrentMember);
     list.sort((a, b) => roleOrder[a.role] - roleOrder[b.role] || a.name.localeCompare(b.name));
     const away = await tx
       .select({
