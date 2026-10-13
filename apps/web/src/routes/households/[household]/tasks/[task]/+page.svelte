@@ -43,7 +43,7 @@
       <!-- The task as it is now, to compare with what is still in the form (ADR-0019 §5). -->
       <section aria-labelledby="current" class="flex flex-col gap-2 rounded-lg border p-4">
         <h2 id="current" class="font-semibold">{m['task.current']()}</h2>
-        <TaskDetails task={form.conflict.current} full />
+        <TaskDetails task={form.conflict.current} full locale={data.locale} />
       </section>
     {:else if refused.length > 0}
       <ErrorSummary heading={m['task.failed']()} message={m['tasks.check']()} fields={refused} />
