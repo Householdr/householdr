@@ -118,6 +118,7 @@ describe('the flags of a request (ADR-0015 §3)', () => {
       'page-transitions': false,
       notifications: false,
       'notification-preferences': false,
+      'push-notifications': false,
     });
   });
 
@@ -142,6 +143,7 @@ describe('the flags of a request (ADR-0015 §3)', () => {
       'page-transitions': false,
       notifications: false,
       'notification-preferences': false,
+      'push-notifications': false,
     });
   });
 });

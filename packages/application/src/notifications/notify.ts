@@ -36,6 +36,8 @@ export async function notify(
       kind: event.kind,
       at: new Date(at.epochMilliseconds),
       week: week.toString(),
+      // Its push is due at once; the worker decides whether, and when, it goes (ADR-0014 §7).
+      pushAfter: new Date(at.epochMilliseconds),
     })),
   );
 }

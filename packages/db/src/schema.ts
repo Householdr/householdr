@@ -957,6 +957,11 @@ export const notifications = pgTable(
     at: timestamp({ withTimezone: true }).notNull(),
     /** For a plan's notification, the first day of its week: it goes with the plan. */
     week: date(),
+    /**
+     * When its push is due, while one may still go out: from when it is made, or until quiet
+     * hours end; empty once it went out or won't (ADR-0014 §4, §7, clarifications).
+     */
+    pushAfter: timestamp({ withTimezone: true }),
   },
   (t) => [
     householdOnly(t.householdId),
@@ -974,6 +979,10 @@ export const notifications = pgTable(
     }).onDelete('cascade'),
     // A member's list, newest first.
     index('notifications_member_at').on(t.householdId, t.memberId, t.at),
+    // The pushes due, which the worker looks for every minute.
+    index('notifications_push_after')
+      .on(t.householdId, t.pushAfter)
+      .where(sql`${t.pushAfter} is not null`),
     check('notifications_kind', sql`${t.kind} in ('plan.drafted', 'plan.published')`),
     // A plan's notifications, and only they, name its week. Both sides are true or false, never
     // null, which a check would let through.

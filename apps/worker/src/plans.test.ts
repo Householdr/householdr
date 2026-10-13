@@ -77,6 +77,7 @@ describe('the plans’ jobs (ADR-0006 §2, ADR-0008 §10)', () => {
       ...test.context,
       clock,
       mailer: recordingMailer(),
+      push: null,
       flags: settableFlags({ plans: true }),
     };
     const { head } = await started(context.db, clock);
@@ -97,7 +98,7 @@ describe('the plans’ jobs (ADR-0006 §2, ADR-0008 §10)', () => {
     const clock = settableClock(Temporal.Instant.from(draftTime));
     const off = { ...test.context, clock, flags: settableFlags() };
     const { householdId, head } = await started(off.db, clock);
-    const queue = await workQueues({ ...off, mailer: recordingMailer() });
+    const queue = await workQueues({ ...off, mailer: recordingMailer(), push: null });
     try {
       await tickPlans({ ...off, queue });
       const waiting = await queue.fetch<Jobs['plan-draft']>('plan-draft', { batchSize: 100 });
@@ -146,6 +147,7 @@ describe('the plans’ jobs (ADR-0006 §2, ADR-0008 §10)', () => {
       ...test.context,
       clock,
       mailer: recordingMailer(),
+      push: null,
       flags: settableFlags({ plans: true, balances: true }),
     };
     const { householdId, head } = await started(context.db, clock);
@@ -222,7 +224,12 @@ describe('deleting expired notifications (ADR-0014 §7, clarification)', () => {
     await draftScheduledPlan(on, { household: householdId, week: '2026-10-12' });
     expect(await kept(householdId)).toBe(1);
     clock.advance({ hours: 91 * 24 });
-    const queue = await workQueues({ ...on, flags: settableFlags(), mailer: recordingMailer() });
+    const queue = await workQueues({
+      ...on,
+      flags: settableFlags(),
+      mailer: recordingMailer(),
+      push: null,
+    });
     try {
       await queue.send('expired-notifications', {});
       await expect.poll(() => kept(householdId), { timeout: 10_000 }).toBe(0);

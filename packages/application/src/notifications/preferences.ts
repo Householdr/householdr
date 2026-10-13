@@ -1,4 +1,10 @@
-import { atVersion, nextVersion, notificationPreferences, type Database } from '@householdr/db';
+import {
+  atVersion,
+  nextVersion,
+  notificationPreferences,
+  type Database,
+  type Transaction,
+} from '@householdr/db';
 import {
   areQuietHours,
   canForAccount,
@@ -66,7 +72,10 @@ export const mayChoose = ({ account }: AccountContext) =>
   });
 
 /** The preferences as stored, or the defaults with version 0 for an account that never saved. */
-async function savedOf(db: Database, account: string): Promise<SavedPreferences> {
+export async function savedOf(
+  db: Database | Transaction,
+  account: string,
+): Promise<SavedPreferences> {
   const [row] = await db
     .select()
     .from(notificationPreferences)
