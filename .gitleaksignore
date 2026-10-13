@@ -1,0 +1,10 @@
+# Findings that are no secrets, each by its commit, file, rule and line, so nothing else is let
+# through (SEC-1). Commit 158b8df wrote out invented browser push keys in tests: RFC 8291's example
+# public key and a 16-byte stand-in secret. Its next commit draws them in the tests instead; the
+# commit itself stays in the branch's history, which is never rewritten.
+158b8df98fc1396d61fb13e25af465bce68c7177:apps/web/src/routes/notification-settings/push/server.test.ts:generic-api-key:54
+158b8df98fc1396d61fb13e25af465bce68c7177:apps/web/src/lib/server/push.test.ts:generic-api-key:6
+158b8df98fc1396d61fb13e25af465bce68c7177:packages/db/src/schema.test.ts:generic-api-key:1093
+158b8df98fc1396d61fb13e25af465bce68c7177:apps/web/e2e/push.e2e.ts:generic-api-key:41
+158b8df98fc1396d61fb13e25af465bce68c7177:packages/application/src/notifications/push-subscriptions.test.ts:generic-api-key:52
+158b8df98fc1396d61fb13e25af465bce68c7177:packages/application/src/notifications/push-subscriptions.test.ts:generic-api-key:97
