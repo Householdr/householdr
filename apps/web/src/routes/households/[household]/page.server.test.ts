@@ -126,6 +126,7 @@ describe('a household’s page (ADR-0007 §1)', () => {
           account: null,
           invitable: false,
           invitationDaysLeft: null,
+          removable: false,
         },
       ],
       mayAddMembers: false,
@@ -133,6 +134,7 @@ describe('a household’s page (ADR-0007 §1)', () => {
       mayChangeSettings: false,
       mayStart: false,
       started: null,
+      removed: false,
       you: membership.member.id,
     });
   });

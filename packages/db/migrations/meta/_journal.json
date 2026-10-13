@@ -253,6 +253,13 @@
       "when": 1791916105413,
       "tag": "0035_leaving",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1791920119695,
+      "tag": "0036_member-removed",
+      "breakpoints": true
     }
   ]
 }

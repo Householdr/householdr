@@ -62,6 +62,8 @@ export const load = (async ({ locals, url }) => {
             timeZone: firstPlan.publishAt.timeZoneId,
           }
         : null,
+    // Right after a head removed a member, who isn't named (ADR-0018 §2, clarification).
+    removed: url.searchParams.has('removed'),
     you: context.member.id,
   };
 }) satisfies PageServerLoad;

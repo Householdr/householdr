@@ -808,5 +808,27 @@
   "leave.submit": "Leave the household",
   "leave.support": "If you don’t feel safe at home, {service} can help: call {phone} or go to {website}.",
   "home.left": "You’ve left the household.",
-  "household.leave": "Leave the household"
+  "household.leave": "Leave the household",
+  "remove.page-title": "Remove {name} · {household} · Householdr",
+  "remove.title": "Remove {name}",
+  "remove.intro": "{name} leaves {household} at once, as if they had left themselves.",
+  "remove.history": "What they did stays in the household’s history, shown as “Former member”, and their balance stays as it is. What they still had to do goes to the others.",
+  "remove.child": "Their account, their guardians and their other households stay as they are.",
+  "remove.logged": "Everyone in the household sees in the activity log that you removed them.",
+  "remove.confirm": "You signed in more than 10 minutes ago. Confirm it’s you on the security page first, then come back here.",
+  "remove.confirm-link": "Confirm it’s you",
+  "remove.submit": "Remove {name}",
+  "remove.keep": "Keep {name} in the household",
+  "household.remove": "Remove {name}",
+  "household.removed": "The member you removed is no longer in the household.",
+  "activity.member-removed": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You removed {subject} from the household.",
+        "who=*": "{actor} removed {subject} from the household."
+      }
+    }
+  ]
 }

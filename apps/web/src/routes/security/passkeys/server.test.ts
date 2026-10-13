@@ -47,6 +47,7 @@ const on = {
   availability: false,
   unavailability: false,
   leaving: false,
+  'removing-members': false,
   plans: false,
   completions: false,
   balances: false,

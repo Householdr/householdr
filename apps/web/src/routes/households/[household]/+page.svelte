@@ -33,6 +33,7 @@
 
   /** What the last change to an invitation did, for the status message (UI-12). */
   const invitationStatus = $derived.by(() => {
+    if (data.removed && !form) return m['household.removed']();
     if (form?.revoked) return m['household.revoked']({ name: nameOf(form.revoked) });
     if (form?.notInvitable) return m['household.not-invitable']();
     if (form?.link && clipboard.copied === form.link) return m['household.copied']();
@@ -111,6 +112,15 @@
               </span>
             {/if}
           </div>
+
+          {#if data.flags['removing-members'] && member.removable}
+            <a
+              href="/households/{page.params.household}/members/{member.id}/remove"
+              class="flex min-h-11 items-center self-start wrap-break-word underline underline-offset-4"
+            >
+              {m['household.remove']({ name: member.name })}
+            </a>
+          {/if}
 
           {#if member.invitable}
             {#if form?.link && form.invited === member.id}
