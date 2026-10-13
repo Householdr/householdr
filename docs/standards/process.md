@@ -40,8 +40,10 @@
 ## Branches and pull requests
 
 - **PROC-8 — Names.** Branches `<type>/<short-description>`; pull request titles
-  `type(scope): description` in Conventional Commit form; squash merge only.
-  ([ADR-0009](../adr/0009-development-workflow-and-releases.md) §1–§2)
+  `type(scope): description` in Conventional Commit form; squash merge only. A large feature gets a
+  feature branch `feat/<area>`: its slices are pull requests into it, and it lands on `main` as one
+  pull request. ([ADR-0009](../adr/0009-development-workflow-and-releases.md) §1–§2,
+  [ADR-0027](../adr/0027-feature-branches.md) §1)
 - **PROC-9 — One concern per pull request**, small enough to review in one sitting (aim for under 400
   changed lines, generated files excluded). Refactoring, behaviour change and dependency updates go in
   separate pull requests.
@@ -53,7 +55,9 @@
 - **PROC-12 — Standards change by pull request.** A `docs` PR changes a rule; if it changes a
   decision, an ADR comes first. Rule IDs are never reused.
 - **PROC-13 — Drafts until ready.** Open pull requests as drafts; mark them ready only when PROC-7 is
-  met, since that starts the full CI pipeline
-  ([ADR-0009](../adr/0009-development-workflow-and-releases.md) §3).
+  met, since that starts the CI pipeline: the full one into `main`, without end-to-end tests into any
+  other branch. Run the end-to-end test files a slice touches locally
+  ([ADR-0009](../adr/0009-development-workflow-and-releases.md) §3,
+  [ADR-0027](../adr/0027-feature-branches.md) §2).
 - **PROC-14 — Contributions** to the core need a signed CLA before merge
   ([ADR-0021](../adr/0021-self-hosted-edition.md) §3).
