@@ -44,7 +44,7 @@
       {#each data.tasks as task (task.id)}
         <li class="flex flex-col gap-2 p-4">
           <span id="task-{task.id}" class="font-medium wrap-break-word">{task.name}</span>
-          <TaskDetails {task} />
+          <TaskDetails {task} locale={data.locale} />
           {#if data.mayChangeTasks}
             <!-- Named with its task, as one of many such links (WCAG 2.4.4). -->
             <Button

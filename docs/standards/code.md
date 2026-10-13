@@ -49,7 +49,7 @@
   logic in routes, jobs, hooks or components.
 - **CODE-26 — Use cases don't know their caller.** No SvelteKit, HTTP, cookies, headers, environment
   variables or translated text in `application`; outside effects go through the context's ports
-  (clock, mailer, push, flags). Add a port only when a second implementation exists.
+  (clock, random, logger, mailer, push, flags). Add a port only when a second implementation exists.
 - **CODE-11 — Authorise in every use case.** Routes pass the guard (session and membership); each use
   case then checks the domain's `can(member, action, resource)` first; deny by default
   ([ADR-0017](../adr/0017-security-baseline.md) §2).
