@@ -21,6 +21,8 @@
       name: '',
       duration: '',
       frequency: 'weekly',
+      everyCount: '',
+      everyUnit: 'weeks',
       start: data.starts.earliest,
       onMiss: defaultOnMiss,
     },

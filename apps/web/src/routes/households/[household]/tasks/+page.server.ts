@@ -39,7 +39,8 @@ const text = (form: FormData, field: string) => {
 };
 
 export const actions = {
-  // Adds a custom task on a simple frequency (ADR-0004 §3, ADR-0007 §2).
+  // Adds a custom task, on a simple frequency or counted from when it was last done (ADR-0004 §3,
+  // §8, ADR-0007 §2).
   add: async ({ locals, request }) => {
     const context = await householdContext(locals);
     const form = await request.formData();
@@ -47,12 +48,18 @@ export const actions = {
       name: text(form, 'name'),
       duration: text(form, 'duration'),
       frequency: text(form, 'frequency'),
+      everyCount: text(form, 'everyCount'),
+      everyUnit: text(form, 'everyUnit'),
       start: text(form, 'start'),
       onMiss: text(form, 'onMiss'),
     };
     const result = await addTask(context, {
       ...values,
       duration: Number(values.duration),
+      // Only the fields that were sent: a form without scripts sends both kinds (ADR-0004 §8).
+      everyCount: values.everyCount ? Number(values.everyCount) : undefined,
+      everyUnit: values.everyUnit || undefined,
+      onMiss: values.onMiss || undefined,
       // Without a day, it starts today.
       start: values.start || undefined,
     });

@@ -447,6 +447,68 @@
   "tasks.invalid-frequency": "Kies hoe vaak het moet gebeuren.",
   "tasks.invalid-start": "Kies een dag vanaf vandaag tot een jaar van nu.",
   "tasks.invalid-on-miss": "Kies wat er gebeurt als het niet op tijd gedaan is.",
+  "tasks.since-last-done": "Gerekend vanaf de laatste keer",
+  "tasks.every": "Weer aan de beurt na",
+  "tasks.every-count": "Hoeveel",
+  "tasks.every-unit": "Dagen, weken of maanden",
+  "tasks.unit-days": "dagen",
+  "tasks.unit-weeks": "weken",
+  "tasks.unit-months": "maanden",
+  "tasks.first-due-hint": "De eerste keer dat het aan de beurt is. Daarna telt het vanaf de laatste keer.",
+  "tasks.every-days": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Ongeveer elke dag, gerekend vanaf de laatste keer",
+        "countPlural=other": "Ongeveer om de {count} dagen, gerekend vanaf de laatste keer"
+      }
+    }
+  ],
+  "tasks.every-weeks": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Ongeveer elke week, gerekend vanaf de laatste keer",
+        "countPlural=other": "Ongeveer om de {count} weken, gerekend vanaf de laatste keer"
+      }
+    }
+  ],
+  "tasks.every-months": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Ongeveer elke maand, gerekend vanaf de laatste keer",
+        "countPlural=other": "Ongeveer om de {count} maanden, gerekend vanaf de laatste keer"
+      }
+    }
+  ],
+  "tasks.how-due": "Hoe dringend",
+  "tasks.due-today": "Vandaag aan de beurt",
+  "tasks.due-in": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Over {count} dag aan de beurt",
+        "countPlural=other": "Over {count} dagen aan de beurt"
+      }
+    }
+  ],
+  "tasks.overdue": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} dag te laat",
+        "countPlural=other": "{count} dagen te laat"
+      }
+    }
+  ],
+  "tasks.invalid-every-count": "Vul in hoeveel, een heel getal van 1 tot een jaar: 365 dagen, 52 weken of 12 maanden.",
+  "tasks.invalid-every-unit": "Kies dagen, weken of maanden.",
   "comparisons.title": "Wat jij zwaar vindt",
   "comparisons.page-title": "Wat jij zwaar vindt · {household} · Householdr",
   "comparisons.why": "De app leert welke taken ieder van jullie zwaar vindt, zodat een planning elke taak kan geven aan wie het het minst erg vindt. Niemand anders ziet je antwoorden, ook de hoofden van het huishouden niet.",

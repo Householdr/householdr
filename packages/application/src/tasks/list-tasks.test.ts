@@ -1,4 +1,4 @@
-import { accounts, passkeys, type Database } from '@householdr/db';
+import { accounts, awayPeriods, inHousehold, passkeys, type Database } from '@householdr/db';
 import { testDatabase } from '@householdr/db/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createHousehold } from '../households/create-household';
@@ -88,6 +88,50 @@ describe('listTasks (ADR-0001 §1)', () => {
       mayChangeTasks: true,
       starts: expect.anything() as unknown,
     });
+  });
+
+  it('says how often a "since last done" task is due, and how due it is today (ADR-0004 §8)', async () => {
+    const head = await founded();
+    const oven = { duration: 40, frequency: 'since-last-done', everyCount: 6, everyUnit: 'weeks' };
+    await addTask(head, { ...oven, name: 'Oven' });
+    await addTask(head, { ...oven, name: 'Fridge', start: '2026-10-16' });
+    await addTask(head, { ...oven, name: 'Freezer', start: '2026-10-18' });
+    // Days away move a due date on: the freezer is due on the first day back.
+    await inHousehold(db, head.householdId, (tx) =>
+      tx
+        .insert(awayPeriods)
+        .values({ householdId: head.householdId, firstDay: '2026-10-18', lastDay: '2026-10-19' }),
+    );
+    const result = await listTasks(head);
+    if (!result.ok) throw new Error('Not listed');
+    const every = { count: 6, unit: 'weeks' };
+    expect(result.tasks).toMatchObject([
+      {
+        name: 'Freezer',
+        duration: 40,
+        frequency: 'since-last-done',
+        every,
+        dueness: { daysUntilDue: 12, progress: 0 },
+        onMiss: 'roll over',
+      },
+      {
+        name: 'Fridge',
+        duration: 40,
+        frequency: 'since-last-done',
+        every,
+        dueness: { daysUntilDue: 8, progress: 0 },
+        onMiss: 'roll over',
+      },
+      // Never done, and due from today.
+      {
+        name: 'Oven',
+        duration: 40,
+        frequency: 'since-last-done',
+        every,
+        dueness: { daysUntilDue: 0, progress: 1 },
+        onMiss: 'roll over',
+      },
+    ]);
   });
 
   it('lists none of another household’s tasks (TEST-4)', async () => {

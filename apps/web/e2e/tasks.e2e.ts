@@ -94,6 +94,47 @@ for (const javaScriptEnabled of [true, false]) {
   });
 }
 
+test('a head adds a task counted from when it was last done, which shows how due it is (ADR-0004 §8)', async ({
+  page,
+  accounts,
+  account,
+}) => {
+  await accounts.addSecondFactor(account.email);
+  const id = await accounts.addHousehold(account.email, 'Ash Lane');
+  await signIn(page, account, `/households/${id}`);
+  await page.goto(`/households/${id}/tasks`);
+  const onMiss = page.getByRole('group', { name: 'If it isn’t done in time' });
+  const every = page.getByRole('group', { name: 'Due again after' });
+  // On a frequency, only what happens if it isn't done applies; counted, only the interval.
+  await expect(onMiss).toBeVisible();
+  await expect(every).toBeHidden();
+  await page.getByLabel('What needs doing').fill('Clean the oven');
+  await page.getByLabel('How long it takes, in minutes').fill('40');
+  await page.getByLabel('How often').selectOption({ label: 'Counted from when it was last done' });
+  await expect(onMiss).toBeHidden();
+  await expect(every).toBeVisible();
+  await expect(page.getByLabel('First time')).toHaveAccessibleDescription(
+    'The first time it’s due. After that, it’s counted from when it was last done.',
+  );
+  await every.getByLabel('How many').fill('6');
+  await every.getByLabel('Days, weeks or months').selectOption({ label: 'weeks' });
+  await expectAccessible(page, 'counted from when it was last done');
+  await page.getByRole('button', { name: 'Add task' }).click();
+
+  await expect(page.getByRole('status')).toHaveText('Clean the oven is added.');
+  const listed = page.getByRole('list', { name: 'Tasks' }).getByRole('listitem');
+  await expect(listed).toHaveText([
+    /^\s*Clean the oven\s*How often\s*About every 6 weeks, counted from when it was last done\s*How due\s*Due today\s*How long\s*40 minutes\s*If not done\s*It moves on to the next week\s*Edit\s*$/,
+  ]);
+  // Never done and due from today: the bar is full, and says so in words too (UI-9).
+  await expect(listed.getByRole('meter', { name: 'How due' })).toHaveAttribute('value', '1');
+  // The form starts over on a frequency.
+  await expect(page.getByLabel('How often')).toHaveValue('weekly');
+  await expect(onMiss).toBeVisible();
+  await expect(every).toBeHidden();
+  await expectAccessible(page, 'counted task added');
+});
+
 test('names every field the server refuses, in the form’s order', async ({
   page,
   accounts,
