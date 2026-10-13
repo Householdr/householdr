@@ -10,6 +10,8 @@ import { publishPlan } from '../plans/publish-plan';
 import { plannedHousehold, type PlannedHousehold } from '../plans/testing';
 import { addOneOff } from './add-one-off';
 import { editOneOff } from './edit-one-off';
+import { listTasks } from './list-tasks';
+import { oneOffToEdit } from './one-off-to-edit';
 import { removeOneOff } from './remove-one-off';
 
 // Members add one-off tasks, and change or remove those they added until they are done, heads any
@@ -338,5 +340,119 @@ describe('one-offs in the activity log (ADR-0018 §5, clarification)', () => {
       { actor: 'Robin', action: 'one-off.removed', task: 'Fix the shelves', byReader: false },
       { actor: 'Alex', action: 'one-off.added', task: 'Fix the shelf', byReader: true },
     ]);
+  });
+});
+
+/** The household's one-off tasks as `context` sees them in the list. */
+const listed = async (context: HouseholdContext) => {
+  const result = await listTasks(context);
+  if (!result.ok) throw new Error(`Not listed: ${result.error}`);
+  return result.oneOffs.map(({ name, done, mayChange }) => ({ name, done, mayChange }));
+};
+
+describe('one-offs in the task list (ADR-0006 §3, clarification)', () => {
+  it('lists them by date, with who may change them', async () => {
+    const h = await plannedHousehold(db);
+    await added(h.adult);
+    const parcel = {
+      ...shelf,
+      name: 'Post the parcel',
+      date: '2026-10-09',
+      deadline: '2026-10-16',
+    };
+    await added(h.head, parcel);
+    const result = await listTasks(h.adult);
+    expect(result).toMatchObject({
+      mayAddOneOffs: true,
+      oneOffs: [
+        {
+          name: 'Post the parcel',
+          date: Temporal.PlainDate.from('2026-10-09'),
+          deadline: Temporal.PlainDate.from('2026-10-16'),
+          done: false,
+          mayChange: false,
+        },
+        { name: 'Fix the shelf', done: false, mayChange: true },
+      ],
+    });
+    expect(await listed(h.head)).toEqual([
+      { name: 'Post the parcel', done: false, mayChange: true },
+      { name: 'Fix the shelf', done: false, mayChange: true },
+    ]);
+  });
+
+  it('keeps a done one-off, marked done, until the next plan week begins', async () => {
+    const h = await plannedHousehold(db);
+    const taskId = await added(h.adult);
+    await done(h, taskId);
+    expect(await listed(h.adult)).toEqual([
+      { name: 'Fix the shelf', done: true, mayChange: false },
+    ]);
+    // Sunday evening, still its week; then Monday 19 October.
+    h.clock.advance({ hours: 4 * 24 + 12 });
+    expect(await listed(h.adult)).toHaveLength(1);
+    h.clock.advance({ hours: 12 });
+    expect(await listed(h.adult)).toEqual([]);
+  });
+
+  it('drops a one-off that closed as missed, which is no longer to do', async () => {
+    const h = await plannedHousehold(db);
+    await added(h.adult, { ...shelf, onMiss: 'lapse' });
+    await draftPlan(h.scheduler, { week: week1 });
+    await publishPlan(h.scheduler, { week: week1 });
+    expect(await listed(h.adult)).toHaveLength(1);
+    // The next week's draft closes it once that week begins (ADR-0002 §2).
+    h.clock.advance({ hours: 11 * 24 });
+    await draftPlan(h.scheduler, { week: '2026-10-19' });
+    expect(await listed(h.adult)).toEqual([]);
+  });
+
+  it('leaves out a removed one-off', async () => {
+    const h = await plannedHousehold(db);
+    const taskId = await added(h.adult);
+    await removeOneOff(h.adult, { taskId, version: 1 });
+    expect(await listed(h.adult)).toEqual([]);
+  });
+});
+
+describe('oneOffToEdit (ADR-0006 §3, clarification)', () => {
+  it('gives the member who added it the one-off, and the days its date can move to', async () => {
+    const h = await plannedHousehold(db);
+    const taskId = await added(h.adult, { ...shelf, deadline: '2026-10-30' });
+    expect(await oneOffToEdit(h.adult, { taskId })).toEqual({
+      ok: true,
+      household: 'Ash Lane',
+      oneOff: {
+        id: taskId,
+        name: 'Fix the shelf',
+        duration: 30,
+        date: Temporal.PlainDate.from('2026-10-14'),
+        deadline: Temporal.PlainDate.from('2026-10-30'),
+        onMiss: 'roll over',
+        version: 1,
+      },
+      dates: {
+        earliest: Temporal.PlainDate.from('2026-10-08'),
+        latest: Temporal.PlainDate.from('2027-10-08'),
+      },
+    });
+  });
+
+  it('is for whoever may change it, and finds no other task (TEST-4)', async () => {
+    const h = await plannedHousehold(db);
+    const taskId = await added(h.adult);
+    const robinAsAdult = { ...h.head, member: { ...h.head.member, role: 'adult' as const } };
+    expect(await oneOffToEdit(robinAsAdult, { taskId })).toEqual({
+      ok: false,
+      error: 'not-allowed',
+    });
+    expect(await oneOffToEdit(h.head, { taskId })).toMatchObject({ ok: true });
+    const vacuum = await h.task('Vacuum', 30, 'weekly', '2026-10-14');
+    for (const id of [vacuum, crypto.randomUUID(), 'shelf']) {
+      expect(await oneOffToEdit(h.head, { taskId: id })).toEqual({
+        ok: false,
+        error: 'not-found',
+      });
+    }
   });
 });

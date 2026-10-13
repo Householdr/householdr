@@ -70,6 +70,28 @@ const add = async (locals: object, fields: Record<string, string>) => {
   }
 };
 
+/** Sends the form that adds a one-off task, with `fields`. */
+const addOneOff = async (locals: object, fields: Record<string, string>) => {
+  const body = new FormData();
+  for (const [name, value] of Object.entries(fields)) body.set(name, value);
+  const request = new Request('https://householdr.example.org/', { method: 'POST', body });
+  type Event = Parameters<typeof actions.addOneOff>[0];
+  try {
+    return await actions.addOneOff({ locals, request } as unknown as Event);
+  } catch (thrown) {
+    if (isHttpError(thrown)) return thrown.status;
+    throw thrown;
+  }
+};
+
+const shelf = {
+  name: 'Fix the shelf',
+  duration: '30',
+  date: '2026-10-14',
+  deadline: '',
+  onMiss: 'roll over',
+};
+
 const vacuum = {
   name: 'Vacuum',
   duration: '30',
@@ -89,6 +111,8 @@ describe('a household’s tasks page (ADR-0001 §1)', () => {
     expect(await opened({ ...on, membership })).toEqual({
       household: 'Ash Lane',
       tasks: [],
+      oneOffs: [],
+      mayAddOneOffs: true,
       mayChangeTasks: true,
       starts: { earliest: '2026-10-08', latest: '2027-10-08' },
       removed: false,
@@ -193,5 +217,53 @@ describe('a household’s tasks page (ADR-0001 §1)', () => {
     expect(await add({ ...off, membership }, vacuum)).toBe(404);
     expect(await opened({ ...on, membership: null })).toBe(404);
     expect(await add({ ...on, membership: null }, vacuum)).toBe(404);
+  });
+});
+
+describe('one-off tasks on the tasks page (ADR-0004 §4, ADR-0006 §3)', () => {
+  it('lets every member with an account add one, and lists them by date', async () => {
+    const head = await founded();
+    const adult = asAdult(head);
+    expect(await addOneOff({ ...on, membership: adult }, shelf)).toEqual({
+      addedOneOff: 'Fix the shelf',
+    });
+    expect(
+      await addOneOff(
+        { ...on, membership: head },
+        { ...shelf, name: 'Post the parcel', date: '2026-10-09', deadline: '2026-10-16' },
+      ),
+    ).toEqual({ addedOneOff: 'Post the parcel' });
+    expect(await opened({ ...on, membership: adult })).toMatchObject({
+      oneOffs: [
+        {
+          name: 'Post the parcel',
+          date: '2026-10-09',
+          deadline: '2026-10-16',
+          done: false,
+          // Robin's own, as the head or as an adult (ADR-0006 §3, clarification).
+          mayChange: true,
+        },
+        { name: 'Fix the shelf', date: '2026-10-14', deadline: undefined, mayChange: true },
+      ],
+      mayAddOneOffs: true,
+    });
+  });
+
+  it('keeps what was typed in the one-off form, and names the fields that won’t do (UI-10)', async () => {
+    const membership = await founded();
+    const typed = { ...shelf, name: ' ', date: '2026-10-07', deadline: '2026-10-01' };
+    const refused = await addOneOff({ ...on, membership }, typed);
+    expect(isActionFailure(refused) && refused).toMatchObject({
+      status: 400,
+      data: { invalidOneOff: ['name', 'date', 'deadline'], oneOffValues: typed },
+    });
+  });
+
+  it('is forbidden to a profile without an account, and not found while the tasks’ flag is off', async () => {
+    const { householdId, member } = await founded();
+    const profile = { householdId, member: { ...member, hasAccount: false } };
+    expect(await addOneOff({ ...on, membership: profile }, shelf)).toBe(403);
+    const off = { flags: { tasks: false } };
+    expect(await addOneOff({ ...off, membership: { householdId, member } }, shelf)).toBe(404);
   });
 });

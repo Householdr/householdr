@@ -195,6 +195,19 @@ describe('a household’s plan page (ADR-0006 §2)', () => {
     });
   });
 
+  it('leads every member to add a one-off task for this week, while the tasks’ flag is on (ADR-0006 §3)', async () => {
+    const head = await drafted();
+    const withTasks = { flags: { ...on.flags, tasks: true } };
+    for (const membership of [head, asAdult(head)]) {
+      expect(await opened({ ...withTasks, membership })).toMatchObject({ mayAddOneOffs: true });
+    }
+    expect(
+      await opened({ ...on, flags: { ...on.flags, tasks: false }, membership: head }),
+    ).toMatchObject({
+      mayAddOneOffs: false,
+    });
+  });
+
   it('publishes nothing a head hasn’t seen, and says which week (ADR-0019 §5)', async () => {
     const membership = await drafted();
     const refused = await publish({ ...on, membership }, { week: '2026-10-12', version: '2' });

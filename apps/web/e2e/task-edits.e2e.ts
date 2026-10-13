@@ -14,8 +14,10 @@ test.beforeEach(async ({ context, baseURL }) => {
 
 /** Adds a weekly task of 30 minutes called `name` with the list's form, as a head. */
 async function addTask(page: Page, name: string) {
-  await page.getByLabel('What needs doing').fill(name);
-  await page.getByLabel('How long it takes, in minutes').fill('30');
+  // The form for tasks, apart from the one for one-off tasks beside it (ADR-0006 §3).
+  const adding = page.getByRole('region', { name: 'Add a task' });
+  await adding.getByLabel('What needs doing').fill(name);
+  await adding.getByLabel('How long it takes, in minutes').fill('30');
   await page.getByRole('button', { name: 'Add task' }).click();
   await expect(page.getByRole('status')).toHaveText(`${name} is added.`);
 }

@@ -1,4 +1,4 @@
-import type { Repeat, TaskField } from '@householdr/application';
+import type { OneOffField, Repeat, TaskField } from '@householdr/application';
 import {
   taskDuration,
   type Dueness,
@@ -64,3 +64,15 @@ export const taskProblems: Record<TaskField, () => string> = {
   start: m['tasks.invalid-start'],
   onMiss: m['tasks.invalid-on-miss'],
 };
+
+/** Why the server refused a field of a one-off task's form, in words (CODE-13). */
+export const oneOffProblems: Record<OneOffField, () => string> = {
+  name: m['tasks.invalid-name'],
+  duration: () => m['tasks.invalid-duration'](taskDuration),
+  date: m['tasks.invalid-start'],
+  deadline: m['tasks.invalid-deadline'],
+  onMiss: m['tasks.invalid-on-miss'],
+};
+
+/** The id of a one-off task's field, apart from those of the form for other tasks. */
+export const oneOffFieldId = (field: OneOffField) => `one-off-${field}`;

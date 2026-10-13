@@ -1466,6 +1466,58 @@
     "note": "Shown on the task list after a head removed a task on its own page.",
     "needsReview": ["nl"]
   },
+  "tasks.one-offs": {
+    "note": "Heading of the list of one-off tasks on the tasks page (ADR-0004 §4).",
+    "needsReview": ["nl"]
+  },
+  "tasks.one-off-done": {
+    "note": "Beside a one-off task in the list that was done this plan week; it stays listed until the next plan week begins (ADR-0006 §3, clarification).",
+    "needsReview": ["nl"]
+  },
+  "tasks.one-off-week": {
+    "note": "When a one-off task without a deadline is done: any day of the plan week of its day. {day} is a date, such as “14 October 2026”.",
+    "needsReview": ["nl"]
+  },
+  "tasks.add-one-off": {
+    "note": "Heading of the form that adds a one-off task, which every member with an account sees, children included (ADR-0006 §3).",
+    "needsReview": ["nl"]
+  },
+  "tasks.add-one-off-intro": {
+    "note": "Under the heading of the one-off form: what a one-off task is for, and that everyone may add one.",
+    "needsReview": ["nl"]
+  },
+  "tasks.one-off-name-hint": {
+    "note": "Hint under the name of a one-off task. Keep the example a small chore done once.",
+    "needsReview": ["nl"]
+  },
+  "tasks.one-off-date": {
+    "note": "Label of a one-off task's day, in its form and its details.",
+    "needsReview": ["nl"]
+  },
+  "tasks.one-off-date-hint": {
+    "note": "Hint under a one-off task's day: it is planned somewhere in that day's plan week, not necessarily on the day.",
+    "needsReview": ["nl"]
+  },
+  "tasks.one-off-deadline": {
+    "note": "Label of a one-off task's optional last day; up to it, the task can float into a quiet week (ADR-0004 §4).",
+    "needsReview": ["nl"]
+  },
+  "tasks.one-off-deadline-hint": {
+    "note": "Hint under the optional last day of a one-off task.",
+    "needsReview": ["nl"]
+  },
+  "tasks.add-one-off-submit": {
+    "note": "Button that adds the one-off task.",
+    "needsReview": ["nl"]
+  },
+  "tasks.add-one-off-failed": {
+    "note": "Heading of the error summary when adding a one-off task was refused.",
+    "needsReview": ["nl"]
+  },
+  "tasks.invalid-deadline": {
+    "note": "Problem with a one-off task's last day: before its day, or more than a year away.",
+    "needsReview": ["nl"]
+  },
   "task.page-title": {
     "note": "Browser tab title of the page that changes a task. {task} is the task's name, {household} the household's; Householdr is the product name, not translated.",
     "needsReview": ["nl"]
@@ -1532,6 +1584,14 @@
   },
   "task.remove-conflict": {
     "note": "Why removing didn't work: someone saved the task after this page was opened (ADR-0019 §5), so the head confirms again with what it is now. Calm, nobody is blamed.",
+    "needsReview": ["nl"]
+  },
+  "task.invalid-deadline": {
+    "note": "Problem with a one-off task's last day when changing it: it may keep the day it has, which may have passed.",
+    "needsReview": ["nl"]
+  },
+  "task.remove-one-off-intro": {
+    "note": "On the page that confirms removing a one-off task: removing it is logged for the whole household (ADR-0018 §5, clarification).",
     "needsReview": ["nl"]
   },
   "comparisons.title": {
@@ -1804,6 +1864,10 @@
   },
   "plan.back": {
     "note": "Link from the plan back to the household's page. {household} is the household's name.",
+    "needsReview": ["nl"]
+  },
+  "plan.add-one-off": {
+    "note": "Link on the plan page to the tasks page's form for a one-off task, which starts on today (ADR-0006 §3, clarification).",
     "needsReview": ["nl"]
   },
   "plan.points": {
