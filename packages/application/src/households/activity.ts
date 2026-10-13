@@ -36,6 +36,8 @@ export interface ActivityEntry {
    * null for a former member; null for any other.
    */
   subject: string | null;
+  /** For the entries about a task, such as adding a one-off, its name as it was then; null for any other. */
+  task: string | null;
   /** For the start entry, what was set before, the starter's own share included; null for any other. */
   setBeforeStart: SetBeforeStartNames | null;
   /** Whether the reader did it, so the log says "you" (ADR-0018 §5, clarification). */
@@ -71,6 +73,7 @@ export async function householdActivity(
         action: activityLog.action,
         subjectId: activityLog.subjectId,
         subject: subjects.name,
+        task: activityLog.taskName,
         setBeforeStart: activityLog.setBeforeStart,
       })
       .from(activityLog)

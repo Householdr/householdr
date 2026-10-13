@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { changedStartRange, isStartDay, isTaskDuration, isTaskInterval, startRange } from './task';
+import {
+  changedStartRange,
+  isOneOffDeadline,
+  isStartDay,
+  isTaskDuration,
+  isTaskInterval,
+  startRange,
+} from './task';
 
-// What a new or changed task may be (ADR-0001 §5, ADR-0004 §3), from examples (TEST-1).
+// What a new or changed task may be (ADR-0001 §5, ADR-0004 §3–§4), from examples (TEST-1).
 
 const date = (iso: string) => Temporal.PlainDate.from(iso);
 
@@ -70,6 +77,30 @@ describe('isStartDay (ADR-0004 §3)', () => {
     }
     expect(isStartDay(today, today, kept)).toBe(true);
     expect(isStartDay(date('2027-10-08'), today, kept)).toBe(true);
+  });
+});
+
+describe('isOneOffDeadline (ADR-0004 §4)', () => {
+  const today = date('2026-10-08');
+
+  it('takes a day from the one-off’s date up to a year from today', () => {
+    const shelf = date('2026-10-14');
+    for (const day of ['2026-10-14', '2026-10-30', '2027-10-08']) {
+      expect(isOneOffDeadline(date(day), shelf, today)).toBe(true);
+    }
+    for (const day of ['2026-10-13', '2026-10-08', '2027-10-09']) {
+      expect(isOneOffDeadline(date(day), shelf, today)).toBe(false);
+    }
+  });
+
+  it('keeps the deadline of a changed one-off, but moves none to another past day', () => {
+    const passed = date('2026-10-01');
+    const kept = date('2026-10-05');
+    expect(isOneOffDeadline(kept, passed, today, kept)).toBe(true);
+    for (const day of ['2026-10-04', '2026-10-06', '2026-10-07']) {
+      expect(isOneOffDeadline(date(day), passed, today, kept)).toBe(false);
+    }
+    expect(isOneOffDeadline(today, passed, today, kept)).toBe(true);
   });
 });
 

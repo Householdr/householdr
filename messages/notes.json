@@ -2145,5 +2145,13 @@
   "activity.away-removed": {
     "note": "Activity log entry: a head removed a time the whole household is away. {actor} is a name, or “A former member”. Never the days. {who} picks the wording: 'you' when the reader did it, '*' otherwise (ADR-0018 §5, clarification).",
     "needsReview": ["nl"]
+  },
+  "activity.one-off-added": {
+    "note": "Activity log entry: a member added a one-off task, such as 'Fix the shelf' (ADR-0006 §3). {actor} is a name, or “A former member”. {task} is the task's name as the member typed it, never translated. {who} picks the wording: 'you' when the reader did it, '*' otherwise (ADR-0018 §5, clarification).",
+    "needsReview": ["nl"]
+  },
+  "activity.one-off-removed": {
+    "note": "Activity log entry: a member removed a one-off task. {actor} is a name, or “A former member”. {task} is the task's name as it was, never translated. {who} picks the wording: 'you' when the reader did it, '*' otherwise (ADR-0018 §5, clarification).",
+    "needsReview": ["nl"]
   }
 }

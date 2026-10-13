@@ -569,6 +569,7 @@ describe('days away in the activity log (ADR-0018 §5)', () => {
         action,
         setBeforeStart: null,
         subjectId,
+        taskName: null,
       };
     };
     const first = entry('absence.added', sam.id);
@@ -669,6 +670,7 @@ describe('the household’s time away in the activity log (ADR-0018 §5, clarifi
         action,
         subjectId: null,
         setBeforeStart: null,
+        taskName: null,
       })),
     );
     // Every member sees them.

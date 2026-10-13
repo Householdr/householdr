@@ -818,5 +818,25 @@
         "who=*": "{actor} heeft een tijd dat het huishouden weg is verwijderd."
       }
     }
+  ],
+  "activity.one-off-added": [
+    {
+      "declarations": ["input who", "input actor", "input task"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je hebt een eenmalige taak toegevoegd: {task}",
+        "who=*": "{actor} heeft een eenmalige taak toegevoegd: {task}"
+      }
+    }
+  ],
+  "activity.one-off-removed": [
+    {
+      "declarations": ["input who", "input actor", "input task"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je hebt een eenmalige taak verwijderd: {task}",
+        "who=*": "{actor} heeft een eenmalige taak verwijderd: {task}"
+      }
+    }
   ]
 }
