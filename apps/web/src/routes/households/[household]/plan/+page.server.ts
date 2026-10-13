@@ -80,6 +80,8 @@ export const load = (async ({ locals }) => {
     thisWeek: weekData(result.thisWeek, completions),
     nextWeek: weekData(result.nextWeek, completions),
     mayPublish: result.mayPublish,
+    // From the plan, as from the tasks page, while the tasks' flag is on (CODE-20).
+    mayAddOneOffs: locals.flags.tasks && result.mayAddOneOffs,
     you: context.member.id,
   };
 }) satisfies PageServerLoad;

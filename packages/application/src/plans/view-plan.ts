@@ -135,6 +135,11 @@ type ViewPlanResult =
       nextWeek: WeekPlan | null;
       /** Whether they see drafts, and may publish one early: heads with two factors. */
       mayPublish: boolean;
+      /**
+       * Whether they may add a one-off task for this week from the plan: every member with an
+       * account (ADR-0006 §3, clarification).
+       */
+      mayAddOneOffs: boolean;
     }
   | { ok: false; error: 'not-allowed' };
 
@@ -332,6 +337,7 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
       thisWeek: weekPlan(current.start),
       nextWeek: weekPlan(next.start),
       mayPublish,
+      mayAddOneOffs: can(context.member, { action: 'oneOff.add' }),
     };
   });
 }

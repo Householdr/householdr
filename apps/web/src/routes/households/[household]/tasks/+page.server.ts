@@ -1,4 +1,4 @@
-import { addTask, listTasks } from '@householdr/application';
+import { addOneOff, addTask, listTasks } from '@householdr/application';
 import { error, fail } from '@sveltejs/kit';
 import { authContext } from '#lib/server/auth.js';
 import type { Actions, PageServerLoad } from './$types';
@@ -15,8 +15,8 @@ async function householdContext(locals: App.Locals) {
 }
 
 /**
- * The household's tasks, and what the member opening them may do there; whether a task was just
- * removed, as its page says when it leads back here.
+ * The household's tasks and one-off tasks, and what the member opening them may do there; whether
+ * a task was just removed, as its page says when it leads back here.
  */
 export const load = (async ({ locals, url }) => {
   const context = await householdContext(locals);
@@ -26,6 +26,13 @@ export const load = (async ({ locals, url }) => {
   return {
     household: result.household,
     tasks: result.tasks,
+    // Days as `YYYY-MM-DD`.
+    oneOffs: result.oneOffs.map(({ date, deadline, ...oneOff }) => ({
+      ...oneOff,
+      date: date.toString(),
+      deadline: deadline?.toString(),
+    })),
+    mayAddOneOffs: result.mayAddOneOffs,
     mayChangeTasks: result.mayChangeTasks,
     starts: { earliest: earliest.toString(), latest: latest.toString() },
     removed: url.searchParams.get('task') === 'removed',
@@ -67,5 +74,27 @@ export const actions = {
     if (result.error === 'not-allowed') error(403);
     // What was typed stays in the form (UI-10).
     return fail(400, { invalid: result.fields, values });
+  },
+  // Adds a one-off task, by any member with an account (ADR-0004 §4, ADR-0006 §3).
+  addOneOff: async ({ locals, request }) => {
+    const context = await householdContext(locals);
+    const form = await request.formData();
+    const values = {
+      name: text(form, 'name'),
+      duration: text(form, 'duration'),
+      date: text(form, 'date'),
+      deadline: text(form, 'deadline'),
+      onMiss: text(form, 'onMiss'),
+    };
+    const result = await addOneOff(context, {
+      ...values,
+      duration: Number(values.duration),
+      // Without a day, it can't wait beyond its week.
+      deadline: values.deadline || undefined,
+    });
+    if (result.ok) return { addedOneOff: result.name };
+    if (result.error === 'not-allowed') error(403);
+    // What was typed stays in the form (UI-10).
+    return fail(400, { invalidOneOff: result.fields, oneOffValues: values });
   },
 } satisfies Actions;

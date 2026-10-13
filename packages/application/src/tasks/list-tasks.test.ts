@@ -85,6 +85,8 @@ describe('listTasks (ADR-0001 §1)', () => {
           onMiss: 'lapse',
         },
       ],
+      oneOffs: [],
+      mayAddOneOffs: true,
       mayChangeTasks: true,
       starts: expect.anything() as unknown,
     });
