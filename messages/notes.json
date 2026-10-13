@@ -1042,6 +1042,10 @@
     "note": "Link to the member's own notifications from the household (ADR-0014 §7).",
     "needsReview": ["nl"]
   },
+  "household.notification-settings": {
+    "note": "Link to the account's own notification settings (ADR-0014 §3), next to the security page's.",
+    "needsReview": ["nl"]
+  },
   "settings.page-title": {
     "note": "Browser tab title of the household settings page.",
     "needsReview": ["nl"]
@@ -2098,12 +2102,132 @@
     "note": "Shown instead of the list when the member has no notifications from the household.",
     "needsReview": ["nl"]
   },
+  "notifications.settings": {
+    "note": "Link from a household's notifications to the account's notification settings (ADR-0014 §3).",
+    "needsReview": ["nl"]
+  },
   "notifications.plan-drafted": {
     "note": "A notification for heads: a week's draft plan is ready for review (ADR-0014 §2). {days} is the week's first and last day, such as “12–18 October 2026”. A link to the plan.",
     "needsReview": ["nl"]
   },
   "notifications.plan-published": {
     "note": "A notification for each member with tasks in a week's plan: it is published, so everyone sees it (ADR-0014 §2). {days} is the week's first and last day, such as “12–18 October 2026”. A link to the plan.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.page-title": {
+    "note": "Browser tab title of the account's notification settings. Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.title": {
+    "note": "Heading of the account's notification settings (ADR-0014 §3).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.intro": {
+    "note": "Under the heading of the notification settings. The settings are the account's, for all its households (ADR-0014 §3); every notification is in the household's list as well (§1).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.channels": {
+    "note": "Heading of the group with a channel to choose for each kind of notification (ADR-0014 §3).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.plan-published": {
+    "note": "Label of the choice for the notification that a week's plan is published (ADR-0014 §2).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.plan-published-who": {
+    "note": "Under “Your week’s plan is published”: who gets it (ADR-0014 §3, clarification).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.plan-drafted": {
+    "note": "Label of the choice for the notification that a week's draft plan is ready for review (ADR-0014 §2).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.plan-drafted-who": {
+    "note": "Under “A draft plan is ready to check”: who gets it. Every account sees it, so the choice holds once they become a head (ADR-0014 §3, clarification).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.push-and-email": {
+    "note": "One of the four ways to get a kind of notification: as a push notification on your devices and by e-mail (ADR-0014 §3).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.push": {
+    "note": "One of the four ways to get a kind of notification: as a push notification on your devices (ADR-0014 §3).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.email": {
+    "note": "One of the four ways to get a kind of notification: by e-mail (ADR-0014 §3).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.app": {
+    "note": "One of the four ways to get a kind of notification: only in the household's list in the app (ADR-0014 §3).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.security": {
+    "note": "Label of the row that can't be changed: e-mails about the account's sign-in and security (ADR-0014 §2, §3).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.security-channel": {
+    "note": "How security and account messages come, which can't be changed (ADR-0014 §3).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.security-why": {
+    "note": "Why security and account messages can't be turned off (ADR-0014 §2, §3).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.quiet-hours": {
+    "note": "Heading of the times when push notifications wait (ADR-0014 §4).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.quiet-hours-hint": {
+    "note": "Under “Quiet hours”: what they do, and that they are read in the household's time zone (ADR-0014 §4).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.quiet-start": {
+    "note": "Label of the time quiet hours start, such as 21:30.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.quiet-end": {
+    "note": "Label of the time quiet hours end, such as 07:30.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.quiet-hours-now": {
+    "note": "The quiet hours as saved, when saving didn't work because they changed on another device. {start} and {end} are times such as “21:30”.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.email-fallback": {
+    "note": "Checkbox, on by default: e-mail what would have been pushed when the account has no working push (ADR-0014 §5).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.on": {
+    "note": "That the e-mail fallback is on, in the settings as saved after a conflict.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.off": {
+    "note": "That the e-mail fallback is off, in the settings as saved after a conflict.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.conflict": {
+    "note": "When saving didn't work because the same account saved them elsewhere since the page opened (ADR-0019 §5).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.invalid-channel": {
+    "note": "Next to a channel choice the server didn't accept.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.invalid-time": {
+    "note": "Next to the start of quiet hours when it isn't a time of day.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.invalid-quiet-end": {
+    "note": "Next to the end of quiet hours when it isn't a time of day or is the same as the start (ADR-0014 §3, clarification).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.invalid-fallback": {
+    "note": "Next to the e-mail fallback's checkbox if the server didn't accept it, which a normal browser never causes.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.back": {
+    "note": "Link from the notification settings to the list of the account's households.",
     "needsReview": ["nl"]
   }
 }

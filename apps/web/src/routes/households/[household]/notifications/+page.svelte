@@ -16,6 +16,11 @@
 <main class="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-12">
   <h1 id="notifications" class="text-2xl font-semibold">{m['notifications.title']()}</h1>
   <p class="wrap-break-word">{m['notifications.intro']({ household: data.household })}</p>
+  {#if data.flags['notification-preferences']}
+    <a href="/notification-settings" class="self-start underline underline-offset-4">
+      {m['notifications.settings']()}
+    </a>
+  {/if}
 
   {#if list.notifications.length > 0}
     <ul aria-labelledby="notifications" class="flex flex-col divide-y rounded-lg border">

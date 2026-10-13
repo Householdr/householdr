@@ -350,5 +350,10 @@
       </a>
     {/if}
     <a href="/security" class="underline underline-offset-4">{m['security.title']()}</a>
+    {#if data.flags['notification-preferences']}
+      <a href="/notification-settings" class="underline underline-offset-4">
+        {m['household.notification-settings']()}
+      </a>
+    {/if}
   </nav>
 </main>
