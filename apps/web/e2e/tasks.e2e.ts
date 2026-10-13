@@ -141,6 +141,41 @@ test('a head adds a task counted from when it was last done, which shows how due
   await expectAccessible(page, 'counted task added');
 });
 
+test('a head adds a task at set times, which the list shows in words (ADR-0004 §4)', async ({
+  page,
+  accounts,
+  account,
+}) => {
+  await accounts.addSecondFactor(account.email);
+  const id = await accounts.addHousehold(account.email, 'Ash Lane');
+  await signIn(page, account, `/households/${id}`);
+  await page.goto(`/households/${id}/tasks`);
+  const form = adding(page);
+  const times = form.getByRole('group', { name: 'Set times' });
+  // Any time that week, until set times are chosen.
+  await expect(form.getByRole('radio', { name: 'Any time that week' })).toBeChecked();
+  await expect(times).toBeHidden();
+  await form.getByLabel('What needs doing').fill('Put the bins out');
+  await form.getByLabel('How long it takes, in minutes').fill('5');
+  await form.getByRole('radio', { name: 'At set times' }).check();
+  await expect(times).toBeVisible();
+  await expect(times.getByLabel('Starts on')).toHaveValue('0');
+  await times.getByLabel('Starts on').selectOption({ label: 'the day before' });
+  await times.getByLabel('From').fill('18:00');
+  await times.getByLabel('Ends on').selectOption({ label: 'the day itself' });
+  await times.getByLabel('Until').fill('07:00');
+  await expectAccessible(page, 'set times');
+  await page.getByRole('button', { name: 'Add task' }).click();
+
+  await expect(form.getByRole('status')).toHaveText('Put the bins out is added.');
+  await expect(page.getByRole('list', { name: 'Tasks' }).getByRole('listitem')).toContainText(
+    'Set times From the day before at 18:00 to the day itself at 07:00',
+  );
+  // The form starts over, on any time that week.
+  await expect(form.getByRole('radio', { name: 'Any time that week' })).toBeChecked();
+  await expect(times).toBeHidden();
+});
+
 test('names every field the server refuses, in the form’s order', async ({
   page,
   accounts,
@@ -151,9 +186,11 @@ test('names every field the server refuses, in the form’s order', async ({
   await signIn(page, account, `/households/${id}`);
   await page.goto(`/households/${id}/tasks`);
   // The browser's own checks come first (UI-2); the server's are what a browser without them sees.
-  await adding(page).locator('form').evaluate((form: HTMLFormElement) => {
-    form.noValidate = true;
-  });
+  await adding(page)
+    .locator('form')
+    .evaluate((form: HTMLFormElement) => {
+      form.noValidate = true;
+    });
   await adding(page).getByLabel('What needs doing').fill('Water the plants');
   await adding(page).getByLabel('How long it takes, in minutes').fill('0');
   await adding(page).getByLabel('First time').fill('2000-01-01');

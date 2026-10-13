@@ -90,8 +90,52 @@ describe('a task’s page (ADR-0001 §2)', () => {
     // The test clock reads 10:00 on 8 October 2026 in Brussels.
     expect(await opened({ ...on, membership }, taskId)).toEqual({
       household: 'Ash Lane',
-      task: { ...vacuum, id: taskId, duration: 30, everyCount: '', everyUnit: 'weeks', version: 1 },
+      task: {
+        ...vacuum,
+        id: taskId,
+        duration: 30,
+        everyCount: '',
+        everyUnit: 'weeks',
+        // Any time that week; set times would start on the day itself, 08:00 to 20:00.
+        when: 'week',
+        fromDay: '0',
+        fromTime: '08:00',
+        toDay: '0',
+        toTime: '20:00',
+        version: 1,
+      },
       starts: { earliest: '2026-10-08', latest: '2027-10-08' },
+    });
+  });
+
+  it('saves set times, shows them, and goes back to any time that week (ADR-0004 §4)', async () => {
+    const { membership, taskId } = await founded();
+    const set = {
+      ...vacuum,
+      version: '1',
+      when: 'set',
+      fromDay: '-1',
+      fromTime: '18:00',
+      toDay: '0',
+      toTime: '07:00',
+    };
+    expect(await saved({ ...on, membership }, taskId, set)).toEqual({ saved: true });
+    const window = { from: { dayOffset: -1, time: '18:00' }, to: { dayOffset: 0, time: '07:00' } };
+    expect(await opened({ ...on, membership }, taskId)).toMatchObject({
+      task: { when: 'set', fromDay: '-1', fromTime: '18:00', toDay: '0', toTime: '07:00', window },
+    });
+    const backwards = await saved({ ...on, membership }, taskId, {
+      ...set,
+      version: '2',
+      fromDay: '1',
+    });
+    expect(isActionFailure(backwards) && backwards.data).toMatchObject({ invalid: ['window'] });
+    // A form without scripts sends the window too; any time that week leaves it out.
+    expect(
+      await saved({ ...on, membership }, taskId, { ...set, version: '2', when: 'week' }),
+    ).toEqual({ saved: true });
+    expect(await opened({ ...on, membership }, taskId)).toMatchObject({
+      task: { when: 'week', window: undefined, version: 3 },
     });
   });
 
