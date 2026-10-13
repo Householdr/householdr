@@ -38,14 +38,19 @@ export interface AllocationInput {
   carried: ReadonlyMap<string, string>;
 }
 
-/** Why an occurrence went where it did (ADR-0001 §7, step 7). */
+/**
+ * Why an occurrence went where it did (ADR-0001 §7, step 7). The allocator gives all but the last,
+ * which is an occurrence's reason once it moved from a member who can no longer do it after
+ * publishing (ADR-0005 §3).
+ */
 export type Reason =
   | 'bound'
   | 'assigned by head'
   | 'linked'
   | 'only eligible member'
   | 'lowest relative load'
-  | 'catching up';
+  | 'catching up'
+  | 're-allocated: member unavailable';
 
 export interface Assignment {
   occurrence: string;

@@ -544,6 +544,8 @@
   "plan.reason.assigned-by-head-you": "Een hoofd gaf het aan jou.",
   "plan.reason.linked": "Het hoort bij een taak die {name} net daarvoor had.",
   "plan.reason.linked-you": "Het hoort bij een taak die jij net daarvoor had.",
+  "plan.reason.reallocated": "Het ging naar {name} toen wie het had het niet meer kon.",
+  "plan.reason.reallocated-you": "Het ging naar jou toen wie het had het niet meer kon.",
   "plan.cause.nobody-eligible": "Niemand kan het dan doen: iedereen is weg of mag het niet doen.",
   "plan.cause.bound-member-not-eligible": "Wie het altijd krijgt, kan het dan niet doen.",
   "plan.cause.linked-member-not-eligible": "Wie de taak had waar het bij hoort, kan het dan niet doen.",

@@ -161,6 +161,10 @@ const reasons: Record<Reason, { other: (name: string) => string; you: () => stri
     you: m['plan.reason.assigned-by-head-you'],
   },
   linked: { other: (name) => m['plan.reason.linked']({ name }), you: m['plan.reason.linked-you'] },
+  're-allocated: member unavailable': {
+    other: (name) => m['plan.reason.reallocated']({ name }),
+    you: m['plan.reason.reallocated-you'],
+  },
 };
 
 /** Stands for the day in a sentence, to split it there: a character no message has. */

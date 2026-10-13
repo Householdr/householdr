@@ -827,7 +827,7 @@ export const assignments = pgTable(
     check(
       'assignments_reason',
       sql`${t.reason} in ('bound', 'assigned by head', 'linked', 'only eligible member',
-        'lowest relative load', 'catching up')`,
+        'lowest relative load', 'catching up', 're-allocated: member unavailable')`,
     ),
     check(
       'assignments_unassigned_cause',

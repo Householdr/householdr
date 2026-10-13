@@ -1,4 +1,5 @@
 import type { Window } from '../schedules/occurrence';
+import { isAvailableDuring, type Availability } from './availability';
 import { planWeek, type HouseholdCalendar } from '../schedules/week';
 
 /**
@@ -32,4 +33,22 @@ export function suddenUnavailability(
   const choices = unavailableDays(start.toPlainDate(), calendar);
   if (!choices.some((day) => day.equals(lastDay))) return undefined;
   return { start, end: lastDay.add({ days: 1 }).toZonedDateTime({ timeZone }) };
+}
+
+/**
+ * What is left at `now` of an occurrence's `window` that a member with `availability` can no
+ * longer do, to re-allocate (ADR-0005 §3, clarification): none when they are available during any
+ * part of it, so it stays theirs, nor once the window has passed, as nobody can do it then.
+ */
+export function windowToReallocate(
+  availability: Availability,
+  window: Window,
+  now: Temporal.Instant,
+  calendar: HouseholdCalendar,
+): Window | undefined {
+  const from = now.toZonedDateTimeISO(calendar.timeZone);
+  if (Temporal.ZonedDateTime.compare(window.end, from) <= 0) return undefined;
+  const left =
+    Temporal.ZonedDateTime.compare(window.start, from) > 0 ? window : { ...window, start: from };
+  return isAvailableDuring(availability, left, calendar) ? undefined : left;
 }

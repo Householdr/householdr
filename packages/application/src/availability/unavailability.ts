@@ -5,6 +5,7 @@ import * as v from 'valibot';
 import { changeLog } from '../households/change-log';
 import type { HouseholdContext } from '../households/context';
 import { planningOf, weekInput } from '../plans/planning';
+import { reallocateUnavailable } from '../plans/reallocate';
 import { memberOf } from './whose';
 
 const id = v.pipe(v.string(), v.uuid());
@@ -37,9 +38,10 @@ type ReportUnavailableResult =
 /**
  * Says a member can't from now to the end of `lastDay`, "I can't today" (ADR-0005 §2–§3, with its
  * clarification): today, or a later day of this plan week. Said again while it lasts, it moves its
- * end. Their fair portion of the week shrinks by that time, so it is an absence, not a deficit
- * (ADR-0002 §1). A head acting for a profile without an account is shown in the activity log once
- * the household has started, never until when (ADR-0018 §5); anyone else's own isn't logged.
+ * end. What they can no longer do in this week's published plan goes to others (§3). Their fair
+ * portion of the week shrinks by that time, so it is an absence, not a deficit (ADR-0002 §1). A
+ * head acting for a profile without an account is shown in the activity log once the household has
+ * started, never until when (ADR-0018 §5); anyone else's own isn't logged.
  */
 export async function reportUnavailable(
   context: HouseholdContext,
@@ -60,8 +62,8 @@ export async function reportUnavailable(
       const parsed = v.safeParse(until, input);
       if (!parsed.success) return { ok: false, error: 'invalid' };
       const now = context.clock.now();
-      const { calendar } = await planningOf(tx);
-      const period = suddenUnavailability(now, parsed.output.lastDay, calendar);
+      const planning = await planningOf(tx);
+      const period = suddenUnavailability(now, parsed.output.lastDay, planning.calendar);
       if (!period) return { ok: false, error: 'invalid' };
       const endsAt = new Date(period.end.epochMilliseconds);
       const moved = await tx
@@ -77,6 +79,7 @@ export async function reportUnavailable(
           endsAt,
         });
       }
+      await reallocateUnavailable(tx, { planning, now }, member.id);
       if (!member.hasAccount) await log('unavailable.reported', member.id);
       return { ok: true };
     },

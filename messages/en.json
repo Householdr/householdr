@@ -544,6 +544,8 @@
   "plan.reason.assigned-by-head-you": "A head gave it to you.",
   "plan.reason.linked": "It goes with a task {name} had just before.",
   "plan.reason.linked-you": "It goes with a task you had just before.",
+  "plan.reason.reallocated": "It went to {name} when the person who had it couldn’t any more.",
+  "plan.reason.reallocated-you": "It went to you when the person who had it couldn’t any more.",
   "plan.cause.nobody-eligible": "Nobody can do it then: everyone is away, or not allowed to do it.",
   "plan.cause.bound-member-not-eligible": "The person it always goes to can’t do it then.",
   "plan.cause.linked-member-not-eligible": "Whoever had the task it goes with can’t do it then.",

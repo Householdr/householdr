@@ -111,6 +111,47 @@ test('another adult sees until which day, and can’t change it', async ({
   }
 });
 
+test('what the member can no longer do this week goes to someone else (ADR-0005 §3)', async ({
+  page,
+  context,
+  baseURL,
+  accounts,
+  account,
+}, testInfo) => {
+  await forceFlags(context, baseURL, { ...flags, plans: true });
+  await accounts.addSecondFactor(account.email);
+  const id = await accounts.addHousehold(account.email, 'Ash Lane');
+  const alex = { email: `${testInfo.testId}-alex@example.org`, password: account.password };
+  await accounts.add(alex);
+  await accounts.addMember(alex.email, id, 'Alex');
+  // Robin has every task of this week's plan; Alex's share comes back once it is published.
+  await accounts.setShare(id, alex.email, 0);
+  await accounts.addTask(id, { name: 'Dishes', duration: 20, frequency: 'daily' });
+  await accounts.publishThisWeek(id);
+  await accounts.setShare(id, alex.email, 100);
+
+  await signIn(page, account, `/households/${id}`);
+  await page.goto(`/households/${id}/availability`);
+  const you = page.getByRole('region', { name: 'Robin (you)' });
+  const field = you.getByLabel('Until the end of');
+  const last = await field.locator('option').last().getAttribute('value');
+  await field.selectOption(last ?? '');
+  await you.getByRole('button', { name: 'I can’t' }).click();
+  await expect(you.getByRole('status')).toHaveText('Noted. Others see until which day, never why.');
+
+  await page.goto(`/households/${id}/plan`);
+  const week = page.getByRole('region', { name: /^This week: / });
+  await expect(week.getByRole('region', { name: 'Robin (you)' })).toContainText(
+    'Nothing this week.',
+  );
+  const theirs = week.getByRole('region', { name: 'Alex' }).getByRole('listitem');
+  await expect(theirs).not.toHaveCount(0);
+  await expect(
+    theirs.filter({ hasText: 'It went to Alex when the person who had it couldn’t any more.' }),
+  ).toHaveCount(await theirs.count());
+  await expectAccessible(page, 're-allocated');
+});
+
 test('is not there while its flag is off (CODE-20)', async ({
   page,
   context,
