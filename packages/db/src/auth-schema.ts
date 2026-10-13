@@ -1,11 +1,14 @@
+import type { ChannelChoice, NotificationKind } from '@householdr/domain';
 import { sql } from 'drizzle-orm';
 import {
   boolean,
   check,
   index,
   integer,
+  jsonb,
   pgSchema,
   text,
+  time,
   timestamp,
   uuid,
   type AnyPgColumn,
@@ -264,5 +267,39 @@ export const rateLimits = auth.table(
   (t) => [
     index('rate_limits_expires_at').on(t.expiresAt),
     check('rate_limits_count', sql`${t.count} >= 0`),
+  ],
+);
+
+/**
+ * An account's notification preferences, once it has saved any (ADR-0014 §3, clarifications): kept
+ * with the account, apart from any household, and gone with it (ADR-0012 §2, clarification). An
+ * account without a row has the defaults.
+ */
+export const notificationPreferences = auth.table(
+  'notification_preferences',
+  {
+    accountId: uuid()
+      .primaryKey()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    /** The channel chosen for each category; a category added since takes its default. */
+    channels: jsonb().$type<Partial<Record<NotificationKind, ChannelChoice>>>().notNull(),
+    /** Quiet hours, from the start up to the end, as times of day (ADR-0014 §4). */
+    quietStart: time().notNull(),
+    quietEnd: time().notNull(),
+    emailFallback: boolean().notNull(),
+    /** What a change is made from (ADR-0019 §5). */
+    version: integer().notNull(),
+  },
+  (t) => [
+    // An object of the categories there are, each with one of the choices.
+    check(
+      'notification_preferences_channels',
+      sql`jsonb_typeof(${t.channels}) = 'object'
+        and ${t.channels} - array['plan.published', 'plan.drafted'] = '{}'::jsonb
+        and not jsonb_path_exists(${t.channels}, '$.* ? (!(@ == "push-and-email" || @ == "push" || @ == "email" || @ == "app"))')`,
+    ),
+    // Equal times could mean none or all day (ADR-0014 §3, clarification).
+    check('notification_preferences_quiet_hours', sql`${t.quietStart} <> ${t.quietEnd}`),
+    check('notification_preferences_version', sql`${t.version} >= 1`),
   ],
 );

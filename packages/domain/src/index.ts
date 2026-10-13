@@ -52,6 +52,15 @@ export {
 export { householdDate } from './households/date';
 export { isAdultOn } from './members/age';
 export {
+  areQuietHours,
+  channelChoices,
+  channelsWith,
+  defaultPreferences,
+  type ChannelChoice,
+  type NotificationPreferences,
+  type QuietHours,
+} from './notifications/preferences';
+export {
   recipients,
   type Notifiable,
   type NotificationEvent,

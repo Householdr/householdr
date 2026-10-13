@@ -232,6 +232,13 @@
       "when": 1791900604930,
       "tag": "0032_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1791913390177,
+      "tag": "0033_notification_preferences",
+      "breakpoints": true
     }
   ]
 }
