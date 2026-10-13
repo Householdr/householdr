@@ -343,7 +343,13 @@ async function storeSkipped(
     if (recurrence?.kind !== 'schedule' || recurrence.timing.kind !== 'fixed') {
       throw new Error(`Only a fixed task's occurrence is skipped, not ${id}.`);
     }
-    const [own] = occurrencesOf(recurrence.schedule, recurrence.timing, date, date, planning.calendar);
+    const [own] = occurrencesOf(
+      recurrence.schedule,
+      recurrence.timing,
+      date,
+      date,
+      planning.calendar,
+    );
     if (!own) throw new Error(`Task ${taskId} has no occurrence on ${date.toString()}.`);
     return {
       householdId,
