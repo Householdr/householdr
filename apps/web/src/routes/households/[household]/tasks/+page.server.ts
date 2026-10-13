@@ -43,6 +43,7 @@ export const load = (async ({ locals, url }) => {
     mayChangeTasks: result.mayChangeTasks,
     starts: { earliest: earliest.toString(), latest: latest.toString() },
     dates: { earliest: result.dates.earliest.toString(), latest: result.dates.latest.toString() },
+    shareable: result.shareable,
     removed: url.searchParams.get('task') === 'removed',
   };
 }) satisfies PageServerLoad;
@@ -73,6 +74,8 @@ export const actions = {
       fromTime: text(form, 'fromTime'),
       toDay: text(form, 'toDay'),
       toTime: text(form, 'toTime'),
+      sharedWith: text(form, 'sharedWith'),
+      ownDates: text(form, 'ownDates'),
       ...sentSchedule(form),
     };
     const changed = changedSchedule(values, text(form, 'change'));
@@ -88,6 +91,9 @@ export const actions = {
       start: values.start || undefined,
       ...windowInput(values),
       ...scheduleFields(values),
+      // Only when sharing: a form without scripts sends its first choice with any other.
+      sharedWith: values.frequency === 'shared' ? values.sharedWith || undefined : undefined,
+      ownDates: values.ownDates === 'on',
     });
     if (result.ok) return { added: result.name };
     if (result.error === 'not-allowed') error(403);

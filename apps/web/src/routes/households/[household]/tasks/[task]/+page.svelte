@@ -18,7 +18,15 @@
   const refused = $derived(invalid.map((id) => ({ id, problem: problems[id]() })));
 
   /** What the form shows: what was sent when saving didn't work, the task as saved otherwise. */
-  const values = $derived(form?.values ?? { ...data.task, duration: String(data.task.duration) });
+  const values = $derived(
+    form?.values ?? {
+      ...data.task,
+      duration: String(data.task.duration),
+      // It keeps the dates it has, until another task's are chosen (ADR-0004 §1).
+      sharedWith: '',
+      ownDates: '',
+    },
+  );
 
   /**
    * Saves without emptying the form, which shows the task as saved, and loads the task again after
@@ -59,6 +67,8 @@
       starts={data.starts}
       dates={data.dates}
       today={data.today}
+      shareable={data.shareable}
+      sharesWith={data.task.sharedWith}
       startingOnMiss={data.task.onMiss}
       action="?/save"
       submit={m['task.save']()}

@@ -1698,6 +1698,26 @@
     "note": "Why the exception dates of an advanced schedule were refused (ADR-0004 §3).",
     "needsReview": ["nl"]
   },
+  "tasks.shared": {
+    "note": "Shared schedules in the form that adds or changes a task, and in the list (ADR-0004 §1). A choice of how often a task is done: on the schedule of another task, such as bringing the bins in on the days they go out.",
+    "needsReview": ["nl"]
+  },
+  "tasks.shared-with": {
+    "note": "Shared schedules in the form that adds or changes a task, and in the list (ADR-0004 §1). Label of the choice of the task whose dates it shares; in the list, the label before the tasks it shares them with.",
+    "needsReview": ["nl"]
+  },
+  "tasks.shared-note": {
+    "note": "Shared schedules in the form that adds or changes a task, and in the list (ADR-0004 §1). Note on the form of a task that shares its dates; {tasks} lists task names.",
+    "needsReview": ["nl"]
+  },
+  "tasks.own-dates": {
+    "note": "Shared schedules in the form that adds or changes a task, and in the list (ADR-0004 §1). Checkbox on the form of a task that shares its dates: new dates for this task alone.",
+    "needsReview": ["nl"]
+  },
+  "tasks.invalid-shared-with": {
+    "note": "Shared schedules in the form that adds or changes a task, and in the list (ADR-0004 §1). Why the choice of whose dates to share was refused.",
+    "needsReview": ["nl"]
+  },
   "tasks.edit": {
     "note": "Link next to each task in the list, for heads, to the page that changes or removes it. Screen readers read it with the task's name after it.",
     "needsReview": ["nl"]

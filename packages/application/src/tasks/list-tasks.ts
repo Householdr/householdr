@@ -26,6 +26,7 @@ import { and, eq, gte, isNotNull, isNull } from 'drizzle-orm';
 import type { HouseholdContext } from '../households/membership';
 import { planningOf } from '../plans/planning';
 import { lastDoneOf } from './last-done';
+import { othersOn, tasksBySchedule, type TaskName } from './shared-schedules';
 import { repeatColumns, repeatOf } from './stored-task';
 import type { Repeat } from './task-fields';
 
@@ -38,6 +39,8 @@ export interface TaskSummary {
   frequency: Repeat;
   /** For a task on an advanced schedule: its rules and dates, which the list says in words (ADR-0004 §3). */
   schedule?: AdvancedSchedule;
+  /** The names of the other tasks on its schedule, if it shares one (ADR-0004 §1, clarification). */
+  sharedWith?: string[];
   /** For a "since last done" task: how long after it is due again, and how due it is now (ADR-0004 §8). */
   every?: Interval;
   dueness?: Dueness;
@@ -79,6 +82,8 @@ type ListTasksResult =
       starts: { earliest: Temporal.PlainDate; latest: Temporal.PlainDate };
       /** The days a new task's extra and exception dates can be on (ADR-0004 §3, clarification). */
       dates: { earliest: Temporal.PlainDate; latest: Temporal.PlainDate };
+      /** The tasks on a calendar schedule, by name, whose dates a new task can share (ADR-0004 §1). */
+      shareable: TaskName[];
     }
   | { ok: false; error: 'not-allowed' };
 
@@ -100,7 +105,13 @@ export async function listTasks(context: HouseholdContext): Promise<ListTasksRes
     if (!household) throw new Error('The household of a member is gone.');
     const today = context.clock.now().toZonedDateTimeISO(household.timeZone).toPlainDate();
     const rows = await tx
-      .select({ id: tasks.id, name: tasks.name, duration: tasks.duration, ...repeatColumns })
+      .select({
+        id: tasks.id,
+        name: tasks.name,
+        duration: tasks.duration,
+        scheduleId: tasks.scheduleId,
+        ...repeatColumns,
+      })
       .from(tasks)
       .leftJoin(schedules, eq(schedules.id, tasks.scheduleId))
       // One-off tasks are listed apart; removed ones never (ADR-0001 §1, clarification).
@@ -129,10 +140,12 @@ export async function listTasks(context: HouseholdContext): Promise<ListTasksRes
           to: Temporal.PlainDate.from(period.to),
         }))
       : [];
+    const bySchedule = await tasksBySchedule(tx);
     const list = repeats.map(({ row, repeat }): TaskSummary => {
       const { id, name, duration } = row;
       const { frequency, every, schedule, start, onMiss, window } = repeat;
       if (!every) {
+        const sharedWith = othersOn(bySchedule, row.scheduleId, id).map((task) => task.name);
         return {
           id,
           name,
@@ -141,6 +154,7 @@ export async function listTasks(context: HouseholdContext): Promise<ListTasksRes
           onMiss,
           ...(schedule && { schedule }),
           ...(window && { window }),
+          ...(sharedWith.length > 0 && { sharedWith }),
         };
       }
       const due = dueness({ every, start }, lastDone.get(id), away, today);
@@ -156,6 +170,9 @@ export async function listTasks(context: HouseholdContext): Promise<ListTasksRes
       mayChangeTasks: can(context.member, { action: 'household.tasks' }),
       starts: startRange(today),
       dates: scheduleDateRange(today),
+      shareable: [...bySchedule.values()]
+        .flat()
+        .toSorted((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id)),
     };
   });
 }

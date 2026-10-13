@@ -37,6 +37,9 @@
       toTime: '20:00',
       // One rule from today, for a task on an advanced schedule (ADR-0004 §3).
       ...scheduleValues(undefined, data.starts.earliest),
+      // None chosen yet: the choice starts on the first task to share dates with (ADR-0004 §1).
+      sharedWith: '',
+      ownDates: '',
     },
   );
 
@@ -193,6 +196,8 @@
           starts={data.starts}
           dates={data.dates}
           today={data.starts.earliest}
+          shareable={data.shareable}
+          sharesWith={[]}
           startingOnMiss={defaultOnMiss}
           action="?/add"
           submit={m['tasks.submit']()}

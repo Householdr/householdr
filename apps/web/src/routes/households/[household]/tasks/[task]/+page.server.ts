@@ -34,6 +34,7 @@ const shown = (task: EditableTask) => ({
   everyUnit: task.every?.unit ?? 'weeks',
   window: task.window && windowData(task.window),
   schedule: task.schedule && scheduleData(task.schedule),
+  sharedWith: task.sharedWith.map(({ name }) => name),
   ...windowValues(task.window),
 });
 
@@ -51,6 +52,7 @@ export const load = (async ({ locals, params }) => {
     starts: { earliest: earliest.toString(), latest: latest.toString() },
     dates: { earliest: result.dates.earliest.toString(), latest: result.dates.latest.toString() },
     today,
+    shareable: result.shareable,
   };
 }) satisfies PageServerLoad;
 
@@ -80,6 +82,8 @@ export const actions = {
       fromTime: text(form, 'fromTime'),
       toDay: text(form, 'toDay'),
       toTime: text(form, 'toTime'),
+      sharedWith: text(form, 'sharedWith'),
+      ownDates: text(form, 'ownDates'),
       version: Number(form.get('version')),
       ...sentSchedule(form),
     };
@@ -97,6 +101,9 @@ export const actions = {
       start: values.start || undefined,
       ...windowInput(values),
       ...scheduleFields(values),
+      // Only when sharing: a form without scripts sends its first choice with any other.
+      sharedWith: values.frequency === 'shared' ? values.sharedWith || undefined : undefined,
+      ownDates: values.ownDates === 'on',
     });
     if (result.ok) return { saved: true };
     if (result.error === 'not-allowed') error(403);

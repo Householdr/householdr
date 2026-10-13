@@ -2,9 +2,10 @@ import { households, inHousehold, schedules, tasks } from '@householdr/db';
 import { can } from '@householdr/domain';
 import * as v from 'valibot';
 import type { HouseholdContext } from '../households/membership';
+import { scheduleToShare } from './shared-schedules';
 import { storedSchedule } from './stored-schedule';
 import { written } from './stored-task';
-import { refusedFields, taskInput, type TaskField } from './task-fields';
+import { refusedFields, shared, taskInput, type TaskField } from './task-fields';
 
 type AddTaskResult =
   | { ok: true; taskId: string; name: string }
@@ -18,8 +19,9 @@ type AddTaskResult =
  * household's time zone. On a simple frequency (ADR-0004 §3), it has a schedule of its own, whose
  * one rule starts on that day; it is flexible, or floating when it recurs monthly or less often
  * (§4), and rolls over or lapses when it isn't done, as chosen (ADR-0002 §2). On an advanced
- * schedule, its own schedule is what the editor built, and it is flexible (§3, clarification). On
- * either, it may be at set times instead (§4, clarification). Counted from when it
+ * schedule, its own schedule is what the editor built, and it is flexible (§3, clarification).
+ * Sharing another task's schedule, it follows that one, timed as its dates have it (§1,
+ * clarification). On any of them, it may be at set times instead (§4, clarification). Counted from when it
  * was last done, it is due on that day until it is first done (ADR-0004 §8).
  */
 export async function addTask(context: HouseholdContext, input: unknown): Promise<AddTaskResult> {
@@ -39,8 +41,16 @@ export async function addTask(context: HouseholdContext, input: unknown): Promis
     if (!parsed.success)
       return { ok: false, error: 'invalid', fields: refusedFields(parsed.issues) };
     const { name, duration } = parsed.output;
-    const { schedule: dates, columns } = written(parsed.output);
-    let scheduleId: string | null = null;
+    // The schedule it is to share, which must be one of the household's (ADR-0004 §1).
+    const sharing =
+      parsed.output.frequency === shared
+        ? await scheduleToShare(tx, parsed.output.sharedWith)
+        : undefined;
+    if (parsed.output.frequency === shared && !sharing) {
+      return { ok: false, error: 'invalid', fields: ['sharedWith'] };
+    }
+    const { schedule: dates, columns } = written(parsed.output, sharing?.schedule);
+    let scheduleId = sharing?.id ?? null;
     if (dates) {
       const [schedule] = await tx
         .insert(schedules)

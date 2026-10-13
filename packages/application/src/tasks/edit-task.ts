@@ -6,9 +6,11 @@ import * as v from 'valibot';
 import type { HouseholdContext } from '../households/membership';
 import { storedSchedule } from './stored-schedule';
 import { written } from './stored-task';
+import { scheduleToShare } from './shared-schedules';
 import {
   advanced,
   refusedFields,
+  shared,
   sinceLastDone,
   taskInput,
   taskReference,
@@ -36,9 +38,11 @@ type EditTaskResult =
  * has no schedule: its own goes, and comes back new if it returns to a frequency (§8). A task that
  * has started keeps its first time, or moves to a day from today on (`isStartDay`). On an advanced
  * schedule, its rules and dates replace those of its own schedule, keeping the first times and
- * dates it had (§3, clarification). On a schedule, it is done any time that week or at set times
- * (§4, clarification). Saved unchanged, the task
- * keeps its version.
+ * dates it had (§3, clarification). Sharing another task's schedule, it follows that one, and its
+ * own goes unless another task uses it; new dates for a task that shares its schedule change them
+ * for every task on it, or give it dates of its own (§1, clarification). On a schedule, it is done
+ * any time that week or at set times (§4, clarification). Saved unchanged, the task keeps its
+ * version.
  */
 export async function editTask(context: HouseholdContext, input: unknown): Promise<EditTaskResult> {
   if (!can(context.member, { action: 'household.tasks' })) {
@@ -77,18 +81,27 @@ export async function editTask(context: HouseholdContext, input: unknown): Promi
       };
     }
     const next = parsed.output;
-    const { schedule: dates, columns } = written(next);
+    // The schedule it is to share, which must be one of the household's (ADR-0004 §1).
+    const sharing =
+      next.frequency === shared ? await scheduleToShare(tx, next.sharedWith) : undefined;
+    if (next.frequency === shared && !sharing) {
+      return { ok: false, error: 'invalid', fields: ['sharedWith'] };
+    }
+    const { schedule: dates, columns } = written(next, sharing?.schedule);
     const sameRepeat =
-      next.frequency === current.frequency &&
-      (next.frequency === advanced
-        ? current.schedule !== undefined &&
-          isDeepStrictEqual(
-            storedSchedule(scheduleOfAdvanced(next.schedule)),
-            storedSchedule(scheduleOfAdvanced(current.schedule)),
-          )
-        : next.start.equals(current.start) &&
-          (next.frequency !== sinceLastDone ||
-            (next.everyCount === current.every?.count && next.everyUnit === current.every.unit)));
+      next.frequency === shared
+        ? sharing?.id === schedule?.id
+        : next.frequency === current.frequency &&
+          (next.frequency === advanced
+            ? current.schedule !== undefined &&
+              isDeepStrictEqual(
+                storedSchedule(scheduleOfAdvanced(next.schedule)),
+                storedSchedule(scheduleOfAdvanced(current.schedule)),
+              )
+            : next.start.equals(current.start) &&
+              (next.frequency !== sinceLastDone ||
+                (next.everyCount === current.every?.count &&
+                  next.everyUnit === current.every.unit)));
     const nextWindow = next.frequency === sinceLastDone ? undefined : next.window;
     const sameWindow =
       nextWindow === undefined || current.window === undefined
@@ -112,17 +125,21 @@ export async function editTask(context: HouseholdContext, input: unknown): Promi
       .where(atVersion(tasks, taskId, seen.output.version))
       .returning({ id: tasks.id });
     if (!claimed) return conflict();
+    // New dates for a task that shares them change them for every task on its schedule, unless
+    // they are its own (ADR-0004 §1, clarification).
+    const ownDates = 'ownDates' in next && next.ownDates && current.sharedWith.length > 0;
     let scheduleId = schedule?.id ?? null;
-    if (dates && schedule && !sameRepeat) {
-      // The schedule is the task's own (ADR-0004 §3), and has its own version (ADR-0019 §5).
+    if (sharing) {
+      scheduleId = sharing.id;
+    } else if (dates && schedule && !sameRepeat && !ownDates) {
+      // The schedule has its own version (ADR-0019 §5); another task on it may just have changed it.
       const [rewritten] = await tx
         .update(schedules)
         .set({ ...storedSchedule(dates), version: nextVersion(schedules) })
         .where(atVersion(schedules, schedule.id, schedule.version))
         .returning({ id: schedules.id });
-      // Only its task changes a task's own schedule, and this transaction holds the task's row.
-      if (!rewritten) throw new Error(`The schedule of task ${taskId} changed while it was saved.`);
-    } else if (dates && !schedule) {
+      if (!rewritten) return conflict();
+    } else if (dates && (!schedule || (!sameRepeat && ownDates))) {
       const [added] = await tx
         .insert(schedules)
         .values({ householdId: context.householdId, ...storedSchedule(dates) })
@@ -136,8 +153,8 @@ export async function editTask(context: HouseholdContext, input: unknown): Promi
       .update(tasks)
       .set({ name: next.name, duration: next.duration, scheduleId, ...columns })
       .where(eq(tasks.id, taskId));
-    if (!dates && schedule) {
-      // Its own schedule goes with it, unless another task uses it too (ADR-0004 §1).
+    if (schedule && scheduleId !== schedule.id) {
+      // The schedule it leaves goes, unless another task uses it too (ADR-0004 §1).
       await tx
         .delete(schedules)
         .where(
