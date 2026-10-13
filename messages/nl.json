@@ -830,5 +830,8 @@
         "who=*": "{actor} heeft {subject} uit het huishouden verwijderd."
       }
     }
-  ]
+  ],
+  "balances.former-members": "Voormalige leden",
+  "balances.former-intro": "Het saldo van wie vertrok, blijft zoals het was, en blijft van hen alleen.",
+  "balances.former-member": "Voormalig lid"
 }

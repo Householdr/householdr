@@ -830,5 +830,8 @@
         "who=*": "{actor} removed {subject} from the household."
       }
     }
-  ]
+  ],
+  "balances.former-members": "Former members",
+  "balances.former-intro": "The balances of those who left stay as they were, each theirs alone.",
+  "balances.former-member": "Former member"
 }
