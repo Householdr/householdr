@@ -52,6 +52,13 @@ ADR.
 | **Assignment** | An occurrence given to a member, with the cost charged and the reason it went there. |
 | **Completion** | Who actually did an occurrence, and when. Not necessarily the assignee, and possibly several members together. |
 
+> **Clarification (2026-10-13):** until the template catalogue brings its areas
+> ([ADR-0007](0007-onboarding.md) §6), a household's **areas** are the ones its heads add, on an
+> areas page next to the tasks: a name of 1 to 50 characters, unlike the household's other areas
+> whatever the case. Heads rename and remove them; removing an area leaves its tasks without one.
+> Heads give a task an area, or none, in the task's form. The task list groups the tasks by area, in
+> name order, with those without an area last. Every member sees the areas.
+
 The **occurrence** is the unit of allocation, not the task. A daily task is split across members over
 the week by default, which makes balancing easier.
 
