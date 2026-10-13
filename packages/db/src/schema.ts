@@ -526,8 +526,8 @@ export const schedules = pgTable(
  * done. Its dates come from a schedule (ADR-0004 §2); for a "since last done" task, from its last
  * completion, `every` so long after it, and from `start` while it was never done (§8); or, for a
  * one-off task, from its one date (§4). Children below its minimum age don't take it unless a head
- * allows it (ADR-0001 §3). Areas and same-person links come with the slices that use them, as
- * columns of their own.
+ * allows it (ADR-0001 §3); its next occurrence of a linked task goes to the same member (§7). Areas
+ * come with the slice that uses them, as columns of their own.
  */
 export const tasks = pgTable(
   'tasks',
@@ -574,6 +574,11 @@ export const tasks = pgTable(
     onMiss: text().$type<PlanTask['onMiss']>().notNull(),
     /** In whole years, if it has one (ADR-0001 §3, clarification). */
     minimumAge: smallint(),
+    /**
+     * The task whose next occurrence goes to whoever does this one, if any (ADR-0001 §7,
+     * clarification). Removing that task clears it.
+     */
+    linkedTo: uuid(),
     /** For versioned updates (CODE-14, ADR-0019 §5). */
     version: integer().notNull().default(1),
   },
@@ -602,6 +607,13 @@ export const tasks = pgTable(
     ),
     check('tasks_on_miss', sql`${t.onMiss} in ('roll over', 'lapse')`),
     check('tasks_minimum_age', sql`${t.minimumAge} is null or ${t.minimumAge} between 1 and 17`),
+    // Another task of its own household, never itself.
+    foreignKey({
+      name: 'tasks_linked_to',
+      columns: [t.householdId, t.linkedTo],
+      foreignColumns: [t.householdId, t.id],
+    }),
+    check('tasks_linked_to_other', sql`${t.linkedTo} <> ${t.id}`),
     // On a schedule; "since last done": flexible, always rolling over, within a year (§8); or a
     // one-off, flexible within its week or up to its deadline (§4), added by a member.
     check(

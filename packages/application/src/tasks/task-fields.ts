@@ -325,7 +325,8 @@ export type TaskField =
   | 'extraDates'
   | 'exceptionDates'
   | 'minimumAge'
-  | 'constraints';
+  | 'constraints'
+  | 'linkedTo';
 
 /** The fields in the order the form shows them, which its error summary follows. */
 const order: TaskField[] = [
@@ -344,6 +345,7 @@ const order: TaskField[] = [
   'window',
   'minimumAge',
   'constraints',
+  'linkedTo',
 ];
 
 /** The fields of a fixed window, which the form names as one (ADR-0004 §4). */

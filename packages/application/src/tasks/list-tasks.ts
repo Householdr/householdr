@@ -41,6 +41,8 @@ export interface TaskSummary {
   schedule?: AdvancedSchedule;
   /** The names of the other tasks on its schedule, if it shares one (ADR-0004 §1, clarification). */
   sharedWith?: string[];
+  /** The name of the task whose next occurrence goes to the same member (ADR-0001 §7). */
+  linkedTo?: string;
   /** For a "since last done" task: how long after it is due again, and how due it is now (ADR-0004 §8). */
   every?: Interval;
   dueness?: Dueness;
@@ -110,6 +112,7 @@ export async function listTasks(context: HouseholdContext): Promise<ListTasksRes
         name: tasks.name,
         duration: tasks.duration,
         scheduleId: tasks.scheduleId,
+        linkedTo: tasks.linkedTo,
         ...repeatColumns,
       })
       .from(tasks)
@@ -141,6 +144,12 @@ export async function listTasks(context: HouseholdContext): Promise<ListTasksRes
         }))
       : [];
     const bySchedule = await tasksBySchedule(tx);
+    // Links to tasks still in the list: one to a removed task no longer counts (ADR-0001 §7).
+    const names = new Map(rows.map(({ id, name }) => [id, name]));
+    const linkOf = (row: { linkedTo: string | null }) => {
+      const name = row.linkedTo === null ? undefined : names.get(row.linkedTo);
+      return name === undefined ? {} : { linkedTo: name };
+    };
     const list = repeats.map(({ row, repeat }): TaskSummary => {
       const { id, name, duration } = row;
       const { frequency, every, schedule, start, onMiss, window } = repeat;
@@ -155,10 +164,11 @@ export async function listTasks(context: HouseholdContext): Promise<ListTasksRes
           ...(schedule && { schedule }),
           ...(window && { window }),
           ...(sharedWith.length > 0 && { sharedWith }),
+          ...linkOf(row),
         };
       }
       const due = dueness({ every, start }, lastDone.get(id), away, today);
-      return { id, name, duration, frequency, every, dueness: due, onMiss };
+      return { id, name, duration, frequency, every, dueness: due, onMiss, ...linkOf(row) };
     });
     list.sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
     return {

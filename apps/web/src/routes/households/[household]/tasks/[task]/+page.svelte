@@ -76,7 +76,13 @@
       submit={m['task.save']()}
       locale={data.locale}
     />
-    <TaskRulesFields {values} members={data.members} {invalid} {problems} />
+    <TaskRulesFields
+      {values}
+      members={data.members}
+      linkable={data.linkable}
+      {invalid}
+      {problems}
+    />
     <Button type="submit" class="w-full">{m['task.save']()}</Button>
   </form>
 

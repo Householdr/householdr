@@ -18,7 +18,13 @@ import {
   type TaskField,
 } from './task-fields';
 import { readTask, type EditableTask } from './task-to-edit';
-import { constrainedMembers, sameRules, taskRulesInput, writeRules } from './task-rules';
+import {
+  constrainedMembers,
+  linkableTasks,
+  sameRules,
+  taskRulesInput,
+  writeRules,
+} from './task-rules';
 
 type EditTaskResult =
   | { ok: true }
@@ -42,8 +48,9 @@ type EditTaskResult =
  * dates it had (§3, clarification). Sharing another task's schedule, it follows that one, and its
  * own goes unless another task uses it; new dates for a task that shares its schedule change them
  * for every task on it, or give it dates of its own (§1, clarification). On a schedule, it is done
- * any time that week or at set times (§4, clarification). Its minimum age and constraints are
- * replaced by those sent, for members of the household (ADR-0001 §3, clarification). Saved
+ * any time that week or at set times (§4, clarification). Its minimum age, constraints and link
+ * are replaced by those sent, for members and other tasks of the household (ADR-0001 §3, §7, with
+ * their clarifications). Saved
  * unchanged, the task keeps its version.
  */
 export async function editTask(context: HouseholdContext, input: unknown): Promise<EditTaskResult> {
@@ -73,7 +80,8 @@ export async function editTask(context: HouseholdContext, input: unknown): Promi
     const parsed = v.safeParse(taskInput(today, kept), input);
     const seen = v.safeParse(v.looseObject({ version }), input);
     const memberIds = new Set((await constrainedMembers(tx)).map(({ id }) => id));
-    const rules = v.safeParse(taskRulesInput(memberIds), input);
+    const linkable = new Set((await linkableTasks(tx, taskId)).map(({ id }) => id));
+    const rules = v.safeParse(taskRulesInput(memberIds, linkable), input);
     if (!parsed.success || !seen.success || !rules.success) {
       // A form loaded before someone else's change hears of that change first: what is refused
       // now, such as a first time the task no longer has, may be what the form was loaded with.

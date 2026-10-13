@@ -36,6 +36,8 @@ const shown = (task: EditableTask) => ({
   window: task.window && windowData(task.window),
   schedule: task.schedule && scheduleData(task.schedule),
   sharedWith: task.sharedWith.map(({ name }) => name),
+  // Its link is the form's to show, by the task's id.
+  linkedTo: undefined,
   ...windowValues(task.window),
 });
 
@@ -55,6 +57,7 @@ export const load = (async ({ locals, params }) => {
     today,
     shareable: result.shareable,
     members: result.members,
+    linkable: result.linkable,
     // Who does it, as its form's fields have it (ADR-0001 §3).
     who: rulesValues(result.task),
   };

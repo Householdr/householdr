@@ -36,6 +36,8 @@ export async function removeClaimed(
     await tx.update(tasks).set({ removed: true }).where(eq(tasks.id, taskId));
     return;
   }
+  // A link to it goes with it (ADR-0001 §7, clarification).
+  await tx.update(tasks).set({ linkedTo: null }).where(eq(tasks.linkedTo, taskId));
   await tx.delete(tasks).where(eq(tasks.id, taskId));
   // A "since last done" task, or a one-off, has none (ADR-0004 §4, §8).
   if (scheduleId === null) return;
