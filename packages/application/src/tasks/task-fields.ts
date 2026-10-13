@@ -38,8 +38,7 @@ const units: readonly Interval['unit'][] = ['days', 'weeks', 'months'];
  * When a task on a schedule is done: any time in its plan week, or at set times around its date
  * (ADR-0004 §4, clarification).
  */
-export const whens = ['week', 'set'] as const;
-export type When = (typeof whens)[number];
+const whens = ['week', 'set'] as const;
 
 /** A local time as `HH:MM`. */
 const clockTime = v.pipe(
