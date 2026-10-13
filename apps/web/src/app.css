@@ -25,7 +25,8 @@
   --muted-foreground: oklch(0.5 0 0);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
+  /* Dark enough for its button's tint too, and within sRGB (ADR-0011 §4). */
+  --destructive: oklch(0.5 0.2 27.325);
   /* Decorative lines; the borders of controls use `--input`. */
   --border: oklch(0.922 0 0);
   --input: oklch(0.6 0 0);
