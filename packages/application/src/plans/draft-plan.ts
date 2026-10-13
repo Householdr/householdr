@@ -367,7 +367,9 @@ async function tasksOf(tx: Transaction, timeZone: string): Promise<HouseholdTask
       exceptionDates: schedules.exceptionDates,
     })
     .from(tasks)
-    .leftJoin(schedules, eq(schedules.id, tasks.scheduleId));
+    .leftJoin(schedules, eq(schedules.id, tasks.scheduleId))
+    // A removed task is never planned again (ADR-0001 §1, clarification).
+    .where(eq(tasks.removed, false));
   const lastDone = await lastDoneOf(tx, timeZone);
   return rows.map(({ id, duration, timing, onMiss, everyCount, everyUnit, start, ...stored }) => {
     const { once, deadline, rules, extraDates, exceptionDates } = stored;
@@ -425,8 +427,9 @@ function clocksFrom(household: readonly HouseholdTask[]) {
 
 /**
  * The occurrences of earlier plan weeks that matter to this one: those still open, which go back
- * into its pool with their own windows (ADR-0002 §2), and the floating ones placed already, by id
- * (ADR-0004 §4). Those placed more than a year ago no longer float into it.
+ * into its pool with their own windows (ADR-0002 §2), unless their task was removed (ADR-0001 §1,
+ * clarification), and the floating ones placed already, by id (ADR-0004 §4). Those placed more than
+ * a year ago no longer float into it.
  */
 async function earlierOccurrences(tx: Transaction, week: PlanWeek, timeZone: string) {
   const inEarlierPlans = inArray(
@@ -446,7 +449,8 @@ async function earlierOccurrences(tx: Transaction, week: PlanWeek, timeZone: str
       windowEnd: occurrences.windowEnd,
     })
     .from(occurrences)
-    .where(and(eq(occurrences.status, 'open'), inEarlierPlans));
+    .innerJoin(tasks, eq(tasks.id, occurrences.taskId))
+    .where(and(eq(occurrences.status, 'open'), eq(tasks.removed, false), inEarlierPlans));
   const placed = await tx
     .select({ taskId: occurrences.taskId, date: occurrences.date })
     .from(occurrences)

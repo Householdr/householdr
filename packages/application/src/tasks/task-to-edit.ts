@@ -1,6 +1,6 @@
 import { households, inHousehold, schedules, tasks, type Transaction } from '@householdr/db';
 import { can, changedStartRange } from '@householdr/domain';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import * as v from 'valibot';
 import type { HouseholdContext } from '../households/membership';
 import { repeatColumns, repeatOf, type TaskRepeat } from './stored-task';
@@ -32,7 +32,8 @@ export async function readTask(tx: Transaction, taskId: string) {
     })
     .from(tasks)
     .leftJoin(schedules, eq(schedules.id, tasks.scheduleId))
-    .where(eq(tasks.id, taskId));
+    // A removed task is hidden for good (ADR-0001 §1, clarification).
+    .where(and(eq(tasks.id, taskId), eq(tasks.removed, false)));
   if (!row) return undefined;
   const { id, name, duration, version, scheduleId, scheduleVersion } = row;
   const task: EditableTask = { id, name, duration, version, ...repeatOf(id, row) };

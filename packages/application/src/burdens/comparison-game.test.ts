@@ -8,6 +8,7 @@ import {
   type Database,
 } from '@householdr/db';
 import { testDatabase } from '@householdr/db/testing';
+import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createHousehold } from '../households/create-household';
 import { membership } from '../households/membership';
@@ -231,6 +232,16 @@ describe('comparisonGame (ADR-0003 §3a)', () => {
     );
     const result = await played(head);
     expect(result.pair?.map((task) => task.id).sort()).toEqual([Dishes, oven?.id].sort());
+  });
+
+  it('leaves out a removed task, which stays only for what was done (ADR-0001 §1, clarification)', async () => {
+    const head = await founded();
+    const { Dishes, Ironing } = await withTasks(head, 'Dishes', 'Ironing', 'Vacuum');
+    await answer(head, Ironing ?? '', Dishes ?? '');
+    await inHousehold(db, head.householdId, (tx) =>
+      tx.update(tasks).set({ removed: true }).where(eq(tasks.name, 'Ironing')),
+    );
+    expect(orderOf(await played(head))).toEqual(['Dishes', 'Vacuum']);
   });
 
   it('lets every member with an account play for themselves', async () => {
