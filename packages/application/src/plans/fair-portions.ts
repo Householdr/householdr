@@ -15,7 +15,7 @@ import {
   type PlanWeek,
   type Window,
 } from '@householdr/domain';
-import { and, gt, gte, lt } from 'drizzle-orm';
+import { and, gt, gte, isNull, lt, or } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { basisOf } from '../shares/member-share';
 import { sharesInWeek } from '../shares/share-changes';
@@ -42,7 +42,8 @@ export interface FairPortion {
  * household is at home, `away` being the days it isn't (ADR-0005 §5). Drafting reads it before the
  * week, and settling once it is over, when it has come out as the week ended up (ADR-0002 §1). A
  * member who joined after `draftedAt`, when the week's plan was drafted, has none: the plan didn't
- * include them (ADR-0002 §1, clarification).
+ * include them (ADR-0002 §1, clarification). A former member's counts up to the moment they left,
+ * and they have none of a later week (ADR-0005 §4, clarification).
  */
 export async function fairPortions(
   tx: Transaction,
@@ -54,6 +55,8 @@ export async function fairPortions(
   // Those of a period that touches the week: its last day in or after it, its first before its end.
   const inWeek = (first: AnyPgColumn, last: AnyPgColumn) =>
     and(gte(last, week.start.toString()), lt(first, week.end.toString()));
+  const midnight = (day: Temporal.PlainDate) =>
+    new Date(day.toZonedDateTime({ timeZone: calendar.timeZone }).epochMilliseconds);
   const rows = await tx
     .select({
       id: members.id,
@@ -61,8 +64,11 @@ export async function fairPortions(
       birthDate: members.birthDate,
       sharePercent: members.sharePercent,
       joinedAt: members.joinedAt,
+      leftAt: members.leftAt,
     })
-    .from(members);
+    .from(members)
+    // Not a former member who left before the week (ADR-0005 §4, clarification).
+    .where(or(isNull(members.leftAt), gt(members.leftAt, midnight(week.start))));
   // The share a member had in this week, where a change to it was kept (ADR-0002 §1, clarification).
   const kept = await sharesInWeek(tx, week);
   const absent = await tx
@@ -71,8 +77,6 @@ export async function fairPortions(
     .where(inWeek(absences.firstDay, absences.lastDay));
   // "I can't today" as it ended up: until its day's end, or until they could after all (ADR-0005
   // §3, ADR-0002 §1).
-  const midnight = (day: Temporal.PlainDate) =>
-    new Date(day.toZonedDateTime({ timeZone: calendar.timeZone }).epochMilliseconds);
   const unavailable = await tx
     .select({
       memberId: unavailabilities.memberId,
@@ -96,6 +100,7 @@ export async function fairPortions(
     .from(temporaryShares)
     .where(inWeek(temporaryShares.firstDay, temporaryShares.lastDay));
   const day = (iso: string) => Temporal.PlainDate.from(iso);
+  const weekEnd = midnight(week.end);
   const zoned = (at: Date) =>
     Temporal.Instant.fromEpochMilliseconds(at.getTime()).toZonedDateTimeISO(calendar.timeZone);
   const people = rows.map((row) => {
@@ -124,9 +129,15 @@ export async function fairPortions(
         // home, with fair portions over those days (ADR-0005 §5).
         ...away,
       ],
-      unavailable: unavailable
-        .filter((u) => u.memberId === row.id)
-        .map((u): Window => ({ start: zoned(u.startsAt), end: zoned(u.endsAt) })),
+      unavailable: [
+        ...unavailable
+          .filter((u) => u.memberId === row.id)
+          .map((u): Window => ({ start: zoned(u.startsAt), end: zoned(u.endsAt) })),
+        // One who left in the week counts up to the moment they left (ADR-0005 §4, clarification).
+        ...(row.leftAt !== null && row.leftAt < weekEnd
+          ? [{ start: zoned(row.leftAt), end: zoned(weekEnd) }]
+          : []),
+      ],
     };
     return { row, share, availability };
   });

@@ -239,6 +239,13 @@
       "when": 1791911994666,
       "tag": "0033_reallocated-reason",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1791913852555,
+      "tag": "0034_former-members",
+      "breakpoints": true
     }
   ]
 }

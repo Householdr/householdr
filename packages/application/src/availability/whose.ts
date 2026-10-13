@@ -1,7 +1,8 @@
 import { households, members, type Transaction } from '@householdr/db';
 import { householdDate, type Member, type Role } from '@householdr/domain';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import type { HouseholdContext } from '../households/context';
+import { isCurrentMember } from '../households/former-members';
 
 // What the use cases about availability share: whose it is, and the household's date.
 
@@ -27,6 +28,9 @@ export const profile = { id: members.id, role: members.role, accountId: members.
 
 /** Member `memberId` of the household, as permissions see them, if there is one. */
 export async function memberOf(tx: Transaction, memberId: string): Promise<Member | undefined> {
-  const [row] = await tx.select(profile).from(members).where(eq(members.id, memberId));
+  const [row] = await tx
+    .select(profile)
+    .from(members)
+    .where(and(eq(members.id, memberId), isCurrentMember));
   return row && asMember(row);
 }

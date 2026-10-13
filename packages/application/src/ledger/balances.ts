@@ -2,6 +2,7 @@ import { inHousehold, ledgerEntries, members, plans, type Transaction } from '@h
 import { can, type RebalancePreset, type Role } from '@householdr/domain';
 import { desc, eq, lt, sql } from 'drizzle-orm';
 import type { HouseholdContext } from '../households/context';
+import { isCurrentMember } from '../households/former-members';
 import { planningOf } from '../plans/planning';
 
 /**
@@ -74,7 +75,8 @@ export async function householdBalances(
     const { rebalance } = await planningOf(tx);
     const people = await tx
       .select({ id: members.id, name: members.name, role: members.role })
-      .from(members);
+      .from(members)
+      .where(isCurrentMember);
     people.sort((a, b) => roleOrder[a.role] - roleOrder[b.role] || a.name.localeCompare(b.name));
     const balances = await balancesOf(tx);
     const settled = await tx

@@ -166,6 +166,22 @@ describe('members', () => {
     );
   });
 
+  it('keeps a former member without an account or a share (ADR-0005 §4, clarification)', async () => {
+    const [account] = await db
+      .insert(accounts)
+      .values({ name: 'Sam', email: `sam-${String(++next)}@example.org`, culture: 'en-BE' })
+      .returning();
+    if (!account) throw new Error('No account');
+    const leftAt = new Date('2026-10-08T08:00:00Z');
+    expect(await refusal(addMember({ name: 'Sam', role: 'adult', leftAt }))).toBeUndefined();
+    expect(
+      await refusal(addMember({ name: 'Sam', role: 'adult', leftAt, accountId: account.id })),
+    ).toBe('members_former');
+    expect(await refusal(addMember({ name: 'Sam', role: 'adult', leftAt, sharePercent: 50 }))).toBe(
+      'members_former',
+    );
+  });
+
   it('needs a name and a known role', async () => {
     expect(await refusal(addMember({ name: '', role: 'adult' }))).toBe('members_name');
     expect(await refusal(addMember({ name: 'Alex', role: 'owner' as 'adult' }))).toBe(
