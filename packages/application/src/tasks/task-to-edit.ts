@@ -3,6 +3,7 @@ import { can, changedStartRange, scheduleDateRange } from '@householdr/domain';
 import { and, eq } from 'drizzle-orm';
 import * as v from 'valibot';
 import type { HouseholdContext } from '../households/membership';
+import { areasOf, type Area } from './areas';
 import { tasksBySchedule, othersOn, type TaskName } from './shared-schedules';
 import { repeatColumns, repeatOf, type TaskRepeat } from './stored-task';
 import {
@@ -23,6 +24,8 @@ export interface EditableTask extends TaskRepeat, TaskRules {
   version: number;
   /** The other tasks on its schedule, by name (ADR-0004 §1, clarification). */
   sharedWith: TaskName[];
+  /** The area it is in, if any (ADR-0001 §1). */
+  areaId?: string;
 }
 
 /**
@@ -40,6 +43,7 @@ export async function readTask(tx: Transaction, taskId: string) {
       scheduleVersion: schedules.version,
       minimumAge: tasks.minimumAge,
       linkedTo: tasks.linkedTo,
+      areaId: tasks.areaId,
       ...repeatColumns,
     })
     .from(tasks)
@@ -56,6 +60,7 @@ export async function readTask(tx: Transaction, taskId: string) {
     duration,
     version,
     sharedWith,
+    ...(row.areaId !== null && { areaId: row.areaId }),
     ...rules,
     ...repeatOf(id, row),
   };
@@ -87,6 +92,8 @@ type TaskToEditResult =
       members: ConstrainedMember[];
       /** The tasks it can be linked to, by name (ADR-0001 §7, clarification). */
       linkable: TaskName[];
+      /** The household's areas, by name (ADR-0001 §1). */
+      areas: Area[];
     }
   /** Only heads change tasks, once signed in with two factors (ADR-0001 §2, ADR-0010 §3). */
   | { ok: false; error: 'not-allowed' }
@@ -134,6 +141,7 @@ export async function taskToEdit(
         .toSorted((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id)),
       members: await constrainedMembers(tx),
       linkable: await linkableTasks(tx, found.task.id),
+      areas: await areasOf(tx),
     };
   });
 }

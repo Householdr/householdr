@@ -119,6 +119,7 @@ describe('a household’s tasks page (ADR-0001 §1)', () => {
       starts: { earliest: '2026-10-08', latest: '2027-10-08' },
       dates: { earliest: '2026-10-08', latest: '2028-10-08' },
       shareable: [],
+      areas: [],
       removed: false,
     });
   });

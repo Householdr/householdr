@@ -26,6 +26,7 @@
       // It keeps the dates it has, until another task's are chosen (ADR-0004 §1).
       sharedWith: '',
       ownDates: '',
+      areaId: data.task.areaId ?? '',
       ...data.who,
     },
   );
@@ -71,6 +72,7 @@
       today={data.today}
       shareable={data.shareable}
       sharesWith={data.task.sharedWith}
+      areas={data.areas}
       startingOnMiss={data.task.onMiss}
       action="?/save"
       submit={m['task.save']()}

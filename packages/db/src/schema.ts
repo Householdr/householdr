@@ -521,13 +521,37 @@ export const schedules = pgTable(
 );
 
 /**
+ * A room or part of the home that groups the household's tasks (ADR-0001 §1, clarification): a
+ * name heads give it, unlike the household's other areas whatever the case. It has no effect on
+ * allocation; removing it leaves its tasks without one.
+ */
+export const areas = pgTable(
+  'areas',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    /** As typed: household content is never translated (ADR-0016 §6). */
+    name: text().notNull(),
+  },
+  (t) => [
+    householdOnly(t.householdId),
+    // What a task refers to, so that it can only be in an area of its own household.
+    unique('areas_household_area').on(t.householdId, t.id),
+    uniqueIndex('areas_household_name').on(t.householdId, sql`lower(${t.name})`),
+    check('areas_name', sql`${t.name} <> '' and char_length(${t.name}) <= 50`),
+  ],
+);
+
+/**
  * A chore of the household (ADR-0001 §1): its name, how long one occurrence takes, where its dates
  * come from, how a date becomes an occurrence window, and what happens to an occurrence that isn't
  * done. Its dates come from a schedule (ADR-0004 §2); for a "since last done" task, from its last
  * completion, `every` so long after it, and from `start` while it was never done (§8); or, for a
  * one-off task, from its one date (§4). Children below its minimum age don't take it unless a head
- * allows it (ADR-0001 §3); its next occurrence of a linked task goes to the same member (§7). Areas
- * come with the slice that uses them, as columns of their own.
+ * allows it (ADR-0001 §3); its next occurrence of a linked task goes to the same member (§7). It
+ * may be in one of the household's areas (§1).
  */
 export const tasks = pgTable(
   'tasks',
@@ -579,6 +603,8 @@ export const tasks = pgTable(
      * clarification). Removing that task clears it.
      */
     linkedTo: uuid(),
+    /** The area it is in, if any (ADR-0001 §1, clarification). */
+    areaId: uuid(),
     /** For versioned updates (CODE-14, ADR-0019 §5). */
     version: integer().notNull().default(1),
   },
@@ -614,6 +640,12 @@ export const tasks = pgTable(
       foreignColumns: [t.householdId, t.id],
     }),
     check('tasks_linked_to_other', sql`${t.linkedTo} <> ${t.id}`),
+    // An area of its own household.
+    foreignKey({
+      name: 'tasks_area',
+      columns: [t.householdId, t.areaId],
+      foreignColumns: [areas.householdId, areas.id],
+    }),
     // On a schedule; "since last done": flexible, always rolling over, within a year (§8); or a
     // one-off, flexible within its week or up to its deadline (§4), added by a member.
     check(

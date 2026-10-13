@@ -6,6 +6,7 @@ import * as v from 'valibot';
 import type { HouseholdContext } from '../households/membership';
 import { storedSchedule } from './stored-schedule';
 import { written } from './stored-task';
+import { areasOf } from './areas';
 import { scheduleToShare } from './shared-schedules';
 import {
   advanced,
@@ -93,6 +94,11 @@ export async function editTask(context: HouseholdContext, input: unknown): Promi
       return { ok: false, error: 'invalid', fields: refusedFields(issues) };
     }
     const next = parsed.output;
+    const areaId = next.areaId ?? null;
+    // In one of the household's areas, if any (ADR-0001 §1, clarification).
+    if (areaId !== null && !(await areasOf(tx)).some(({ id }) => id === areaId)) {
+      return { ok: false, error: 'invalid', fields: ['area'] };
+    }
     // The schedule it is to share, which must be one of the household's (ADR-0004 §1).
     const sharing =
       next.frequency === shared ? await scheduleToShare(tx, next.sharedWith) : undefined;
@@ -124,6 +130,7 @@ export async function editTask(context: HouseholdContext, input: unknown): Promi
     const changed =
       !sameRepeat ||
       !sameWho ||
+      areaId !== (current.areaId ?? null) ||
       !sameWindow ||
       next.name !== current.name ||
       next.duration !== current.duration ||
@@ -165,7 +172,7 @@ export async function editTask(context: HouseholdContext, input: unknown): Promi
     }
     await tx
       .update(tasks)
-      .set({ name: next.name, duration: next.duration, scheduleId, ...columns })
+      .set({ name: next.name, duration: next.duration, areaId, scheduleId, ...columns })
       .where(eq(tasks.id, taskId));
     if (!sameWho) await writeRules(tx, context.householdId, taskId, rules.output);
     if (schedule && scheduleId !== schedule.id) {

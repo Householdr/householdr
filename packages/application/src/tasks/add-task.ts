@@ -2,6 +2,7 @@ import { households, inHousehold, schedules, tasks } from '@householdr/db';
 import { can } from '@householdr/domain';
 import * as v from 'valibot';
 import type { HouseholdContext } from '../households/membership';
+import { areasOf } from './areas';
 import { scheduleToShare } from './shared-schedules';
 import { storedSchedule } from './stored-schedule';
 import { written } from './stored-task';
@@ -40,7 +41,11 @@ export async function addTask(context: HouseholdContext, input: unknown): Promis
     const parsed = v.safeParse(taskInput(today), sent);
     if (!parsed.success)
       return { ok: false, error: 'invalid', fields: refusedFields(parsed.issues) };
-    const { name, duration } = parsed.output;
+    const { name, duration, areaId = null } = parsed.output;
+    // In one of the household's areas, if any (ADR-0001 §1, clarification).
+    if (areaId !== null && !(await areasOf(tx)).some(({ id }) => id === areaId)) {
+      return { ok: false, error: 'invalid', fields: ['area'] };
+    }
     // The schedule it is to share, which must be one of the household's (ADR-0004 §1).
     const sharing =
       parsed.output.frequency === shared
@@ -61,7 +66,7 @@ export async function addTask(context: HouseholdContext, input: unknown): Promis
     }
     const [task] = await tx
       .insert(tasks)
-      .values({ householdId, name, duration, scheduleId, ...columns })
+      .values({ householdId, name, duration, areaId, scheduleId, ...columns })
       .returning({ id: tasks.id });
     if (!task) throw new Error('No task was written.');
     return { ok: true, taskId: task.id, name };
