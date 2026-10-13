@@ -14,6 +14,7 @@ import {
   dueness,
   planWeek,
   startRange,
+  type AdvancedSchedule,
   type Dueness,
   type Interval,
   type Member,
@@ -34,6 +35,8 @@ export interface TaskSummary {
   /** In minutes. */
   duration: number;
   frequency: Repeat;
+  /** For a task on an advanced schedule: its rules and dates, which the list says in words (ADR-0004 §3). */
+  schedule?: AdvancedSchedule;
   /** For a "since last done" task: how long after it is due again, and how due it is now (ADR-0004 §8). */
   every?: Interval;
   dueness?: Dueness;
@@ -125,8 +128,18 @@ export async function listTasks(context: HouseholdContext): Promise<ListTasksRes
       : [];
     const list = repeats.map(({ row, repeat }): TaskSummary => {
       const { id, name, duration } = row;
-      const { frequency, every, start, onMiss, window } = repeat;
-      if (!every) return { id, name, duration, frequency, onMiss, ...(window && { window }) };
+      const { frequency, every, schedule, start, onMiss, window } = repeat;
+      if (!every) {
+        return {
+          id,
+          name,
+          duration,
+          frequency,
+          onMiss,
+          ...(schedule && { schedule }),
+          ...(window && { window }),
+        };
+      }
       const due = dueness({ every, start }, lastDone.get(id), away, today);
       return { id, name, duration, frequency, every, dueness: due, onMiss };
     });

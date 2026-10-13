@@ -7,6 +7,8 @@ import {
   type PlanTask,
 } from '@householdr/domain';
 import { m } from '#lib/paraglide/messages.js';
+import { scheduleWords } from '#lib/schedule-words.js';
+import type { ScheduleData } from '#lib/task-schedule.js';
 
 /** A frequency in words, never as its rule (ADR-0004 §3). */
 const frequencyWords: Record<Frequency, () => string> = {
@@ -18,9 +20,13 @@ const frequencyWords: Record<Frequency, () => string> = {
   yearly: m['tasks.yearly'],
 };
 
-/** The choices of how often a task is done, in words: the frequencies, then "since last done". */
+/**
+ * The choices of how often a task is done, in words: the frequencies, an advanced schedule, then
+ * "since last done".
+ */
 export const repeatWords: Record<Repeat, () => string> = {
   ...frequencyWords,
+  advanced: m['tasks.advanced'],
   'since-last-done': m['tasks.since-last-done'],
 };
 
@@ -31,9 +37,16 @@ export const unitWords: Record<Interval['unit'], () => string> = {
   months: m['tasks.unit-months'],
 };
 
-/** How often a task is done, in words: its frequency, or about how long after it was last done. */
-export function howOften(task: { frequency: Repeat; every?: Interval | undefined }) {
-  const { every } = task;
+/**
+ * How often a task is done, in words: its frequency, its advanced schedule (ADR-0004 §3), or about
+ * how long after it was last done.
+ */
+export function howOften(
+  task: { frequency: Repeat; every?: Interval | undefined; schedule?: ScheduleData | undefined },
+  locale: string,
+) {
+  const { every, schedule } = task;
+  if (schedule) return scheduleWords(schedule, locale);
   if (!every) return repeatWords[task.frequency]();
   const count = { count: every.count };
   if (every.unit === 'days') return m['tasks.every-days'](count);
@@ -65,6 +78,9 @@ export const taskProblems: Record<TaskField, () => string> = {
   onMiss: m['tasks.invalid-on-miss'],
   when: m['tasks.invalid-when'],
   window: m['tasks.invalid-window'],
+  rules: m['tasks.invalid-rules'],
+  extraDates: m['tasks.invalid-extra-dates'],
+  exceptionDates: m['tasks.invalid-exception-dates'],
 };
 
 /** Why the server refused a field of a one-off task's form, in words (CODE-13). */

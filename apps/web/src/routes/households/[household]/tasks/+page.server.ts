@@ -1,6 +1,7 @@
 import { addOneOff, addTask, listTasks } from '@householdr/application';
 import { error, fail } from '@sveltejs/kit';
 import { authContext } from '#lib/server/auth.js';
+import { scheduleData } from '#lib/task-schedule.js';
 import { windowData, windowInput } from '#lib/task-window.js';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -26,10 +27,11 @@ export const load = (async ({ locals, url }) => {
   const { earliest, latest } = result.starts;
   return {
     household: result.household,
-    // A window's times as `HH:MM`.
-    tasks: result.tasks.map(({ window, ...task }) => ({
+    // A window's times as `HH:MM`; an advanced schedule's days as `YYYY-MM-DD`.
+    tasks: result.tasks.map(({ window, schedule, ...task }) => ({
       ...task,
       window: window && windowData(window),
+      schedule: schedule && scheduleData(schedule),
     })),
     // Days as `YYYY-MM-DD`.
     oneOffs: result.oneOffs.map(({ date, deadline, ...oneOff }) => ({

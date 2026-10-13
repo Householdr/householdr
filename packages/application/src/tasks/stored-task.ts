@@ -1,16 +1,19 @@
 import { schedules, tasks, type StoredRule } from '@householdr/db';
 import {
+  advancedScheduleOf,
   defaultTiming,
   frequencyOf,
   frequencyRule,
+  scheduleOfAdvanced,
+  type AdvancedSchedule,
   type Interval,
   type PlanTask,
-  type Rule,
+  type Schedule,
   type Timing,
   type WindowEdge,
 } from '@householdr/domain';
 import { scheduleOf } from './stored-schedule';
-import { sinceLastDone, type Repeat, type TaskInput } from './task-fields';
+import { advanced, sinceLastDone, type Repeat, type TaskInput } from './task-fields';
 
 /** The columns of a task that say when in its week it is done (ADR-0004 §4). */
 export const timingColumns = {
@@ -64,7 +67,12 @@ export interface TaskRepeat {
   frequency: Repeat;
   /** For a "since last done" task. */
   every?: Interval;
-  /** Its first time: the day its schedule's rule starts on, or when it is due if never done. */
+  /** For a task on an advanced schedule: its rules and dates (ADR-0004 §3). */
+  schedule?: AdvancedSchedule;
+  /**
+   * Its first time: the day its schedule's rule starts on, or when it is due if never done. On an
+   * advanced schedule, the earliest first time of its rules and extra dates.
+   */
   start: Temporal.PlainDate;
   /** What happens to an occurrence that isn't done (ADR-0002 §2). */
   onMiss: PlanTask['onMiss'];
@@ -96,22 +104,31 @@ export function repeatOf(
   }
   const schedule =
     rules && extraDates && exceptionDates && scheduleOf({ rules, extraDates, exceptionDates });
-  const frequency = schedule && frequencyOf(schedule);
-  const [rule] = schedule ? schedule.rules : [];
-  // Only simple frequencies are written until the advanced editor comes (ADR-0004 §3).
-  if (!frequency || !rule) throw new Error(`Task ${id} isn't on a simple frequency.`);
+  if (!schedule) throw new Error(`Task ${id} has neither a schedule nor an interval.`);
   const timing = timingOf(id, row);
-  if (timing.kind !== 'fixed') return { frequency, start: rule.start, onMiss };
-  return { frequency, start: rule.start, onMiss, window: { from: timing.from, to: timing.to } };
+  const window = timing.kind === 'fixed' ? { from: timing.from, to: timing.to } : undefined;
+  const timed = { onMiss, ...(window && { window }) };
+  const frequency = frequencyOf(schedule);
+  const [rule] = schedule.rules;
+  if (frequency && rule) return { frequency, start: rule.start, ...timed };
+  // Anything else the editor writes is an advanced schedule (ADR-0004 §3).
+  const built = advancedScheduleOf(schedule);
+  if (!built) throw new Error(`Task ${id} has a schedule the editor can't show.`);
+  const firsts = [...built.rules.map((r) => r.start), ...built.extraDates];
+  const [first] = firsts.toSorted((a, b) => Temporal.PlainDate.compare(a, b));
+  if (!first) throw new Error(`Task ${id} has a schedule without dates.`);
+  return { frequency: advanced, schedule: built, start: first, ...timed };
 }
 
 /**
- * What a task's valid input writes: its columns, and the one rule of its own schedule, unless it
- * is counted from when it was last done, which is flexible and always rolls over (ADR-0004 §3–§4,
- * §8). On a schedule, it is fixed with its window at set times, or as its frequency has it.
+ * What a task's valid input writes: its columns, and its own schedule: the one rule of a simple
+ * frequency, or what the advanced editor built, unless it is counted from when it was last done,
+ * which is flexible and always rolls over (ADR-0004 §3–§4, §8). On a schedule, it is fixed with its
+ * window at set times, or as its frequency has it; an advanced one any time that week is flexible
+ * (§3, clarification).
  */
 export function written(input: TaskInput): {
-  rule: Rule | undefined;
+  schedule: Schedule | undefined;
   columns: Pick<
     typeof tasks.$inferInsert,
     | 'everyCount'
@@ -127,7 +144,7 @@ export function written(input: TaskInput): {
 } {
   if (input.frequency === sinceLastDone) {
     return {
-      rule: undefined,
+      schedule: undefined,
       columns: {
         everyCount: input.everyCount,
         everyUnit: input.everyUnit,
@@ -138,8 +155,15 @@ export function written(input: TaskInput): {
       },
     };
   }
+  const custom = input.frequency === advanced;
   return {
-    rule: frequencyRule(input.frequency, input.start),
+    schedule: custom
+      ? scheduleOfAdvanced(input.schedule)
+      : {
+          rules: [frequencyRule(input.frequency, input.start)],
+          extraDates: [],
+          exceptionDates: [],
+        },
     columns: {
       everyCount: null,
       everyUnit: null,
@@ -153,7 +177,10 @@ export function written(input: TaskInput): {
             windowToDay: input.window.to.dayOffset,
             windowToTime: input.window.to.time.toString(),
           }
-        : { timing: defaultTiming(input.frequency).kind, ...noWindow }),
+        : {
+            timing: custom ? 'flexible' : defaultTiming(input.frequency).kind,
+            ...noWindow,
+          }),
     },
   };
 }

@@ -1,11 +1,13 @@
 import { atVersion, households, inHousehold, nextVersion, schedules, tasks } from '@householdr/db';
-import { can, type WindowEdge } from '@householdr/domain';
+import { can, scheduleOfAdvanced, type WindowEdge } from '@householdr/domain';
 import { and, eq, notExists } from 'drizzle-orm';
+import { isDeepStrictEqual } from 'node:util';
 import * as v from 'valibot';
 import type { HouseholdContext } from '../households/membership';
-import { storedRules } from './stored-schedule';
+import { storedSchedule } from './stored-schedule';
 import { written } from './stored-task';
 import {
+  advanced,
   refusedFields,
   sinceLastDone,
   taskInput,
@@ -32,8 +34,10 @@ type EditTaskResult =
  * first time rewrites the single rule of the task's own schedule (ADR-0004 §3), and the timing
  * follows the frequency, as when it was added (§4). Counted from when it was last done instead, it
  * has no schedule: its own goes, and comes back new if it returns to a frequency (§8). A task that
- * has started keeps its first time, or moves to a day from today on (`isStartDay`). On a schedule,
- * it is done any time that week or at set times (§4, clarification). Saved unchanged, the task
+ * has started keeps its first time, or moves to a day from today on (`isStartDay`). On an advanced
+ * schedule, its rules and dates replace those of its own schedule, keeping the first times and
+ * dates it had (§3, clarification). On a schedule, it is done any time that week or at set times
+ * (§4, clarification). Saved unchanged, the task
  * keeps its version.
  */
 export async function editTask(context: HouseholdContext, input: unknown): Promise<EditTaskResult> {
@@ -56,7 +60,11 @@ export async function editTask(context: HouseholdContext, input: unknown): Promi
     if (!found) return { ok: false, error: 'not-found' };
     const { task: current, schedule } = found;
     const today = context.clock.now().toZonedDateTimeISO(household.timeZone).toPlainDate();
-    const parsed = v.safeParse(taskInput(today, current.start), input);
+    const kept = {
+      start: current.start,
+      ...(current.schedule && { schedule: scheduleOfAdvanced(current.schedule) }),
+    };
+    const parsed = v.safeParse(taskInput(today, kept), input);
     const seen = v.safeParse(v.looseObject({ version }), input);
     if (!parsed.success || !seen.success) {
       // A form loaded before someone else's change hears of that change first: what is refused
@@ -69,12 +77,18 @@ export async function editTask(context: HouseholdContext, input: unknown): Promi
       };
     }
     const next = parsed.output;
-    const { rule, columns } = written(next);
+    const { schedule: dates, columns } = written(next);
     const sameRepeat =
       next.frequency === current.frequency &&
-      next.start.equals(current.start) &&
-      (next.frequency !== sinceLastDone ||
-        (next.everyCount === current.every?.count && next.everyUnit === current.every.unit));
+      (next.frequency === advanced
+        ? current.schedule !== undefined &&
+          isDeepStrictEqual(
+            storedSchedule(scheduleOfAdvanced(next.schedule)),
+            storedSchedule(scheduleOfAdvanced(current.schedule)),
+          )
+        : next.start.equals(current.start) &&
+          (next.frequency !== sinceLastDone ||
+            (next.everyCount === current.every?.count && next.everyUnit === current.every.unit)));
     const nextWindow = next.frequency === sinceLastDone ? undefined : next.window;
     const sameWindow =
       nextWindow === undefined || current.window === undefined
@@ -99,30 +113,30 @@ export async function editTask(context: HouseholdContext, input: unknown): Promi
       .returning({ id: tasks.id });
     if (!claimed) return conflict();
     let scheduleId = schedule?.id ?? null;
-    if (rule && schedule && !sameRepeat) {
+    if (dates && schedule && !sameRepeat) {
       // The schedule is the task's own (ADR-0004 §3), and has its own version (ADR-0019 §5).
       const [rewritten] = await tx
         .update(schedules)
-        .set({ rules: storedRules([rule]), version: nextVersion(schedules) })
+        .set({ ...storedSchedule(dates), version: nextVersion(schedules) })
         .where(atVersion(schedules, schedule.id, schedule.version))
         .returning({ id: schedules.id });
       // Only its task changes a task's own schedule, and this transaction holds the task's row.
       if (!rewritten) throw new Error(`The schedule of task ${taskId} changed while it was saved.`);
-    } else if (rule && !schedule) {
+    } else if (dates && !schedule) {
       const [added] = await tx
         .insert(schedules)
-        .values({ householdId: context.householdId, rules: storedRules([rule]) })
+        .values({ householdId: context.householdId, ...storedSchedule(dates) })
         .returning({ id: schedules.id });
       if (!added) throw new Error('No schedule was written.');
       scheduleId = added.id;
-    } else if (!rule) {
+    } else if (!dates) {
       scheduleId = null;
     }
     await tx
       .update(tasks)
       .set({ name: next.name, duration: next.duration, scheduleId, ...columns })
       .where(eq(tasks.id, taskId));
-    if (!rule && schedule) {
+    if (!dates && schedule) {
       // Its own schedule goes with it, unless another task uses it too (ADR-0004 §1).
       await tx
         .delete(schedules)

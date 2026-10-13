@@ -44,7 +44,8 @@
   } = $props();
 
   const onMissChoices: PlanTask['onMiss'][] = ['roll over', 'lapse'];
-  const repeats = Object.keys(repeatWords) as Repeat[];
+  // The advanced editor comes in its own slice.
+  const repeats = (Object.keys(repeatWords) as Repeat[]).filter((choice) => choice !== 'advanced');
   const units = Object.keys(unitWords) as Interval['unit'][];
 
   const whenChoices = ['week', 'set'] as const;

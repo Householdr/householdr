@@ -1,6 +1,7 @@
 import { editTask, taskToEdit, type EditableTask } from '@householdr/application';
 import { error, fail } from '@sveltejs/kit';
 import { authContext } from '#lib/server/auth.js';
+import { scheduleData } from '#lib/task-schedule.js';
 import { windowData, windowInput, windowValues } from '#lib/task-window.js';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -17,7 +18,8 @@ async function householdContext(locals: App.Locals) {
 
 /**
  * A task as the page shows it, its first time as `YYYY-MM-DD`, and its interval, if it is counted
- * from when it was last done, and its set times, if any, as its form's fields have them.
+ * from when it was last done, its set times, if any, as its form's fields have them, and an
+ * advanced schedule's days as `YYYY-MM-DD`.
  */
 const shown = (task: EditableTask) => ({
   ...task,
@@ -25,6 +27,7 @@ const shown = (task: EditableTask) => ({
   everyCount: task.every ? String(task.every.count) : '',
   everyUnit: task.every?.unit ?? 'weeks',
   window: task.window && windowData(task.window),
+  schedule: task.schedule && scheduleData(task.schedule),
   ...windowValues(task.window),
 });
 

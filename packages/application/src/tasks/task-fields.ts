@@ -1,13 +1,20 @@
 import {
+  advancedSchedule,
   fixedWindow,
   frequencies,
+  isAdvancedSchedule,
+  isScheduleDate,
   isFixedWindow,
   isStartDay,
   isTaskDuration,
   isTaskInterval,
+  weekdays,
+  weekdaysOfMonth,
+  type AdvancedSchedule,
   type Frequency,
   type Interval,
   type PlanTask,
+  type Schedule,
   type WindowEdge,
 } from '@householdr/domain';
 import * as v from 'valibot';
@@ -28,9 +35,13 @@ export const day = v.pipe(
   }),
 );
 
-/** How often a task is done: a simple frequency, or counted from when it was last done (ADR-0004 §3, §8). */
+/**
+ * How often a task is done: a simple frequency, an advanced schedule, or counted from when it was
+ * last done (ADR-0004 §3, §8).
+ */
 export const sinceLastDone = 'since-last-done';
-export type Repeat = Frequency | typeof sinceLastDone;
+export const advanced = 'advanced';
+export type Repeat = Frequency | typeof advanced | typeof sinceLastDone;
 
 const units: readonly Interval['unit'][] = ['days', 'weeks', 'months'];
 
@@ -55,23 +66,67 @@ const edgeDay = v.pipe(
   v.maxValue(fixedWindow.dayOffset),
 );
 
-const repeats: readonly Repeat[] = [...frequencies, sinceLastDone];
+/** How many weeks or months apart a rule's dates are; its limits are the schedule's to check. */
+const every = v.pipe(v.number(), v.integer());
+
+/**
+ * A rule of the advanced editor (ADR-0004 §3, clarifications), its limits checked with the whole
+ * schedule.
+ */
+const advancedRuleInput = v.variant('kind', [
+  v.object({
+    kind: v.literal('weeks'),
+    every,
+    days: v.array(v.picklist(weekdays)),
+    start: day,
+  }),
+  v.object({ kind: v.literal('months'), every, start: day }),
+  v.object({
+    kind: v.literal('weekdays-of-month'),
+    every,
+    which: v.array(v.picklist(weekdaysOfMonth)),
+    day: v.picklist(weekdays),
+    start: day,
+  }),
+  v.object({ kind: v.literal('year'), start: day }),
+]);
+
+const repeats: readonly Repeat[] = [...frequencies, advanced, sinceLastDone];
 export const onMisses: readonly PlanTask['onMiss'][] = ['roll over', 'lapse'];
 
 /** A task as its form sends it, once valid. */
 export type TaskInput = {
   name: string;
   duration: number;
-  start: Temporal.PlainDate;
 } & (
   | {
       frequency: Frequency;
+      start: Temporal.PlainDate;
       onMiss: PlanTask['onMiss'];
       /** At set times: the window around each date (ADR-0004 §4, clarification). */
       window?: { from: WindowEdge; to: WindowEdge };
     }
-  | { frequency: typeof sinceLastDone; everyCount: number; everyUnit: Interval['unit'] }
+  | {
+      frequency: typeof advanced;
+      schedule: AdvancedSchedule;
+      onMiss: PlanTask['onMiss'];
+      window?: { from: WindowEdge; to: WindowEdge };
+    }
+  | {
+      frequency: typeof sinceLastDone;
+      start: Temporal.PlainDate;
+      everyCount: number;
+      everyUnit: Interval['unit'];
+    }
 );
+
+/** What a task being changed has already, which stays allowed even once it has passed. */
+export interface KeptDays {
+  /** Its first time. */
+  start: Temporal.PlainDate;
+  /** Its schedule, whose rules' first times and dates stay allowed (ADR-0004 §3, clarification). */
+  schedule?: Schedule;
+}
 
 /**
  * What a task's form sends (CODE-12): its name, the minutes it takes, how often, and the day it
@@ -79,11 +134,28 @@ export type TaskInput = {
  * (ADR-0004 §3). On a simple frequency, also what happens to an occurrence that isn't done
  * (ADR-0002 §2), and whether it is done any time that week or at set times, with its window
  * (`isFixedWindow`, §4); counted from when it was last done, how long after (§8), and it always
- * rolls over, any time that week.
+ * rolls over, any time that week. On an advanced schedule, its rules, each with its own first time
+ * instead of the task's, and its extra and exception dates (`isAdvancedSchedule`,
+ * `isScheduleDate`, §3), with the on-miss policy and timing of a simple frequency.
  * Every field is checked, whichever others are refused, so the form can name them all.
  */
-export function taskInput(today: Temporal.PlainDate, kept?: Temporal.PlainDate) {
+export function taskInput(today: Temporal.PlainDate, kept?: KeptDays) {
   const counted = (input: { frequency: Repeat }) => input.frequency === sinceLastDone;
+  const custom = (input: { frequency: Repeat }) => input.frequency === advanced;
+  const keptStarts = [kept?.start, ...(kept?.schedule?.rules.map((rule) => rule.start) ?? [])];
+  const keptDates = [
+    ...(kept?.schedule?.extraDates ?? []),
+    ...(kept?.schedule?.exceptionDates ?? []),
+  ];
+  const ruleStart = (start: Temporal.PlainDate) =>
+    keptStarts.some((day) => day?.equals(start)) || isStartDay(start, today);
+  // Up to 50, each once, from today up to two years on unless the schedule has it already.
+  const dates = v.pipe(
+    v.array(day),
+    v.maxLength(advancedSchedule.dates),
+    v.check((list) => new Set(list.map(String)).size === list.length),
+    v.check((list) => list.every((date) => isScheduleDate(date, today, keptDates))),
+  );
   return v.pipe(
     v.object({
       name,
@@ -91,10 +163,20 @@ export function taskInput(today: Temporal.PlainDate, kept?: Temporal.PlainDate) 
       frequency: v.picklist(repeats),
       everyCount: v.optional(v.pipe(v.number(), v.integer())),
       everyUnit: v.optional(v.picklist(units)),
-      start: v.pipe(
-        day,
-        v.check((start) => isStartDay(start, today, kept)),
+      start: v.optional(
+        v.pipe(
+          day,
+          v.check((start) => isStartDay(start, today, kept?.start)),
+        ),
       ),
+      rules: v.optional(
+        v.pipe(
+          v.array(advancedRuleInput),
+          v.check((rules) => rules.every((rule) => ruleStart(rule.start))),
+        ),
+      ),
+      extraDates: v.optional(dates),
+      exceptionDates: v.optional(dates),
       onMiss: v.optional(v.picklist(onMisses)),
       when: v.optional(v.picklist(whens)),
       fromDay: v.optional(edgeDay),
@@ -118,6 +200,28 @@ export function taskInput(today: Temporal.PlainDate, kept?: Temporal.PlainDate) 
         (input) => !counted(input) || input.everyUnit !== undefined,
       ),
       ['everyUnit'],
+    ),
+    // A simple frequency and "since last done" start on a day; an advanced schedule's rules do.
+    v.forward(
+      v.partialCheck(
+        [['frequency'], ['start']],
+        (input) => custom(input) || input.start !== undefined,
+      ),
+      ['start'],
+    ),
+    v.forward(
+      v.partialCheck(
+        [['frequency'], ['rules'], ['extraDates'], ['exceptionDates']],
+        (input) =>
+          !custom(input) ||
+          // The dates are checked on their own above: here only whether there is one counts.
+          isAdvancedSchedule({
+            rules: input.rules ?? [],
+            extraDates: input.extraDates?.slice(0, 1) ?? [],
+            exceptionDates: [],
+          }),
+      ),
+      ['rules'],
     ),
     v.forward(
       v.partialCheck(
@@ -145,10 +249,11 @@ export function taskInput(today: Temporal.PlainDate, kept?: Temporal.PlainDate) 
     ),
     v.rawTransform(({ dataset, addIssue, NEVER }): TaskInput => {
       const { name, duration, frequency, everyCount, everyUnit, start, onMiss } = dataset.value;
+      const { rules, extraDates, exceptionDates } = dataset.value;
       const { when, fromDay, fromTime, toDay, toTime } = dataset.value;
-      const common = { name, duration, start };
+      const common = { name, duration };
       if (frequency === sinceLastDone && everyCount !== undefined && everyUnit !== undefined) {
-        return { ...common, frequency, everyCount, everyUnit };
+        if (start) return { ...common, frequency, start, everyCount, everyUnit };
       }
       if (frequency !== sinceLastDone && onMiss !== undefined) {
         const set =
@@ -157,12 +262,19 @@ export function taskInput(today: Temporal.PlainDate, kept?: Temporal.PlainDate) 
           fromTime !== undefined &&
           toDay !== undefined &&
           toTime !== undefined;
-        if (!set) return { ...common, frequency, onMiss };
-        const window = {
-          from: { dayOffset: fromDay, time: fromTime },
-          to: { dayOffset: toDay, time: toTime },
-        };
-        return { ...common, frequency, onMiss, window };
+        const window = set
+          ? { from: { dayOffset: fromDay, time: fromTime }, to: { dayOffset: toDay, time: toTime } }
+          : undefined;
+        const timed = { ...common, onMiss, ...(window && { window }) };
+        if (frequency === advanced) {
+          const schedule = {
+            rules: rules ?? [],
+            extraDates: extraDates ?? [],
+            exceptionDates: exceptionDates ?? [],
+          };
+          return { ...timed, frequency, schedule };
+        }
+        if (start) return { ...timed, frequency, start };
       }
       // The checks above refuse anything else.
       addIssue();
@@ -181,7 +293,10 @@ export type TaskField =
   | 'start'
   | 'onMiss'
   | 'when'
-  | 'window';
+  | 'window'
+  | 'rules'
+  | 'extraDates'
+  | 'exceptionDates';
 
 /** The fields in the order the form shows them, which its error summary follows. */
 const order: TaskField[] = [
@@ -191,6 +306,9 @@ const order: TaskField[] = [
   'everyCount',
   'everyUnit',
   'start',
+  'rules',
+  'extraDates',
+  'exceptionDates',
   'onMiss',
   'when',
   'window',
