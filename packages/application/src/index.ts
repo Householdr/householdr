@@ -64,6 +64,12 @@ export {
   householdNotifications,
   type HouseholdNotification,
 } from './notifications/household-notifications';
+export {
+  changeNotificationPreferences,
+  notificationPreferencesOf,
+  type PreferencesField,
+  type SavedPreferences,
+} from './notifications/preferences';
 export { closeDueOccurrences } from './plans/closing';
 export { draftPlan } from './plans/draft-plan';
 export { queueDuePlanSteps, type ScheduleContext } from './plans/plan-schedule';
@@ -94,8 +100,10 @@ export { taskToEdit, type EditableTask } from './tasks/task-to-edit';
 // The household member as permissions see them, which the web app's guard keeps per request; why an
 // occurrence went where it did, which the plan's page puts in words; and how fast balances even
 // out, which the balances page does; how long ago a day was, which pages say vaguely; and what a
-// notification says happened, which the notifications page puts in words.
+// notification says happened, which the notifications page puts in words, and the channels a
+// member chooses from, which their settings page does.
 export type {
+  ChannelChoice,
   Member,
   NotificationKind,
   PastDay,

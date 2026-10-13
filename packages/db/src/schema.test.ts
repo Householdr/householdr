@@ -2,7 +2,13 @@ import type { HouseholdCalendar, RebalancePreset } from '@householdr/domain';
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { inHousehold, type Database, type Transaction } from './connection';
-import { accountEmails, accounts, sessions, twoFactors } from './auth-schema';
+import {
+  accountEmails,
+  accounts,
+  notificationPreferences,
+  sessions,
+  twoFactors,
+} from './auth-schema';
 import {
   absences,
   assignments,
@@ -1009,5 +1015,54 @@ describe('notifications (ADR-0014 §7)', () => {
       });
       expect(left).toEqual([]);
     }
+  });
+});
+
+describe('notification_preferences (ADR-0014 §3, clarifications)', () => {
+  type Preferences = Omit<typeof notificationPreferences.$inferInsert, 'accountId'>;
+  const saved: Preferences = {
+    channels: { 'plan.published': 'email', 'plan.drafted': 'app' },
+    quietStart: '22:00',
+    quietEnd: '07:00',
+    emailFallback: false,
+    version: 1,
+  };
+  const save = async (fields: Partial<Preferences>) => {
+    const [account] = await db
+      .insert(accounts)
+      .values({ name: 'Robin', email: `robin-${String(++next)}@example.org`, culture: 'en-BE' })
+      .returning();
+    if (!account) throw new Error('No account');
+    await db.insert(notificationPreferences).values({ accountId: account.id, ...saved, ...fields });
+    return account.id;
+  };
+
+  it('keeps a known choice for each category it names, and only those', async () => {
+    expect(await refusal(save({}))).toBeUndefined();
+    expect(await refusal(save({ channels: {} }))).toBeUndefined();
+    const unknown = { 'plan.lost': 'push' } as Preferences['channels'];
+    expect(await refusal(save({ channels: unknown }))).toBe('notification_preferences_channels');
+    const wrong = { 'plan.published': 'sms' } as unknown as Preferences['channels'];
+    expect(await refusal(save({ channels: wrong }))).toBe('notification_preferences_channels');
+    const list = ['push'] as unknown as Preferences['channels'];
+    expect(await refusal(save({ channels: list }))).toBe('notification_preferences_channels');
+  });
+
+  it('keeps quiet hours whose start and end differ, across midnight too', async () => {
+    expect(await refusal(save({ quietStart: '23:30', quietEnd: '00:15' }))).toBeUndefined();
+    expect(await refusal(save({ quietStart: '07:30', quietEnd: '07:30' }))).toBe(
+      'notification_preferences_quiet_hours',
+    );
+    expect(await refusal(save({ version: 0 }))).toBe('notification_preferences_version');
+  });
+
+  it('go with the account', async () => {
+    const accountId = await save({});
+    await db.delete(accounts).where(eq(accounts.id, accountId));
+    const left = await db
+      .select()
+      .from(notificationPreferences)
+      .where(eq(notificationPreferences.accountId, accountId));
+    expect(left).toEqual([]);
   });
 });
