@@ -1,7 +1,9 @@
 # ADR-0009: Development workflow, CI/CD and releases
 
 - **Status:** Accepted; for the core, its private-repository assumptions (§2 branch protection,
-  §4 minutes, §11) are superseded by [ADR-0024](0024-public-core-from-stage-0.md)
+  §4 minutes, §11) are superseded by [ADR-0024](0024-public-core-from-stage-0.md); `main` as the only
+  long-lived branch (§1) and the full pipeline on every ready pull request (§3) are superseded by
+  [ADR-0027](0027-feature-branches.md)
 - **Date:** 2026-10-04
 - **Deciders:** Jens
 - **Related:** [ADR-0008](0008-tech-stack.md) (toolchain, containers)
