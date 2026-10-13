@@ -8,7 +8,7 @@ import {
   timesPerYear,
   type Evidence,
 } from '@householdr/domain';
-import { eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import * as v from 'valibot';
 import type { HouseholdContext } from '../households/membership';
 import type { Random } from '../ports';
@@ -95,8 +95,9 @@ export async function comparisonGame(
       })
       .from(tasks)
       .leftJoin(schedules, eq(schedules.id, tasks.scheduleId))
-      // One-off tasks come and go, and aren't compared until a decision says they are.
-      .where(isNull(tasks.once));
+      // One-off tasks come and go, and aren't compared (ADR-0003 §3a, clarification); removed ones
+      // are gone (ADR-0001 §1, clarification).
+      .where(and(isNull(tasks.once), eq(tasks.removed, false)));
     // Row-level security keeps other households out, but not the other members: the member's own
     // answers only (ADR-0003 §5, ADR-0018 §4).
     const answers = await tx

@@ -531,6 +531,11 @@ export const tasks = pgTable(
      * (ADR-0006 §3, clarification).
      */
     addedBy: uuid(),
+    /**
+     * Removed by a head after it was planned (ADR-0001 §1, clarification): it is out of the task
+     * list and never planned again, while its done work and past plans keep it by its name.
+     */
+    removed: boolean().notNull().default(false),
     /** ADR-0004 §4; a "since last done" task is flexible within the week it is due in (§8). */
     timing: text().$type<Exclude<Timing['kind'], 'fixed'>>().notNull(),
     /** ADR-0002 §2. */
