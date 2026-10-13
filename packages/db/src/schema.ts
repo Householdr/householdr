@@ -2,6 +2,7 @@ import {
   defaultPlanTimings,
   defaultRebalance,
   type HouseholdCalendar,
+  type NotificationKind,
   type PlanStatus,
   type PlanTask,
   type Reason,
@@ -934,5 +935,51 @@ export const ledgerEntries = pgTable(
     // The household's balances and their history, whatever the kind of entry.
     index('ledger_entries_member_week').on(t.householdId, t.memberId, t.week),
     check('ledger_entries_kind', sql`${t.kind} in ('settlement')`),
+  ],
+);
+
+/**
+ * A notification for a member with an account, in the household it comes from (ADR-0014 §1, §7,
+ * clarifications): what happened and what it is about, never text, which is written in the reader's
+ * language when it is shown (§6). Only that member sees it; it is kept 90 days (ADR-0012 §5).
+ */
+export const notifications = pgTable(
+  'notifications',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    /** Whom it is for; it goes with their profile. */
+    memberId: uuid().notNull(),
+    kind: text().$type<NotificationKind>().notNull(),
+    /** When it was created, with the change that caused it. */
+    at: timestamp({ withTimezone: true }).notNull(),
+    /** For a plan's notification, the first day of its week: it goes with the plan. */
+    week: date(),
+  },
+  (t) => [
+    householdOnly(t.householdId),
+    foreignKey({
+      name: 'notifications_member',
+      columns: [t.householdId, t.memberId],
+      foreignColumns: [members.householdId, members.id],
+    }).onDelete('cascade'),
+    // A draft removed for a week the household turns out to be away for takes its notifications
+    // along (ADR-0014 §7, clarification).
+    foreignKey({
+      name: 'notifications_plan',
+      columns: [t.householdId, t.week],
+      foreignColumns: [plans.householdId, plans.weekStart],
+    }).onDelete('cascade'),
+    // A member's list, newest first.
+    index('notifications_member_at').on(t.householdId, t.memberId, t.at),
+    check('notifications_kind', sql`${t.kind} in ('plan.drafted', 'plan.published')`),
+    // A plan's notifications, and only they, name its week. Both sides are true or false, never
+    // null, which a check would let through.
+    check(
+      'notifications_week',
+      sql`(${t.kind} in ('plan.drafted', 'plan.published')) = (${t.week} is not null)`,
+    ),
   ],
 );

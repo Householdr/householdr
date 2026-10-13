@@ -18,6 +18,7 @@ import {
 } from '@householdr/domain';
 import { and, asc, eq, exists, isNotNull, isNull, or } from 'drizzle-orm';
 import * as v from 'valibot';
+import { notify } from '../notifications/notify';
 import { draftWeek } from '../plans/draft-plan';
 import { planningOf } from '../plans/planning';
 import type { HouseholdContext } from './membership';
@@ -143,7 +144,13 @@ export async function startHousehold(
       now,
       replacing: undefined,
     });
-    return { ok: true, when, firstWeek: week.start, drafted: planId !== undefined };
+    if (planId === undefined) return { ok: true, when, firstWeek: week.start, drafted: false };
+    // Any other head hears that the draft is ready (ADR-0014 §2, clarification).
+    await notify(tx, householdId, now, context.member.id, {
+      event: { kind: 'plan.drafted' },
+      week: week.start,
+    });
+    return { ok: true, when, firstWeek: week.start, drafted: true };
   });
 }
 

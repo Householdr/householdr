@@ -11,6 +11,8 @@ export interface Jobs {
   'account-email': { id: string };
   /** Deletes the links to sign up that expired a week ago: carries nothing (ADR-0012 §5). */
   'expired-sign-up-links': Record<string, never>;
+  /** Deletes the in-app notifications older than 90 days: carries nothing (ADR-0014 §7). */
+  'expired-notifications': Record<string, never>;
   /** Queues the plan steps that are due, household by household: carries nothing (ADR-0008 §10). */
   'plan-tick': Record<string, never>;
   /** Drafts a household's plan: its id, and the first day of the plan week (ADR-0006 §2). */
@@ -42,6 +44,7 @@ const queues: Record<QueueName, Parameters<PgBoss['createQueue']>[1]> = {
   'account-email': { retryLimit: 10, retryDelay: 60, retryBackoff: true },
   // A failed run waits for the next one.
   'expired-sign-up-links': { retryLimit: 0 },
+  'expired-notifications': { retryLimit: 0 },
   // One tick at a time; a failed one waits for the next.
   'plan-tick': { policy: 'exclusive', retryLimit: 0 },
   // One job for a household's week at a time, by its key (ADR-0008 §10); a failed one is queued
@@ -64,12 +67,14 @@ const keys: { [Q in QueueName]?: (data: Jobs[Q]) => string } = {
 };
 
 /**
- * The queues that get a job on a schedule, in cron's terms and UTC: the deletion jobs (ADR-0012 §5)
- * and the plans' tick (ADR-0008 §10).
+ * The queues that get a job on a schedule, in cron's terms and UTC: the deletion jobs (ADR-0012 §5,
+ * ADR-0014 §7) and the plans' tick (ADR-0008 §10).
  */
 const schedules: Partial<Record<QueueName, string>> = {
   // Every hour, off the full hour that other schedules crowd.
   'expired-sign-up-links': '23 * * * *',
+  // Every night, when little else runs.
+  'expired-notifications': '41 3 * * *',
   // Every minute, which is as late as a draft or a publish may come (ADR-0008 §10).
   'plan-tick': '* * * * *',
 };

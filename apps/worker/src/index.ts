@@ -1,6 +1,6 @@
 // Background jobs that build a system context and call one use case each (ADR-0008 §10, CODE-10).
 import { flagSource, smtpMailer, stdoutLogger, systemClock } from '@householdr/adapters';
-import { connect, jobQueue, type Jobs } from '@householdr/application';
+import { connect, deleteExpiredNotifications, jobQueue, type Jobs } from '@householdr/application';
 import { createAuth, deleteExpiredSignUpLinks } from '@householdr/auth';
 import { deliverAccountEmail, type DeliveryContext } from './account-emails';
 import {
@@ -65,6 +65,11 @@ export async function workQueues(context: WorkerContext) {
   });
   await queue.work<Jobs['expired-sign-up-links']>('expired-sign-up-links', () =>
     deleteExpiredSignUpLinks(context),
+  );
+  // Unlike the features it serves, behind no flag: what was kept is deleted in time whatever is
+  // switched off since (ADR-0012 §5).
+  await queue.work<Jobs['expired-notifications']>('expired-notifications', () =>
+    deleteExpiredNotifications(context),
   );
   await queue.work<Jobs['plan-tick']>('plan-tick', () => tickPlans({ ...context, queue }));
   await queue.work<Jobs['plan-draft']>('plan-draft', async (jobs) => {
