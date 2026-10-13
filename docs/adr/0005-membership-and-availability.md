@@ -71,6 +71,22 @@ Reporting sudden unavailability (illness, an emergency) after the plan is publis
 Any member can report themselves unavailable; heads can do so for children and profiles without an
 account.
 
+> **Clarification (2026-10-13):** "I can't today" lasts from the moment it is reported to the end of
+> a day the member picks: today, or a later day of the current plan week. Away for longer is a
+> planned absence for the days after (§2). Others see only its days, as for an absence, never when it
+> was reported ([ADR-0018](0018-household-safety.md) §3). Reporting it again while it lasts moves its
+> end; **"I can after all"** ends it at once, and it counts up to that moment only.
+>
+> What it **re-allocates** are the member's open occurrences in this week's published plan that they
+> can no longer do: those with no part of what is left of their window outside the period (§2,
+> clarification). A task they can still do later in the week stays theirs. Each goes to one of the
+> members available during what is left of its window, by the allocator's usual rule, counting what
+> everyone has in the plan already, with the reason "re-allocated: member unavailable"
+> ([ADR-0001](0001-domain-model-and-weekly-allocation.md) §7). Nothing moves back when it ends early or
+> its end moves: the plan stays frozen ([ADR-0006](0006-plan-lifecycle-and-completion.md) §3), and a
+> later end re-allocates what it adds. A head reporting or ending it for a profile without an account
+> is logged, as for an absence ([ADR-0018](0018-household-safety.md) §5).
+
 ### 4. Joining and leaving
 
 - A member who **joins** starts at balance 0, and with burden estimates at the household baseline. Their
@@ -93,6 +109,25 @@ account.
 > **former member**: no account, share or place in any plan, and shown as "Former member" unless they
 > chose to appear under their name ([ADR-0012](0012-privacy-and-data-protection.md) §6). Their
 > balance stays frozen and theirs alone, so two former members' histories never mix.
+
+> **Clarification (2026-10-13):** **leaving** takes effect at once. The member leaves every plan of a
+> week not yet over: in a published plan, their open occurrences are re-allocated as for "I can't
+> today" (§3, clarification), and those nobody else can do are left unassigned, charging nobody; a
+> draft is drafted again without them. Their fair portion of the week they leave counts up to the
+> moment they left, and later weeks don't include them. Their comparison answers, absences and
+> invitation link go ([ADR-0012](0012-privacy-and-data-protection.md) §5).
+>
+> A profile with **nothing to keep**, in no published plan, completion or ledger entry and without a
+> consent record, is deleted instead: there is no history for it to stay in.
+>
+> A head **removing** a member who isn't a head ([ADR-0018](0018-household-safety.md) §4) ends the
+> membership the same way, after confirming it is them if their sign-in isn't recent
+> ([ADR-0010](0010-identity-invitations-and-childrens-accounts.md) §6); it is logged
+> ([ADR-0018](0018-household-safety.md) §5). Leaving isn't logged: the household sees only that the
+> member is no longer in it ([ADR-0018](0018-household-safety.md) §2, §8).
+>
+> The **balances** page keeps former members' frozen balances and their history, after the current
+> members, as "Former member" or under their name, as they chose.
 
 ### 5. The household is away
 
