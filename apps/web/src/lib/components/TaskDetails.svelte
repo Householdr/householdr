@@ -2,6 +2,7 @@
   import { dayText, minutesText } from '#lib/intl.js';
   import { m } from '#lib/paraglide/messages.js';
   import { duenessWords, howOften, onMissWords, windowWords } from '#lib/task-words.js';
+  import type { ScheduleData } from '#lib/task-schedule.js';
   import type { Repeat } from '@householdr/application';
   import type { Dueness, Interval, PlanTask } from '@householdr/domain';
 
@@ -20,6 +21,8 @@
       duration: number;
       frequency: Repeat;
       every?: Interval | undefined;
+      /** On an advanced schedule: its rules and dates, its days as `YYYY-MM-DD`. */
+      schedule?: ScheduleData | undefined;
       dueness?: Dueness | undefined;
       /** `YYYY-MM-DD`. */
       start?: string;
@@ -44,7 +47,7 @@
     <dd class="wrap-break-word">{task.name}</dd>
   {/if}
   <dt class="text-muted-foreground">{m['tasks.how-often']()}</dt>
-  <dd>{howOften(task)}</dd>
+  <dd>{howOften(task, locale)}</dd>
   {#if task.dueness}
     <dt id="how-due-{uid}" class="text-muted-foreground">{m['tasks.how-due']()}</dt>
     <dd class="flex flex-wrap items-center gap-2">

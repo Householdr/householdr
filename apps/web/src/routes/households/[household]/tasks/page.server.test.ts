@@ -1,4 +1,4 @@
-import { createHousehold, membership } from '@householdr/application';
+import { addTask, createHousehold, membership } from '@householdr/application';
 import { createTestAccount, testSignInContext } from '@householdr/auth/testing';
 import { isActionFailure, isHttpError } from '@sveltejs/kit';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -166,6 +166,36 @@ describe('a household’s tasks page (ADR-0001 §1)', () => {
     });
     const refused = await add({ ...on, membership }, { ...oven, everyCount: '' });
     expect(isActionFailure(refused) && refused.data).toMatchObject({ invalid: ['everyCount'] });
+  });
+
+  it('lists a task on an advanced schedule with its rules and days as page data (ADR-0004 §3)', async () => {
+    const membership = await founded();
+    const { db, clock } = test.context;
+    const added = await addTask(
+      { db, clock, ...membership },
+      {
+        ...vacuum,
+        duration: 30,
+        frequency: 'advanced',
+        rules: [{ kind: 'weeks', every: 2, days: [1, 4], start: '2026-10-08' }],
+        extraDates: ['2026-12-24'],
+        exceptionDates: [],
+      },
+    );
+    expect(added).toMatchObject({ ok: true });
+    expect(await opened({ ...on, membership })).toMatchObject({
+      tasks: [
+        {
+          name: 'Vacuum',
+          frequency: 'advanced',
+          schedule: {
+            rules: [{ kind: 'weeks', every: 2, days: [1, 4], start: '2026-10-08' }],
+            extraDates: ['2026-12-24'],
+            exceptionDates: [],
+          },
+        },
+      ],
+    });
   });
 
   it('starts a task today when no day is sent', async () => {
