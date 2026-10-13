@@ -794,5 +794,16 @@
   "notification-settings.invalid-time": "Enter a time, such as 21:30.",
   "notification-settings.invalid-quiet-end": "Enter a time other than the start, such as 07:30.",
   "notification-settings.invalid-fallback": "Tick the box, or leave it empty.",
+  "notification-settings.push-title": "Push on this device",
+  "notification-settings.push-intro": "Push notifications reach this device even when Householdr isn’t open. Each device you use has its own setting, and signing a device out turns its push off.",
+  "notification-settings.push-on": "Push is on for this device.",
+  "notification-settings.push-off": "Push is off for this device.",
+  "notification-settings.push-turn-on": "Turn on push for this device",
+  "notification-settings.push-turn-off": "Turn off push for this device",
+  "notification-settings.push-no-script": "Turning push on needs JavaScript in this browser.",
+  "notification-settings.push-unsupported": "This browser can’t receive push notifications. On an iPhone or iPad, add Householdr to your home screen first and open it from there.",
+  "notification-settings.push-blocked": "This browser blocks notifications from Householdr. Allow them in the browser’s settings for this site, then come back here.",
+  "notification-settings.push-failed": "Push couldn’t be turned on for this device. Try again later.",
+  "notification-settings.push-unavailable": "Push notifications aren’t set up on this server. Choose e-mail to get notifications outside the app.",
   "notification-settings.back": "Back to your households"
 }

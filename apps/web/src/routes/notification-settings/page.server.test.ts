@@ -72,6 +72,8 @@ describe('the notification settings page (ADR-0014 §3)', () => {
         emailFallback: true,
         version: 0,
       },
+      // No push on an instance without a VAPID key (ADR-0014 §7, clarification).
+      push: null,
     });
     expect(await saved(locals, form('0'))).toEqual({ saved: true });
     // An unticked box sends nothing, which turns the fallback off.
@@ -86,6 +88,7 @@ describe('the notification settings page (ADR-0014 §3)', () => {
         emailFallback: false,
         version: 2,
       },
+      push: null,
     });
   });
 

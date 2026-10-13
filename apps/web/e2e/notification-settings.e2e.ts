@@ -76,7 +76,7 @@ for (const javaScriptEnabled of [true, false]) {
       await page.getByLabel('Until').fill('06:30');
       await fallback(page).uncheck();
       await page.getByRole('button', { name: 'Save the settings' }).click();
-      await expect(page.getByRole('status')).toHaveText('The settings are saved.');
+      await expect(page.getByRole('status').first()).toHaveText('The settings are saved.');
 
       await page.reload();
       await expect(published(page)).toHaveValue('email');
@@ -126,7 +126,7 @@ for (const javaScriptEnabled of [true, false]) {
         await other.goto('/notification-settings');
         await drafted(other).selectOption({ label: 'E-mail' });
         await other.getByRole('button', { name: 'Save the settings' }).click();
-        await expect(other.getByRole('status')).toHaveText('The settings are saved.');
+        await expect(other.getByRole('status').first()).toHaveText('The settings are saved.');
       } finally {
         await device.close();
       }
@@ -140,7 +140,7 @@ for (const javaScriptEnabled of [true, false]) {
       if (javaScriptEnabled) await expectAccessible(page, 'a conflict');
       // Saving again keeps this device's choice.
       await page.getByRole('button', { name: 'Save the settings' }).click();
-      await expect(page.getByRole('status')).toHaveText('The settings are saved.');
+      await expect(page.getByRole('status').first()).toHaveText('The settings are saved.');
       await page.reload();
       await expect(drafted(page)).toHaveValue('app');
     });

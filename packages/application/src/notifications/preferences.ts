@@ -58,7 +58,7 @@ const isField = (key: unknown): key is PreferencesField =>
  * Whether the account may set these preferences: its own, for now. A guardian setting a child's
  * managed account's comes with those accounts (ADR-0014 §3, ADR-0010 §7).
  */
-const mayChoose = ({ account }: AccountContext) =>
+export const mayChoose = ({ account }: AccountContext) =>
   canForAccount({ account, twoFactor: false }, 'account.notifications', {
     id: account,
     managed: false,

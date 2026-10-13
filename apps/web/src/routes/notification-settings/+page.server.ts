@@ -1,10 +1,12 @@
 import {
   changeNotificationPreferences,
+  devicePushEndpoints,
   notificationPreferencesOf,
   type SavedPreferences,
 } from '@householdr/application';
 import { error, fail, redirect } from '@sveltejs/kit';
 import { authContext } from '#lib/server/auth.js';
+import { pushPublicKey } from '#lib/server/push.js';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
@@ -15,7 +17,7 @@ async function accountContext(locals: App.Locals) {
   if (!locals.flags['sign-in'] || !locals.flags['notification-preferences']) error(404);
   if (!locals.session) redirect(303, '/sign-in');
   const { db } = await authContext();
-  return { db, account: locals.session.accountId };
+  return { db, account: locals.session.accountId, session: locals.session.id };
 }
 
 /** Preferences as the form shows them: quiet hours as `HH:MM`, as a time field takes them. */
@@ -29,9 +31,17 @@ const formValues = ({ channels, quietHours, emailFallback, version }: SavedPrefe
 });
 
 export const load = (async ({ locals }) => {
-  const result = await notificationPreferencesOf(await accountContext(locals));
+  const context = await accountContext(locals);
+  const result = await notificationPreferencesOf(context);
   if (!result.ok) error(403);
-  return { preferences: formValues(result.preferences) };
+  // Whether this device has push on: the key to subscribe with, and what this session holds
+  // (ADR-0014 §7, clarification). An instance without a key offers none.
+  const publicKey = pushPublicKey();
+  const device = publicKey ? await devicePushEndpoints(context) : null;
+  return {
+    preferences: formValues(result.preferences),
+    push: publicKey && device?.ok ? { publicKey, endpoints: device.endpoints } : null,
+  };
 }) satisfies PageServerLoad;
 
 const text = (value: FormDataEntryValue | null) => (typeof value === 'string' ? value : '');
