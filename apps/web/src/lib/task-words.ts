@@ -9,7 +9,7 @@ import {
 import { m } from '#lib/paraglide/messages.js';
 
 /** A frequency in words, never as its rule (ADR-0004 §3). */
-export const frequencyWords: Record<Frequency, () => string> = {
+const frequencyWords: Record<Frequency, () => string> = {
   daily: m['tasks.daily'],
   weekly: m['tasks.weekly'],
   biweekly: m['tasks.biweekly'],

@@ -106,7 +106,13 @@ describe('a task’s page (ADR-0001 §2)', () => {
 
   it('saves a task as counted from when it was last done, and shows its interval (ADR-0004 §8)', async () => {
     const { membership, taskId } = await founded();
-    const counted = { ...vacuum, frequency: 'since-last-done', everyCount: '6', everyUnit: 'weeks', version: '1' };
+    const counted = {
+      ...vacuum,
+      frequency: 'since-last-done',
+      everyCount: '6',
+      everyUnit: 'weeks',
+      version: '1',
+    };
     expect(await saved({ ...on, membership }, taskId, counted)).toEqual({ saved: true });
     expect(await opened({ ...on, membership }, taskId)).toMatchObject({
       task: {
