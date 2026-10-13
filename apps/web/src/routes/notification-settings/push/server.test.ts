@@ -1,3 +1,4 @@
+import { createECDH, randomBytes } from 'node:crypto';
 import { currentSession, signInWithPassword } from '@householdr/auth';
 import { createTestAccount, testSignInContext } from '@householdr/auth/testing';
 import { isHttpError } from '@sveltejs/kit';
@@ -15,8 +16,12 @@ beforeAll(async () => {
 });
 afterAll(() => test.close());
 
-const publicKey =
-  'BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4';
+// The instance's VAPID public key, and a browser's own key and secret: P-256 keys of the test's own.
+const publicKey = createECDH('prime256v1').generateKeys().toString('base64url');
+const browserKeys = {
+  p256dh: createECDH('prime256v1').generateKeys().toString('base64url'),
+  auth: randomBytes(16).toString('base64url'),
+};
 beforeEach(() => {
   vi.stubEnv('VAPID_PUBLIC_KEY', publicKey);
   return () => vi.unstubAllEnvs();
@@ -51,7 +56,7 @@ const device = async (account?: string) => {
 const subscription = (endpoint = `https://fcm.googleapis.com/fcm/send/${crypto.randomUUID()}`) => ({
   endpoint,
   expirationTime: null,
-  keys: { p256dh: publicKey, auth: 'BTBZMqHH6r4Tts7J_aSIgg' },
+  keys: browserKeys,
 });
 
 /** What the endpoint answers `method` with `body`, from `origin`, or the status it ends in. */

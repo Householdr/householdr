@@ -93,6 +93,13 @@ touches it, and how people exercise their rights.
 > each category, the quiet hours, whether the e-mail fallback is on) are account data, on the basis
 > of the contract (b), kept while the account exists.
 
+> **Clarification (2026-10-13):** a **push subscription** is kept with the account and the session
+> of the device it was made on, and deleted when that session ends or the push service says it is
+> gone ([ADR-0014](0014-notifications-and-reminders.md) §7, clarification). A **count of pushes**
+> sent to an account each day, which the daily ceiling needs (ADR-0014 §4, clarification), is
+> account data on the basis of the contract (b), with nothing about what was sent, and is
+> forgotten after two days.
+
 What is deliberately **not** stored:
 
 - **No reasons**: not for a reduced share, not for an absence, not for sudden unavailability. "I can't
