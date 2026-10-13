@@ -1,3 +1,4 @@
+import { createECDH, randomBytes } from 'node:crypto';
 import type { Page } from '@playwright/test';
 import { expect, expectAccessible, forceFlags, signIn, test } from './fixtures';
 
@@ -19,42 +20,48 @@ test.beforeEach(async ({ context, baseURL }) => {
  * with a subscription whose endpoint is `endpoint`.
  */
 const withPushService = (page: Page, endpoint: string) =>
-  page.addInitScript((address) => {
-    const allowed = 'e2e-notifications-allowed';
-    Object.defineProperty(Notification, 'permission', {
-      get: () => (localStorage.getItem(allowed) ? 'granted' : 'default'),
-    });
-    Notification.requestPermission = () => {
-      localStorage.setItem(allowed, 'yes');
-      return Promise.resolve('granted');
-    };
-    const held = 'e2e-push-subscription';
-    const subscription = () => ({
-      endpoint: address,
-      expirationTime: null,
-      toJSON: () => ({
+  page.addInitScript(
+    ({ address, keys }) => {
+      const allowed = 'e2e-notifications-allowed';
+      Object.defineProperty(Notification, 'permission', {
+        get: () => (localStorage.getItem(allowed) ? 'granted' : 'default'),
+      });
+      Notification.requestPermission = () => {
+        localStorage.setItem(allowed, 'yes');
+        return Promise.resolve('granted');
+      };
+      const held = 'e2e-push-subscription';
+      const subscription = () => ({
         endpoint: address,
         expirationTime: null,
-        keys: {
-          p256dh:
-            'BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4',
-          auth: 'BTBZMqHH6r4Tts7J_aSIgg',
+        toJSON: () => ({
+          endpoint: address,
+          expirationTime: null,
+          keys,
+        }),
+        unsubscribe: () => {
+          localStorage.removeItem(held);
+          return Promise.resolve(true);
         },
-      }),
-      unsubscribe: () => {
-        localStorage.removeItem(held);
-        return Promise.resolve(true);
+      });
+      PushManager.prototype.subscribe = function () {
+        localStorage.setItem(held, 'yes');
+        return Promise.resolve(subscription() as unknown as PushSubscription);
+      };
+      PushManager.prototype.getSubscription = function () {
+        const found = localStorage.getItem(held) ? subscription() : null;
+        return Promise.resolve(found as unknown as PushSubscription | null);
+      };
+    },
+    {
+      address: endpoint,
+      // A browser's P-256 public key and 16-byte secret, of the test's own.
+      keys: {
+        p256dh: createECDH('prime256v1').generateKeys().toString('base64url'),
+        auth: randomBytes(16).toString('base64url'),
       },
-    });
-    PushManager.prototype.subscribe = function () {
-      localStorage.setItem(held, 'yes');
-      return Promise.resolve(subscription() as unknown as PushSubscription);
-    };
-    PushManager.prototype.getSubscription = function () {
-      const found = localStorage.getItem(held) ? subscription() : null;
-      return Promise.resolve(found as unknown as PushSubscription | null);
-    };
-  }, endpoint);
+    },
+  );
 
 const section = (page: Page) => page.getByRole('region', { name: 'Push on this device' });
 

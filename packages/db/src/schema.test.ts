@@ -1089,8 +1089,8 @@ describe('push_subscriptions (ADR-0014 §7, clarification)', () => {
       accountId: account.id,
       sessionId: session.id,
       endpoint,
-      p256dh: 'BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcx',
-      auth: 'BTBZMqHH6r4Tts7J_aSIgg',
+      p256dh: 'the-browser-public-key',
+      auth: 'the-browser-secret',
     });
     return { account, session };
   };
