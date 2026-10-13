@@ -349,6 +349,13 @@ export type ActivityAction =
   /** Once it has started, a head removed days away of its subject's, a profile without an account. */
   | 'absence.removed'
   /**
+   * Once it has started, a head said its subject, a profile without an account, can't today, acting
+   * for them (ADR-0005 §3, ADR-0018 §5, clarification); never until when.
+   */
+  | 'unavailable.reported'
+  /** Once it has started, a head said its subject, a profile without an account, can after all. */
+  | 'unavailable.ended'
+  /**
    * A head marked the whole household away for a time, never which days (ADR-0005 §5, ADR-0018 §5,
    * clarification).
    */
@@ -359,7 +366,7 @@ export type ActivityAction =
 /** The actions whose entries name whom they were done to (ADR-0018 §5). */
 const toWhom = sql.raw(`'completion.logged', 'completion.undone', 'completion.picked-up',
   'share.changed', 'temporary-share.added', 'temporary-share.removed', 'absence.added',
-  'absence.removed'`);
+  'absence.removed', 'unavailable.reported', 'unavailable.ended'`);
 
 /**
  * What was set before the household started, which its start entry lists
@@ -415,8 +422,8 @@ export const activityLog = pgTable(
       sql`${t.action} in ('household.name', 'household.timeZone', 'household.language',
         'household.country', 'household.started', 'completion.logged', 'completion.undone',
         'completion.picked-up', 'share.changed', 'temporary-share.added',
-        'temporary-share.removed', 'absence.added', 'absence.removed', 'away.added',
-        'away.removed')`,
+        'temporary-share.removed', 'absence.added', 'absence.removed', 'unavailable.reported',
+        'unavailable.ended', 'away.added', 'away.removed')`,
     ),
     // Only the actions done to someone name them. One way only: a subject whose profile goes
     // leaves the entry without them.
@@ -610,6 +617,37 @@ export const absences = pgTable(
     // For a member's absences to go with their profile without reading the whole table.
     index('absences_member').on(t.memberId),
     check('absences_days', sql`${t.lastDay} >= ${t.firstDay}`),
+  ],
+);
+
+/**
+ * A member's sudden unavailability, "I can't today" (ADR-0005 §2–§3): from when it was reported up
+ * to the end of the day they picked, or to when they said "I can after all" (ADR-0005 §3,
+ * clarification). No reason is asked or stored (ADR-0012 §2), and others see only its days
+ * (ADR-0018 §3). It goes with the member's profile.
+ */
+export const unavailabilities = pgTable(
+  'unavailabilities',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    memberId: uuid().notNull(),
+    startsAt: timestamp({ withTimezone: true }).notNull(),
+    endsAt: timestamp({ withTimezone: true }).notNull(),
+  },
+  (t) => [
+    householdOnly(t.householdId),
+    // A member of its own household: foreign keys are checked past row-level security (CODE-17).
+    foreignKey({
+      name: 'unavailabilities_member',
+      columns: [t.householdId, t.memberId],
+      foreignColumns: [members.householdId, members.id],
+    }).onDelete('cascade'),
+    // Who can't in a span of time: those that end in or after it (ADR-0001 §6).
+    index('unavailabilities_household_ends').on(t.householdId, t.endsAt),
+    check('unavailabilities_times', sql`${t.startsAt} < ${t.endsAt}`),
   ],
 );
 

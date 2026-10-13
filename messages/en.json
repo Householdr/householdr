@@ -499,6 +499,20 @@
   "availability.household-intro": "For when everyone is away together, such as a family holiday. Weeks spent entirely away get no plan, chores that fall while you’re all away are skipped, balances don’t change and nobody gets reminders. Only heads plan this.",
   "availability.household-none": "No time away together planned.",
   "availability.household-plan": "Plan time away together",
+  "availability.cant-legend": "Can’t today?",
+  "availability.cant-intro": "If something comes up, say so here, until the end of today or a later day this week. You won’t fall behind for the time you can’t. Others see only until which day, never why.",
+  "availability.cant-last-day": "Until the end of",
+  "availability.cant-today-option": "Today",
+  "availability.i-cant": "I can’t",
+  "availability.they-cant": "{name} can’t",
+  "availability.cant-today": "Can’t today.",
+  "availability.cant-until": "Can’t until the end of {day}.",
+  "availability.i-can": "I can after all",
+  "availability.they-can": "{name} can after all",
+  "availability.unavailable": "Noted. Others see until which day, never why.",
+  "availability.available": "Noted: can after all.",
+  "availability.already-available": "That had already ended.",
+  "availability.cant-invalid-day": "Choose today or a later day of this week.",
   "plan.title": "Plan",
   "plan.page-title": "Plan · {household} · Householdr",
   "plan.intro": "Who does what, week by week. Each task says why it went to whoever has it.",
@@ -726,6 +740,26 @@
       "match": {
         "who=you": "You removed days away of {subject}’s.",
         "who=*": "{actor} removed days away of {subject}’s."
+      }
+    }
+  ],
+  "activity.unavailable-reported": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You said {subject} can’t today.",
+        "who=*": "{actor} said {subject} can’t today."
+      }
+    }
+  ],
+  "activity.unavailable-ended": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You said {subject} can after all.",
+        "who=*": "{actor} said {subject} can after all."
       }
     }
   ],

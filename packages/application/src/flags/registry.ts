@@ -77,6 +77,13 @@ export const flags = {
     owner: 'Jens',
     expires: '2027-03-31',
   },
+  unavailability: {
+    kind: 'release',
+    description:
+      'Saying “I can’t today” for the rest of a day or of the plan week, and “I can after all”, which shrink the fair portion (ADR-0005 §2–§3, ADR-0002 §1).',
+    owner: 'Jens',
+    expires: '2027-03-31',
+  },
   plans: {
     kind: 'release',
     description:

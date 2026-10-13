@@ -132,7 +132,7 @@ describe('the activity log (ADR-0018 §5)', () => {
     );
   });
 
-  it('names whose share or days away a head changed after the start, never a value', async () => {
+  it('names whose share or availability a head changed after the start, never a value', async () => {
     const { id, robin } = await withEntry();
     const [sam] = await inHousehold(db, id, (tx) =>
       tx
@@ -158,6 +158,8 @@ describe('the activity log (ADR-0018 §5)', () => {
       'temporary-share.removed',
       'absence.added',
       'absence.removed',
+      'unavailable.reported',
+      'unavailable.ended',
     ] as const) {
       expect(await refusal(entry(action))).toBeUndefined();
       // Only the start entry lists anything besides whom (ADR-0018 §5, clarification).

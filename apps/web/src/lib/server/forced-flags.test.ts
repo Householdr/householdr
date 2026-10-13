@@ -14,6 +14,7 @@ describe('withForcedFlags (ADR-0015 §10)', () => {
     tasks: false,
     comparisons: false,
     availability: false,
+    unavailability: false,
     plans: false,
     completions: false,
     balances: false,

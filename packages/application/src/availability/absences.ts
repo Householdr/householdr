@@ -2,25 +2,27 @@ import {
   absences,
   activityLog,
   awayPeriods,
-  households,
   inHousehold,
   members,
+  unavailabilities,
   type Transaction,
 } from '@householdr/db';
 import {
   can,
   householdDate,
   plannableDays,
+  unavailableDays,
   unplannableEnds,
   type Absence,
   type AbsenceEnd,
-  type Member,
   type Role,
 } from '@householdr/domain';
-import { and, asc, eq, gte } from 'drizzle-orm';
+import { and, asc, eq, gt, gte } from 'drizzle-orm';
 import * as v from 'valibot';
 import { changeLog } from '../households/change-log';
 import type { HouseholdContext } from '../households/membership';
+import { planningOf } from '../plans/planning';
+import { asMember, memberOf, profile, today } from './whose';
 
 /** A field of the form that adds an absence, as a refusal names it. */
 export type AbsenceField = 'firstDay' | 'lastDay';
@@ -60,32 +62,6 @@ const days = v.object({ firstDay: dayOrMissing, lastDay: dayOrMissing });
 
 /** Which absence is removed (CODE-12). */
 const which = v.object({ absence: id });
-
-/** The household's date now, which absences are planned from (ADR-0005 §2). */
-async function today(tx: Transaction, context: HouseholdContext) {
-  const [household] = await tx.select({ timeZone: households.timeZone }).from(households);
-  if (!household) throw new Error('The household of a member is gone.');
-  return householdDate(context.clock.now(), household.timeZone);
-}
-
-/**
- * A member's profile as permissions see them. Their own second factor plays no part in who may
- * manage their availability (ADR-0018 §4), so it isn't looked up.
- */
-const asMember = (row: { id: string; role: Role; accountId: string | null }): Member => ({
-  id: row.id,
-  role: row.role,
-  hasAccount: row.accountId !== null,
-  twoFactor: false,
-});
-
-const profile = { id: members.id, role: members.role, accountId: members.accountId };
-
-/** Member `memberId` of the household, as permissions see them, if there is one. */
-async function memberOf(tx: Transaction, memberId: string): Promise<Member | undefined> {
-  const [row] = await tx.select(profile).from(members).where(eq(members.id, memberId));
-  return row && asMember(row);
-}
 
 /**
  * Absences still current or to come on the household's date `today`: the ones the page shows and
@@ -200,6 +176,11 @@ export interface MemberAvailability {
   role: Role;
   /** Their current and upcoming absences, by first day. */
   absences: AbsenceView[];
+  /**
+   * The last day of their "I can't today", while it lasts: its days, never when it was said
+   * (ADR-0005 §3, clarification).
+   */
+  unavailableUntil: Temporal.PlainDate | null;
   /** Whether the member viewing may add and remove their absences (ADR-0005 §2, ADR-0018 §4). */
   mayManage: boolean;
 }
@@ -219,6 +200,8 @@ type ViewAvailabilityResult =
       members: MemberAvailability[];
       /** The days a new absence can fall on, for the form's hints (CODE-12). */
       plannable: Absence;
+      /** The days "I can't today" can last up to, today first (ADR-0005 §3, clarification). */
+      unavailableDays: Temporal.PlainDate[];
     }
   | { ok: false; error: 'not-allowed' };
 
@@ -235,7 +218,8 @@ export async function viewAvailability(context: HouseholdContext): Promise<ViewA
     return { ok: false, error: 'not-allowed' };
   }
   return inHousehold(context.db, context.householdId, async (tx) => {
-    const date = await today(tx, context);
+    const { calendar } = await planningOf(tx);
+    const date = householdDate(context.clock.now(), calendar.timeZone);
     const list = await tx.select({ ...profile, name: members.name }).from(members);
     list.sort((a, b) => roleOrder[a.role] - roleOrder[b.role] || a.name.localeCompare(b.name));
     const away = await tx
@@ -248,6 +232,18 @@ export async function viewAvailability(context: HouseholdContext): Promise<ViewA
       .from(absences)
       .where(notOver(date))
       .orderBy(asc(absences.firstDay), asc(absences.lastDay), asc(absences.id));
+    const now = context.clock.now();
+    const cannot = await tx
+      .select({ memberId: unavailabilities.memberId, endsAt: unavailabilities.endsAt })
+      .from(unavailabilities)
+      .where(gt(unavailabilities.endsAt, new Date(now.epochMilliseconds)));
+    // The day of its last moment: it ends at 00:00 after it.
+    const lastDayOf = (memberId: string) => {
+      const ends = cannot.filter((row) => row.memberId === memberId).map((row) => row.endsAt);
+      if (ends.length === 0) return null;
+      const last = Math.max(...ends.map((end) => end.getTime())) - 1;
+      return householdDate(Temporal.Instant.fromEpochMilliseconds(last), calendar.timeZone);
+    };
     const together = await tx
       .select({ id: awayPeriods.id, firstDay: awayPeriods.firstDay, lastDay: awayPeriods.lastDay })
       .from(awayPeriods)
@@ -264,6 +260,7 @@ export async function viewAvailability(context: HouseholdContext): Promise<ViewA
         mayManage: can(context.member, { action: 'household.away' }),
       },
       plannable: plannableDays(date),
+      unavailableDays: unavailableDays(date, calendar),
       members: list.map((row) => ({
         id: row.id,
         name: row.name,
@@ -275,6 +272,7 @@ export async function viewAvailability(context: HouseholdContext): Promise<ViewA
             from: Temporal.PlainDate.from(absence.firstDay),
             to: Temporal.PlainDate.from(absence.lastDay),
           })),
+        unavailableUntil: lastDayOf(row.id),
         mayManage: can(context.member, { action: 'availability.manage', member: asMember(row) }),
       })),
     };
