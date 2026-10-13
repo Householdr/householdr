@@ -10,7 +10,7 @@
 | [0006](0006-plan-lifecycle-and-completion.md) | Plan lifecycle and completion | Accepted |
 | [0007](0007-onboarding.md) | Onboarding a new household | Accepted |
 | [0008](0008-tech-stack.md) | Tech stack and engineering principles | Accepted |
-| [0009](0009-development-workflow-and-releases.md) | Development workflow, CI/CD and releases | Accepted, superseded in part by 0024 |
+| [0009](0009-development-workflow-and-releases.md) | Development workflow, CI/CD and releases | Accepted, superseded in part by 0024 and 0027 |
 | [0010](0010-identity-invitations-and-childrens-accounts.md) | Identity, invitations and children's accounts | Accepted |
 | [0011](0011-accessibility-and-responsive-baseline.md) | Accessibility and responsive-first baseline | Draft |
 | [0012](0012-privacy-and-data-protection.md) | Privacy and data protection | Accepted |
@@ -28,6 +28,7 @@
 | [0024](0024-public-core-from-stage-0.md) | The core is public from stage 0 | Accepted |
 | [0025](0025-public-api-and-connected-apps.md) | A public API, and apps that members connect | Draft |
 | [0026](0026-mcp-server.md) | An MCP server for AI assistants | Draft |
+| [0027](0027-feature-branches.md) | Feature branches, with end-to-end tests only on the way into `main` | Accepted |
 
 ## Planned
 
