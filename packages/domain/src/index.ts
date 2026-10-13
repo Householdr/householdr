@@ -140,6 +140,7 @@ export {
 export {
   changedStartRange,
   defaultOnMiss,
+  isOneOffDeadline,
   isStartDay,
   isTaskDuration,
   isTaskInterval,

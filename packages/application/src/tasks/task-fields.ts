@@ -11,7 +11,7 @@ import * as v from 'valibot';
 import { name } from '../households/name';
 
 /** A day of the calendar as `YYYY-MM-DD`: one that exists, unlike 30 February. */
-const day = v.pipe(
+export const day = v.pipe(
   v.string(),
   v.isoDate(),
   v.rawTransform(({ dataset, addIssue, NEVER }) => {
@@ -32,7 +32,7 @@ export type Repeat = Frequency | typeof sinceLastDone;
 const units: readonly Interval['unit'][] = ['days', 'weeks', 'months'];
 
 const repeats: readonly Repeat[] = [...frequencies, sinceLastDone];
-const onMisses: readonly PlanTask['onMiss'][] = ['roll over', 'lapse'];
+export const onMisses: readonly PlanTask['onMiss'][] = ['roll over', 'lapse'];
 
 /** A task as its form sends it, once valid. */
 export type TaskInput = {

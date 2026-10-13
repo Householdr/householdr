@@ -818,5 +818,25 @@
         "who=*": "{actor} removed a time the household is away."
       }
     }
+  ],
+  "activity.one-off-added": [
+    {
+      "declarations": ["input who", "input actor", "input task"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You added a one-off task: {task}",
+        "who=*": "{actor} added a one-off task: {task}"
+      }
+    }
+  ],
+  "activity.one-off-removed": [
+    {
+      "declarations": ["input who", "input actor", "input task"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You removed a one-off task: {task}",
+        "who=*": "{actor} removed a one-off task: {task}"
+      }
+    }
   ]
 }

@@ -355,7 +355,17 @@ export type ActivityAction =
    */
   | 'away.added'
   /** A head removed a time the whole household is away, never which days. */
-  | 'away.removed';
+  | 'away.removed'
+  /**
+   * A member added a one-off task, named by its name, which every member sees in the task list
+   * anyway (ADR-0006 §3, ADR-0018 §5, clarifications).
+   */
+  | 'one-off.added'
+  /** A member removed a one-off task, named by its name. */
+  | 'one-off.removed';
+
+/** The actions whose entries name the task they were about, by its name (ADR-0018 §5). */
+const aboutTask = sql.raw(`'one-off.added', 'one-off.removed'`);
 
 /** The actions whose entries name whom they were done to (ADR-0018 §5). */
 const toWhom = sql.raw(`'completion.logged', 'completion.undone', 'completion.picked-up',
@@ -407,6 +417,11 @@ export const activityLog = pgTable(
      * or the days someone is away.
      */
     subjectId: uuid().references(() => members.id, { onDelete: 'set null' }),
+    /**
+     * For the actions about a task, the task's name as it was then, kept when the task changes or
+     * goes; none for any other.
+     */
+    taskName: text(),
   },
   (t) => [
     householdOnly(t.householdId),
@@ -417,7 +432,12 @@ export const activityLog = pgTable(
         'household.country', 'household.started', 'completion.logged', 'completion.undone',
         'completion.picked-up', 'share.changed', 'temporary-share.added',
         'temporary-share.removed', 'absence.added', 'absence.removed', 'away.added',
-        'away.removed')`,
+        'away.removed', 'one-off.added', 'one-off.removed')`,
+    ),
+    // The actions about a task name it, and only they.
+    check(
+      'activity_log_task_name',
+      sql`(${t.action} in (${aboutTask})) = (${t.taskName} is not null)`,
     ),
     // Only the actions done to someone name them. One way only: a subject whose profile goes
     // leaves the entry without them.

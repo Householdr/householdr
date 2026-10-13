@@ -67,6 +67,22 @@ export function changedStartRange(today: Temporal.PlainDate, kept: Temporal.Plai
 }
 
 /**
+ * Whether a one-off task due on `date` can have `deadline` as the last day it can be done on
+ * (ADR-0004 §4), given `today` in the household's time zone: on or after its date, and within
+ * `startRange(today)`, as its date is, so no one-off floats more than a year ahead; or, when a
+ * one-off is changed, the deadline it has already (`kept`), which may have passed.
+ */
+export function isOneOffDeadline(
+  deadline: Temporal.PlainDate,
+  date: Temporal.PlainDate,
+  today: Temporal.PlainDate,
+  kept?: Temporal.PlainDate,
+): boolean {
+  if (kept?.equals(deadline)) return true;
+  return Temporal.PlainDate.compare(deadline, date) >= 0 && isStartDay(deadline, today);
+}
+
+/**
  * The on-miss policy a task's form starts on, before whoever adds the task picks: roll over, since
  * a chore that still needs doing is the safer guess (ADR-0002 §2, clarification).
  */
