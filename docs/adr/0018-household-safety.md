@@ -130,6 +130,11 @@ Entries say who did what to whom, never a value hidden from the reader: no share
 > its days: "Robin marked the household away". Like a change to the household's settings, it affects
 > everyone, so it is logged before the household starts as well.
 
+> **Clarification (2026-10-13):** **adding a one-off task**
+> ([ADR-0006](0006-plan-lifecycle-and-completion.md) §3), and removing one, is logged too, with the
+> task's name, which every member sees in the task list anyway: "Sam added a one-off task: Fix the
+> shelf".
+
 The log can't be edited or deleted by anyone in the household, and is kept as long as the ledger.
 Members notice what is done in their name; disputes have a record.
 

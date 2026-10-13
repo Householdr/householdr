@@ -59,6 +59,10 @@ children, and can be offered at idle moments rather than demanded.
 > **Clarification (2026-10-09):** the two tasks of a pair are shown in a **random order**, so the
 > side a task is on doesn't sway the answer.
 
+> **Clarification (2026-10-13):** **one-off tasks** ([ADR-0004](0004-recurrence-schedules.md) §4)
+> are left out of the game: they come and go, so comparing them teaches little. Their burden stays
+> the prior for every member.
+
 **b. Post-completion feedback (optional).** One tap on completion: *easier than usual / about right /
 harder than usual*, dismissable without answering. It nudges `θ(m,t)` relative to its own current
 estimate. To keep friction low:
