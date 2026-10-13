@@ -1718,6 +1718,46 @@
     "note": "Shared schedules in the form that adds or changes a task, and in the list (ADR-0004 §1). Why the choice of whose dates to share was refused.",
     "needsReview": ["nl"]
   },
+  "task.who": {
+    "note": "Who does a task, on the task's page, which only heads see (ADR-0001 §3). Legend of the group with the minimum age and the constraints.",
+    "needsReview": ["nl"]
+  },
+  "task.who-hint": {
+    "note": "Who does a task, on the task's page, which only heads see (ADR-0001 §3). Hint under the legend.",
+    "needsReview": ["nl"]
+  },
+  "task.minimum-age": {
+    "note": "Who does a task, on the task's page, which only heads see (ADR-0001 §3). Label of the task's minimum age.",
+    "needsReview": ["nl"]
+  },
+  "task.minimum-age-hint": {
+    "note": "Who does a task, on the task's page, which only heads see (ADR-0001 §3). Hint under the minimum age.",
+    "needsReview": ["nl"]
+  },
+  "task.constraint-none": {
+    "note": "Who does a task, on the task's page, which only heads see (ADR-0001 §3). A member's constraint: none, they take it when they fit.",
+    "needsReview": ["nl"]
+  },
+  "task.constraint-bound": {
+    "note": "Who does a task, on the task's page, which only heads see (ADR-0001 §3). A member's constraint: the task is always theirs.",
+    "needsReview": ["nl"]
+  },
+  "task.constraint-excluded": {
+    "note": "Who does a task, on the task's page, which only heads see (ADR-0001 §3). A member's constraint: the task is never theirs.",
+    "needsReview": ["nl"]
+  },
+  "task.constraint-allowed": {
+    "note": "Who does a task, on the task's page, which only heads see (ADR-0001 §3). A child's constraint: they may take it though they are younger than its minimum age.",
+    "needsReview": ["nl"]
+  },
+  "tasks.invalid-minimum-age": {
+    "note": "Who does a task, on the task's page, which only heads see (ADR-0001 §3). Why the minimum age was refused.",
+    "needsReview": ["nl"]
+  },
+  "tasks.invalid-constraints": {
+    "note": "Who does a task, on the task's page, which only heads see (ADR-0001 §3). Why the constraints were refused.",
+    "needsReview": ["nl"]
+  },
   "tasks.edit": {
     "note": "Link next to each task in the list, for heads, to the page that changes or removes it. Screen readers read it with the task's name after it.",
     "needsReview": ["nl"]

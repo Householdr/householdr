@@ -205,6 +205,25 @@ for (const javaScriptEnabled of [true, false]) {
       await expect(page.getByRole('status')).toHaveText('The task is removed.');
       await expect(page.getByText('There are no tasks yet.')).toBeVisible();
     });
+
+    test('a head sets who does a task, which only its page shows (ADR-0001 §3)', async ({
+      page,
+      accounts,
+      account,
+    }) => {
+      await headWithTasks(page, accounts, account, 'Clean the oven');
+      await openTask(page, 'Clean the oven');
+      const who = page.getByRole('group', { name: 'Who does it' });
+      await who.getByLabel('Minimum age, in years').fill('12');
+      await expect(who.getByLabel('Robin')).toHaveValue('');
+      await who.getByLabel('Robin').selectOption({ label: 'Always theirs' });
+      if (javaScriptEnabled) await expectAccessible(page, 'who does it');
+      await page.getByRole('button', { name: 'Save the task' }).click();
+      await expect(page.getByRole('status')).toHaveText('The task is saved.');
+      await page.reload();
+      await expect(who.getByLabel('Minimum age, in years')).toHaveValue('12');
+      await expect(who.getByLabel('Robin')).toHaveValue('bound');
+    });
   });
 }
 

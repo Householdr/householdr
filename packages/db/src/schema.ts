@@ -1,5 +1,6 @@
 import {
   defaultPlanTimings,
+  type Constraint,
   defaultRebalance,
   type HouseholdCalendar,
   type Interval,
@@ -23,6 +24,7 @@ import {
   jsonb,
   pgPolicy,
   pgTable,
+  primaryKey,
   smallint,
   text,
   time,
@@ -523,8 +525,9 @@ export const schedules = pgTable(
  * come from, how a date becomes an occurrence window, and what happens to an occurrence that isn't
  * done. Its dates come from a schedule (ADR-0004 §2); for a "since last done" task, from its last
  * completion, `every` so long after it, and from `start` while it was never done (§8); or, for a
- * one-off task, from its one date (§4). Fixed windows, areas, minimum ages and same-person links
- * come with the slices that use them, as columns of their own.
+ * one-off task, from its one date (§4). Children below its minimum age don't take it unless a head
+ * allows it (ADR-0001 §3). Areas and same-person links come with the slices that use them, as
+ * columns of their own.
  */
 export const tasks = pgTable(
   'tasks',
@@ -569,6 +572,8 @@ export const tasks = pgTable(
     windowToTime: time(),
     /** ADR-0002 §2. */
     onMiss: text().$type<PlanTask['onMiss']>().notNull(),
+    /** In whole years, if it has one (ADR-0001 §3, clarification). */
+    minimumAge: smallint(),
     /** For versioned updates (CODE-14, ADR-0019 §5). */
     version: integer().notNull().default(1),
   },
@@ -596,6 +601,7 @@ export const tasks = pgTable(
         and (${t.windowToDay} is null or ${t.windowToDay} between -3 and 3)`,
     ),
     check('tasks_on_miss', sql`${t.onMiss} in ('roll over', 'lapse')`),
+    check('tasks_minimum_age', sql`${t.minimumAge} is null or ${t.minimumAge} between 1 and 17`),
     // On a schedule; "since last done": flexible, always rolling over, within a year (§8); or a
     // one-off, flexible within its week or up to its deadline (§4), added by a member.
     check(
@@ -696,6 +702,42 @@ export const absences = pgTable(
     // For a member's absences to go with their profile without reading the whole table.
     index('absences_member').on(t.memberId),
     check('absences_days', sql`${t.lastDay} >= ${t.firstDay}`),
+  ],
+);
+
+/**
+ * A head's setting for one task and one member (ADR-0001 §1, §3 with its clarification): always
+ * theirs, never theirs, or allowed below the task's minimum age, the domain's `Constraint`. A member
+ * without one takes the task if they fit. Only heads see them. It goes with the task or the member.
+ */
+export const taskConstraints = pgTable(
+  'task_constraints',
+  {
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    taskId: uuid().notNull(),
+    memberId: uuid().notNull(),
+    constraint: text().$type<Constraint>().notNull(),
+  },
+  (t) => [
+    householdOnly(t.householdId),
+    primaryKey({ columns: [t.taskId, t.memberId] }),
+    // A task and a member of its own household: foreign keys are checked past row-level security
+    // (CODE-17).
+    foreignKey({
+      name: 'task_constraints_task_household',
+      columns: [t.householdId, t.taskId],
+      foreignColumns: [tasks.householdId, tasks.id],
+    }).onDelete('cascade'),
+    foreignKey({
+      name: 'task_constraints_member_household',
+      columns: [t.householdId, t.memberId],
+      foreignColumns: [members.householdId, members.id],
+    }).onDelete('cascade'),
+    // For a member's constraints to go with their profile without reading the whole table.
+    index('task_constraints_member').on(t.memberId),
+    check('task_constraints_constraint', sql`${t.constraint} in ('bound', 'excluded', 'allowed')`),
   ],
 );
 
