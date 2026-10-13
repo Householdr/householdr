@@ -1778,6 +1778,14 @@
     "note": "Why a task went to the reader: it goes with a task they had before (ADR-0001 §7).",
     "needsReview": ["nl"]
   },
+  "plan.reason.reallocated": {
+    "note": "Why a task went to {name}: it moved to them in this week's plan because the member who had it said they can't today, without naming that member (ADR-0005 §3, ADR-0001 §7).",
+    "needsReview": ["nl"]
+  },
+  "plan.reason.reallocated-you": {
+    "note": "Why a task went to the reader: it moved to them in this week's plan because the member who had it said they can't today, without naming that member (ADR-0005 §3, ADR-0001 §7).",
+    "needsReview": ["nl"]
+  },
   "plan.cause.nobody-eligible": {
     "note": "Why nobody has a task, for heads (ADR-0001 §7, clarification).",
     "needsReview": ["nl"]
