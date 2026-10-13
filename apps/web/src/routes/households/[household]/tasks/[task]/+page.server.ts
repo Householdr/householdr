@@ -1,6 +1,7 @@
 import { editTask, taskToEdit, type EditableTask } from '@householdr/application';
 import { error, fail } from '@sveltejs/kit';
 import { authContext } from '#lib/server/auth.js';
+import { windowData, windowInput, windowValues } from '#lib/task-window.js';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
@@ -16,13 +17,15 @@ async function householdContext(locals: App.Locals) {
 
 /**
  * A task as the page shows it, its first time as `YYYY-MM-DD`, and its interval, if it is counted
- * from when it was last done, as its form's fields have it.
+ * from when it was last done, and its set times, if any, as its form's fields have them.
  */
 const shown = (task: EditableTask) => ({
   ...task,
   start: task.start.toString(),
   everyCount: task.every ? String(task.every.count) : '',
   everyUnit: task.every?.unit ?? 'weeks',
+  window: task.window && windowData(task.window),
+  ...windowValues(task.window),
 });
 
 /** The task, for a head to change (ADR-0001 §2), from the version it is at now (ADR-0019 §5). */
@@ -56,6 +59,11 @@ export const actions = {
       everyUnit: text(form, 'everyUnit'),
       start: text(form, 'start'),
       onMiss: text(form, 'onMiss'),
+      when: text(form, 'when'),
+      fromDay: text(form, 'fromDay'),
+      fromTime: text(form, 'fromTime'),
+      toDay: text(form, 'toDay'),
+      toTime: text(form, 'toTime'),
       version: Number(form.get('version')),
     };
     const result = await editTask(context, {
@@ -66,6 +74,7 @@ export const actions = {
       everyCount: values.everyCount ? Number(values.everyCount) : undefined,
       everyUnit: values.everyUnit || undefined,
       onMiss: values.onMiss || undefined,
+      ...windowInput(values),
     });
     if (result.ok) return { saved: true };
     if (result.error === 'not-allowed') error(403);

@@ -1,6 +1,7 @@
 import { removeTask, taskToEdit, type EditableTask } from '@householdr/application';
 import { error, fail, redirect } from '@sveltejs/kit';
 import { authContext } from '#lib/server/auth.js';
+import { windowData } from '#lib/task-window.js';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
@@ -14,8 +15,12 @@ async function householdContext(locals: App.Locals) {
   return { db, clock, ...locals.membership };
 }
 
-/** A task as the page shows it, its first time as `YYYY-MM-DD`. */
-const shown = (task: EditableTask) => ({ ...task, start: task.start.toString() });
+/** A task as the page shows it, its first time as `YYYY-MM-DD`, its set times as `HH:MM`. */
+const shown = (task: EditableTask) => ({
+  ...task,
+  start: task.start.toString(),
+  window: task.window && windowData(task.window),
+});
 
 /** The task a head is asked to confirm removing (ADR-0001 §2), at the version it is at now. */
 export const load = (async ({ locals, params }) => {

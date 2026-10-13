@@ -25,6 +25,7 @@ import {
   pgTable,
   smallint,
   text,
+  time,
   timestamp,
   unique,
   uniqueIndex,
@@ -557,7 +558,15 @@ export const tasks = pgTable(
      */
     removed: boolean().notNull().default(false),
     /** ADR-0004 §4; a "since last done" task is flexible within the week it is due in (§8). */
-    timing: text().$type<Exclude<Timing['kind'], 'fixed'>>().notNull(),
+    timing: text().$type<Timing['kind']>().notNull(),
+    /**
+     * For a fixed task: its window, from a day before or after the schedule date at a local time to
+     * another (ADR-0004 §4, clarification).
+     */
+    windowFromDay: smallint(),
+    windowFromTime: time(),
+    windowToDay: smallint(),
+    windowToTime: time(),
     /** ADR-0002 §2. */
     onMiss: text().$type<PlanTask['onMiss']>().notNull(),
     /** For versioned updates (CODE-14, ADR-0019 §5). */
@@ -576,7 +585,16 @@ export const tasks = pgTable(
     unique('tasks_household_task').on(t.householdId, t.id),
     check('tasks_name', sql`${t.name} <> ''`),
     check('tasks_duration', sql`${t.duration} between 1 and 1440`),
-    check('tasks_timing', sql`${t.timing} in ('flexible', 'floating')`),
+    check('tasks_timing', sql`${t.timing} in ('flexible', 'floating', 'fixed')`),
+    // A fixed task has a window within 3 days of its date, and only a fixed task has one (ADR-0004
+    // §4, clarification); the use cases check that it ends after it starts.
+    check(
+      'tasks_window',
+      sql`(${t.timing} = 'fixed') = (${t.windowFromDay} is not null and ${t.windowFromTime} is not null
+          and ${t.windowToDay} is not null and ${t.windowToTime} is not null)
+        and (${t.windowFromDay} is null or ${t.windowFromDay} between -3 and 3)
+        and (${t.windowToDay} is null or ${t.windowToDay} between -3 and 3)`,
+    ),
     check('tasks_on_miss', sql`${t.onMiss} in ('roll over', 'lapse')`),
     // On a schedule; "since last done": flexible, always rolling over, within a year (§8); or a
     // one-off, flexible within its week or up to its deadline (§4), added by a member.

@@ -27,6 +27,12 @@
       everyUnit: 'weeks',
       start: data.starts.earliest,
       onMiss: defaultOnMiss,
+      // Any time that week, unless set: then the day itself, from 08:00 to 20:00 (ADR-0004 §4).
+      when: 'week',
+      fromDay: '0',
+      fromTime: '08:00',
+      toDay: '0',
+      toTime: '20:00',
     },
   );
 

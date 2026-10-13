@@ -18,6 +18,7 @@ import {
   type Interval,
   type Member,
   type PlanTask,
+  type WindowEdge,
 } from '@householdr/domain';
 import { and, eq, gte, isNotNull, isNull } from 'drizzle-orm';
 import type { HouseholdContext } from '../households/membership';
@@ -38,6 +39,8 @@ export interface TaskSummary {
   dueness?: Dueness;
   /** What happens to an occurrence that isn't done (ADR-0002 §2). */
   onMiss: PlanTask['onMiss'];
+  /** At set times: the window around each date (ADR-0004 §4, clarification). */
+  window?: { from: WindowEdge; to: WindowEdge };
 }
 
 /** A one-off task of the household, as its list shows it (ADR-0004 §4, ADR-0006 §3). */
@@ -122,8 +125,8 @@ export async function listTasks(context: HouseholdContext): Promise<ListTasksRes
       : [];
     const list = repeats.map(({ row, repeat }): TaskSummary => {
       const { id, name, duration } = row;
-      const { frequency, every, start, onMiss } = repeat;
-      if (!every) return { id, name, duration, frequency, onMiss };
+      const { frequency, every, start, onMiss, window } = repeat;
+      if (!every) return { id, name, duration, frequency, onMiss, ...(window && { window }) };
       const due = dueness({ every, start }, lastDone.get(id), away, today);
       return { id, name, duration, frequency, every, dueness: due, onMiss };
     });

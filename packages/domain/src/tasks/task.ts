@@ -1,4 +1,5 @@
 import type { PlanTask } from '../plans/week-occurrences';
+import type { WindowEdge } from '../schedules/occurrence';
 import type { Interval } from '../schedules/since-last-done';
 
 /**
@@ -87,3 +88,24 @@ export function isOneOffDeadline(
  * a chore that still needs doing is the safer guess (ADR-0002 §2, clarification).
  */
 export const defaultOnMiss: PlanTask['onMiss'] = 'roll over';
+
+/**
+ * How far a fixed window's edges may lie from the schedule date, in days either way, and how long
+ * the window may last, in days (ADR-0004 §4, clarification).
+ */
+export const fixedWindow = { dayOffset: 3, days: 7 } as const;
+
+/**
+ * Whether a fixed task's window can run from `from` to `to` (ADR-0004 §4, clarification): each edge
+ * a whole number of days from 3 before to 3 after the schedule date, and the window ending after it
+ * starts and lasting at most 7 days, counted on the local clock.
+ */
+export function isFixedWindow(from: WindowEdge, to: WindowEdge): boolean {
+  const edgeOk = ({ dayOffset }: WindowEdge) =>
+    Number.isInteger(dayOffset) && Math.abs(dayOffset) <= fixedWindow.dayOffset;
+  if (!edgeOk(from) || !edgeOk(to)) return false;
+  const minutes = ({ dayOffset, time }: WindowEdge) =>
+    dayOffset * 24 * 60 + time.hour * 60 + time.minute;
+  const length = minutes(to) - minutes(from);
+  return length > 0 && length <= fixedWindow.days * 24 * 60;
+}

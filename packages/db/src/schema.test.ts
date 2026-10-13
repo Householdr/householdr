@@ -407,10 +407,20 @@ describe('schedules and tasks (ADR-0001 §1, ADR-0004)', () => {
       expect(await refusal(addTask({ duration }))).toBe('tasks_duration');
     }
     expect(await refusal(addTask({ timing: 'floating' }))).toBeUndefined();
-    // Fixed windows come with the columns for their times (ADR-0004 §4).
-    for (const timing of ['fixed', 'sometimes']) {
-      expect(await refusal(addTask({ timing: timing as 'flexible' }))).toBe('tasks_timing');
-    }
+    expect(await refusal(addTask({ timing: 'sometimes' as 'flexible' }))).toBe('tasks_timing');
+    // A fixed task has its window, within 3 days of its date, and only a fixed one (ADR-0004 §4).
+    const window = {
+      windowFromDay: -1,
+      windowFromTime: '18:00',
+      windowToDay: 0,
+      windowToTime: '07:00',
+    };
+    expect(await refusal(addTask({ timing: 'fixed', ...window }))).toBeUndefined();
+    expect(await refusal(addTask({ timing: 'fixed' }))).toBe('tasks_window');
+    expect(await refusal(addTask({ timing: 'fixed', ...window, windowFromDay: -4 }))).toBe(
+      'tasks_window',
+    );
+    expect(await refusal(addTask({ timing: 'flexible', ...window }))).toBe('tasks_window');
     expect(await refusal(addTask({ onMiss: 'lapse' }))).toBeUndefined();
     expect(await refusal(addTask({ onMiss: 'skip' as 'lapse' }))).toBe('tasks_on_miss');
   });

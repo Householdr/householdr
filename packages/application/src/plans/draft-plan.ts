@@ -30,6 +30,7 @@ import * as v from 'valibot';
 import { closeDue } from './closing';
 import { lastDoneOf } from '../tasks/last-done';
 import { scheduleOf } from '../tasks/stored-schedule';
+import { timingColumns, timingOf } from '../tasks/stored-task';
 import { membersOf } from './allocation-members';
 import {
   awayIn,
@@ -104,8 +105,9 @@ export async function draftPlan(context: PlanContext, input: unknown): Promise<D
 
 /**
  * Undoes what drafting plan `planId` did, so it can be drafted again: what it marked to close isn't
- * marked any more, and its assignments are gone. What it closed already, once its week began, stays
- * closed. Those no plan holds any more go once it is drafted.
+ * marked any more, what it skipped as away is gone, to be skipped again or planned, and its
+ * assignments are gone. What it closed already, once its week began, stays closed. Those no plan
+ * holds any more go once it is drafted.
  */
 async function undoDraft(tx: Transaction, planId: string) {
   await tx
@@ -114,6 +116,9 @@ async function undoDraft(tx: Transaction, planId: string) {
     .where(
       and(eq(occurrences.closedByPlan, planId), inArray(occurrences.status, ['open', 'done'])),
     );
+  await tx
+    .delete(occurrences)
+    .where(and(eq(occurrences.closedByPlan, planId), eq(occurrences.status, 'away')));
   await tx.delete(assignments).where(eq(assignments.planId, planId));
 }
 
@@ -247,9 +252,8 @@ export async function draftWeek(tx: Transaction, draft: Draft): Promise<string |
   // What the week doesn't carry over closes as missed when it begins, if nobody did it by then
   // (ADR-0002 §2, clarifications): now, for a week begun already. Only an occurrence whose whole
   // window falls while the household is away is skipped (ADR-0005 §5): a flexible window is its
-  // whole week, which then has no plan, and a floating one is never skipped. Fixed windows bring
-  // the first.
-  if (weekResult.skipped.length > 0) throw new Error('Skipped occurrences are not stored yet.');
+  // whole week, which then has no plan, and a floating one is never skipped, so a fixed one.
+  await storeSkipped(tx, draft, planId, weekResult.skipped, tasksById);
   const missed = weekResult.missed.map(rowOf);
   if (missed.length > 0) {
     await tx
@@ -319,6 +323,42 @@ async function storeOccurrences(
   );
 }
 
+/**
+ * Stores the occurrences `skipped` by their ids, `task@date`, as away: closed by plan `planId`,
+ * with their own windows, so no later week carries them (ADR-0005 §5). Only a fixed task's are.
+ */
+async function storeSkipped(
+  tx: Transaction,
+  { householdId, planning }: Draft,
+  planId: string,
+  skipped: readonly string[],
+  tasksById: ReadonlyMap<string, HouseholdTask>,
+) {
+  if (skipped.length === 0) return;
+  const rows = skipped.map((id) => {
+    const at = id.lastIndexOf('@');
+    const taskId = id.slice(0, at);
+    const date = Temporal.PlainDate.from(id.slice(at + 1));
+    const recurrence = tasksById.get(taskId)?.task.recurrence;
+    if (recurrence?.kind !== 'schedule' || recurrence.timing.kind !== 'fixed') {
+      throw new Error(`Only a fixed task's occurrence is skipped, not ${id}.`);
+    }
+    const [own] = occurrencesOf(recurrence.schedule, recurrence.timing, date, date, planning.calendar);
+    if (!own) throw new Error(`Task ${taskId} has no occurrence on ${date.toString()}.`);
+    return {
+      householdId,
+      taskId,
+      date: date.toString(),
+      windowStart: new Date(own.window.start.epochMilliseconds),
+      windowEnd: new Date(own.window.end.epochMilliseconds),
+      status: 'away' as const,
+      closedByPlan: planId,
+    };
+  });
+  // One a closed plan holds already, done ahead, say, stays as it is.
+  await tx.insert(occurrences).values(rows).onConflictDoNothing();
+}
+
 /** Removes the open occurrences no plan holds: those only a replaced draft had. */
 async function removeUnplanned(tx: Transaction) {
   await tx
@@ -352,7 +392,7 @@ async function tasksOf(tx: Transaction, timeZone: string): Promise<HouseholdTask
     .select({
       id: tasks.id,
       duration: tasks.duration,
-      timing: tasks.timing,
+      ...timingColumns,
       onMiss: tasks.onMiss,
       everyCount: tasks.everyCount,
       everyUnit: tasks.everyUnit,
@@ -368,7 +408,7 @@ async function tasksOf(tx: Transaction, timeZone: string): Promise<HouseholdTask
     // A removed task is never planned again (ADR-0001 §1, clarification).
     .where(eq(tasks.removed, false));
   const lastDone = await lastDoneOf(tx, timeZone);
-  return rows.map(({ id, duration, timing, onMiss, everyCount, everyUnit, start, ...stored }) => {
+  return rows.map(({ id, duration, onMiss, everyCount, everyUnit, start, ...stored }) => {
     const { once, deadline, rules, extraDates, exceptionDates } = stored;
     if (once !== null) {
       const recurrence = {
@@ -385,7 +425,7 @@ async function tasksOf(tx: Transaction, timeZone: string): Promise<HouseholdTask
           id,
           duration,
           onMiss,
-          recurrence: { kind: 'schedule', schedule, timing: { kind: timing } },
+          recurrence: { kind: 'schedule', schedule, timing: timingOf(id, stored) },
         },
         schedule,
       };
