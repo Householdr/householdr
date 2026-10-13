@@ -793,5 +793,20 @@
         "who=*": "{actor} heeft een tijd dat het huishouden weg is verwijderd."
       }
     }
-  ]
+  ],
+  "leave.page-title": "{household} verlaten · Householdr",
+  "leave.title": "{household} verlaten",
+  "leave.failed": "Je bent nog lid van het huishouden",
+  "leave.invalid": "Kies hoe de geschiedenis van het huishouden je toont.",
+  "leave.last-head": "Je bent het enige hoofd van het huishouden. Vertrekken als laatste hoofd, waarbij je het huishouden aan iemand anders overdraagt, kan nog niet.",
+  "leave.intro": "Je vertrekt meteen, zonder een reden te geven. Niemand krijgt een bericht: het huishouden ziet alleen dat je er niet meer bij bent.",
+  "leave.history": "Wat je deed, blijft in de geschiedenis van het huishouden, en je saldo blijft zoals het is. Wat je nog moest doen, gaat naar de anderen.",
+  "leave.rejoin": "Om terug te komen heb je een nieuwe uitnodiging nodig, die alleen jij kunt aanvaarden.",
+  "leave.shown-as": "Hoe moet de geschiedenis van het huishouden je tonen?",
+  "leave.as-former": "Als ‘Voormalig lid’",
+  "leave.as-name": "Onder je naam, {name}",
+  "leave.submit": "Het huishouden verlaten",
+  "leave.support": "Voel je je thuis niet veilig, dan kan {service} helpen: bel {phone} of ga naar {website}.",
+  "home.left": "Je hebt het huishouden verlaten.",
+  "household.leave": "Het huishouden verlaten"
 }

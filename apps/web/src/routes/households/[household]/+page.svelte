@@ -342,5 +342,10 @@
       </a>
     {/if}
     <a href="/security" class="underline underline-offset-4">{m['security.title']()}</a>
+    {#if data.flags.leaving && data.mayLeave}
+      <a href="/households/{page.params.household}/leave" class="underline underline-offset-4">
+        {m['household.leave']()}
+      </a>
+    {/if}
   </nav>
 </main>

@@ -175,6 +175,8 @@ type ViewHouseholdResult =
       members: HouseholdMember[];
       /** Whether the member viewing it may add members: a head with two factors (ADR-0001 §2). */
       mayAddMembers: boolean;
+      /** Whether they may leave it on their own: anyone but a child (ADR-0010 §10, ADR-0018 §2). */
+      mayLeave: boolean;
       /** Whether they may change the household's settings, which only heads do (ADR-0007 §2). */
       mayChangeSettings: boolean;
       /** Whether they may start it: a head, while it is in setup (ADR-0007 §2 step 7). */
@@ -252,6 +254,7 @@ export async function viewHousehold(context: HouseholdContext): Promise<ViewHous
       name: household.name,
       members: list,
       mayAddMembers: mayInvite,
+      mayLeave: can(context.member, { action: 'member.leave', member: context.member }),
       mayChangeSettings,
       // Starting is a setting of the household's, which only heads change (ADR-0007 §2).
       mayStart: mayChangeSettings && !planning.firstWeek,

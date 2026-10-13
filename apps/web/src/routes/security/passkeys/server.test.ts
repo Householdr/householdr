@@ -46,6 +46,7 @@ const on = {
   comparisons: false,
   availability: false,
   unavailability: false,
+  leaving: false,
   plans: false,
   completions: false,
   balances: false,

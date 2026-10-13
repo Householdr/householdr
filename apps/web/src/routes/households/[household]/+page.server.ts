@@ -50,6 +50,7 @@ export const load = (async ({ locals, url }) => {
       invitationDaysLeft: invitationExpiresAt ? daysUntil(now, invitationExpiresAt) : null,
     })),
     mayAddMembers: result.mayAddMembers,
+    mayLeave: result.mayLeave,
     mayChangeSettings: result.mayChangeSettings,
     mayStart: result.mayStart,
     started:

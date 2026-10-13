@@ -18,7 +18,7 @@ import { draftPlan } from '../plans/draft-plan';
 import { publishPlan } from '../plans/publish-plan';
 import { plannedHousehold, type PlannedHousehold } from '../plans/testing';
 import { householdActivity } from './activity';
-import { leaveHousehold } from './leave';
+import { leaveHousehold, leaveOptions } from './leave';
 import { membership, viewHousehold, type HouseholdContext } from './membership';
 
 // Leaving (ADR-0005 §4, ADR-0018 §2, §8, with their clarifications), on a real database (TEST-11)
@@ -259,5 +259,33 @@ describe('leaveHousehold (ADR-0005 §4, ADR-0018 §2)', () => {
     expect(await leave(h.head)).toEqual({ ok: true });
     // Once gone, they can't leave again.
     expect(await leave(h.head)).toEqual({ ok: false, error: 'not-allowed' });
+  });
+});
+
+describe('leaveOptions (ADR-0018 §2, §8)', () => {
+  it('gives the household, the member’s name and the support line of its country', async () => {
+    const h = await plannedHousehold(db);
+    expect(await leaveOptions(h.adult)).toEqual({
+      ok: true,
+      household: 'Ash Lane',
+      name: 'Alex',
+      lastHead: false,
+      support: { name: '1712', phone: '1712', website: 'https://www.1712.be' },
+    });
+    expect(await leaveOptions(h.head)).toMatchObject({ ok: true, lastHead: true });
+  });
+
+  it('has no support line yet for a country without one', async () => {
+    const h = await plannedHousehold(db, { country: 'DE', timeZone: 'Europe/Berlin' });
+    expect(await leaveOptions(h.adult)).toMatchObject({ ok: true, support: null });
+  });
+
+  it('is not for a child, nor for someone who left', async () => {
+    const h = await plannedHousehold(db);
+    expect(
+      await leaveOptions({ ...h.adult, member: { ...h.adult.member, role: 'child' } }),
+    ).toEqual({ ok: false, error: 'not-allowed' });
+    await leave(h.adult);
+    expect(await leaveOptions(h.adult)).toEqual({ ok: false, error: 'not-allowed' });
   });
 });

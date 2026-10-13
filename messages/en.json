@@ -793,5 +793,20 @@
         "who=*": "{actor} removed a time the household is away."
       }
     }
-  ]
+  ],
+  "leave.page-title": "Leave {household} · Householdr",
+  "leave.title": "Leave {household}",
+  "leave.failed": "You’re still in the household",
+  "leave.invalid": "Choose how the household’s history shows you.",
+  "leave.last-head": "You’re the household’s only head. Leaving as the last head, which hands the household on to someone else, isn’t possible yet.",
+  "leave.intro": "You leave at once, without giving a reason. Nobody is told: the household only sees that you’re no longer in it.",
+  "leave.history": "What you did stays in the household’s history, and your balance stays as it is. What you still had to do goes to the others.",
+  "leave.rejoin": "To come back, you need a new invitation, which only you can accept.",
+  "leave.shown-as": "How should the household’s history show you?",
+  "leave.as-former": "As “Former member”",
+  "leave.as-name": "Under your name, {name}",
+  "leave.submit": "Leave the household",
+  "leave.support": "If you don’t feel safe at home, {service} can help: call {phone} or go to {website}.",
+  "home.left": "You’ve left the household.",
+  "household.leave": "Leave the household"
 }
