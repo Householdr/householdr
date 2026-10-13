@@ -28,6 +28,7 @@
 | [0024](0024-public-core-from-stage-0.md) | The core is public from stage 0 | Accepted |
 | [0025](0025-public-api-and-connected-apps.md) | A public API, and apps that members connect | Draft |
 | [0026](0026-mcp-server.md) | An MCP server for AI assistants | Draft |
+| [0027](0027-feature-branches.md) | Feature branches, with end-to-end tests only on the way into `main` | Draft |
 
 ## Planned
 
