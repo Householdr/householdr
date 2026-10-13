@@ -151,7 +151,7 @@ test('names every field the server refuses, in the form’s order', async ({
   await signIn(page, account, `/households/${id}`);
   await page.goto(`/households/${id}/tasks`);
   // The browser's own checks come first (UI-2); the server's are what a browser without them sees.
-  await page.locator('form').evaluate((form: HTMLFormElement) => {
+  await adding(page).locator('form').evaluate((form: HTMLFormElement) => {
     form.noValidate = true;
   });
   await adding(page).getByLabel('What needs doing').fill('Water the plants');
