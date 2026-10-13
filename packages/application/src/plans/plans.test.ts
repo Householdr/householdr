@@ -445,6 +445,52 @@ describe('"since last done" tasks (ADR-0004 §8)', () => {
   });
 });
 
+describe('one-off tasks (ADR-0004 §4)', () => {
+  const twoWeeks = async (h: PlannedHousehold) => {
+    await drafted(h.scheduler, week1);
+    await publishPlan(h.scheduler, { week: week1 });
+    h.clock.advance({ hours: 9 * 24 });
+    return drafted(h.scheduler, week2);
+  };
+
+  it('plans one in the week of its date, and rolls it over or lets it lapse like any task', async () => {
+    const h = await household();
+    await h.oneOff('Fix the shelf', 30, '2026-10-14');
+    await h.oneOff('Post the parcel', 15, '2026-10-15', { onMiss: 'lapse' });
+    const week2Plan = await twoWeeks(h);
+    expect((await h.plan(week1))?.rows.map((row) => [row.task, row.date])).toEqual([
+      ['Fix the shelf', '2026-10-14'],
+      ['Post the parcel', '2026-10-15'],
+    ]);
+    // Not done in week 1: the shelf still needs fixing, the parcel's moment has passed.
+    expect((await h.plan(week2))?.rows.map((row) => [row.task, row.date])).toEqual([
+      ['Fix the shelf', '2026-10-14'],
+    ]);
+    expect(await h.occurrences()).toEqual([
+      expect.objectContaining({ task: 'Fix the shelf', status: 'open', closedByPlan: null }),
+      expect.objectContaining({ task: 'Post the parcel', status: 'open', closedByPlan: week2Plan }),
+    ]);
+  });
+
+  it('keeps a deadline as the end of its own window', async () => {
+    const h = await household();
+    await h.oneOff('Post the parcel', 15, '2026-10-14', { deadline: '2026-10-16' });
+    await drafted(h.scheduler, week1);
+    expect((await h.plan(week1))?.rows.map((row) => row.task)).toEqual(['Post the parcel']);
+    // The end of Friday 16 October in Brussels.
+    expect(await h.occurrences()).toEqual([
+      expect.objectContaining({ windowEnd: new Date('2026-10-16T22:00:00Z') }),
+    ]);
+  });
+
+  it('plans one whose date has passed no more once its window is over', async () => {
+    const h = await household();
+    await h.oneOff('Fix the shelf', 30, '2026-10-06', { onMiss: 'lapse' });
+    await drafted(h.scheduler, week1);
+    expect((await h.plan(week1))?.rows).toEqual([]);
+  });
+});
+
 describe('publishPlan (ADR-0006 §2)', () => {
   it('publishes the draft, recording when, once (CODE-19)', async () => {
     const h = await household();
