@@ -1,3 +1,4 @@
+import { createECDH, randomBytes } from 'node:crypto';
 import { accounts, pushSubscriptions, sessions, type Database } from '@householdr/db';
 import { testDatabase } from '@householdr/db/testing';
 import { eq } from 'drizzle-orm';
@@ -42,15 +43,17 @@ const device = async (accountId?: string) => {
   return { db, account, session: session.id };
 };
 
+/** A browser's P-256 public key and 16-byte secret, drawn for the test, in base64url. */
+const browserKeys = {
+  p256dh: createECDH('prime256v1').generateKeys().toString('base64url'),
+  auth: randomBytes(16).toString('base64url'),
+};
+
 /** A browser's subscription, as `PushSubscription.toJSON()` gives it. */
 const subscription = (endpoint = `https://fcm.googleapis.com/fcm/send/${String(++next)}`) => ({
   endpoint,
   expirationTime: null,
-  keys: {
-    p256dh:
-      'BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4',
-    auth: 'BTBZMqHH6r4Tts7J_aSIgg',
-  },
+  keys: browserKeys,
 });
 
 const endpoints = async (context: Awaited<ReturnType<typeof device>>) => {
@@ -94,7 +97,7 @@ describe('savePushSubscription (ADR-0014 §7, clarification)', () => {
       { ...keys, p256dh: keys.p256dh.slice(1) },
       { ...keys, p256dh: `A${keys.p256dh.slice(1)}` },
       { ...keys, auth: `${keys.auth}A` },
-      { ...keys, auth: 'BTBZMqHH6r4Tts7J/aSIgg' },
+      { ...keys, auth: `/${keys.auth.slice(1)}` },
       {},
     ]) {
       expect(await savePushSubscription(phone, { ...subscription(), keys: wrong })).toEqual({
