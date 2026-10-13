@@ -52,6 +52,12 @@ export {
 export { householdDate } from './households/date';
 export { isAdultOn } from './members/age';
 export {
+  recipients,
+  type Notifiable,
+  type NotificationEvent,
+  type NotificationKind,
+} from './notifications/recipients';
+export {
   canForAccount,
   type Account,
   type AccountAction,

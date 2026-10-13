@@ -10,6 +10,7 @@ import {
   comparisons,
   households,
   members,
+  notifications,
   occurrences,
   parentalConsents,
   plans,
@@ -948,5 +949,65 @@ describe('temporary_shares', () => {
     expect(await refusal(addTemporaryShare({ ...week, percent: -1 }))).toBe(
       'temporary_shares_percent',
     );
+  });
+});
+
+describe('notifications (ADR-0014 §7)', () => {
+  /** A household with a head, and a draft for the week of 12 October. */
+  const notified = async () => {
+    const id = newId();
+    return inHousehold(db, id, async (tx) => {
+      await tx.insert(households).values(household(id));
+      const [member] = await tx
+        .insert(members)
+        .values({ householdId: id, name: 'Robin', role: 'head' })
+        .returning();
+      if (!member) throw new Error('No member');
+      await tx.insert(plans).values({
+        householdId: id,
+        weekStart: '2026-10-12',
+        weekEnd: '2026-10-19',
+        status: 'draft',
+        draftedAt: new Date(),
+      });
+      return { id, member };
+    });
+  };
+  const add = (
+    { id, member }: Awaited<ReturnType<typeof notified>>,
+    fields: Partial<typeof notifications.$inferInsert> = {},
+  ) =>
+    inHousehold(db, id, (tx) =>
+      tx.insert(notifications).values({
+        householdId: id,
+        memberId: member.id,
+        kind: 'plan.drafted',
+        at: new Date(),
+        week: '2026-10-12',
+        ...fields,
+      }),
+    );
+
+  it('names the week of a plan’s notification, a week the household has a plan for', async () => {
+    const n = await notified();
+    expect(await refusal(add(n))).toBeUndefined();
+    expect(await refusal(add(n, { kind: 'plan.published' }))).toBeUndefined();
+    expect(await refusal(add(n, { week: null }))).toBe('notifications_week');
+    expect(await refusal(add(n, { week: '2026-10-19' }))).toBe('notifications_plan');
+    expect(await refusal(add(n, { kind: 'plan.lost' as 'plan.drafted' }))).toBe(
+      'notifications_kind',
+    );
+  });
+
+  it('go with their plan, their member’s profile and their household', async () => {
+    for (const gone of [plans, members, households]) {
+      const n = await notified();
+      await add(n);
+      const left = await inHousehold(db, n.id, async (tx) => {
+        await tx.delete(gone);
+        return tx.select().from(notifications);
+      });
+      expect(left).toEqual([]);
+    }
   });
 });
