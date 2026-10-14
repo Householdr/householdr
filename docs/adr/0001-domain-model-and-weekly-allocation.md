@@ -95,6 +95,13 @@ the week by default, which makes balancing easier.
   override it in both directions. Minimum ages come seeded from the task template.
 - How a child logs in, and parental consent, belong to the identity ADR.
 
+> **Clarification (2026-10-13):** a task's **minimum age** is optional, in whole years from 1 to 17.
+> Heads set it on the task's page, with the task's **constraints**: for each member, *anyone who
+> fits* (none), *always theirs* (`bound`) or *never theirs* (`excluded`), and for a child below the
+> minimum age, *allowed anyway* (`allowed`). Several members can be bound to one task. Only heads see
+> constraints, on the task's page; the plan shows their effect through its reasons (§7). A change
+> counts from the next draft, as a share's does (§4), and a member's constraints go with them.
+
 ### 4. Shares
 
 A member's **share** sets their portion of the household's work relative to the others. Only heads can
