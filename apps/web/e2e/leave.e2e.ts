@@ -70,7 +70,8 @@ for (const javaScriptEnabled of [true, false]) {
       const sam = { email: `${testInfo.testId}-sam@example.org`, password: account.password };
       await accounts.add(sam);
       await accounts.addMember(sam.email, id, 'Sam');
-      await signIn(page, account, `/households/${id}/leave`);
+      await signIn(page, account, `/households/${id}`);
+      await page.goto(`/households/${id}/leave`);
       await expect(page.getByText('You’re the household’s last head')).toBeVisible();
       const successor = page.getByRole('group', { name: 'Who becomes head?' });
       // No one in particular to begin with, which gives it to whoever has been there longest.
