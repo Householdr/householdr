@@ -1,5 +1,5 @@
 import { households, inHousehold, schedules, tasks, type Transaction } from '@householdr/db';
-import { can, changedStartRange } from '@householdr/domain';
+import { can, changedStartRange, scheduleDateRange } from '@householdr/domain';
 import { and, eq } from 'drizzle-orm';
 import * as v from 'valibot';
 import type { HouseholdContext } from '../households/membership';
@@ -52,6 +52,13 @@ type TaskToEditResult =
       task: EditableTask;
       /** The days its date picker offers for its first time (`changedStartRange`). */
       starts: { earliest: Temporal.PlainDate; latest: Temporal.PlainDate };
+      /**
+       * The days its pickers offer for an extra or exception date (`scheduleDateRange`), stretched
+       * to the earliest it has already (ADR-0004 §3, clarification).
+       */
+      dates: { earliest: Temporal.PlainDate; latest: Temporal.PlainDate };
+      /** Today in the household's time zone: the first time a rule added to it starts with. */
+      today: Temporal.PlainDate;
     }
   /** Only heads change tasks, once signed in with two factors (ADR-0001 §2, ADR-0010 §3). */
   | { ok: false; error: 'not-allowed' }
@@ -76,11 +83,23 @@ export async function taskToEdit(
     const found = await readTask(tx, target.output.taskId);
     if (!found) return { ok: false, error: 'not-found' };
     const today = context.clock.now().toZonedDateTimeISO(household.timeZone).toPlainDate();
+    const { earliest, latest } = scheduleDateRange(today);
+    const kept = [
+      ...(found.task.schedule?.extraDates ?? []),
+      ...(found.task.schedule?.exceptionDates ?? []),
+    ];
     return {
       ok: true,
       household: household.name,
       task: found.task,
       starts: changedStartRange(today, found.task.start),
+      dates: {
+        earliest: [earliest, ...kept].reduce((a, b) =>
+          Temporal.PlainDate.compare(a, b) <= 0 ? a : b,
+        ),
+        latest,
+      },
+      today,
     };
   });
 }

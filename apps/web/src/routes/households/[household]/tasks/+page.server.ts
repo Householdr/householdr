@@ -1,7 +1,7 @@
 import { addOneOff, addTask, listTasks } from '@householdr/application';
 import { error, fail } from '@sveltejs/kit';
 import { authContext } from '#lib/server/auth.js';
-import { scheduleData } from '#lib/task-schedule.js';
+import { changedSchedule, scheduleData, scheduleFields, sentSchedule } from '#lib/task-schedule.js';
 import { windowData, windowInput } from '#lib/task-window.js';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -42,6 +42,7 @@ export const load = (async ({ locals, url }) => {
     mayAddOneOffs: result.mayAddOneOffs,
     mayChangeTasks: result.mayChangeTasks,
     starts: { earliest: earliest.toString(), latest: latest.toString() },
+    dates: { earliest: result.dates.earliest.toString(), latest: result.dates.latest.toString() },
     removed: url.searchParams.get('task') === 'removed',
   };
 }) satisfies PageServerLoad;
@@ -53,8 +54,9 @@ const text = (form: FormData, field: string) => {
 };
 
 export const actions = {
-  // Adds a custom task, on a simple frequency or counted from when it was last done (ADR-0004 §3,
-  // §8, ADR-0007 §2).
+  // Adds a custom task, on a simple frequency, an advanced schedule or counted from when it was
+  // last done (ADR-0004 §3, §8, ADR-0007 §2). A button of the advanced editor adds or removes one
+  // of its rows instead, and the form shows again with it (CODE-10).
   add: async ({ locals, request }) => {
     const context = await householdContext(locals);
     const form = await request.formData();
@@ -71,7 +73,10 @@ export const actions = {
       fromTime: text(form, 'fromTime'),
       toDay: text(form, 'toDay'),
       toTime: text(form, 'toTime'),
+      ...sentSchedule(form),
     };
+    const changed = changedSchedule(values, text(form, 'change'));
+    if (changed) return { values: { ...values, ...changed } };
     const result = await addTask(context, {
       ...values,
       duration: Number(values.duration),
@@ -82,6 +87,7 @@ export const actions = {
       // Without a day, it starts today.
       start: values.start || undefined,
       ...windowInput(values),
+      ...scheduleFields(values),
     });
     if (result.ok) return { added: result.name };
     if (result.error === 'not-allowed') error(403);

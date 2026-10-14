@@ -7,7 +7,9 @@
   import TaskDetails from '#lib/components/TaskDetails.svelte';
   import TaskFields from '#lib/components/TaskFields.svelte';
   import { Button } from '#lib/components/ui/button/index.js';
+  import { scheduleChanges } from '#lib/hooks/use-schedule-editor.svelte.js';
   import { m } from '#lib/paraglide/messages.js';
+  import { scheduleValues } from '#lib/task-schedule.js';
   import { oneOffFieldId, oneOffProblems, taskProblems } from '#lib/task-words.js';
   import { defaultOnMiss } from '@householdr/domain';
   import type { PageProps } from './$types';
@@ -33,6 +35,8 @@
       fromTime: '08:00',
       toDay: '0',
       toTime: '20:00',
+      // One rule from today, for a task on an advanced schedule (ADR-0004 §3).
+      ...scheduleValues(undefined, data.starts.earliest),
     },
   );
 
@@ -176,13 +180,23 @@
         {form?.added ? m['tasks.added']({ name: form.added }) : ''}
       </p>
 
-      <form method="POST" action="?/add" use:enhance class="flex flex-col gap-4">
+      <form
+        method="POST"
+        action="?/add"
+        use:enhance={scheduleChanges()}
+        class="flex flex-col gap-4"
+      >
         <TaskFields
           {values}
           {invalid}
           problems={taskProblems}
           starts={data.starts}
+          dates={data.dates}
+          today={data.starts.earliest}
           startingOnMiss={defaultOnMiss}
+          action="?/add"
+          submit={m['tasks.submit']()}
+          locale={data.locale}
         />
         <Button type="submit" class="w-full">{m['tasks.submit']()}</Button>
       </form>

@@ -1,7 +1,13 @@
 import { editTask, taskToEdit, type EditableTask } from '@householdr/application';
 import { error, fail } from '@sveltejs/kit';
 import { authContext } from '#lib/server/auth.js';
-import { scheduleData } from '#lib/task-schedule.js';
+import {
+  changedSchedule,
+  scheduleData,
+  scheduleFields,
+  scheduleValues,
+  sentSchedule,
+} from '#lib/task-schedule.js';
 import { windowData, windowInput, windowValues } from '#lib/task-window.js';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -36,10 +42,15 @@ export const load = (async ({ locals, params }) => {
   const result = await taskToEdit(await householdContext(locals), { taskId: params.task });
   if (!result.ok) error(result.error === 'not-found' ? 404 : 403);
   const { earliest, latest } = result.starts;
+  const task = shown(result.task);
+  const today = result.today.toString();
   return {
     household: result.household,
-    task: shown(result.task),
+    // An advanced schedule's fields too, or one new rule for a task that turns to one.
+    task: { ...task, ...scheduleValues(task.schedule, today) },
     starts: { earliest: earliest.toString(), latest: latest.toString() },
+    dates: { earliest: result.dates.earliest.toString(), latest: result.dates.latest.toString() },
+    today,
   };
 }) satisfies PageServerLoad;
 
@@ -50,7 +61,9 @@ const text = (form: FormData, field: string) => {
 };
 
 export const actions = {
-  // Saves the task from the version the form was loaded with (ADR-0019 §5).
+  // Saves the task from the version the form was loaded with (ADR-0019 §5). A button of the
+  // advanced editor adds or removes one of its rows instead, and the form shows again with it
+  // (CODE-10).
   save: async ({ locals, params, request }) => {
     const context = await householdContext(locals);
     const form = await request.formData();
@@ -68,7 +81,10 @@ export const actions = {
       toDay: text(form, 'toDay'),
       toTime: text(form, 'toTime'),
       version: Number(form.get('version')),
+      ...sentSchedule(form),
     };
+    const changed = changedSchedule(values, text(form, 'change'));
+    if (changed) return { values: { ...values, ...changed } };
     const result = await editTask(context, {
       ...values,
       taskId: params.task,
@@ -77,7 +93,10 @@ export const actions = {
       everyCount: values.everyCount ? Number(values.everyCount) : undefined,
       everyUnit: values.everyUnit || undefined,
       onMiss: values.onMiss || undefined,
+      // An advanced schedule's rules have first dates of their own (ADR-0004 §3).
+      start: values.start || undefined,
       ...windowInput(values),
+      ...scheduleFields(values),
     });
     if (result.ok) return { saved: true };
     if (result.error === 'not-allowed') error(403);

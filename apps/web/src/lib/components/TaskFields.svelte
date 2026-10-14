@@ -1,10 +1,12 @@
 <script lang="ts">
   import FieldProblem from '#lib/components/FieldProblem.svelte';
+  import ScheduleFields from '#lib/components/ScheduleFields.svelte';
   import { Input } from '#lib/components/ui/input/index.js';
   import { Label } from '#lib/components/ui/label/index.js';
   import { NativeSelect, NativeSelectOption } from '#lib/components/ui/native-select/index.js';
   import { useTaskRepeat } from '#lib/hooks/use-task-repeat.svelte.js';
   import { m } from '#lib/paraglide/messages.js';
+  import type { ScheduleValues } from '#lib/task-schedule.js';
   import { edgeDays, edgeDayWords, onMissWords, repeatWords, unitWords } from '#lib/task-words.js';
   import type { Repeat, TaskField } from '@householdr/application';
   import { taskDuration, taskInterval, type Interval, type PlanTask } from '@householdr/domain';
@@ -14,16 +16,23 @@
    * §8), showing `values`, with the `problems` of the fields the server refused (UI-10). The first
    * time is offered within `starts`; a reset form goes back to `startingOnMiss`. Counted from when
    * it was last done, a task has an interval instead of a choice of what happens if it isn't done,
-   * and of when it is done: any time that week, or at set times around each date (§4).
+   * and of when it is done: any time that week, or at set times around each date (§4). On an
+   * advanced schedule, its editor takes the first time's place, its buttons sending the form to
+   * `action` (§3).
    */
   let {
     values,
     invalid,
     problems,
     starts,
+    dates,
+    today,
     startingOnMiss,
+    action,
+    submit,
+    locale,
   }: {
-    values: {
+    values: ScheduleValues & {
       name: string;
       duration: string;
       frequency: string;
@@ -40,12 +49,19 @@
     invalid: readonly TaskField[];
     problems: Record<TaskField, () => string>;
     starts: { earliest: string; latest: string };
+    /** The days an extra date or a date to leave out can be on. */
+    dates: { earliest: string; latest: string };
+    /** `YYYY-MM-DD`: a new rule's first time. */
+    today: string;
     startingOnMiss: PlanTask['onMiss'];
+    action: string;
+    /** The words of the form's own button, which Enter presses. */
+    submit: string;
+    locale: string;
   } = $props();
 
   const onMissChoices: PlanTask['onMiss'][] = ['roll over', 'lapse'];
-  // The advanced editor comes in its own slice.
-  const repeats = (Object.keys(repeatWords) as Repeat[]).filter((choice) => choice !== 'advanced');
+  const repeats = Object.keys(repeatWords) as Repeat[];
   const units = Object.keys(unitWords) as Interval['unit'][];
 
   const whenChoices = ['week', 'set'] as const;
@@ -73,6 +89,8 @@
   };
 </script>
 
+<!-- Enter in a field saves: the form's default button comes before the editor's own buttons. -->
+<button type="submit" hidden>{submit}</button>
 <div class="flex flex-col gap-2">
   <Label for="name">{m['tasks.name']()}</Label>
   <Input
@@ -122,6 +140,20 @@
   </NativeSelect>
   <FieldProblem id="frequency-problem" problem={problemOf('frequency')} />
 </div>
+<!-- Made again with the form's values after each change of its rows, which the server sends. -->
+{#key values}
+  <ScheduleFields
+    {values}
+    apply={!repeat.running || repeat.advanced}
+    {invalid}
+    {problems}
+    {today}
+    {starts}
+    {dates}
+    {action}
+    {locale}
+  />
+{/key}
 <!-- Hidden and disabled while it doesn't apply, so it is neither checked nor sent. -->
 <fieldset class="flex min-w-0 flex-col gap-2" hidden={!applies(true)} disabled={!applies(true)}>
   <legend class="mb-1 text-sm font-medium">{m['tasks.every']()}</legend>
@@ -160,12 +192,13 @@
   <FieldProblem id="everyCount-problem" problem={problemOf('everyCount')} />
   <FieldProblem id="everyUnit-problem" problem={problemOf('everyUnit')} />
 </fieldset>
-<div class="flex flex-col gap-2">
+<div class="flex flex-col gap-2" hidden={repeat.running && repeat.advanced}>
   <Label for="start">{m['tasks.start']()}</Label>
   <Input
     id="start"
     name="start"
     type="date"
+    disabled={repeat.running && repeat.advanced}
     required
     min={starts.earliest}
     max={starts.latest}
@@ -220,7 +253,7 @@
         name="when"
         value={choice}
         required={repeat.running}
-        checked={values.when === choice}
+        checked={repeat.when === choice}
         defaultChecked={choice === 'week'}
         onchange={repeat.chooseWhen}
         class="size-5 shrink-0 accent-primary"
