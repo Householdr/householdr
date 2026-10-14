@@ -120,6 +120,7 @@ describe('the pushes’ jobs (ADR-0014 §7)', () => {
       clock,
       mailer: recordingMailer(),
       push,
+      origin: 'https://householdr.example.org',
       flags: settableFlags({ 'push-notifications': true }),
     };
     const { householdId, endpoint } = await household(context.db, clock);

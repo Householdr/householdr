@@ -10,6 +10,7 @@ import {
 import { connect, deleteExpiredNotifications, jobQueue, type Jobs } from '@householdr/application';
 import { createAuth, deleteExpiredSignUpLinks } from '@householdr/auth';
 import { deliverAccountEmail, type DeliveryContext } from './account-emails';
+import { deliverMorningEmail, tickEmails, type MorningEmailsContext } from './morning-emails';
 import {
   closeScheduledOccurrences,
   draftScheduledPlan,
@@ -21,10 +22,11 @@ import {
 import { deliverPush, forgetSentPushes, tickPushes, type PushesContext } from './pushes';
 
 /**
- * What the worker's jobs need: sending account e-mails and pushes, the time for the deletion jobs
- * and the plans, and the flags that hold features back (CODE-20).
+ * What the worker's jobs need: sending account e-mails, pushes and morning e-mails, the time for
+ * the deletion jobs and the plans, and the flags that hold features back (CODE-20).
  */
-export interface WorkerContext extends DeliveryContext, PlansContext, PushesContext {}
+export interface WorkerContext
+  extends DeliveryContext, PlansContext, PushesContext, MorningEmailsContext {}
 
 type Environment = Record<string, string | undefined>;
 
@@ -70,6 +72,7 @@ export async function startWorker(env: Environment = process.env) {
     db,
     mailer: smtpMailer(settings.smtp),
     push: vapid && webPush(vapid, systemClock),
+    origin: settings.origin,
     clock: systemClock,
     flags: flagSource(env),
   });
@@ -102,6 +105,10 @@ export async function workQueues(context: WorkerContext) {
   await queue.work<Jobs['push-tick']>('push-tick', () => tickPushes({ ...context, queue }));
   await queue.work<Jobs['notification-push']>('notification-push', async (jobs) => {
     for (const job of jobs) await deliverPush(context, job.data);
+  });
+  await queue.work<Jobs['email-tick']>('email-tick', () => tickEmails({ ...context, queue }));
+  await queue.work<Jobs['morning-email']>('morning-email', async (jobs) => {
+    for (const job of jobs) await deliverMorningEmail(context, job.data);
   });
   await queue.work<Jobs['plan-tick']>('plan-tick', () => tickPlans({ ...context, queue }));
   await queue.work<Jobs['plan-draft']>('plan-draft', async (jobs) => {

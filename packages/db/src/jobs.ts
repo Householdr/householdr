@@ -19,6 +19,8 @@ export interface Jobs {
   'push-tick': Record<string, never>;
   /** A notification's push: its household's id, and its own (ADR-0014 §7). */
   'notification-push': { household: string; notification: string };
+  /** Queues the morning e-mails that are due, household by household: carries nothing (ADR-0014 §5). */
+  'email-tick': Record<string, never>;
   /**
    * A member's morning e-mail from a household: the household's id, and the member's
    * (ADR-0014 §5, clarification).
@@ -62,6 +64,8 @@ const queues: Record<QueueName, Parameters<PgBoss['createQueue']>[1]> = {
   // One job for a notification's push at a time, by its key (ADR-0014 §7); one that fails is
   // queued again by a later tick, while it is still due.
   'notification-push': { policy: 'exclusive', retryLimit: 0 },
+  // One tick at a time; a failed one waits for the next.
+  'email-tick': { policy: 'exclusive', retryLimit: 0 },
   // One job for a member's morning e-mail at a time, by its key; one that fails is queued again by
   // a later tick, while it is still due.
   'morning-email': { policy: 'exclusive', retryLimit: 0 },
@@ -91,7 +95,8 @@ const keys: { [Q in QueueName]?: (data: Jobs[Q]) => string } = {
 
 /**
  * The queues that get a job on a schedule, in cron's terms and UTC: the deletion jobs (ADR-0012 §5,
- * ADR-0014 §4, §7), the plans' tick (ADR-0008 §10) and the pushes' (ADR-0014 §7).
+ * ADR-0014 §4, §7), the plans' tick (ADR-0008 §10), the pushes' (ADR-0014 §7) and the morning
+ * e-mails' (§5).
  */
 const schedules: Partial<Record<QueueName, string>> = {
   // Every hour, off the full hour that other schedules crowd.
@@ -102,6 +107,8 @@ const schedules: Partial<Record<QueueName, string>> = {
   'expired-pushes': '53 * * * *',
   // Every minute, which is as late as a push may come.
   'push-tick': '* * * * *',
+  // Every minute, which is as late as a morning e-mail may come.
+  'email-tick': '* * * * *',
   // Every minute, which is as late as a draft or a publish may come (ADR-0008 §10).
   'plan-tick': '* * * * *',
 };

@@ -53,9 +53,10 @@ describe('the job queue', () => {
     expect(tables.rows).toEqual([{ name: 'queue' }]);
   });
 
-  it('sends a job to delete expired notifications every night (ADR-0014 §7), expired sign-up links (ADR-0012 §5) and push times (ADR-0014 §4) every hour, and the plans’ and pushes’ ticks every minute (ADR-0008 §10, ADR-0014 §7)', async () => {
+  it('sends a job to delete expired notifications every night (ADR-0014 §7), expired sign-up links (ADR-0012 §5) and push times (ADR-0014 §4) every hour, and the plans’, pushes’ and morning e-mails’ ticks every minute (ADR-0008 §10, ADR-0014 §5, §7)', async () => {
     const schedules = await queue.getSchedules();
     expect(schedules.sort((a, b) => a.name.localeCompare(b.name))).toEqual([
+      expect.objectContaining({ name: 'email-tick', cron: '* * * * *' }),
       expect.objectContaining({ name: 'expired-notifications', cron: '41 3 * * *' }),
       expect.objectContaining({ name: 'expired-pushes', cron: '53 * * * *' }),
       expect.objectContaining({ name: 'expired-sign-up-links', cron: '23 * * * *' }),
