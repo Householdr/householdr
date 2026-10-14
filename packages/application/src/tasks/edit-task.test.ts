@@ -133,6 +133,8 @@ describe('taskToEdit (ADR-0001 §2)', () => {
       start: '2026-10-12',
       onMiss: 'roll over',
       version: 1,
+      sharedWith: [],
+      constraints: [],
     });
     const { earliest, latest } = result.starts;
     expect([earliest.toString(), latest.toString()]).toEqual(['2026-10-08', '2027-10-08']);
@@ -279,6 +281,8 @@ describe('editTask (ADR-0001 §2, ADR-0019 §5)', () => {
       id: taskId,
       name: 'Hoover',
       version: 2,
+      sharedWith: [],
+      constraints: [],
     });
     expect(await stored(head.householdId)).toEqual([{ ...asAdded, name: 'Hoover', version: 2 }]);
     // Saved again from the version the conflict gave, it is saved.
@@ -404,5 +408,110 @@ describe('editTask (ADR-0001 §2, ADR-0019 §5)', () => {
       ).toEqual({ ok: false, error: 'not-allowed' });
     }
     expect(await stored(head.householdId)).toEqual([asAdded]);
+  });
+});
+
+describe('editTask to and from "since last done" (ADR-0004 §8)', () => {
+  const counted = {
+    frequency: 'since-last-done',
+    everyCount: 6,
+    everyUnit: 'weeks',
+  };
+  /** The household's tasks as stored, with or without a schedule, and its schedules. */
+  const rows = (householdId: string) =>
+    inHousehold(db, householdId, async (tx) => ({
+      tasks: await tx
+        .select({
+          scheduleId: tasks.scheduleId,
+          everyCount: tasks.everyCount,
+          everyUnit: tasks.everyUnit,
+          start: tasks.start,
+          timing: tasks.timing,
+          onMiss: tasks.onMiss,
+          version: tasks.version,
+        })
+        .from(tasks),
+      schedules: await tx.select({ id: schedules.id, rules: schedules.rules }).from(schedules),
+    }));
+
+  it('moves a task off its schedule, which goes, and back onto a new one', async () => {
+    const head = await founded();
+    const taskId = await added(head, { onMiss: 'lapse' });
+    expect(
+      await editTask(head, { ...vacuum, ...counted, onMiss: 'lapse', taskId, version: 1 }),
+    ).toEqual({ ok: true });
+    expect(await rows(head.householdId)).toEqual({
+      tasks: [
+        {
+          scheduleId: null,
+          everyCount: 6,
+          everyUnit: 'weeks',
+          start: '2026-10-12',
+          timing: 'flexible',
+          onMiss: 'roll over',
+          version: 2,
+        },
+      ],
+      schedules: [],
+    });
+    const read = await taskToEdit(head, { taskId });
+    expect(read.ok && shown(read.task)).toMatchObject({
+      frequency: 'since-last-done',
+      every: { count: 6, unit: 'weeks' },
+      start: '2026-10-12',
+      onMiss: 'roll over',
+    });
+    expect(await editTask(head, { ...vacuum, frequency: 'monthly', taskId, version: 2 })).toEqual({
+      ok: true,
+    });
+    const back = await rows(head.householdId);
+    expect(back.tasks).toEqual([
+      {
+        scheduleId: back.schedules[0]?.id,
+        everyCount: null,
+        everyUnit: null,
+        start: null,
+        timing: 'floating',
+        onMiss: 'roll over',
+        version: 3,
+      },
+    ]);
+    expect(back.schedules).toEqual([
+      { id: expect.any(String) as string, rules: [{ rrule: 'FREQ=MONTHLY', start: '2026-10-12' }] },
+    ]);
+  });
+
+  it('changes the interval, and keeps the version when nothing changed', async () => {
+    const head = await founded();
+    const taskId = await added(head);
+    await editTask(head, { ...vacuum, ...counted, taskId, version: 1 });
+    expect(await editTask(head, { ...vacuum, ...counted, taskId, version: 2 })).toEqual({
+      ok: true,
+    });
+    expect((await rows(head.householdId)).tasks).toMatchObject([{ version: 2 }]);
+    expect(
+      await editTask(head, {
+        ...vacuum,
+        ...counted,
+        everyCount: 2,
+        everyUnit: 'months',
+        taskId,
+        version: 2,
+      }),
+    ).toEqual({ ok: true });
+    expect((await rows(head.householdId)).tasks).toMatchObject([
+      { everyCount: 2, everyUnit: 'months', version: 3 },
+    ]);
+  });
+
+  it('writes nothing for a form loaded before someone else’s change', async () => {
+    const head = await founded();
+    const taskId = await added(head);
+    await editTask(head, { ...vacuum, duration: 45, taskId, version: 1 });
+    const result = await editTask(head, { ...vacuum, ...counted, taskId, version: 1 });
+    expect(result).toMatchObject({ ok: false, error: 'conflict' });
+    const now = await rows(head.householdId);
+    expect(now.tasks).toMatchObject([{ everyCount: null, version: 2 }]);
+    expect(now.schedules).toHaveLength(1);
   });
 });

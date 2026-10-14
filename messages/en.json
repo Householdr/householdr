@@ -447,6 +447,194 @@
   "tasks.invalid-frequency": "Choose how often it’s done.",
   "tasks.invalid-start": "Choose a day from today up to a year from now.",
   "tasks.invalid-on-miss": "Choose what happens if it isn’t done in time.",
+  "tasks.since-last-done": "Counted from when it was last done",
+  "tasks.every": "Due again after",
+  "tasks.every-count": "How many",
+  "tasks.every-unit": "Days, weeks or months",
+  "tasks.unit-days": "days",
+  "tasks.unit-weeks": "weeks",
+  "tasks.unit-months": "months",
+  "tasks.first-due-hint": "The first time it’s due. After that, it’s counted from when it was last done.",
+  "tasks.every-days": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "About every day, counted from when it was last done",
+        "countPlural=other": "About every {count} days, counted from when it was last done"
+      }
+    }
+  ],
+  "tasks.every-weeks": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "About every week, counted from when it was last done",
+        "countPlural=other": "About every {count} weeks, counted from when it was last done"
+      }
+    }
+  ],
+  "tasks.every-months": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "About every month, counted from when it was last done",
+        "countPlural=other": "About every {count} months, counted from when it was last done"
+      }
+    }
+  ],
+  "tasks.how-due": "How due",
+  "tasks.due-today": "Due today",
+  "tasks.due-in": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Due in {count} day",
+        "countPlural=other": "Due in {count} days"
+      }
+    }
+  ],
+  "tasks.overdue": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} day overdue",
+        "countPlural=other": "{count} days overdue"
+      }
+    }
+  ],
+  "tasks.invalid-every-count": "Enter how many, a whole number from 1 up to a year: 365 days, 52 weeks or 12 months.",
+  "tasks.invalid-every-unit": "Choose days, weeks or months.",
+  "tasks.when": "When it’s done",
+  "tasks.when-week": "Any time that week",
+  "tasks.when-set": "At set times",
+  "tasks.window": "Set times",
+  "tasks.window-hint": "Around each date. For bins collected on a Wednesday morning: from the day before at 18:00 to the day itself at 07:00.",
+  "tasks.window-from-day": "Starts on",
+  "tasks.window-from-time": "From",
+  "tasks.window-to-day": "Ends on",
+  "tasks.window-to-time": "Until",
+  "tasks.day-itself": "the day itself",
+  "tasks.day-before": "the day before",
+  "tasks.day-after": "the day after",
+  "tasks.days-before": "{count} days before",
+  "tasks.days-after": "{count} days after",
+  "tasks.window-words": "From {from} at {fromTime} to {to} at {toTime}",
+  "tasks.invalid-when": "Choose whether it’s done any time that week or at set times.",
+  "tasks.invalid-window": "Choose when it starts and ends, within 3 days of its date. It must end after it starts.",
+  "tasks.advanced": "Advanced schedule",
+  "schedule.weeks": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "every {days}",
+        "countPlural=other": "every {count} weeks on {days}"
+      }
+    }
+  ],
+  "schedule.months": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "every month on day {day}",
+        "countPlural=other": "every {count} months on day {day}"
+      }
+    }
+  ],
+  "schedule.weekdays-of-month": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "every {which} {day} of the month",
+        "countPlural=other": "every {count} months on the {which} {day}"
+      }
+    }
+  ],
+  "schedule.year": "every year on {date}",
+  "schedule.first": "1st",
+  "schedule.second": "2nd",
+  "schedule.third": "3rd",
+  "schedule.fourth": "4th",
+  "schedule.last": "last",
+  "schedule.on": "on {dates}",
+  "schedule.also-on": "also on {dates}",
+  "schedule.not-on": "not on {dates}",
+  "schedule.rules": "Rules",
+  "schedule.rules-hint": "Up to 5. The task happens on every date a rule gives.",
+  "schedule.rule": "Rule {number}",
+  "schedule.kind": "Repeats",
+  "schedule.kind-weeks": "Every few weeks, on weekdays",
+  "schedule.kind-months": "Every few months, on the day of the first date",
+  "schedule.kind-weekdays-of-month": "Every few months, on a weekday of the month",
+  "schedule.kind-year": "Every year, on the day of the first date",
+  "schedule.every": "Every how many weeks or months",
+  "schedule.days": "On",
+  "schedule.which": "Which in the month",
+  "schedule.weekday": "Weekday",
+  "schedule.start": "First date",
+  "schedule.start-hint": "Every few months and every year repeat on the day of the first date.",
+  "schedule.remove-rule": "Remove rule {number}",
+  "schedule.add-rule": "Add a rule",
+  "schedule.extra-dates": "Extra dates",
+  "schedule.extra-dates-hint": "Days it happens as well, such as a collection moved by a holiday.",
+  "schedule.extra-date": "Extra date {number}",
+  "schedule.remove-extra": "Remove extra date {number}",
+  "schedule.add-extra": "Add an extra date",
+  "schedule.exception-dates": "Dates to leave out",
+  "schedule.exception-dates-hint": "Days it doesn't happen, even when a rule gives them.",
+  "schedule.exception-date": "Date to leave out {number}",
+  "schedule.remove-exception": "Remove date to leave out {number}",
+  "schedule.add-exception": "Add a date to leave out",
+  "schedule.in-words": "In words: {words}",
+  "tasks.invalid-rules": "Give up to 5 rules, each every 1 to 52 weeks or 1 to 12 months, on at least one day, with a first date from today up to a year from now. Add a rule or an extra date.",
+  "tasks.invalid-extra-dates": "Give up to 50 extra dates, each once, from today up to two years from now.",
+  "tasks.invalid-exception-dates": "Give up to 50 dates to leave out, each once, from today up to two years from now.",
+  "tasks.shared": "Same dates as another task",
+  "tasks.shared-with": "Same dates as",
+  "tasks.shared-note": "Same dates as {tasks}. New dates change theirs too.",
+  "tasks.own-dates": "Give it dates of its own instead, leaving theirs as they are",
+  "tasks.invalid-shared-with": "Choose a task on a schedule whose dates it shares.",
+  "task.who": "Who does it",
+  "task.who-hint": "Only heads see this. A change counts from the next plan.",
+  "task.minimum-age": "Minimum age, in years",
+  "task.minimum-age-hint": "Leave it empty for any age. Children below it don't get the task, unless you allow it below.",
+  "task.constraint-none": "Anyone who fits",
+  "task.constraint-bound": "Always theirs",
+  "task.constraint-excluded": "Never theirs",
+  "task.constraint-allowed": "Allowed below the minimum age",
+  "tasks.invalid-minimum-age": "Give an age from 1 to 17, or leave it empty.",
+  "tasks.invalid-constraints": "Choose who does it for each member of the household.",
+  "task.linked-to": "Whoever does it also does the next",
+  "task.linked-to-hint": "Such as bringing the bins back in after putting them out.",
+  "task.linked-to-none": "No other task",
+  "tasks.linked-to": "Same person also does",
+  "tasks.invalid-linked-to": "Choose another task of the household that isn't a one-off, or none.",
+  "areas.page-title": "Areas · {household} · Householdr",
+  "areas.title": "Areas",
+  "areas.intro": "Areas group the tasks, such as the kitchen or the garden. They don't change who does what.",
+  "areas.none": "There are no areas yet.",
+  "areas.name": "Name",
+  "areas.add": "Add an area",
+  "areas.added": "{name} is added.",
+  "areas.rename": "Rename {name}",
+  "areas.renamed": "The area is now called {name}.",
+  "areas.remove": "Remove {name}",
+  "areas.removed": "{name} is removed. Its tasks have no area now.",
+  "areas.invalid": "Give a name of 1 to 50 characters.",
+  "areas.taken": "Another area already has that name.",
+  "areas.failed": "Saving the area didn’t work",
+  "areas.back": "Back to the tasks",
+  "tasks.areas": "Areas",
+  "tasks.area": "Area",
+  "tasks.no-area": "No area",
+  "tasks.invalid-area": "Choose one of the household's areas, or none.",
   "comparisons.title": "What’s hard for you",
   "comparisons.page-title": "What’s hard for you · {household} · Householdr",
   "comparisons.why": "The app learns which tasks each of you finds hard, so plans can give each task to whoever minds it least. Nobody else sees your answers, not even the household’s heads.",
@@ -462,6 +650,19 @@
   "comparisons.back": "Back to {household}",
   "tasks.edit": "Edit",
   "tasks.removed": "The task is removed.",
+  "tasks.one-offs": "One-off tasks",
+  "tasks.one-off-done": "Done",
+  "tasks.one-off-week": "In the week of {day}",
+  "tasks.add-one-off": "Add a one-off task",
+  "tasks.add-one-off-intro": "For something that needs doing once, such as fixing a shelf. Everyone in the household can add one.",
+  "tasks.one-off-name-hint": "For example, “Fix the shelf”.",
+  "tasks.one-off-date": "When",
+  "tasks.one-off-date-hint": "It’s planned in the week of this day.",
+  "tasks.one-off-deadline": "Can wait until (optional)",
+  "tasks.one-off-deadline-hint": "Leave it empty to have it done that week. With a day, it can be planned in any week up to it.",
+  "tasks.add-one-off-submit": "Add one-off task",
+  "tasks.add-one-off-failed": "Adding the one-off task didn’t work",
+  "tasks.invalid-deadline": "Choose a day on or after its day, up to a year from now, or leave it empty.",
   "task.page-title": "Edit {task} · {household} · Householdr",
   "task.title": "Edit the task",
   "task.save": "Save the task",
@@ -479,6 +680,8 @@
   "task.keep": "Keep it",
   "task.remove-failed": "Removing the task didn’t work",
   "task.remove-conflict": "This task changed a moment ago, so it wasn’t removed. Check it as it is now, then remove it if you still want to.",
+  "task.invalid-deadline": "Keep the day it already has, or choose one on or after its day, up to a year from now.",
+  "task.remove-one-off-intro": "It goes from the household’s tasks for good, and the activity log says you removed it.",
   "availability.page-title": "Who’s away · Householdr",
   "availability.title": "Who’s away",
   "availability.intro": "Plan the days you’re away, so the chores are shared among those at home. Everyone in the household sees these dates, never a reason or a place.",
@@ -516,6 +719,8 @@
   "plan.any-day-next-week": "Any day next week",
   "plan.points-label": "Points",
   "plan.why": "Why",
+  "plan.times-label": "Set times",
+  "plan.times": "From {from} until {to}",
   "plan.nothing": "Nothing this week.",
   "plan.unassigned": "Not given to anyone",
   "plan.unassigned-intro": "If one is still not given to anyone when the plan is published, it moves on to the next week or is dropped, as its task says. Nobody’s balance is charged for it.",
@@ -534,6 +739,7 @@
   "plan.cause.bound-member-not-eligible": "The person it always goes to can’t do it then.",
   "plan.cause.linked-member-not-eligible": "Whoever had the task it goes with can’t do it then.",
   "plan.back": "Back to {household}",
+  "plan.add-one-off": "Add a one-off task for this week",
   "plan.points": [
     {
       "declarations": ["input count", "local countPlural = count: plural"],
@@ -754,6 +960,26 @@
       "match": {
         "who=you": "You removed a time the household is away.",
         "who=*": "{actor} removed a time the household is away."
+      }
+    }
+  ],
+  "activity.one-off-added": [
+    {
+      "declarations": ["input who", "input actor", "input task"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You added a one-off task: {task}",
+        "who=*": "{actor} added a one-off task: {task}"
+      }
+    }
+  ],
+  "activity.one-off-removed": [
+    {
+      "declarations": ["input who", "input actor", "input task"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You removed a one-off task: {task}",
+        "who=*": "{actor} removed a one-off task: {task}"
       }
     }
   ]

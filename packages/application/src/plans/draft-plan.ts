@@ -14,11 +14,10 @@ import {
   householdDate,
   occurrenceId,
   occurrences as occurrencesOf,
+  oneOffOccurrence,
   planWeek,
   rebalanceRates,
   weekOccurrences,
-  type Absence,
-  type AllocationMember,
   type AllocationTask,
   type PlannedOccurrence,
   type PlanTask,
@@ -28,12 +27,16 @@ import {
 } from '@householdr/domain';
 import { and, eq, gte, inArray, lt, notExists, sql } from 'drizzle-orm';
 import * as v from 'valibot';
-import { balancesOf } from '../ledger/balances';
 import { closeDue } from './closing';
+import { lastDoneOf } from '../tasks/last-done';
 import { scheduleOf } from '../tasks/stored-schedule';
-import { fairPortions } from './fair-portions';
+import { timingColumns, timingOf } from '../tasks/stored-task';
+import { rulesByTask } from '../tasks/task-rules';
+import { carriedLinks } from './carried-links';
+import { membersOf } from './allocation-members';
 import {
   awayIn,
+  awaySince,
   mayDraft,
   planningOf,
   weekInput,
@@ -104,8 +107,9 @@ export async function draftPlan(context: PlanContext, input: unknown): Promise<D
 
 /**
  * Undoes what drafting plan `planId` did, so it can be drafted again: what it marked to close isn't
- * marked any more, and its assignments are gone. What it closed already, once its week began, stays
- * closed. Those no plan holds any more go once it is drafted.
+ * marked any more, what it skipped as away is gone, to be skipped again or planned, and its
+ * assignments are gone. What it closed already, once its week began, stays closed. Those no plan
+ * holds any more go once it is drafted.
  */
 async function undoDraft(tx: Transaction, planId: string) {
   await tx
@@ -114,6 +118,9 @@ async function undoDraft(tx: Transaction, planId: string) {
     .where(
       and(eq(occurrences.closedByPlan, planId), inArray(occurrences.status, ['open', 'done'])),
     );
+  await tx
+    .delete(occurrences)
+    .where(and(eq(occurrences.closedByPlan, planId), eq(occurrences.status, 'away')));
   await tx.delete(assignments).where(eq(assignments.planId, planId));
 }
 
@@ -157,15 +164,24 @@ export async function draftWeek(tx: Transaction, draft: Draft): Promise<string |
   // What earlier weeks close by now isn't in the pool any more.
   await closeDue(tx, draft.now, calendar.timeZone);
   const away = await awayIn(tx, week);
-  const household = await tasksOf(tx);
+  const household = await tasksOf(tx, calendar.timeZone);
   const earlier = await earlierOccurrences(tx, week, calendar.timeZone);
+  // A "since last done" task keeps its one open occurrence by its due date, which the domain gives
+  // again each week until it is done, so it isn't carried over as well (ADR-0004 §8).
+  const sinceLastDone = new Set(
+    household
+      .filter(({ task }) => task.recurrence.kind === 'sinceLastDone')
+      .map(({ task }) => task.id),
+  );
   const weekResult = weekOccurrences({
     week: week.start,
     calendar,
     tasks: household.map(({ task }) => task),
-    open: earlier.open,
+    open: earlier.open.filter((o) => !sinceLastDone.has(o.task)),
     placedEarlier: earlier.placed,
-    away,
+    // Days away since a "since last done" clock started don't count towards it (§8): those periods
+    // too, which end before the week and change nothing else about it.
+    away: await awaySince(tx, clocksFrom(household) ?? week.start, week),
     today,
   });
   if (!weekResult.planned) {
@@ -175,6 +191,7 @@ export async function draftWeek(tx: Transaction, draft: Draft): Promise<string |
   }
   // Shares and availability count over the days at home still to come (ADR-0005 §5, ADR-0007 §3).
   const people = await membersOf(tx, planning, week, [...away, ...goneDays(week, today)]);
+  const rules = await rulesByTask(tx);
   const allocation = allocate({
     week: week.start,
     calendar,
@@ -186,11 +203,23 @@ export async function draftWeek(tx: Transaction, draft: Draft): Promise<string |
       id: task.id,
       duration: task.duration,
       burden: new Map(people.map((member) => [member.id, 1])),
-      constraints: new Map(),
+      // Who it is for: old enough, and as heads bound, excluded or allowed (ADR-0001 §3).
+      ...(rules.get(task.id) ?? { constraints: new Map() }),
     })),
     occurrences: weekResult.occurrences,
     preAssigned: new Map(),
-    carried: new Map(),
+    // A link from an occurrence assigned last week goes to the same member (ADR-0001 §7).
+    carried: await carriedLinks(
+      tx,
+      week.start,
+      calendar.timeZone,
+      new Map(
+        [...rules].flatMap(([id, { linkedTo }]) =>
+          linkedTo === undefined ? [] : [[id, linkedTo] as const],
+        ),
+      ),
+      weekResult.occurrences,
+    ),
   });
 
   const planId = await storePlan(tx, draft);
@@ -238,9 +267,8 @@ export async function draftWeek(tx: Transaction, draft: Draft): Promise<string |
   // What the week doesn't carry over closes as missed when it begins, if nobody did it by then
   // (ADR-0002 §2, clarifications): now, for a week begun already. Only an occurrence whose whole
   // window falls while the household is away is skipped (ADR-0005 §5): a flexible window is its
-  // whole week, which then has no plan, and a floating one is never skipped. Fixed windows bring
-  // the first.
-  if (weekResult.skipped.length > 0) throw new Error('Skipped occurrences are not stored yet.');
+  // whole week, which then has no plan, and a floating one is never skipped, so a fixed one.
+  await storeSkipped(tx, draft, planId, weekResult.skipped, tasksById);
   const missed = weekResult.missed.map(rowOf);
   if (missed.length > 0) {
     await tx
@@ -310,6 +338,48 @@ async function storeOccurrences(
   );
 }
 
+/**
+ * Stores the occurrences `skipped` by their ids, `task@date`, as away: closed by plan `planId`,
+ * with their own windows, so no later week carries them (ADR-0005 §5). Only a fixed task's are.
+ */
+async function storeSkipped(
+  tx: Transaction,
+  { householdId, planning }: Draft,
+  planId: string,
+  skipped: readonly string[],
+  tasksById: ReadonlyMap<string, HouseholdTask>,
+) {
+  if (skipped.length === 0) return;
+  const rows = skipped.map((id) => {
+    const at = id.lastIndexOf('@');
+    const taskId = id.slice(0, at);
+    const date = Temporal.PlainDate.from(id.slice(at + 1));
+    const recurrence = tasksById.get(taskId)?.task.recurrence;
+    if (recurrence?.kind !== 'schedule' || recurrence.timing.kind !== 'fixed') {
+      throw new Error(`Only a fixed task's occurrence is skipped, not ${id}.`);
+    }
+    const [own] = occurrencesOf(
+      recurrence.schedule,
+      recurrence.timing,
+      date,
+      date,
+      planning.calendar,
+    );
+    if (!own) throw new Error(`Task ${taskId} has no occurrence on ${date.toString()}.`);
+    return {
+      householdId,
+      taskId,
+      date: date.toString(),
+      windowStart: new Date(own.window.start.epochMilliseconds),
+      windowEnd: new Date(own.window.end.epochMilliseconds),
+      status: 'away' as const,
+      closedByPlan: planId,
+    };
+  });
+  // One a closed plan holds already, done ahead, say, stays as it is.
+  await tx.insert(occurrences).values(rows).onConflictDoNothing();
+}
+
 /** Removes the open occurrences no plan holds: those only a replaced draft had. */
 async function removeUnplanned(tx: Transaction) {
   await tx
@@ -327,44 +397,97 @@ async function removeUnplanned(tx: Transaction) {
     );
 }
 
-/** A task as planning sees it, with its schedule. */
+/** A task as planning sees it, with its schedule if it has one. */
 interface HouseholdTask {
   task: PlanTask;
-  schedule: Schedule;
+  schedule?: Schedule;
 }
 
-/** The household's tasks, each on its schedule, with its timing and on-miss policy (ADR-0004). */
-async function tasksOf(tx: Transaction): Promise<HouseholdTask[]> {
+/**
+ * The household's tasks, each with its timing and on-miss policy (ADR-0004): on its schedule;
+ * "since last done", with the day in `timeZone` it was last done on, if ever (§8); or one-off, on
+ * its date and up to its deadline, if it has one (§4).
+ */
+async function tasksOf(tx: Transaction, timeZone: string): Promise<HouseholdTask[]> {
   const rows = await tx
     .select({
       id: tasks.id,
       duration: tasks.duration,
-      timing: tasks.timing,
+      ...timingColumns,
       onMiss: tasks.onMiss,
+      everyCount: tasks.everyCount,
+      everyUnit: tasks.everyUnit,
+      start: tasks.start,
+      once: tasks.once,
+      deadline: tasks.deadline,
       rules: schedules.rules,
       extraDates: schedules.extraDates,
       exceptionDates: schedules.exceptionDates,
     })
     .from(tasks)
-    .innerJoin(schedules, eq(schedules.id, tasks.scheduleId));
-  return rows.map(({ id, duration, timing, onMiss, ...stored }) => {
-    const schedule = scheduleOf(stored);
+    .leftJoin(schedules, eq(schedules.id, tasks.scheduleId))
+    // A removed task is never planned again (ADR-0001 §1, clarification).
+    .where(eq(tasks.removed, false));
+  const lastDone = await lastDoneOf(tx, timeZone);
+  return rows.map(({ id, duration, onMiss, everyCount, everyUnit, start, ...stored }) => {
+    const { once, deadline, rules, extraDates, exceptionDates } = stored;
+    if (once !== null) {
+      const recurrence = {
+        kind: 'oneOff' as const,
+        date: Temporal.PlainDate.from(once),
+        ...(deadline !== null && { deadline: Temporal.PlainDate.from(deadline) }),
+      };
+      return { task: { id, duration, onMiss, recurrence } };
+    }
+    if (rules && extraDates && exceptionDates) {
+      const schedule = scheduleOf({ rules, extraDates, exceptionDates });
+      return {
+        task: {
+          id,
+          duration,
+          onMiss,
+          recurrence: { kind: 'schedule', schedule, timing: timingOf(id, stored) },
+        },
+        schedule,
+      };
+    }
+    if (everyCount === null || everyUnit === null || start === null) {
+      throw new Error(`Task ${id} has neither a schedule nor an interval.`);
+    }
+    const done = lastDone.get(id);
     return {
       task: {
         id,
         duration,
         onMiss,
-        recurrence: { kind: 'schedule', schedule, timing: { kind: timing } },
+        recurrence: {
+          kind: 'sinceLastDone',
+          every: { count: everyCount, unit: everyUnit },
+          start: Temporal.PlainDate.from(start),
+          ...(done && { lastDone: done }),
+        },
       },
-      schedule,
     };
   });
 }
 
+/** The earliest day a "since last done" clock counts from: a last completion or a start. */
+function clocksFrom(household: readonly HouseholdTask[]) {
+  let earliest: Temporal.PlainDate | undefined;
+  for (const { task } of household) {
+    const r = task.recurrence;
+    if (r.kind !== 'sinceLastDone') continue;
+    const from = r.lastDone ?? r.start;
+    if (!earliest || Temporal.PlainDate.compare(from, earliest) < 0) earliest = from;
+  }
+  return earliest;
+}
+
 /**
  * The occurrences of earlier plan weeks that matter to this one: those still open, which go back
- * into its pool with their own windows (ADR-0002 §2), and the floating ones placed already, by id
- * (ADR-0004 §4). Those placed more than a year ago no longer float into it.
+ * into its pool with their own windows (ADR-0002 §2), unless their task was removed (ADR-0001 §1,
+ * clarification), and the floating ones placed already, by id (ADR-0004 §4). Those placed more than
+ * a year ago no longer float into it.
  */
 async function earlierOccurrences(tx: Transaction, week: PlanWeek, timeZone: string) {
   const inEarlierPlans = inArray(
@@ -384,7 +507,8 @@ async function earlierOccurrences(tx: Transaction, week: PlanWeek, timeZone: str
       windowEnd: occurrences.windowEnd,
     })
     .from(occurrences)
-    .where(and(eq(occurrences.status, 'open'), inEarlierPlans));
+    .innerJoin(tasks, eq(tasks.id, occurrences.taskId))
+    .where(and(eq(occurrences.status, 'open'), eq(tasks.removed, false), inEarlierPlans));
   const placed = await tx
     .select({ taskId: occurrences.taskId, date: occurrences.date })
     .from(occurrences)
@@ -409,49 +533,24 @@ async function earlierOccurrences(tx: Transaction, week: PlanWeek, timeZone: str
 }
 
 /**
- * The members as the allocator sees them (ADR-0001 §6–§7): their fair portion of the week, over
- * the days the household is at home (ADR-0005 §5); a child's birth date; their balance, which the
- * plan catches up on (ADR-0002 §3), as settled up to the week before last; and the tasks they had in
- * last week's plan.
- */
-async function membersOf(
-  tx: Transaction,
-  planning: Planning,
-  week: PlanWeek,
-  away: readonly Absence[],
-): Promise<AllocationMember[]> {
-  const portions = await fairPortions(tx, planning.calendar, week, away);
-  // Up to the week before last: the week before this one is underway as it is drafted, and its work
-  // counts from the draft after (ADR-0002 §3, clarification).
-  const lastWeekStart = planWeek(week.start.subtract({ days: 1 }), planning.calendar).start;
-  const balances = await balancesOf(tx, { before: lastWeekStart });
-  const lastWeek = await tx
-    .select({ memberId: assignments.memberId, taskId: occurrences.taskId })
-    .from(assignments)
-    .innerJoin(plans, eq(plans.id, assignments.planId))
-    .innerJoin(occurrences, eq(occurrences.id, assignments.occurrenceId))
-    .where(eq(plans.weekEnd, week.start.toString()));
-  return portions.map(({ id, birthDate, availability, fairFraction }) => ({
-    id,
-    fairFraction,
-    availability,
-    ...(birthDate === undefined ? {} : { birthDate }),
-    balance: balances.get(id) ?? 0,
-    load: 0,
-    lastWeek: new Set(lastWeek.filter((a) => a.memberId === id).map((a) => a.taskId)),
-  }));
-}
-
-/**
  * A new occurrence's own window, as `occurrences` gives it: for a floating one, the weeks it may
- * float over, not the part of them in this week (ADR-0004 §4). Any other is due this week, with
- * its own window.
+ * float over, not the part of them in this week; for a one-off, its week or up to its deadline
+ * (ADR-0004 §4). Any other is due this week, with its own window.
  */
 function ownWindow(o: PlannedOccurrence, task: HouseholdTask | undefined, planning: Planning) {
   if (!task) throw new Error(`No task ${o.task}.`);
   const { recurrence } = task.task;
+  if (recurrence.kind === 'oneOff') {
+    return oneOffOccurrence(recurrence.date, recurrence.deadline, planning.calendar).window;
+  }
   if (recurrence.kind !== 'schedule' || recurrence.timing.kind !== 'floating') return o.window;
-  const [own] = occurrencesOf(task.schedule, recurrence.timing, o.date, o.date, planning.calendar);
+  const [own] = occurrencesOf(
+    recurrence.schedule,
+    recurrence.timing,
+    o.date,
+    o.date,
+    planning.calendar,
+  );
   if (!own) throw new Error(`Task ${o.task} has no occurrence on ${o.date.toString()}.`);
   return own.window;
 }

@@ -113,6 +113,63 @@ export async function plannedHousehold(
       if (!result.ok) throw new Error(`Not added: ${result.error}`);
       return result.taskId;
     },
+    /**
+     * Adds a "since last done" task, due `every` so long after it was last done, and from `start`
+     * while it never was (ADR-0004 §8), and returns its id.
+     */
+    sinceLastDone: (
+      name: string,
+      duration: number,
+      every: { count: number; unit: 'days' | 'weeks' | 'months' },
+      start: string,
+    ) =>
+      inIt(async (tx) => {
+        const [row] = await tx
+          .insert(tasks)
+          .values({
+            householdId,
+            name,
+            duration,
+            everyCount: every.count,
+            everyUnit: every.unit,
+            start,
+            timing: 'flexible',
+            onMiss: 'roll over',
+          })
+          .returning({ id: tasks.id });
+        if (!row) throw new Error('No task');
+        return row.id;
+      }),
+    /**
+     * Adds a one-off task on `date`, flexible within its week or up to `deadline` (ADR-0004 §4), as
+     * Alex added it, and returns its id.
+     */
+    oneOff: (
+      name: string,
+      duration: number,
+      date: string,
+      {
+        deadline,
+        onMiss = 'roll over',
+      }: { deadline?: string; onMiss?: 'roll over' | 'lapse' } = {},
+    ) =>
+      inIt(async (tx) => {
+        const [row] = await tx
+          .insert(tasks)
+          .values({
+            householdId,
+            name,
+            duration,
+            once: date,
+            deadline,
+            addedBy: adult.member.id,
+            timing: 'flexible',
+            onMiss,
+          })
+          .returning({ id: tasks.id });
+        if (!row) throw new Error('No task');
+        return row.id;
+      }),
     /** Plans an absence for a member, both days included. */
     absent: (memberId: string, firstDay: string, lastDay: string) =>
       inIt((tx) => tx.insert(absences).values({ householdId, memberId, firstDay, lastDay })),
@@ -164,6 +221,7 @@ export async function plannedHousehold(
             date: occurrences.date,
             status: occurrences.status,
             closedByPlan: occurrences.closedByPlan,
+            windowEnd: occurrences.windowEnd,
           })
           .from(occurrences)
           .innerJoin(tasks, eq(tasks.id, occurrences.taskId))

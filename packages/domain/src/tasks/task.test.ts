@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { changedStartRange, isStartDay, isTaskDuration, startRange } from './task';
+import {
+  changedStartRange,
+  isFixedWindow,
+  isOneOffDeadline,
+  isStartDay,
+  isTaskDuration,
+  isTaskInterval,
+  startRange,
+} from './task';
 
-// What a new or changed task may be (ADR-0001 §5, ADR-0004 §3), from examples (TEST-1).
+// What a new or changed task may be (ADR-0001 §5, ADR-0004 §3–§4), from examples (TEST-1).
 
 const date = (iso: string) => Temporal.PlainDate.from(iso);
 
@@ -10,6 +18,31 @@ describe('isTaskDuration (ADR-0001 §5)', () => {
     for (const minutes of [1, 5, 30, 90, 1440]) expect(isTaskDuration(minutes)).toBe(true);
     for (const minutes of [0, -5, 1441, 2.5, 0.5, Number.NaN, Number.POSITIVE_INFINITY]) {
       expect(isTaskDuration(minutes)).toBe(false);
+    }
+  });
+});
+
+describe('isTaskInterval (ADR-0004 §8)', () => {
+  it('takes whole numbers from 1 up to a year in each unit', () => {
+    for (const every of [
+      { count: 1, unit: 'days' },
+      { count: 365, unit: 'days' },
+      { count: 6, unit: 'weeks' },
+      { count: 52, unit: 'weeks' },
+      { count: 12, unit: 'months' },
+    ] as const) {
+      expect(isTaskInterval(every)).toBe(true);
+    }
+    for (const every of [
+      { count: 0, unit: 'days' },
+      { count: 366, unit: 'days' },
+      { count: 53, unit: 'weeks' },
+      { count: 13, unit: 'months' },
+      { count: 1.5, unit: 'weeks' },
+      { count: -1, unit: 'months' },
+      { count: Number.NaN, unit: 'days' },
+    ] as const) {
+      expect(isTaskInterval(every)).toBe(false);
     }
   });
 });
@@ -48,6 +81,30 @@ describe('isStartDay (ADR-0004 §3)', () => {
   });
 });
 
+describe('isOneOffDeadline (ADR-0004 §4)', () => {
+  const today = date('2026-10-08');
+
+  it('takes a day from the one-off’s date up to a year from today', () => {
+    const shelf = date('2026-10-14');
+    for (const day of ['2026-10-14', '2026-10-30', '2027-10-08']) {
+      expect(isOneOffDeadline(date(day), shelf, today)).toBe(true);
+    }
+    for (const day of ['2026-10-13', '2026-10-08', '2027-10-09']) {
+      expect(isOneOffDeadline(date(day), shelf, today)).toBe(false);
+    }
+  });
+
+  it('keeps the deadline of a changed one-off, but moves none to another past day', () => {
+    const passed = date('2026-10-01');
+    const kept = date('2026-10-05');
+    expect(isOneOffDeadline(kept, passed, today, kept)).toBe(true);
+    for (const day of ['2026-10-04', '2026-10-06', '2026-10-07']) {
+      expect(isOneOffDeadline(date(day), passed, today, kept)).toBe(false);
+    }
+    expect(isOneOffDeadline(today, passed, today, kept)).toBe(true);
+  });
+});
+
 describe('changedStartRange (ADR-0004 §3)', () => {
   const today = date('2026-10-08');
   const range = (kept: string) => {
@@ -66,5 +123,28 @@ describe('changedStartRange (ADR-0004 §3)', () => {
 
   it('reaches a first time past a year from today, as a later time zone can leave it', () => {
     expect(range('2027-10-09')).toEqual(['2026-10-08', '2027-10-09']);
+  });
+});
+
+describe('isFixedWindow (ADR-0004 §4, clarification)', () => {
+  const edge = (dayOffset: number, time: string) => ({
+    dayOffset,
+    time: Temporal.PlainTime.from(time),
+  });
+
+  it('takes a window that ends after it starts, its edges within 3 days of the date', () => {
+    // The bins: out the evening before, in the evening after collection.
+    expect(isFixedWindow(edge(-1, '18:00'), edge(0, '07:00'))).toBe(true);
+    expect(isFixedWindow(edge(0, '12:00'), edge(0, '22:00'))).toBe(true);
+    expect(isFixedWindow(edge(-3, '00:00'), edge(3, '23:59'))).toBe(true);
+    for (const [from, to] of [
+      [edge(0, '07:00'), edge(0, '07:00')],
+      [edge(0, '08:00'), edge(0, '07:00')],
+      [edge(-4, '18:00'), edge(0, '07:00')],
+      [edge(0, '18:00'), edge(4, '07:00')],
+      [edge(0.5, '18:00'), edge(1, '07:00')],
+    ] as const) {
+      expect(isFixedWindow(from, to)).toBe(false);
+    }
   });
 });

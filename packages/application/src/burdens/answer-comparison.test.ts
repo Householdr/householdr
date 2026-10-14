@@ -4,9 +4,11 @@ import {
   inHousehold,
   members,
   passkeys,
+  tasks,
   type Database,
 } from '@householdr/db';
 import { testDatabase } from '@householdr/db/testing';
+import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createHousehold } from '../households/create-household';
 import { membership } from '../households/membership';
@@ -200,6 +202,19 @@ describe('answerComparison (ADR-0003 §3a)', () => {
     ]) {
       expect(await answerComparison(head, input)).toEqual({ ok: false, error: 'invalid' });
     }
+    expect(await answersIn(head.householdId)).toEqual([]);
+  });
+
+  it('refuses a removed task, which is no longer compared (ADR-0001 §1, clarification)', async () => {
+    const head = await founded();
+    const { dishes, ironing } = head;
+    await inHousehold(db, head.householdId, (tx) =>
+      tx.update(tasks).set({ removed: true }).where(eq(tasks.id, ironing)),
+    );
+    expect(await answerComparison(head, { tasks: [dishes, ironing], harder: ironing })).toEqual({
+      ok: false,
+      error: 'invalid',
+    });
     expect(await answersIn(head.householdId)).toEqual([]);
   });
 

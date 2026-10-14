@@ -1,3 +1,4 @@
+import type { Page } from '@playwright/test';
 import { expect, expectAccessible, forceFlags, signIn, test } from './fixtures';
 
 // A household's tasks: every member sees them, and heads add custom tasks on a simple frequency
@@ -5,6 +6,9 @@ import { expect, expectAccessible, forceFlags, signIn, test } from './fixtures';
 
 const rollOver = { name: 'It moves on to the next week' };
 const lapse = { name: 'It’s dropped: the moment has passed' };
+
+/** The form that adds a task, apart from the one for one-off tasks beside it (ADR-0006 §3). */
+const adding = (page: Page) => page.getByRole('region', { name: 'Add a task' });
 
 test.beforeEach(async ({ context, baseURL }) => {
   await forceFlags(context, baseURL, { 'sign-in': true, onboarding: true, tasks: true });
@@ -28,16 +32,16 @@ for (const javaScriptEnabled of [true, false]) {
       await expect(page.getByRole('heading', { level: 1 })).toHaveText('Tasks');
       await expect(page.getByText('There are no tasks yet.')).toBeVisible();
       // It starts today, in the household's time zone, unless the head picks another day.
-      await expect(page.getByLabel('First time')).toHaveValue(/^\d{4}-\d{2}-\d{2}$/);
-      await expect(page.getByLabel('How often')).toHaveValue('weekly');
+      await expect(adding(page).getByLabel('First time')).toHaveValue(/^\d{4}-\d{2}-\d{2}$/);
+      await expect(adding(page).getByLabel('How often')).toHaveValue('weekly');
       // The choice starts on rolling over (ADR-0002 §2, clarification).
-      const onMiss = page.getByRole('group', { name: 'If it isn’t done in time' });
+      const onMiss = adding(page).getByRole('group', { name: 'If it isn’t done in time' });
       await expect(onMiss.getByRole('radio', rollOver)).toBeChecked();
       if (javaScriptEnabled) await expectAccessible(page);
 
-      await page.getByLabel('What needs doing').fill('Put the bins out');
-      await page.getByLabel('How long it takes, in minutes').fill('5');
-      await page.getByLabel('How often').selectOption({ label: 'Every two weeks' });
+      await adding(page).getByLabel('What needs doing').fill('Put the bins out');
+      await adding(page).getByLabel('How long it takes, in minutes').fill('5');
+      await adding(page).getByLabel('How often').selectOption({ label: 'Every two weeks' });
       await onMiss.getByRole('radio', lapse).check();
       await page.getByRole('button', { name: 'Add task' }).click();
 
@@ -45,8 +49,8 @@ for (const javaScriptEnabled of [true, false]) {
       await expect(page.getByRole('list', { name: 'Tasks' }).getByRole('listitem')).toHaveText([
         /^\s*Put the bins out\s*How often\s*Every two weeks\s*How long\s*5 minutes\s*If not done\s*It’s dropped: the moment has passed\s*Edit\s*$/,
       ]);
-      await expect(page.getByLabel('What needs doing')).toHaveValue('');
-      await expect(page.getByLabel('How often')).toHaveValue('weekly');
+      await expect(adding(page).getByLabel('What needs doing')).toHaveValue('');
+      await expect(adding(page).getByLabel('How often')).toHaveValue('weekly');
       await expect(onMiss.getByRole('radio', rollOver)).toBeChecked();
       if (javaScriptEnabled) await expectAccessible(page, 'task added');
 
@@ -64,10 +68,10 @@ for (const javaScriptEnabled of [true, false]) {
       await signIn(page, account, `/households/${id}`);
       await page.goto(`/households/${id}/tasks`);
       // Spaces get past the browser's check, not the server's (CODE-12).
-      await page.getByLabel('What needs doing').fill('   ');
-      await page.getByLabel('How long it takes, in minutes').fill('45');
-      await page.getByLabel('How often').selectOption({ label: 'Every month' });
-      await page.getByRole('radio', lapse).check();
+      await adding(page).getByLabel('What needs doing').fill('   ');
+      await adding(page).getByLabel('How long it takes, in minutes').fill('45');
+      await adding(page).getByLabel('How often').selectOption({ label: 'Every month' });
+      await adding(page).getByRole('radio', lapse).check();
       await page.getByRole('button', { name: 'Add task' }).click();
 
       const summary = page.getByRole('region', { name: 'Adding the task didn’t work' });
@@ -75,15 +79,15 @@ for (const javaScriptEnabled of [true, false]) {
       await expect(summary.getByRole('link')).toHaveText([
         'Enter what needs doing, up to 100 characters.',
       ]);
-      const name = page.getByLabel('What needs doing');
+      const name = adding(page).getByLabel('What needs doing');
       await expect(name).toHaveAttribute('aria-invalid', 'true');
       await expect(name).toHaveAccessibleDescription(
         'For example, “Vacuum the living room”. Enter what needs doing, up to 100 characters.',
       );
       await expect(name).toHaveValue('   ');
-      await expect(page.getByLabel('How long it takes, in minutes')).toHaveValue('45');
-      await expect(page.getByLabel('How often')).toHaveValue('monthly');
-      await expect(page.getByRole('radio', lapse)).toBeChecked();
+      await expect(adding(page).getByLabel('How long it takes, in minutes')).toHaveValue('45');
+      await expect(adding(page).getByLabel('How often')).toHaveValue('monthly');
+      await expect(adding(page).getByRole('radio', lapse)).toBeChecked();
       await expect(page.getByText('There are no tasks yet.')).toBeVisible();
       if (javaScriptEnabled) await expectAccessible(page, 'name refused');
 
@@ -93,6 +97,84 @@ for (const javaScriptEnabled of [true, false]) {
     });
   });
 }
+
+test('a head adds a task counted from when it was last done, which shows how due it is (ADR-0004 §8)', async ({
+  page,
+  accounts,
+  account,
+}) => {
+  await accounts.addSecondFactor(account.email);
+  const id = await accounts.addHousehold(account.email, 'Ash Lane');
+  await signIn(page, account, `/households/${id}`);
+  await page.goto(`/households/${id}/tasks`);
+  const onMiss = adding(page).getByRole('group', { name: 'If it isn’t done in time' });
+  const every = adding(page).getByRole('group', { name: 'Due again after' });
+  // On a frequency, only what happens if it isn't done applies; counted, only the interval.
+  await expect(onMiss).toBeVisible();
+  await expect(every).toBeHidden();
+  await adding(page).getByLabel('What needs doing').fill('Clean the oven');
+  await adding(page).getByLabel('How long it takes, in minutes').fill('40');
+  await adding(page)
+    .getByLabel('How often')
+    .selectOption({ label: 'Counted from when it was last done' });
+  await expect(onMiss).toBeHidden();
+  await expect(every).toBeVisible();
+  await expect(adding(page).getByLabel('First time')).toHaveAccessibleDescription(
+    'The first time it’s due. After that, it’s counted from when it was last done.',
+  );
+  await every.getByLabel('How many').fill('6');
+  await every.getByLabel('Days, weeks or months').selectOption({ label: 'weeks' });
+  await expectAccessible(page, 'counted from when it was last done');
+  await page.getByRole('button', { name: 'Add task' }).click();
+
+  await expect(page.getByRole('status')).toHaveText('Clean the oven is added.');
+  const listed = page.getByRole('list', { name: 'Tasks' }).getByRole('listitem');
+  await expect(listed).toHaveText([
+    /^\s*Clean the oven\s*How often\s*About every 6 weeks, counted from when it was last done\s*How due\s*Due today\s*How long\s*40 minutes\s*If not done\s*It moves on to the next week\s*Edit\s*$/,
+  ]);
+  // Never done and due from today: the bar is full, and says so in words too (UI-9).
+  await expect(listed.getByRole('meter', { name: 'How due' })).toHaveAttribute('value', '1');
+  // The form starts over on a frequency.
+  await expect(adding(page).getByLabel('How often')).toHaveValue('weekly');
+  await expect(onMiss).toBeVisible();
+  await expect(every).toBeHidden();
+  await expectAccessible(page, 'counted task added');
+});
+
+test('a head adds a task at set times, which the list shows in words (ADR-0004 §4)', async ({
+  page,
+  accounts,
+  account,
+}) => {
+  await accounts.addSecondFactor(account.email);
+  const id = await accounts.addHousehold(account.email, 'Ash Lane');
+  await signIn(page, account, `/households/${id}`);
+  await page.goto(`/households/${id}/tasks`);
+  const form = adding(page);
+  const times = form.getByRole('group', { name: 'Set times' });
+  // Any time that week, until set times are chosen.
+  await expect(form.getByRole('radio', { name: 'Any time that week' })).toBeChecked();
+  await expect(times).toBeHidden();
+  await form.getByLabel('What needs doing').fill('Put the bins out');
+  await form.getByLabel('How long it takes, in minutes').fill('5');
+  await form.getByRole('radio', { name: 'At set times' }).check();
+  await expect(times).toBeVisible();
+  await expect(times.getByLabel('Starts on')).toHaveValue('0');
+  await times.getByLabel('Starts on').selectOption({ label: 'the day before' });
+  await times.getByLabel('From').fill('18:00');
+  await times.getByLabel('Ends on').selectOption({ label: 'the day itself' });
+  await times.getByLabel('Until').fill('07:00');
+  await expectAccessible(page, 'set times');
+  await page.getByRole('button', { name: 'Add task' }).click();
+
+  await expect(form.getByRole('status')).toHaveText('Put the bins out is added.');
+  await expect(page.getByRole('list', { name: 'Tasks' }).getByRole('listitem')).toContainText(
+    'Set times From the day before at 18:00 to the day itself at 07:00',
+  );
+  // The form starts over, on any time that week.
+  await expect(form.getByRole('radio', { name: 'Any time that week' })).toBeChecked();
+  await expect(times).toBeHidden();
+});
 
 test('names every field the server refuses, in the form’s order', async ({
   page,
@@ -104,16 +186,20 @@ test('names every field the server refuses, in the form’s order', async ({
   await signIn(page, account, `/households/${id}`);
   await page.goto(`/households/${id}/tasks`);
   // The browser's own checks come first (UI-2); the server's are what a browser without them sees.
-  await page.locator('form').evaluate((form: HTMLFormElement) => {
-    form.noValidate = true;
-  });
-  await page.getByLabel('What needs doing').fill('Water the plants');
-  await page.getByLabel('How long it takes, in minutes').fill('0');
-  await page.getByLabel('First time').fill('2000-01-01');
+  await adding(page)
+    .locator('form')
+    .evaluate((form: HTMLFormElement) => {
+      form.noValidate = true;
+    });
+  await adding(page).getByLabel('What needs doing').fill('Water the plants');
+  await adding(page).getByLabel('How long it takes, in minutes').fill('0');
+  await adding(page).getByLabel('First time').fill('2000-01-01');
   // Neither choice, as only a page without the browser's checks could send.
-  await page.getByRole('radio', rollOver).evaluate((radio: HTMLInputElement) => {
-    radio.checked = false;
-  });
+  await adding(page)
+    .getByRole('radio', rollOver)
+    .evaluate((radio: HTMLInputElement) => {
+      radio.checked = false;
+    });
   await page.getByRole('button', { name: 'Add task' }).click();
 
   const summary = page.getByRole('region', { name: 'Adding the task didn’t work' });
@@ -124,19 +210,19 @@ test('names every field the server refuses, in the form’s order', async ({
     'Choose what happens if it isn’t done in time.',
   ]);
   await expect(
-    page.getByRole('group', { name: 'If it isn’t done in time' }),
+    adding(page).getByRole('group', { name: 'If it isn’t done in time' }),
   ).toHaveAccessibleDescription('Choose what happens if it isn’t done in time.');
-  await expect(page.getByLabel('How long it takes, in minutes')).toHaveAccessibleDescription(
-    'Enter the minutes it takes, a whole number from 1 to 1440.',
-  );
-  await expect(page.getByLabel('First time')).toHaveValue('2000-01-01');
-  await expect(page.getByLabel('What needs doing')).not.toHaveAttribute('aria-invalid');
-  await expect(page.getByLabel('What needs doing')).toHaveValue('Water the plants');
+  await expect(
+    adding(page).getByLabel('How long it takes, in minutes'),
+  ).toHaveAccessibleDescription('Enter the minutes it takes, a whole number from 1 to 1440.');
+  await expect(adding(page).getByLabel('First time')).toHaveValue('2000-01-01');
+  await expect(adding(page).getByLabel('What needs doing')).not.toHaveAttribute('aria-invalid');
+  await expect(adding(page).getByLabel('What needs doing')).toHaveValue('Water the plants');
   await expectAccessible(page, 'fields refused');
 
   // The last problem leads to the first choice.
   await summary.getByRole('link').last().click();
-  await expect(page.getByRole('radio', rollOver)).toBeFocused();
+  await expect(adding(page).getByRole('radio', rollOver)).toBeFocused();
 });
 
 test('adding tasks waits for a second factor (ADR-0010 §3)', async ({

@@ -1,6 +1,8 @@
-import { addTask, listTasks } from '@householdr/application';
+import { addOneOff, addTask, listTasks } from '@householdr/application';
 import { error, fail } from '@sveltejs/kit';
 import { authContext } from '#lib/server/auth.js';
+import { changedSchedule, scheduleData, scheduleFields, sentSchedule } from '#lib/task-schedule.js';
+import { windowData, windowInput } from '#lib/task-window.js';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
@@ -15,8 +17,8 @@ async function householdContext(locals: App.Locals) {
 }
 
 /**
- * The household's tasks, and what the member opening them may do there; whether a task was just
- * removed, as its page says when it leads back here.
+ * The household's tasks and one-off tasks, and what the member opening them may do there; whether
+ * a task was just removed, as its page says when it leads back here.
  */
 export const load = (async ({ locals, url }) => {
   const context = await householdContext(locals);
@@ -25,9 +27,24 @@ export const load = (async ({ locals, url }) => {
   const { earliest, latest } = result.starts;
   return {
     household: result.household,
-    tasks: result.tasks,
+    // A window's times as `HH:MM`; an advanced schedule's days as `YYYY-MM-DD`.
+    tasks: result.tasks.map(({ window, schedule, ...task }) => ({
+      ...task,
+      window: window && windowData(window),
+      schedule: schedule && scheduleData(schedule),
+    })),
+    // Days as `YYYY-MM-DD`.
+    oneOffs: result.oneOffs.map(({ date, deadline, ...oneOff }) => ({
+      ...oneOff,
+      date: date.toString(),
+      deadline: deadline?.toString(),
+    })),
+    mayAddOneOffs: result.mayAddOneOffs,
     mayChangeTasks: result.mayChangeTasks,
     starts: { earliest: earliest.toString(), latest: latest.toString() },
+    dates: { earliest: result.dates.earliest.toString(), latest: result.dates.latest.toString() },
+    shareable: result.shareable,
+    areas: result.areas,
     removed: url.searchParams.get('task') === 'removed',
   };
 }) satisfies PageServerLoad;
@@ -39,7 +56,9 @@ const text = (form: FormData, field: string) => {
 };
 
 export const actions = {
-  // Adds a custom task on a simple frequency (ADR-0004 §3, ADR-0007 §2).
+  // Adds a custom task, on a simple frequency, an advanced schedule or counted from when it was
+  // last done (ADR-0004 §3, §8, ADR-0007 §2). A button of the advanced editor adds or removes one
+  // of its rows instead, and the form shows again with it (CODE-10).
   add: async ({ locals, request }) => {
     const context = await householdContext(locals);
     const form = await request.formData();
@@ -47,18 +66,63 @@ export const actions = {
       name: text(form, 'name'),
       duration: text(form, 'duration'),
       frequency: text(form, 'frequency'),
+      everyCount: text(form, 'everyCount'),
+      everyUnit: text(form, 'everyUnit'),
       start: text(form, 'start'),
       onMiss: text(form, 'onMiss'),
+      when: text(form, 'when'),
+      fromDay: text(form, 'fromDay'),
+      fromTime: text(form, 'fromTime'),
+      toDay: text(form, 'toDay'),
+      toTime: text(form, 'toTime'),
+      areaId: text(form, 'areaId'),
+      sharedWith: text(form, 'sharedWith'),
+      ownDates: text(form, 'ownDates'),
+      ...sentSchedule(form),
     };
+    const changed = changedSchedule(values, text(form, 'change'));
+    if (changed) return { values: { ...values, ...changed } };
     const result = await addTask(context, {
       ...values,
       duration: Number(values.duration),
+      // Only the fields that were sent: a form without scripts sends both kinds (ADR-0004 §8).
+      everyCount: values.everyCount ? Number(values.everyCount) : undefined,
+      everyUnit: values.everyUnit || undefined,
+      onMiss: values.onMiss || undefined,
       // Without a day, it starts today.
       start: values.start || undefined,
+      ...windowInput(values),
+      ...scheduleFields(values),
+      areaId: values.areaId || undefined,
+      // Only when sharing: a form without scripts sends its first choice with any other.
+      sharedWith: values.frequency === 'shared' ? values.sharedWith || undefined : undefined,
+      ownDates: values.ownDates === 'on',
     });
     if (result.ok) return { added: result.name };
     if (result.error === 'not-allowed') error(403);
     // What was typed stays in the form (UI-10).
     return fail(400, { invalid: result.fields, values });
+  },
+  // Adds a one-off task, by any member with an account (ADR-0004 §4, ADR-0006 §3).
+  addOneOff: async ({ locals, request }) => {
+    const context = await householdContext(locals);
+    const form = await request.formData();
+    const values = {
+      name: text(form, 'name'),
+      duration: text(form, 'duration'),
+      date: text(form, 'date'),
+      deadline: text(form, 'deadline'),
+      onMiss: text(form, 'onMiss'),
+    };
+    const result = await addOneOff(context, {
+      ...values,
+      duration: Number(values.duration),
+      // Without a day, it can't wait beyond its week.
+      deadline: values.deadline || undefined,
+    });
+    if (result.ok) return { addedOneOff: result.name };
+    if (result.error === 'not-allowed') error(403);
+    // What was typed stays in the form (UI-10).
+    return fail(400, { invalidOneOff: result.fields, oneOffValues: values });
   },
 } satisfies Actions;
