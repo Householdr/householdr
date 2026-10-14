@@ -1,4 +1,11 @@
-import { activityLog, assignments, members, type Database } from '@householdr/db';
+import {
+  activityLog,
+  assignments,
+  ledgerEntries,
+  members,
+  plans,
+  type Database,
+} from '@householdr/db';
 import { testDatabase } from '@householdr/db/testing';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -152,6 +159,61 @@ describe('former members', () => {
     const activity = await householdActivity(h.adult);
     expect(activity.ok && activity.entries.map((e) => [e.actor, e.subject])).toEqual([
       [null, null],
+    ]);
+  });
+
+  it('keep their frozen balances after the current members’, latest to leave first', async () => {
+    const h = await withFormer(new Date('2026-09-20T10:00:00Z'));
+    const [kim] = await h.inIt((tx) =>
+      tx
+        .insert(members)
+        .values({
+          householdId: h.householdId,
+          name: 'Kim',
+          role: 'adult',
+          joinedAt: new Date('2026-09-01T00:00:00Z'),
+          leftAt: new Date('2026-09-30T10:00:00Z'),
+          showsName: true,
+        })
+        .returning({ id: members.id }),
+    );
+    if (!kim) throw new Error('No Kim');
+    // Sam's last week, settled after they left.
+    await h.inIt(async (tx) => {
+      await tx.insert(plans).values({
+        householdId: h.householdId,
+        weekStart: '2026-09-14',
+        weekEnd: '2026-09-21',
+        draftedAt: new Date('2026-09-12T10:00:00Z'),
+        status: 'published',
+        publishedAt: new Date('2026-09-13T10:00:00Z'),
+      });
+      await tx.insert(ledgerEntries).values({
+        householdId: h.householdId,
+        memberId: h.sam,
+        kind: 'settlement',
+        week: '2026-09-14',
+        change: -12,
+        at: new Date('2026-09-21T00:00:00Z'),
+      });
+    });
+    const balances = await householdBalances(h.adult);
+    expect(balances.ok && balances.members.map((m) => m.name)).toEqual(['Robin', 'Alex']);
+    expect(balances.ok && balances.former).toEqual([
+      // Under their name, as Kim chose; Sam as a former member.
+      { id: kim.id, name: 'Kim', balance: 0, history: [] },
+      {
+        id: h.sam,
+        name: null,
+        balance: -12,
+        history: [
+          {
+            start: Temporal.PlainDate.from('2026-09-14'),
+            end: Temporal.PlainDate.from('2026-09-21'),
+            change: -12,
+          },
+        ],
+      },
     ]);
   });
 });
