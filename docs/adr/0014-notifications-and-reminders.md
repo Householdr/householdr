@@ -71,6 +71,13 @@ Product news and offers are a separate, opt-in category with their own rules (§
 **Never sent**, by design: anyone's miss, anyone else's balance changes, "you're falling behind"
 messages, re-engagement nudges ("we miss you"), and promotional **push** notifications.
 
+> **Clarification (2026-10-13):** notifications go only to members **with an account**, and never to
+> the member whose own action caused them: a head who publishes a plan early, or starts the household
+> now, isn't told about it. *Your week's plan is published* goes to each member with an occurrence
+> in that plan. *Draft ready for review* goes to every head when a week's draft is **first made**, by
+> the scheduler or by starting now ([ADR-0007](0007-onboarding.md) §3); a head drafting it again
+> tells nobody, since the heads know about that draft already.
+
 ### 3. Preferences
 
 - Each member chooses, for each category, **how they receive it**: by push, by e-mail, both, or only
@@ -88,6 +95,21 @@ messages, re-engagement nudges ("we miss you"), and promotional **push** notific
   the fallback of §5 doesn't apply.
 - Preferences belong to the account, so a member of two households sets them once; each notification
   names the household it comes from.
+
+> **Clarification (2026-10-13):** the settings page is the **account's own**, like its security page,
+> and is where the quiet hours (§4) and the e-mail fallback (§5) are set too. It lists every
+> category the app sends so far, each with a line saying what it is and who gets it, such as
+> "heads"; a row of §2 adds its category with its first notification. Every account sees every
+> category, so a choice still holds when the account becomes a head. Preferences are kept with the
+> account, apart from any household ([ADR-0008](0008-tech-stack.md) §9, clarification).
+
+> **Clarification (2026-10-13):** each category offers four choices: **push and e-mail**, **push**,
+> **e-mail**, or **only in the app**, starting at the catalogue's channels. The account and security
+> e-mails of §2 are one row, locked on "by e-mail", since they reach the person whatever they
+> choose. The **quiet hours** are a start and an end, each a time of day to the minute; they may
+> span midnight, and they can't be equal, which could mean no quiet hours or all day. The
+> **e-mail fallback** (§5) is on until the member turns it off. **Push** is turned on and off for
+> the device in hand on the same page, where the browser can (§7, clarification).
 
 ### 4. Timing: quiet hours and limits
 
@@ -108,6 +130,19 @@ messages, re-engagement nudges ("we miss you"), and promotional **push** notific
 - **No reminders** are sent while the household is away
   ([ADR-0005](0005-membership-and-availability.md) §5).
 
+> **Clarification (2026-10-13):** quiet hours run from their start up to their end: with the
+> default, a push due at 07:30 goes out at 07:30. A push **held** in quiet hours goes out when they
+> end, if its notification still exists then (a removed draft takes its notification along, §7,
+> clarification), in the order they came; it isn't merged with others. The ceiling's **day** is the
+> calendar day in the time zone of the household the push comes from, and it counts every push sent
+> to the account since that day began, from any of its households: for a member whose households
+> share a zone, which is nearly everyone, that is simply their day. A push held or sent counts on
+> the day it goes out. One over the ceiling is never sent later; its notification stays in the
+> list. A push that can't be sent within a day of its notification, held or failing, is dropped
+> the same way. To count them, the times pushes were sent are kept with the account, apart from
+> any household, and forgotten after two days
+> ([ADR-0012](0012-privacy-and-data-protection.md) §2, clarification).
+
 ### 5. Members without push
 
 An adult member with no working push subscription (never allowed, not installed on iOS, or the
@@ -120,6 +155,17 @@ are combined:
 
 The member can turn the fallback off. The app suggests enabling push (and, on iOS, installing to the
 home screen) at the moments it would have helped, at most once a week.
+
+> **Clarification (2026-10-13):** the **morning e-mail** comes once a day for each household, when
+> the member's quiet hours end (07:30 by default) in the household's time zone, so it never comes
+> before they would take a push (§4). It comes only when there is something in it: each
+> notification from that household since the last one whose channel, or fallback, is e-mail (§3),
+> in the order they came. It names the household and the day, says each notification in the same sentence as
+> the list, and links to the household's list of notifications; nothing else from the household is
+> in it (§6). A notification more than a day old by then is left out, like a push (§4,
+> clarification). Children get none (§3). It goes to the address the account signs in with.
+> Notifications with no e-mail of their own so far are all of this kind: none needs an answer the
+> same day.
 
 ### 6. Content
 
@@ -138,6 +184,14 @@ home screen) at the moments it would have helped, at most once a week.
   text, never turned into links, and cut to a fixed length. Anyone outside the household, such as an
   invitee, gets no text written by a member beyond who invited them to which household
   ([ADR-0017](0017-security-baseline.md) §5, clarification).
+
+> **Clarification (2026-10-13):** a **push carries** what its notification says in the list and
+> no more: a title naming the household it comes from, the notification's sentence in the
+> recipient's language, and the page of the app it opens, such as the plan's. No IDs beyond that
+> page's address, no data for the app to read, nothing a lock screen shouldn't show. It is
+> encrypted for the browser (RFC 8291), so the push service sees only its size and when it is sent
+> ([ADR-0012](0012-privacy-and-data-protection.md) §8). A push service keeps it for a device that
+> is offline for at most a day; after that, the notification is still in the list.
 
 ### 7. Delivery
 
@@ -160,6 +214,14 @@ home screen) at the moments it would have helped, at most once a week.
   self-hosted instance uses its own SMTP server ([ADR-0021](0021-self-hosted-edition.md) §5).
 - In-app notifications are kept **90 days**, then deleted.
 
+> **Clarification (2026-10-13):** the in-app list is **per household**: each household has the
+> member's own notifications from it, newest first, each a link to where it can be acted on, such as
+> the plan. Nobody else sees them. A notification is stored as what happened and what it is about,
+> such as a plan's week, never as text: it is written in the reader's language when it is shown
+> (§6). One about a draft goes with the draft if the draft is removed, as for a week the household
+> turns out to be away for ([ADR-0005](0005-membership-and-availability.md) §5). A daily job deletes
+> those older than 90 days.
+
 > **Clarification (2026-10-08):** **account e-mails** (a sign-up's verification, a password reset,
 > security notices; §2) belong to no household, so their rows live in the `auth` schema
 > ([ADR-0008](0008-tech-stack.md) §9, clarification) and go out through the same worker and
@@ -169,6 +231,17 @@ home screen) at the moments it would have helped, at most once a week.
 > newer link for the same purpose replaces the older one. The limit on e-mails to one address
 > ([ADR-0017](0017-security-baseline.md) §5, clarification) is counted when the row would be
 > written: over it, no row is written.
+
+> **Clarification (2026-10-13):** a **push subscription** belongs to the account and to the
+> **session** of the device it was made on, and goes when that session ends: signing a device out,
+> or every device, also stops its pushes ([ADR-0018](0018-household-safety.md) §2). Push is turned
+> on per device on the notification settings page (§3, clarification); only that button asks the
+> browser's permission, never the app on its own. A push goes to every subscription of the account,
+> as one job per notification, so every device the member chose shows it. The **service worker**
+> that receives it is our own, served by the app ([ADR-0008](0008-tech-stack.md) §7): it shows the
+> push and, when tapped, opens its page. The VAPID keys come from the environment
+> ([ADR-0017](0017-security-baseline.md) §7); an instance without them offers no push, and its
+> members get e-mail as members without push do (§5).
 
 ### 8. Promotional communication: product news and offers
 

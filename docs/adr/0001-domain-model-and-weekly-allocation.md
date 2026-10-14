@@ -52,8 +52,20 @@ ADR.
 | **Assignment** | An occurrence given to a member, with the cost charged and the reason it went there. |
 | **Completion** | Who actually did an occurrence, and when. Not necessarily the assignee, and possibly several members together. |
 
+> **Clarification (2026-10-13):** until the template catalogue brings its areas
+> ([ADR-0007](0007-onboarding.md) §6), a household's **areas** are the ones its heads add, on an
+> areas page next to the tasks: a name of 1 to 50 characters, unlike the household's other areas
+> whatever the case. Heads rename and remove them; removing an area leaves its tasks without one.
+> Heads give a task an area, or none, in the task's form. The task list groups the tasks by area, in
+> name order, with those without an area last. Every member sees the areas.
+
 The **occurrence** is the unit of allocation, not the task. A daily task is split across members over
 the week by default, which makes balancing easier.
+
+> **Clarification (2026-10-13):** **removing a task** that has been in a plan hides it: it leaves the
+> task list and is never planned again. Its open occurrences go: those in drafts and in weeks to come,
+> and one not yet done in this week's published plan. Done work, the balances and past plans keep it,
+> by its name, so nothing a member already earned changes.
 
 ### 2. Roles
 
@@ -82,6 +94,13 @@ the week by default, which makes balancing easier.
 - A task whose minimum age is above the child's age is treated as `excluded` for that child; a head can
   override it in both directions. Minimum ages come seeded from the task template.
 - How a child logs in, and parental consent, belong to the identity ADR.
+
+> **Clarification (2026-10-13):** a task's **minimum age** is optional, in whole years from 1 to 17.
+> Heads set it on the task's page, with the task's **constraints**: for each member, *anyone who
+> fits* (none), *always theirs* (`bound`) or *never theirs* (`excluded`), and for a child below the
+> minimum age, *allowed anyway* (`allowed`). Several members can be bound to one task. Only heads see
+> constraints, on the task's page; the plan shows their effect through its reasons (§7). A change
+> counts from the next draft, as a share's does (§4), and a member's constraints go with them.
 
 ### 4. Shares
 
@@ -192,6 +211,11 @@ Deterministic greedy allocation, run when the week's draft plan is generated, an
 > - The **rotation penalty** is 10% of the cost of each part whose task the member had in last
 >   week's plan, added to the numerator. It only affects the choice; the load is charged the plain
 >   cost.
+
+> **Clarification (2026-10-13):** heads set a task's **same-person link** on the task's page, to
+> one other task of the household that isn't a one-off ("whoever puts the bins out brings them in").
+> A task links to at most one other and never to itself; links may chain. The task list shows the
+> link. A link to a task that is removed no longer counts, and a change counts from the next draft.
 > - The reason is **"catching up"** when someone else would have been picked without the catch-up
 >   terms, and "lowest relative load" otherwise.
 

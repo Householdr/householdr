@@ -32,6 +32,14 @@ A **schedule** produces dates. A **task** references a schedule plus an **offset
 This lets one schedule ("PMD collection") drive several tasks ("put PMD bin out", "bring PMD bin in")
 without repeating the rule.
 
+> **Clarification (2026-10-13):** a task **shares** another task's schedule when a head chooses
+> *same dates as* that task, in the same household. Both then follow one schedule, each with its own
+> timing, window and on-miss policy. Only tasks on a calendar schedule share one; a "since last
+> done" or one-off task has none. Changing the dates of a task that shares them changes them for
+> every task on that schedule, unless the head gives it **dates of its own**, which leaves the others
+> as they were. A schedule has no name of its own: the task list says which tasks share it. It goes
+> when the last task on it does.
+
 ### 2. A schedule is a set of rules
 
 ```
@@ -80,6 +88,24 @@ every Tuesday").
 > evaluated with RFC 7529's `RSCALE=GREGORIAN;SKIP=FORWARD`, so a monthly chore never silently skips
 > a month and the rule stays standard.
 
+> **Clarification (2026-10-13):** the **advanced editor** (MVP: without seasons) builds a schedule
+> from up to five rules, each one of: *every N weeks on* one or more weekdays; *every N months on day
+> D*; *every N months on the 1st, 2nd, 3rd, 4th or last* weekday; *every year on* a day and month.
+> Each rule starts on a day from today up to a year on, as a simple frequency does. Next to the rules
+> come **extra dates** and **exception dates**: days the schedule adds or leaves out, up to 50 of
+> each, from today up to two years on. The editor and the task list say the result in words ("Every
+> 2nd and 4th Tuesday, and every Wednesday; not on 11 November"), never as `RRULE`.
+
+> **Clarification (2026-10-13):** in the advanced editor, a rule's **first time sets its day**:
+> *every N months* and *every year* repeat on the day of the month (and the month) of their first
+> time, as a simple frequency does, so a day that doesn't exist moves as above. N runs from 1 to 52
+> weeks or from 1 to 12 months. A rule on the 1st, 2nd, 3rd, 4th or last weekday may name several
+> of them for one weekday ("2nd and 4th Tuesday"). A schedule needs at least one rule or one extra
+> date. When a schedule changes, the first times and dates it already has stay allowed, even once
+> they have passed, and count towards the 50. A task on an advanced schedule done *any time that
+> week* is flexible within the week of each date. A schedule that is exactly a simple frequency is
+> shown, and changed, as that frequency.
+
 ### 4. From date to occurrence: offset and window
 
 Each task turns a schedule date into an occurrence window:
@@ -116,6 +142,15 @@ Each task turns a schedule date into an occurrence window:
 
 Simple-frequency tasks default to flexible (floating for monthly and rarer); tasks on an advanced
 schedule default to fixed.
+
+> **Clarification (2026-10-13):** **fixed times** can be chosen for any task on a schedule, a simple
+> frequency included: the editor asks *any time that week* or *at set times*. A "since last done"
+> task and a one-off task are never fixed. A window runs from a day and time to a day and time, each
+> day from **3 days before to 3 days after** the schedule date ("the day before at 18:00" to "the day
+> itself at 07:00"), times to the minute. It must end after it starts and last at most **7 days**.
+> The advanced editor starts on set times, the day itself from 08:00 to 20:00; the simple one on any
+> time that week. An occurrence whose whole window falls while the household is away is skipped
+> ([ADR-0005](0005-membership-and-availability.md) §5).
 
 ### 5. The same rules describe availability
 

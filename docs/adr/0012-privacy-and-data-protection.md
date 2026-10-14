@@ -86,6 +86,20 @@ touches it, and how people exercise their rights.
 > its holder accepted, and when ([ADR-0007](0007-onboarding.md) §2, clarification): proof of the
 > contract, on its basis (b), kept while the account exists (§5).
 
+> **Clarification (2026-10-13):** an **in-app notification** keeps what happened, for which member,
+> when, and what it is about, such as a plan's week, but no text
+> ([ADR-0014](0014-notifications-and-reminders.md) §7, clarification). It is a chore record that
+> only the member it is for sees, kept 90 days (§5). **Notification preferences** (a channel for
+> each category, the quiet hours, whether the e-mail fallback is on) are account data, on the basis
+> of the contract (b), kept while the account exists.
+
+> **Clarification (2026-10-13):** a **push subscription** is kept with the account and the session
+> of the device it was made on, and deleted when that session ends or the push service says it is
+> gone ([ADR-0014](0014-notifications-and-reminders.md) §7, clarification). **When pushes were
+> sent** to an account, which the daily ceiling counts (ADR-0014 §4, clarification), is account
+> data on the basis of the contract (b), with nothing about what was sent or from which household,
+> and is forgotten after two days.
+
 What is deliberately **not** stored:
 
 - **No reasons**: not for a reduced share, not for an absence, not for sudden unavailability. "I can't

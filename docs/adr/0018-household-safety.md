@@ -65,6 +65,11 @@ will then be closed.
 > Profiles created at the same moment are ordered by a fixed rule (their id), so the same household
 > always gets the same successor.
 
+> **Clarification (2026-10-13):** the leave flow asks how the household's history should show the
+> person: as "Former member", which is chosen until they pick their name. The choice stays theirs
+> after leaving or being removed, on their account's own pages; until they make it there, a member
+> who was removed shows as "Former member".
+
 ### 3. Whereabouts: no more than the plan needs
 
 | Information | What others in the household see |
@@ -130,6 +135,11 @@ Entries say who did what to whom, never a value hidden from the reader: no share
 > its days: "Robin marked the household away". Like a change to the household's settings, it affects
 > everyone, so it is logged before the household starts as well.
 
+> **Clarification (2026-10-13):** **adding a one-off task**
+> ([ADR-0006](0006-plan-lifecycle-and-completion.md) §3), and removing one, is logged too, with the
+> task's name, which every member sees in the task list anyway: "Sam added a one-off task: Fix the
+> shelf".
+
 The log can't be edited or deleted by anyone in the household, and is kept as long as the ledger.
 Members notice what is done in their name; disputes have a record.
 
@@ -170,6 +180,13 @@ These are excluded on purpose, however often they are requested:
 - The **leave household** flow and the help pages link discreetly to **support services** for domestic
   violence in the member's country (for example 1712 in Belgium, Veilig Thuis in the Netherlands, 3919
   in France), from a maintained list.
+
+  > **Clarification (2026-10-13):** "the member's country" is the household's, which is all we know
+  > ([ADR-0010](0010-identity-invitations-and-childrens-accounts.md) §9). The leave page names its
+  > service in one plain line, with its phone number and a link, without a heading or anything that
+  > stands out on a shared screen. The maintained list is part of the code, starting with the three
+  > above, and grows by pull request; a country without an entry shows none yet.
+
 - The security page explains what to do if someone else may have access: sign out all devices, change
   password, check passkeys and two-factor.
 - **Leaving sends nothing to the household** beyond the membership change heads need. No e-mail to
