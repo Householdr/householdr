@@ -118,6 +118,7 @@ describe('a task’s page (ADR-0001 §2)', () => {
       shareable: [],
       members: [{ id: membership.member.id, name: 'Robin', child: false }],
       linkable: [],
+      areas: [],
       who: { minimumAge: '', linkedTo: '', constraints: {} },
     });
   });

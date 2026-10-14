@@ -31,6 +31,7 @@
     today,
     shareable,
     sharesWith,
+    areas,
     startingOnMiss,
     action,
     submit,
@@ -51,6 +52,7 @@
       toTime: string;
       sharedWith: string;
       ownDates: string;
+      areaId: string;
     };
     invalid: readonly TaskField[];
     problems: Record<TaskField, () => string>;
@@ -63,6 +65,8 @@
     shareable: readonly { id: string; name: string }[];
     /** The names of the other tasks on its schedule, if it shares one. */
     sharesWith: readonly string[];
+    /** The household's areas, one of which it can be in (ADR-0001 §1). */
+    areas: readonly { id: string; name: string }[];
     startingOnMiss: PlanTask['onMiss'];
     action: string;
     /** The words of the form's own button, which Enter presses. */
@@ -137,6 +141,24 @@
   />
   <FieldProblem id="duration-problem" problem={problemOf('duration')} />
 </div>
+{#if areas.length > 0}
+  <div class="flex flex-col gap-2">
+    <Label for="area">{m['tasks.area']()}</Label>
+    <NativeSelect
+      id="area"
+      name="areaId"
+      class="w-full"
+      value={values.areaId}
+      {...described('area')}
+    >
+      <NativeSelectOption value="">{m['tasks.no-area']()}</NativeSelectOption>
+      {#each areas as area (area.id)}
+        <NativeSelectOption value={area.id}>{area.name}</NativeSelectOption>
+      {/each}
+    </NativeSelect>
+    <FieldProblem id="area-problem" problem={problemOf('area')} />
+  </div>
+{/if}
 <div class="flex flex-col gap-2">
   <Label for="frequency">{m['tasks.how-often']()}</Label>
   <NativeSelect

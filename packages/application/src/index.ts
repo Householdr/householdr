@@ -80,6 +80,7 @@ export {
   type TemporaryShareField,
   type TemporaryShareInput,
 } from './shares/temporary-shares';
+export { addArea, listAreas, removeArea, renameArea, type Area } from './tasks/areas';
 export { addOneOff } from './tasks/add-one-off';
 export { addTask } from './tasks/add-task';
 export { editOneOff } from './tasks/edit-one-off';

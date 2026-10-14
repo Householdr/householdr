@@ -72,6 +72,7 @@ export const onMissWords: Record<PlanTask['onMiss'], () => string> = {
 export const taskProblems: Record<TaskField, () => string> = {
   name: m['tasks.invalid-name'],
   duration: () => m['tasks.invalid-duration'](taskDuration),
+  area: m['tasks.invalid-area'],
   frequency: m['tasks.invalid-frequency'],
   everyCount: m['tasks.invalid-every-count'],
   everyUnit: m['tasks.invalid-every-unit'],
