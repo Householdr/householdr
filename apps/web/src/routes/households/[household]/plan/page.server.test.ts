@@ -131,6 +131,8 @@ describe('a household’s plan page (ADR-0006 §2)', () => {
                 completion: null,
                 cost: 30,
                 reason: 'only eligible member',
+                // Done any time that week, so without set times (ADR-0004 §4).
+                window: null,
               },
             ],
           },

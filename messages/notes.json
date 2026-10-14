@@ -2190,6 +2190,14 @@
     "note": "Label, in a task of the plan, of why it went to whoever has it (ADR-0007 §5).",
     "needsReview": ["nl"]
   },
+  "plan.times-label": {
+    "note": "The plan page: label of a task's set times (ADR-0004 §4), which everyone sees (ADR-0018 §3).",
+    "needsReview": ["nl"]
+  },
+  "plan.times": {
+    "note": "The plan page: a task's set times; {from} and {to} are a weekday and a time, such as 'Tuesday 18:00'.",
+    "needsReview": ["nl"]
+  },
   "plan.nothing": {
     "note": "Under a member's name when they have no task in the week's plan.",
     "needsReview": ["nl"]
