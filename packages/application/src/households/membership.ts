@@ -264,14 +264,13 @@ export async function viewHousehold(context: HouseholdContext): Promise<ViewHous
     list.sort((a, b) => roleOrder[a.role] - roleOrder[b.role] || a.name.localeCompare(b.name));
     const mayChangeSettings = can(context.member, { action: 'household.settings' });
     const planning = await planningOf(tx);
+    // Their role as it is now: answering the last head's naming may have just changed it.
     const [own] = await tx
-      .select({ namedHead: members.namedHead })
+      .select({ id: members.id, role: members.role, namedHead: members.namedHead })
       .from(members)
       .where(eq(members.id, context.member.id));
     const namedHead = own?.namedHead
-      ? {
-          mayDecline: !(await isLastHead(tx, context.member)) || (await successors(tx)).length > 0,
-        }
+      ? { mayDecline: !(await isLastHead(tx, own)) || (await successors(tx)).length > 0 }
       : null;
     return {
       ok: true as const,
@@ -283,7 +282,7 @@ export async function viewHousehold(context: HouseholdContext): Promise<ViewHous
       // Starting is a setting of the household's, which only heads change (ADR-0007 §2).
       mayStart: mayChangeSettings && !planning.firstWeek,
       namedHead,
-      needsTwoFactors: context.member.role === 'head' && !context.member.twoFactor,
+      needsTwoFactors: own?.role === 'head' && !context.member.twoFactor,
       firstPlan: firstPlanOf(planning, context.clock.now()),
     };
   });

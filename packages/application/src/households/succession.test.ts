@@ -90,6 +90,8 @@ describe('answerHeadRole (ADR-0018 §2, clarification)', () => {
   it('passes it on to the adult with an account longest there for one who declines', async () => {
     const { h, alex, sam } = await named();
     expect(await answerHeadRole(alex, { answer: 'decline' })).toEqual({ ok: true });
+    // The page after declining, with the role the request began with, no longer asks Alex anything.
+    expect(await viewHousehold(alex)).toMatchObject({ namedHead: null, needsTwoFactors: false });
     expect(await roles(h)).toEqual([
       { name: 'Alex', role: 'adult', namedHead: false },
       { name: 'Sam', role: 'head', namedHead: false },
