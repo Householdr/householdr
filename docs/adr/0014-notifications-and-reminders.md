@@ -138,8 +138,10 @@ messages, re-engagement nudges ("we miss you"), and promotional **push** notific
 > to the account since that day began, from any of its households: for a member whose households
 > share a zone, which is nearly everyone, that is simply their day. A push held or sent counts on
 > the day it goes out. One over the ceiling is never sent later; its notification stays in the
-> list. Pushes sent are counted with the account, apart from any household, and each count is
-> forgotten after two days ([ADR-0012](0012-privacy-and-data-protection.md) §2, clarification).
+> list. A push that can't be sent within a day of its notification, held or failing, is dropped
+> the same way. To count them, the times pushes were sent are kept with the account, apart from
+> any household, and forgotten after two days
+> ([ADR-0012](0012-privacy-and-data-protection.md) §2, clarification).
 
 ### 5. Members without push
 
@@ -153,6 +155,17 @@ are combined:
 
 The member can turn the fallback off. The app suggests enabling push (and, on iOS, installing to the
 home screen) at the moments it would have helped, at most once a week.
+
+> **Clarification (2026-10-13):** the **morning e-mail** comes once a day for each household, when
+> the member's quiet hours end (07:30 by default) in the household's time zone, so it never comes
+> before they would take a push (§4). It comes only when there is something in it: each
+> notification from that household since the last one whose channel, or fallback, is e-mail (§3),
+> in the order they came. It names the household and the day, says each notification in the same sentence as
+> the list, and links to the household's list of notifications; nothing else from the household is
+> in it (§6). A notification more than a day old by then is left out, like a push (§4,
+> clarification). Children get none (§3). It goes to the address the account signs in with.
+> Notifications with no e-mail of their own so far are all of this kind: none needs an answer the
+> same day.
 
 ### 6. Content
 

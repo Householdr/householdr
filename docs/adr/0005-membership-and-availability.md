@@ -129,6 +129,15 @@ account.
 > The **balances** page keeps former members' frozen balances and their history, after the current
 > members, as "Former member" or under their name, as they chose.
 
+> **Clarification (2026-10-13):** "every plan of a week not yet over" is this week's and, once it is
+> drafted, next week's. In a published plan, **all** of the member's open occurrences are
+> re-allocated from what is left of each window, and one whose window has passed, which nobody can do
+> any more, is left unassigned. Their **absences, times they couldn't and temporary shares** that
+> start after the moment they left go at once; the others go once the week they left is settled,
+> since its settlement counts them in their fair portion of it
+> ([ADR-0002](0002-balance-ledger.md) §1), so leaving never turns an absence into a deficit. The
+> **balances** page lists former members in the order they left, the latest first.
+
 ### 5. The household is away
 
 When everyone is away together (a family holiday), member absences alone aren't enough: schedules would
