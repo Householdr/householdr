@@ -1,4 +1,4 @@
-import { expect, expectAccessible, forceFlags, signIn, test } from './fixtures';
+import { expect, expectAccessible, forceFlags, signInWithForm, test } from './fixtures';
 import { forgetMail, mailTo, resetLink } from './mail';
 
 // Choosing a new password through an e-mailed link (ADR-0010 §8), while its release flag is off by
@@ -61,7 +61,7 @@ for (const javaScriptEnabled of [true, false]) {
       );
       if (javaScriptEnabled) await expectAccessible(page, 'password changed');
       await mailTo(account.email, 'Your Householdr password was changed');
-      await signIn(page, { ...account, password: newPassword });
+      await signInWithForm(page, { ...account, password: newPassword });
 
       // A link works once.
       await page.goto(link);

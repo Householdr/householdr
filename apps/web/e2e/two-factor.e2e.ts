@@ -1,6 +1,13 @@
 import { totpCode } from '@householdr/auth/testing';
 import type { Page } from '@playwright/test';
-import { expect, expectAccessible, forceFlags, signIn, test, withAuthenticator } from './fixtures';
+import {
+  expect,
+  expectAccessible,
+  forceFlags,
+  signInWithForm,
+  test,
+  withAuthenticator,
+} from './fixtures';
 import { forgetMail, mailTo, resetLink } from './mail';
 
 // Two-factor codes from an authenticator app: turning them on and off on the security page,
@@ -62,7 +69,7 @@ test('the security page shows nothing of two-factor while its flag is off', asyn
   account,
 }) => {
   await forceFlags(context, baseURL, { 'sign-in': true });
-  await signIn(page, account);
+  await signInWithForm(page, account);
   await expect(page.getByRole('heading', { name: 'Two-factor authentication' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: /two-factor/ })).toHaveCount(0);
 });
@@ -79,7 +86,7 @@ for (const javaScriptEnabled of [true, false]) {
       account,
     }) => {
       await forgetMail(account.email);
-      await signIn(page, account);
+      await signInWithForm(page, account);
       await expect(section(page).getByRole('status')).toHaveText(
         'Two-factor authentication is off.',
       );
@@ -148,7 +155,7 @@ for (const javaScriptEnabled of [true, false]) {
       page,
       account,
     }) => {
-      await signIn(page, account);
+      await signInWithForm(page, account);
       const { key } = await turnOn(page);
       await signOut(page);
 
@@ -182,7 +189,7 @@ for (const javaScriptEnabled of [true, false]) {
     });
 
     test('signs in with a recovery code, which works once', async ({ page, account }) => {
-      await signIn(page, account);
+      await signInWithForm(page, account);
       const { recoveryCodes } = await turnOn(page);
       const [code = ''] = recoveryCodes;
       await signOut(page);
@@ -215,7 +222,7 @@ for (const javaScriptEnabled of [true, false]) {
       account,
     }) => {
       await forceFlags(context, baseURL, { ...flags, 'password-reset': true });
-      await signIn(page, account);
+      await signInWithForm(page, account);
       const { key, recoveryCodes } = await turnOn(page);
       await signOut(page);
       await forgetMail(account.email);
@@ -267,7 +274,7 @@ for (const javaScriptEnabled of [true, false]) {
       accounts,
       account,
     }) => {
-      await signIn(page, account);
+      await signInWithForm(page, account);
       const { key } = await turnOn(page);
       await accounts.signedInLongAgo(account.email);
       await page.goto('/security');
@@ -302,7 +309,7 @@ for (const javaScriptEnabled of [true, false]) {
       );
       // The password signs in on its own again.
       await signOut(page);
-      await signIn(page, account);
+      await signInWithForm(page, account);
     });
   });
 }
@@ -314,7 +321,7 @@ test('makes new recovery codes, and the old ones stop working', async ({
   account,
 }) => {
   await forceFlags(context, baseURL, flags);
-  await signIn(page, account);
+  await signInWithForm(page, account);
   const { recoveryCodes } = await turnOn(page);
   await section(page).getByRole('link', { name: 'Done' }).click();
   await forgetMail(account.email);
@@ -344,7 +351,7 @@ test('keeps it on for a head without a passkey, and says why (ADR-0010 §3)', as
   account,
 }) => {
   await forceFlags(context, baseURL, flags);
-  await signIn(page, account);
+  await signInWithForm(page, account);
   await turnOn(page);
   await accounts.addHousehold(account.email, 'Ash Lane');
   await section(page).getByRole('link', { name: 'Done' }).click();
@@ -364,7 +371,7 @@ test('never asks a passkey for a code, since it is two factors already', async (
 }) => {
   await forceFlags(context, baseURL, { ...flags, passkeys: true });
   await withAuthenticator(page);
-  await signIn(page, account);
+  await signInWithForm(page, account);
   await page.getByRole('button', { name: 'Add a passkey' }).click();
   await expect(page.getByText('The passkey is added.')).toBeVisible();
   await turnOn(page);

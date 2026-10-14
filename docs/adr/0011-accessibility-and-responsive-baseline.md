@@ -134,8 +134,11 @@ Households use whatever phone they have, often old and on mobile data:
 - **Component tests find elements by role and accessible name** (`getByRole('button', { name: … })`),
   so a control without a proper name can't even be tested.
 - **axe** runs in every end-to-end test, on every page and on key states (dialog open, form with
-  errors), at a phone and a desktop viewport, in light and dark themes. Violations fail the run and
-  appear in the run summary ([ADR-0009](0009-development-workflow-and-releases.md) §9).
+  errors), at a phone and a desktop viewport, in light and dark themes. The tests themselves run in
+  the light theme; each axe check switches the page to the dark theme and checks it again. The dark
+  theme changes only colours (§3, [ADR-0008](0008-tech-stack.md) §5), so running every flow a second
+  time in it would only double the suite's run time. Violations fail the run and appear in the run
+  summary ([ADR-0009](0009-development-workflow-and-releases.md) §9).
 - Token contrast is checked by a unit test over the design tokens.
 
 **Manual, per feature** (part of the PR template's checklist,
