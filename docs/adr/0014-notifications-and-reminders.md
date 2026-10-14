@@ -138,8 +138,10 @@ messages, re-engagement nudges ("we miss you"), and promotional **push** notific
 > to the account since that day began, from any of its households: for a member whose households
 > share a zone, which is nearly everyone, that is simply their day. A push held or sent counts on
 > the day it goes out. One over the ceiling is never sent later; its notification stays in the
-> list. Pushes sent are counted with the account, apart from any household, and each count is
-> forgotten after two days ([ADR-0012](0012-privacy-and-data-protection.md) §2, clarification).
+> list. A push that can't be sent within a day of its notification, held or failing, is dropped
+> the same way. To count them, the times pushes were sent are kept with the account, apart from
+> any household, and forgotten after two days
+> ([ADR-0012](0012-privacy-and-data-protection.md) §2, clarification).
 
 ### 5. Members without push
 
