@@ -1,5 +1,17 @@
 // Use cases: authorise, validate, transact, emit events, return a result (ADR-0023).
-export type { Clock, Flags, LogFields, Logger, Mail, Mailer, Random } from './ports';
+export type {
+  Clock,
+  Flags,
+  LogFields,
+  Logger,
+  Mail,
+  Mailer,
+  Push,
+  PushContent,
+  PushOutcome,
+  PushTarget,
+  Random,
+} from './ports';
 export { flags, type FlagKey } from './flags/registry';
 export {
   householdActivity,

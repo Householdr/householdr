@@ -10,3 +10,4 @@ export { checkBreachedPassword, type BreachCheck } from './breached-passwords';
 export { systemClock } from './system-clock';
 export { systemRandom } from './system-random';
 export { flagSource } from './flag-source';
+export { webPush, type VapidSettings } from './web-push';
