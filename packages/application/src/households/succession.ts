@@ -88,8 +88,10 @@ export async function answerHeadRole(
       await tx.update(members).set(answered).where(eq(members.id, self.id));
       return { ok: true };
     }
-    const [next] = (await isLastHead(tx, self)) ? await successors(tx) : [null];
-    if (next === undefined) return { ok: false, error: 'only-adult' };
+    // The role passes on unless another head remains.
+    const lastHead = await isLastHead(tx, self);
+    const [next] = lastHead ? await successors(tx) : [];
+    if (lastHead && !next) return { ok: false, error: 'only-adult' };
     await tx
       .update(members)
       .set({ ...answered, role: 'adult' })

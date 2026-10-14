@@ -120,7 +120,8 @@ for (const javaScriptEnabled of [true, false]) {
       account,
     }, testInfo) => {
       const { id, alex } = await household(accounts, account, testInfo);
-      await signIn(page, account, `/households/${id}/leave`);
+      await signIn(page, account, `/households/${id}`);
+      await page.goto(`/households/${id}/leave`);
       await page
         .getByRole('group', { name: 'Who becomes head?' })
         .getByRole('radio', { name: 'Alex', exact: true })
