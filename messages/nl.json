@@ -808,5 +808,27 @@
   "leave.submit": "Het huishouden verlaten",
   "leave.support": "Voel je je thuis niet veilig, dan kan {service} helpen: bel {phone} of ga naar {website}.",
   "home.left": "Je hebt het huishouden verlaten.",
-  "household.leave": "Het huishouden verlaten"
+  "household.leave": "Het huishouden verlaten",
+  "remove.page-title": "{name} verwijderen · {household} · Householdr",
+  "remove.title": "{name} verwijderen",
+  "remove.intro": "{name} verlaat {household} meteen, alsof die zelf was vertrokken.",
+  "remove.history": "Wat die deed, blijft in de geschiedenis van het huishouden, als ‘Voormalig lid’, en het saldo blijft zoals het is. Wat die nog moest doen, gaat naar de anderen.",
+  "remove.child": "Het account, de ouders en de andere huishoudens van het kind blijven zoals ze zijn.",
+  "remove.logged": "Iedereen in het huishouden ziet bij de activiteit dat jij het lid hebt verwijderd.",
+  "remove.confirm": "Je bent meer dan 10 minuten geleden ingelogd. Bevestig eerst op de beveiligingspagina dat jij het bent en kom dan hier terug.",
+  "remove.confirm-link": "Bevestig dat jij het bent",
+  "remove.submit": "{name} verwijderen",
+  "remove.keep": "{name} in het huishouden houden",
+  "household.remove": "{name} verwijderen",
+  "household.removed": "Het lid dat je verwijderde, hoort niet meer bij het huishouden.",
+  "activity.member-removed": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je hebt {subject} uit het huishouden verwijderd.",
+        "who=*": "{actor} heeft {subject} uit het huishouden verwijderd."
+      }
+    }
+  ]
 }

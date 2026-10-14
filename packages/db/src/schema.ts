@@ -377,12 +377,17 @@ export type ActivityAction =
    */
   | 'away.added'
   /** A head removed a time the whole household is away, never which days. */
-  | 'away.removed';
+  | 'away.removed'
+  /**
+   * Once it has started, a head removed its subject, who isn't a head, from the household (ADR-0005
+   * §4, ADR-0018 §4–§5, clarifications).
+   */
+  | 'member.removed';
 
 /** The actions whose entries name whom they were done to (ADR-0018 §5). */
 const toWhom = sql.raw(`'completion.logged', 'completion.undone', 'completion.picked-up',
   'share.changed', 'temporary-share.added', 'temporary-share.removed', 'absence.added',
-  'absence.removed', 'unavailable.reported', 'unavailable.ended'`);
+  'absence.removed', 'unavailable.reported', 'unavailable.ended', 'member.removed'`);
 
 /**
  * What was set before the household started, which its start entry lists
@@ -439,7 +444,7 @@ export const activityLog = pgTable(
         'household.country', 'household.started', 'completion.logged', 'completion.undone',
         'completion.picked-up', 'share.changed', 'temporary-share.added',
         'temporary-share.removed', 'absence.added', 'absence.removed', 'unavailable.reported',
-        'unavailable.ended', 'away.added', 'away.removed')`,
+        'unavailable.ended', 'away.added', 'away.removed', 'member.removed')`,
     ),
     // Only the actions done to someone name them. One way only: a subject whose profile goes
     // leaves the entry without them.

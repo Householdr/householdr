@@ -166,6 +166,8 @@ export interface HouseholdMember {
   invitable: boolean;
   /** When the profile's invitation link stops working, if it has one the viewer may see. */
   invitationExpiresAt: Temporal.Instant | null;
+  /** Whether the viewer may remove them: a head, for anyone but a head (ADR-0018 §4). */
+  removable: boolean;
 }
 
 type ViewHouseholdResult =
@@ -244,6 +246,7 @@ export async function viewHousehold(context: HouseholdContext): Promise<ViewHous
         // A link that has expired is as good as none.
         invitationExpiresAt:
           expiresAt && Temporal.Instant.compare(expiresAt, now) > 0 ? expiresAt : null,
+        removable: can(context.member, { action: 'member.remove', member: seen }),
       };
     });
     list.sort((a, b) => roleOrder[a.role] - roleOrder[b.role] || a.name.localeCompare(b.name));

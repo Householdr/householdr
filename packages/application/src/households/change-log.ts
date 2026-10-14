@@ -12,6 +12,7 @@ type SetForMember = Extract<
   | 'absence.removed'
   | 'unavailable.reported'
   | 'unavailable.ended'
+  | 'member.removed'
 >;
 
 /**
