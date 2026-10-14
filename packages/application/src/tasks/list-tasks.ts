@@ -13,6 +13,7 @@ import {
   can,
   dueness,
   planWeek,
+  scheduleDateRange,
   startRange,
   type AdvancedSchedule,
   type Dueness,
@@ -25,6 +26,8 @@ import { and, eq, gte, isNotNull, isNull } from 'drizzle-orm';
 import type { HouseholdContext } from '../households/membership';
 import { planningOf } from '../plans/planning';
 import { lastDoneOf } from './last-done';
+import { areasOf, type Area } from './areas';
+import { othersOn, tasksBySchedule, type TaskName } from './shared-schedules';
 import { repeatColumns, repeatOf } from './stored-task';
 import type { Repeat } from './task-fields';
 
@@ -37,6 +40,12 @@ export interface TaskSummary {
   frequency: Repeat;
   /** For a task on an advanced schedule: its rules and dates, which the list says in words (ADR-0004 §3). */
   schedule?: AdvancedSchedule;
+  /** The names of the other tasks on its schedule, if it shares one (ADR-0004 §1, clarification). */
+  sharedWith?: string[];
+  /** The name of the task whose next occurrence goes to the same member (ADR-0001 §7). */
+  linkedTo?: string;
+  /** The area it is in, if any (ADR-0001 §1). */
+  areaId?: string;
   /** For a "since last done" task: how long after it is due again, and how due it is now (ADR-0004 §8). */
   every?: Interval;
   dueness?: Dueness;
@@ -76,6 +85,12 @@ type ListTasksResult =
       mayChangeTasks: boolean;
       /** The days a new task can start on, from today in the household's time zone. */
       starts: { earliest: Temporal.PlainDate; latest: Temporal.PlainDate };
+      /** The days a new task's extra and exception dates can be on (ADR-0004 §3, clarification). */
+      dates: { earliest: Temporal.PlainDate; latest: Temporal.PlainDate };
+      /** The tasks on a calendar schedule, by name, whose dates a new task can share (ADR-0004 §1). */
+      shareable: TaskName[];
+      /** The household's areas, by name, which group the tasks (ADR-0001 §1, clarification). */
+      areas: Area[];
     }
   | { ok: false; error: 'not-allowed' };
 
@@ -97,7 +112,15 @@ export async function listTasks(context: HouseholdContext): Promise<ListTasksRes
     if (!household) throw new Error('The household of a member is gone.');
     const today = context.clock.now().toZonedDateTimeISO(household.timeZone).toPlainDate();
     const rows = await tx
-      .select({ id: tasks.id, name: tasks.name, duration: tasks.duration, ...repeatColumns })
+      .select({
+        id: tasks.id,
+        name: tasks.name,
+        duration: tasks.duration,
+        scheduleId: tasks.scheduleId,
+        linkedTo: tasks.linkedTo,
+        areaId: tasks.areaId,
+        ...repeatColumns,
+      })
       .from(tasks)
       .leftJoin(schedules, eq(schedules.id, tasks.scheduleId))
       // One-off tasks are listed apart; removed ones never (ADR-0001 §1, clarification).
@@ -126,10 +149,22 @@ export async function listTasks(context: HouseholdContext): Promise<ListTasksRes
           to: Temporal.PlainDate.from(period.to),
         }))
       : [];
+    const bySchedule = await tasksBySchedule(tx);
+    // Its area, and its link to a task still in the list: one to a removed task no longer counts
+    // (ADR-0001 §1, §7).
+    const names = new Map(rows.map(({ id, name }) => [id, name]));
+    const detailsOf = (row: { linkedTo: string | null; areaId: string | null }) => {
+      const name = row.linkedTo === null ? undefined : names.get(row.linkedTo);
+      return {
+        ...(name !== undefined && { linkedTo: name }),
+        ...(row.areaId !== null && { areaId: row.areaId }),
+      };
+    };
     const list = repeats.map(({ row, repeat }): TaskSummary => {
       const { id, name, duration } = row;
       const { frequency, every, schedule, start, onMiss, window } = repeat;
       if (!every) {
+        const sharedWith = othersOn(bySchedule, row.scheduleId, id).map((task) => task.name);
         return {
           id,
           name,
@@ -138,10 +173,12 @@ export async function listTasks(context: HouseholdContext): Promise<ListTasksRes
           onMiss,
           ...(schedule && { schedule }),
           ...(window && { window }),
+          ...(sharedWith.length > 0 && { sharedWith }),
+          ...detailsOf(row),
         };
       }
       const due = dueness({ every, start }, lastDone.get(id), away, today);
-      return { id, name, duration, frequency, every, dueness: due, onMiss };
+      return { id, name, duration, frequency, every, dueness: due, onMiss, ...detailsOf(row) };
     });
     list.sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
     return {
@@ -152,6 +189,11 @@ export async function listTasks(context: HouseholdContext): Promise<ListTasksRes
       mayAddOneOffs: can(context.member, { action: 'oneOff.add' }),
       mayChangeTasks: can(context.member, { action: 'household.tasks' }),
       starts: startRange(today),
+      dates: scheduleDateRange(today),
+      areas: await areasOf(tx),
+      shareable: [...bySchedule.values()]
+        .flat()
+        .toSorted((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id)),
     };
   });
 }

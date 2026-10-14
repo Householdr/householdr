@@ -69,10 +69,12 @@ const opened = async (locals: object, task: string) => {
   }
 };
 
-/** Sends the form that saves task `task`, with `fields`. */
-const saved = async (locals: object, task: string, fields: Record<string, string>) => {
+/** Sends the form that saves task `task`, with `fields`, those with several values once for each. */
+const saved = async (locals: object, task: string, fields: Record<string, string | string[]>) => {
   const body = new FormData();
-  for (const [name, value] of Object.entries(fields)) body.set(name, value);
+  for (const [name, value] of Object.entries(fields)) {
+    for (const each of [value].flat()) body.append(name, each);
+  }
   const request = new Request('https://householdr.example.org/', { method: 'POST', body });
   try {
     return await actions.save({ locals, params: { task }, request } as unknown as Parameters<
@@ -103,8 +105,70 @@ describe('a task’s page (ADR-0001 §2)', () => {
         toDay: '0',
         toTime: '20:00',
         version: 1,
+        sharedWith: [],
+        constraints: [],
+        // One rule from today, should it turn to an advanced schedule (ADR-0004 §3).
+        rules: [{ kind: 'weeks', every: '1', days: [], which: [], day: '1', start: '2026-10-08' }],
+        extraDates: [],
+        exceptionDates: [],
       },
       starts: { earliest: '2026-10-08', latest: '2027-10-08' },
+      dates: { earliest: '2026-10-08', latest: '2028-10-08' },
+      today: '2026-10-08',
+      shareable: [],
+      members: [{ id: membership.member.id, name: 'Robin', child: false }],
+      linkable: [],
+      areas: [],
+      who: { minimumAge: '', linkedTo: '', constraints: {} },
+    });
+  });
+
+  it('turns a task to an advanced schedule, without a first time of its own, and shows its fields (ADR-0004 §3)', async () => {
+    const { membership, taskId } = await founded();
+    const advanced = {
+      ...vacuum,
+      version: '1',
+      frequency: 'advanced',
+      // Disabled with scripts, so not sent.
+      start: '',
+      'rule-0-kind': 'weeks',
+      'rule-0-every': '2',
+      'rule-0-days': ['1', '4'],
+      'rule-0-start': '2026-10-12',
+    };
+    expect(
+      await saved({ ...on, membership }, taskId, { ...advanced, change: 'add-extra' }),
+    ).toMatchObject({ values: { extraDates: [''], version: 1 } });
+    expect(await saved({ ...on, membership }, taskId, advanced)).toEqual({ saved: true });
+    expect(await opened({ ...on, membership }, taskId)).toMatchObject({
+      task: {
+        frequency: 'advanced',
+        schedule: {
+          rules: [{ kind: 'weeks', every: 2, days: [1, 4], start: '2026-10-12' }],
+          extraDates: [],
+          exceptionDates: [],
+        },
+        rules: [{ kind: 'weeks', every: '2', days: ['1', '4'], start: '2026-10-12' }],
+      },
+    });
+  });
+
+  it('saves who does it, and shows it again (ADR-0001 §3)', async () => {
+    const { membership, taskId } = await founded();
+    const robin = membership.member.id;
+    const who = { ...vacuum, version: '1', minimumAge: '12', [`constraint-${robin}`]: 'bound' };
+    expect(await saved({ ...on, membership }, taskId, who)).toEqual({ saved: true });
+    expect(await opened({ ...on, membership }, taskId)).toMatchObject({
+      who: { minimumAge: '12', constraints: { [robin]: 'bound' } },
+    });
+    const refused = await saved({ ...on, membership }, taskId, {
+      ...who,
+      version: '2',
+      minimumAge: '18',
+    });
+    expect(isActionFailure(refused) && refused.data).toMatchObject({
+      invalid: ['minimumAge'],
+      values: { minimumAge: '18', constraints: { [robin]: 'bound' } },
     });
   });
 

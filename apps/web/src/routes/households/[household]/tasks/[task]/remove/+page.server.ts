@@ -25,6 +25,9 @@ const shown = (task: EditableTask) => ({
   start: task.start.toString(),
   window: task.window && windowData(task.window),
   schedule: task.schedule && scheduleData(task.schedule),
+  sharedWith: task.sharedWith.map(({ name }) => name),
+  // Its link is the form's to show, by the task's id.
+  linkedTo: undefined,
 });
 
 /** The task a head is asked to confirm removing (ADR-0001 §2), at the version it is at now. */

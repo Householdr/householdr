@@ -57,10 +57,12 @@ const opened = async (locals: object, url = new URL('https://householdr.example.
   }
 };
 
-/** Sends the form that adds a task, with `fields`. */
-const add = async (locals: object, fields: Record<string, string>) => {
+/** Sends the form that adds a task, with `fields`, those with several values once for each. */
+const add = async (locals: object, fields: Record<string, string | string[]>) => {
   const body = new FormData();
-  for (const [name, value] of Object.entries(fields)) body.set(name, value);
+  for (const [name, value] of Object.entries(fields)) {
+    for (const each of [value].flat()) body.append(name, each);
+  }
   const request = new Request('https://householdr.example.org/', { method: 'POST', body });
   try {
     return await actions.add({ locals, request } as unknown as Parameters<typeof actions.add>[0]);
@@ -115,6 +117,9 @@ describe('a household’s tasks page (ADR-0001 §1)', () => {
       mayAddOneOffs: true,
       mayChangeTasks: true,
       starts: { earliest: '2026-10-08', latest: '2027-10-08' },
+      dates: { earliest: '2026-10-08', latest: '2028-10-08' },
+      shareable: [],
+      areas: [],
       removed: false,
     });
   });
@@ -194,6 +199,100 @@ describe('a household’s tasks page (ADR-0001 §1)', () => {
             exceptionDates: [],
           },
         },
+      ],
+    });
+  });
+
+  it('adds a task on an advanced schedule from its editor’s fields, of every kind the form sends (ADR-0004 §3)', async () => {
+    const membership = await founded();
+    const recycling = {
+      ...vacuum,
+      name: 'Recycling',
+      frequency: 'advanced',
+      // A form without scripts sends the fields of every kind; the kind picks.
+      'rule-0-kind': 'weekdays-of-month',
+      'rule-0-every': '1',
+      'rule-0-days': ['1'],
+      'rule-0-which': ['2', '4'],
+      'rule-0-day': '2',
+      'rule-0-start': '2026-10-08',
+      'rule-1-kind': 'year',
+      'rule-1-every': '',
+      'rule-1-day': '1',
+      'rule-1-start': '2027-03-03',
+      extraDates: ['2026-12-24', ''],
+      exceptionDates: [''],
+    };
+    expect(await add({ ...on, membership }, recycling)).toEqual({ added: 'Recycling' });
+    expect(await opened({ ...on, membership })).toMatchObject({
+      tasks: [
+        {
+          name: 'Recycling',
+          schedule: {
+            rules: [
+              { kind: 'weekdays-of-month', every: 1, which: [2, 4], day: 2, start: '2026-10-08' },
+              { kind: 'year', start: '2027-03-03' },
+            ],
+            extraDates: ['2026-12-24'],
+            exceptionDates: [],
+          },
+        },
+      ],
+    });
+  });
+
+  it('adds and removes rows of the advanced editor without saving, keeping what was typed (CODE-10)', async () => {
+    const membership = await founded();
+    const typed = {
+      ...vacuum,
+      frequency: 'advanced',
+      'rule-0-kind': 'months',
+      'rule-0-every': '2',
+      'rule-0-start': '2026-10-31',
+      extraDates: '2026-12-24',
+    };
+    const rule = { kind: 'months', every: '2', days: [], which: [], day: '', start: '2026-10-31' };
+    const added = { kind: 'weeks', every: '1', days: [], which: [], day: '1', start: '' };
+    expect(await add({ ...on, membership }, { ...typed, change: 'add-rule' })).toMatchObject({
+      values: { name: 'Vacuum', rules: [rule, added], extraDates: ['2026-12-24'] },
+    });
+    expect(await add({ ...on, membership }, { ...typed, change: 'remove-rule-0' })).toMatchObject({
+      values: { rules: [], extraDates: ['2026-12-24'] },
+    });
+    expect(await add({ ...on, membership }, { ...typed, change: 'add-exception' })).toMatchObject({
+      values: { rules: [rule], exceptionDates: [''] },
+    });
+    expect(await add({ ...on, membership }, { ...typed, change: 'remove-extra-0' })).toMatchObject({
+      values: { extraDates: [] },
+    });
+    expect(await opened({ ...on, membership })).toMatchObject({ tasks: [] });
+  });
+
+  it('adds a task on another task’s dates, which the list says (ADR-0004 §1)', async () => {
+    const membership = await founded();
+    expect(await add({ ...on, membership }, { ...vacuum, name: 'Bins out' })).toEqual({
+      added: 'Bins out',
+    });
+    const page = await opened({ ...on, membership });
+    if (typeof page === 'number') throw new Error(`No page: ${String(page)}`);
+    const [bins] = page.shareable;
+    if (!bins) throw new Error('Nothing to share.');
+    // A form without scripts sends the fields of the other kinds too.
+    const back = {
+      ...vacuum,
+      name: 'Bins in',
+      frequency: 'shared',
+      sharedWith: bins.id,
+      start: '',
+      'rule-0-kind': 'weeks',
+      'rule-0-every': '1',
+      'rule-0-start': '2026-10-08',
+    };
+    expect(await add({ ...on, membership }, back)).toEqual({ added: 'Bins in' });
+    expect(await opened({ ...on, membership })).toMatchObject({
+      tasks: [
+        { name: 'Bins in', frequency: 'weekly', sharedWith: ['Bins out'] },
+        { name: 'Bins out', frequency: 'weekly', sharedWith: ['Bins in'] },
       ],
     });
   });

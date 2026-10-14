@@ -31,6 +31,8 @@ import { closeDue } from './closing';
 import { lastDoneOf } from '../tasks/last-done';
 import { scheduleOf } from '../tasks/stored-schedule';
 import { timingColumns, timingOf } from '../tasks/stored-task';
+import { rulesByTask } from '../tasks/task-rules';
+import { carriedLinks } from './carried-links';
 import { membersOf } from './allocation-members';
 import {
   awayIn,
@@ -189,6 +191,7 @@ export async function draftWeek(tx: Transaction, draft: Draft): Promise<string |
   }
   // Shares and availability count over the days at home still to come (ADR-0005 §5, ADR-0007 §3).
   const people = await membersOf(tx, planning, week, [...away, ...goneDays(week, today)]);
+  const rules = await rulesByTask(tx);
   const allocation = allocate({
     week: week.start,
     calendar,
@@ -200,11 +203,23 @@ export async function draftWeek(tx: Transaction, draft: Draft): Promise<string |
       id: task.id,
       duration: task.duration,
       burden: new Map(people.map((member) => [member.id, 1])),
-      constraints: new Map(),
+      // Who it is for: old enough, and as heads bound, excluded or allowed (ADR-0001 §3).
+      ...(rules.get(task.id) ?? { constraints: new Map() }),
     })),
     occurrences: weekResult.occurrences,
     preAssigned: new Map(),
-    carried: new Map(),
+    // A link from an occurrence assigned last week goes to the same member (ADR-0001 §7).
+    carried: await carriedLinks(
+      tx,
+      week.start,
+      calendar.timeZone,
+      new Map(
+        [...rules].flatMap(([id, { linkedTo }]) =>
+          linkedTo === undefined ? [] : [[id, linkedTo] as const],
+        ),
+      ),
+      weekResult.occurrences,
+    ),
   });
 
   const planId = await storePlan(tx, draft);

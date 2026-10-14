@@ -5,9 +5,13 @@
   import OneOffDetails from '#lib/components/OneOffDetails.svelte';
   import OneOffFields from '#lib/components/OneOffFields.svelte';
   import TaskDetails from '#lib/components/TaskDetails.svelte';
+  import TaskListItem from '#lib/components/TaskListItem.svelte';
   import TaskFields from '#lib/components/TaskFields.svelte';
   import { Button } from '#lib/components/ui/button/index.js';
+  import { scheduleChanges } from '#lib/hooks/use-schedule-editor.svelte.js';
   import { m } from '#lib/paraglide/messages.js';
+  import { groupByArea } from '#lib/task-areas.js';
+  import { scheduleValues } from '#lib/task-schedule.js';
   import { oneOffFieldId, oneOffProblems, taskProblems } from '#lib/task-words.js';
   import { defaultOnMiss } from '@householdr/domain';
   import type { PageProps } from './$types';
@@ -33,6 +37,12 @@
       fromTime: '08:00',
       toDay: '0',
       toTime: '20:00',
+      // One rule from today, for a task on an advanced schedule (ADR-0004 §3).
+      ...scheduleValues(undefined, data.starts.earliest),
+      // None chosen yet: the choice starts on the first task to share dates with (ADR-0004 §1).
+      sharedWith: '',
+      ownDates: '',
+      areaId: '',
     },
   );
 
@@ -68,29 +78,50 @@
     <p role="status">{m['tasks.removed']()}</p>
   {/if}
 
-  {#if data.tasks.length > 0}
+  <!-- Every member sees the areas, which group the tasks (ADR-0001 §1, clarification). -->
+  <a
+    href="/households/{page.params.household}/tasks/areas"
+    class="flex min-h-11 items-center self-start underline underline-offset-4"
+  >
+    {m['tasks.areas']()}
+  </a>
+
+  {#if data.tasks.length === 0}
+    <p>{m['tasks.none']()}</p>
+  {:else if data.areas.length === 0}
     <ul aria-labelledby="tasks" class="flex flex-col divide-y rounded-lg border">
       {#each data.tasks as task (task.id)}
-        <li class="flex flex-col gap-2 p-4">
-          <span id="task-{task.id}" class="font-medium wrap-break-word">{task.name}</span>
+        <TaskListItem
+          id={task.id}
+          name={task.name}
+          household={page.params.household}
+          mayChange={data.mayChangeTasks}
+        >
           <TaskDetails {task} locale={data.locale} />
-          {#if data.mayChangeTasks}
-            <!-- Named with its task, as one of many such links (WCAG 2.4.4). -->
-            <Button
-              id="edit-{task.id}"
-              href="/households/{page.params.household}/tasks/{task.id}"
-              variant="outline"
-              class="self-start"
-              aria-labelledby="edit-{task.id} task-{task.id}"
-            >
-              {m['tasks.edit']()}
-            </Button>
-          {/if}
-        </li>
+        </TaskListItem>
       {/each}
     </ul>
   {:else}
-    <p>{m['tasks.none']()}</p>
+    {#each groupByArea(data.tasks, data.areas) as group (group.id ?? '')}
+      {@const heading = group.id ? `area-${group.id}` : 'no-area'}
+      <section aria-labelledby={heading} class="flex flex-col gap-4">
+        <h2 id={heading} class="text-lg font-semibold wrap-break-word">
+          {group.name ?? m['tasks.no-area']()}
+        </h2>
+        <ul aria-labelledby={heading} class="flex flex-col divide-y rounded-lg border">
+          {#each group.tasks as task (task.id)}
+            <TaskListItem
+              id={task.id}
+              name={task.name}
+              household={page.params.household}
+              mayChange={data.mayChangeTasks}
+            >
+              <TaskDetails {task} locale={data.locale} />
+            </TaskListItem>
+          {/each}
+        </ul>
+      </section>
+    {/each}
   {/if}
 
   {#if data.oneOffs.length > 0}
@@ -176,13 +207,26 @@
         {form?.added ? m['tasks.added']({ name: form.added }) : ''}
       </p>
 
-      <form method="POST" action="?/add" use:enhance class="flex flex-col gap-4">
+      <form
+        method="POST"
+        action="?/add"
+        use:enhance={scheduleChanges()}
+        class="flex flex-col gap-4"
+      >
         <TaskFields
           {values}
           {invalid}
           problems={taskProblems}
           starts={data.starts}
+          dates={data.dates}
+          today={data.starts.earliest}
+          shareable={data.shareable}
+          sharesWith={[]}
+          areas={data.areas}
           startingOnMiss={defaultOnMiss}
+          action="?/add"
+          submit={m['tasks.submit']()}
+          locale={data.locale}
         />
         <Button type="submit" class="w-full">{m['tasks.submit']()}</Button>
       </form>

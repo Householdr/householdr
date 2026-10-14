@@ -36,12 +36,13 @@ export const day = v.pipe(
 );
 
 /**
- * How often a task is done: a simple frequency, an advanced schedule, or counted from when it was
- * last done (ADR-0004 §3, §8).
+ * How often a task is done: a simple frequency, an advanced schedule, the dates of another task's
+ * schedule, or counted from when it was last done (ADR-0004 §1, §3, §8).
  */
 export const sinceLastDone = 'since-last-done';
 export const advanced = 'advanced';
-export type Repeat = Frequency | typeof advanced | typeof sinceLastDone;
+export const shared = 'shared';
+export type Repeat = Frequency | typeof advanced | typeof shared | typeof sinceLastDone;
 
 const units: readonly Interval['unit'][] = ['days', 'weeks', 'months'];
 
@@ -91,13 +92,15 @@ const advancedRuleInput = v.variant('kind', [
   v.object({ kind: v.literal('year'), start: day }),
 ]);
 
-const repeats: readonly Repeat[] = [...frequencies, advanced, sinceLastDone];
+const repeats: readonly Repeat[] = [...frequencies, advanced, shared, sinceLastDone];
 export const onMisses: readonly PlanTask['onMiss'][] = ['roll over', 'lapse'];
 
 /** A task as its form sends it, once valid. */
 export type TaskInput = {
   name: string;
   duration: number;
+  /** The area it is in, if any: the use cases check it is one of the household's (ADR-0001 §1). */
+  areaId?: string;
 } & (
   | {
       frequency: Frequency;
@@ -105,10 +108,20 @@ export type TaskInput = {
       onMiss: PlanTask['onMiss'];
       /** At set times: the window around each date (ADR-0004 §4, clarification). */
       window?: { from: WindowEdge; to: WindowEdge };
+      /** For a task that shares its schedule: new dates for it alone (ADR-0004 §1, clarification). */
+      ownDates: boolean;
     }
   | {
       frequency: typeof advanced;
       schedule: AdvancedSchedule;
+      onMiss: PlanTask['onMiss'];
+      window?: { from: WindowEdge; to: WindowEdge };
+      ownDates: boolean;
+    }
+  | {
+      frequency: typeof shared;
+      /** The task whose schedule it shares (ADR-0004 §1, clarification). */
+      sharedWith: string;
       onMiss: PlanTask['onMiss'];
       window?: { from: WindowEdge; to: WindowEdge };
     }
@@ -136,7 +149,9 @@ export interface KeptDays {
  * (`isFixedWindow`, §4); counted from when it was last done, how long after (§8), and it always
  * rolls over, any time that week. On an advanced schedule, its rules, each with its own first time
  * instead of the task's, and its extra and exception dates (`isAdvancedSchedule`,
- * `isScheduleDate`, §3), with the on-miss policy and timing of a simple frequency.
+ * `isScheduleDate`, §3), with the on-miss policy and timing of a simple frequency. Sharing another
+ * task's schedule, which task, with them too (§1, clarification); the task is the use case's to
+ * find. A task that shares its schedule may take new dates for itself alone (`ownDates`).
  * Every field is checked, whichever others are refused, so the form can name them all.
  */
 export function taskInput(today: Temporal.PlainDate, kept?: KeptDays) {
@@ -177,6 +192,9 @@ export function taskInput(today: Temporal.PlainDate, kept?: KeptDays) {
       ),
       extraDates: v.optional(dates),
       exceptionDates: v.optional(dates),
+      sharedWith: v.optional(v.pipe(v.string(), v.uuid())),
+      areaId: v.optional(v.pipe(v.string(), v.uuid())),
+      ownDates: v.optional(v.boolean()),
       onMiss: v.optional(v.picklist(onMisses)),
       when: v.optional(v.picklist(whens)),
       fromDay: v.optional(edgeDay),
@@ -201,13 +219,21 @@ export function taskInput(today: Temporal.PlainDate, kept?: KeptDays) {
       ),
       ['everyUnit'],
     ),
-    // A simple frequency and "since last done" start on a day; an advanced schedule's rules do.
+    // A simple frequency and "since last done" start on a day; an advanced schedule's rules do,
+    // and a shared schedule's are another task's.
     v.forward(
       v.partialCheck(
         [['frequency'], ['start']],
-        (input) => custom(input) || input.start !== undefined,
+        (input) => custom(input) || input.frequency === shared || input.start !== undefined,
       ),
       ['start'],
+    ),
+    v.forward(
+      v.partialCheck(
+        [['frequency'], ['sharedWith']],
+        (input) => input.frequency !== shared || input.sharedWith !== undefined,
+      ),
+      ['sharedWith'],
     ),
     v.forward(
       v.partialCheck(
@@ -249,9 +275,10 @@ export function taskInput(today: Temporal.PlainDate, kept?: KeptDays) {
     ),
     v.rawTransform(({ dataset, addIssue, NEVER }): TaskInput => {
       const { name, duration, frequency, everyCount, everyUnit, start, onMiss } = dataset.value;
-      const { rules, extraDates, exceptionDates } = dataset.value;
+      const { rules, extraDates, exceptionDates, sharedWith, ownDates = false } = dataset.value;
       const { when, fromDay, fromTime, toDay, toTime } = dataset.value;
-      const common = { name, duration };
+      const { areaId } = dataset.value;
+      const common = { name, duration, ...(areaId !== undefined && { areaId }) };
       if (frequency === sinceLastDone && everyCount !== undefined && everyUnit !== undefined) {
         if (start) return { ...common, frequency, start, everyCount, everyUnit };
       }
@@ -266,15 +293,18 @@ export function taskInput(today: Temporal.PlainDate, kept?: KeptDays) {
           ? { from: { dayOffset: fromDay, time: fromTime }, to: { dayOffset: toDay, time: toTime } }
           : undefined;
         const timed = { ...common, onMiss, ...(window && { window }) };
-        if (frequency === advanced) {
+        if (frequency === shared) {
+          if (sharedWith) return { ...timed, frequency, sharedWith };
+        } else if (frequency === advanced) {
           const schedule = {
             rules: rules ?? [],
             extraDates: extraDates ?? [],
             exceptionDates: exceptionDates ?? [],
           };
-          return { ...timed, frequency, schedule };
+          return { ...timed, frequency, schedule, ownDates };
+        } else if (start) {
+          return { ...timed, frequency, start, ownDates };
         }
-        if (start) return { ...timed, frequency, start };
       }
       // The checks above refuse anything else.
       addIssue();
@@ -287,7 +317,9 @@ export function taskInput(today: Temporal.PlainDate, kept?: KeptDays) {
 export type TaskField =
   | 'name'
   | 'duration'
+  | 'area'
   | 'frequency'
+  | 'sharedWith'
   | 'everyCount'
   | 'everyUnit'
   | 'start'
@@ -296,13 +328,18 @@ export type TaskField =
   | 'window'
   | 'rules'
   | 'extraDates'
-  | 'exceptionDates';
+  | 'exceptionDates'
+  | 'minimumAge'
+  | 'constraints'
+  | 'linkedTo';
 
 /** The fields in the order the form shows them, which its error summary follows. */
 const order: TaskField[] = [
   'name',
   'duration',
+  'area',
   'frequency',
+  'sharedWith',
   'everyCount',
   'everyUnit',
   'start',
@@ -312,6 +349,9 @@ const order: TaskField[] = [
   'onMiss',
   'when',
   'window',
+  'minimumAge',
+  'constraints',
+  'linkedTo',
 ];
 
 /** The fields of a fixed window, which the form names as one (ADR-0004 §4). */
@@ -322,6 +362,7 @@ export function refusedFields(issues: readonly v.BaseIssue<unknown>[]): TaskFiel
   const keys = new Set(
     issues.map(({ path }) => {
       const key = path?.[0]?.key;
+      if (key === 'areaId') return 'area';
       return typeof key === 'string' && windowFields.has(key) ? 'window' : key;
     }),
   );

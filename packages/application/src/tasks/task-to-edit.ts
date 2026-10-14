@@ -1,18 +1,31 @@
 import { households, inHousehold, schedules, tasks, type Transaction } from '@householdr/db';
-import { can, changedStartRange } from '@householdr/domain';
+import { can, changedStartRange, scheduleDateRange } from '@householdr/domain';
 import { and, eq } from 'drizzle-orm';
 import * as v from 'valibot';
 import type { HouseholdContext } from '../households/membership';
+import { areasOf, type Area } from './areas';
+import { tasksBySchedule, othersOn, type TaskName } from './shared-schedules';
 import { repeatColumns, repeatOf, type TaskRepeat } from './stored-task';
+import {
+  constrainedMembers,
+  linkableTasks,
+  rulesOf,
+  type ConstrainedMember,
+  type TaskRules,
+} from './task-rules';
 import { taskReference } from './task-fields';
 
 /** A task as the form that changes it shows it, with the version it is changed from (ADR-0019 §5). */
-export interface EditableTask extends TaskRepeat {
+export interface EditableTask extends TaskRepeat, TaskRules {
   id: string;
   name: string;
   /** In minutes. */
   duration: number;
   version: number;
+  /** The other tasks on its schedule, by name (ADR-0004 §1, clarification). */
+  sharedWith: TaskName[];
+  /** The area it is in, if any (ADR-0001 §1). */
+  areaId?: string;
 }
 
 /**
@@ -28,6 +41,9 @@ export async function readTask(tx: Transaction, taskId: string) {
       version: tasks.version,
       scheduleId: schedules.id,
       scheduleVersion: schedules.version,
+      minimumAge: tasks.minimumAge,
+      linkedTo: tasks.linkedTo,
+      areaId: tasks.areaId,
       ...repeatColumns,
     })
     .from(tasks)
@@ -36,7 +52,18 @@ export async function readTask(tx: Transaction, taskId: string) {
     .where(and(eq(tasks.id, taskId), eq(tasks.removed, false)));
   if (!row) return undefined;
   const { id, name, duration, version, scheduleId, scheduleVersion } = row;
-  const task: EditableTask = { id, name, duration, version, ...repeatOf(id, row) };
+  const sharedWith = othersOn(await tasksBySchedule(tx), scheduleId, id);
+  const rules = await rulesOf(tx, id, row);
+  const task: EditableTask = {
+    id,
+    name,
+    duration,
+    version,
+    sharedWith,
+    ...(row.areaId !== null && { areaId: row.areaId }),
+    ...rules,
+    ...repeatOf(id, row),
+  };
   const schedule =
     scheduleId === null || scheduleVersion === null
       ? undefined
@@ -52,6 +79,21 @@ type TaskToEditResult =
       task: EditableTask;
       /** The days its date picker offers for its first time (`changedStartRange`). */
       starts: { earliest: Temporal.PlainDate; latest: Temporal.PlainDate };
+      /**
+       * The days its pickers offer for an extra or exception date (`scheduleDateRange`), stretched
+       * to the earliest it has already (ADR-0004 §3, clarification).
+       */
+      dates: { earliest: Temporal.PlainDate; latest: Temporal.PlainDate };
+      /** Today in the household's time zone: the first time a rule added to it starts with. */
+      today: Temporal.PlainDate;
+      /** The tasks on another calendar schedule, whose dates it can share (ADR-0004 §1). */
+      shareable: TaskName[];
+      /** The household's members, by name, for its constraints (ADR-0001 §3, clarification). */
+      members: ConstrainedMember[];
+      /** The tasks it can be linked to, by name (ADR-0001 §7, clarification). */
+      linkable: TaskName[];
+      /** The household's areas, by name (ADR-0001 §1). */
+      areas: Area[];
     }
   /** Only heads change tasks, once signed in with two factors (ADR-0001 §2, ADR-0010 §3). */
   | { ok: false; error: 'not-allowed' }
@@ -76,11 +118,30 @@ export async function taskToEdit(
     const found = await readTask(tx, target.output.taskId);
     if (!found) return { ok: false, error: 'not-found' };
     const today = context.clock.now().toZonedDateTimeISO(household.timeZone).toPlainDate();
+    const { earliest, latest } = scheduleDateRange(today);
+    const kept = [
+      ...(found.task.schedule?.extraDates ?? []),
+      ...(found.task.schedule?.exceptionDates ?? []),
+    ];
     return {
       ok: true,
       household: household.name,
       task: found.task,
       starts: changedStartRange(today, found.task.start),
+      dates: {
+        earliest: [earliest, ...kept].reduce((a, b) =>
+          Temporal.PlainDate.compare(a, b) <= 0 ? a : b,
+        ),
+        latest,
+      },
+      today,
+      shareable: [...(await tasksBySchedule(tx)).entries()]
+        .filter(([scheduleId]) => scheduleId !== found.schedule?.id)
+        .flatMap(([, names]) => names)
+        .toSorted((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id)),
+      members: await constrainedMembers(tx),
+      linkable: await linkableTasks(tx, found.task.id),
+      areas: await areasOf(tx),
     };
   });
 }

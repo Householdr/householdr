@@ -89,6 +89,15 @@ describe('listTasks (ADR-0001 §1)', () => {
       mayAddOneOffs: true,
       mayChangeTasks: true,
       starts: expect.anything() as unknown,
+      dates: {
+        earliest: Temporal.PlainDate.from('2026-10-08'),
+        latest: Temporal.PlainDate.from('2028-10-08'),
+      },
+      areas: [],
+      shareable: [
+        { id: fridge, name: 'Clean the fridge' },
+        { id: water, name: 'Water the plants' },
+      ],
     });
   });
 
