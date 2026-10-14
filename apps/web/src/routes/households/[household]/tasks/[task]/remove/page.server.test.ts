@@ -94,7 +94,7 @@ describe('removing a task (ADR-0001 §2)', () => {
     const { membership, taskId } = await founded();
     expect(await opened({ ...on, membership }, taskId)).toEqual({
       household: 'Ash Lane',
-      task: { ...vacuum, id: taskId, version: 1, sharedWith: [] },
+      task: { ...vacuum, id: taskId, version: 1, sharedWith: [], constraints: [] },
     });
   });
 

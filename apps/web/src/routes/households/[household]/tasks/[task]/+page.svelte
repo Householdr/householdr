@@ -4,6 +4,7 @@
   import ErrorSummary from '#lib/components/ErrorSummary.svelte';
   import TaskDetails from '#lib/components/TaskDetails.svelte';
   import TaskFields from '#lib/components/TaskFields.svelte';
+  import TaskRulesFields from '#lib/components/TaskRulesFields.svelte';
   import { Button } from '#lib/components/ui/button/index.js';
   import { scheduleChanges } from '#lib/hooks/use-schedule-editor.svelte.js';
   import { m } from '#lib/paraglide/messages.js';
@@ -25,6 +26,7 @@
       // It keeps the dates it has, until another task's are chosen (ADR-0004 §1).
       sharedWith: '',
       ownDates: '',
+      ...data.who,
     },
   );
 
@@ -74,6 +76,7 @@
       submit={m['task.save']()}
       locale={data.locale}
     />
+    <TaskRulesFields {values} members={data.members} {invalid} {problems} />
     <Button type="submit" class="w-full">{m['task.save']()}</Button>
   </form>
 

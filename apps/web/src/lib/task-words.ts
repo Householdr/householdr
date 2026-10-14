@@ -83,6 +83,8 @@ export const taskProblems: Record<TaskField, () => string> = {
   extraDates: m['tasks.invalid-extra-dates'],
   exceptionDates: m['tasks.invalid-exception-dates'],
   sharedWith: m['tasks.invalid-shared-with'],
+  minimumAge: m['tasks.invalid-minimum-age'],
+  constraints: m['tasks.invalid-constraints'],
 };
 
 /** Why the server refused a field of a one-off task's form, in words (CODE-13). */
