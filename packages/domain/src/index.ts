@@ -58,6 +58,7 @@ export {
 export { householdDate } from './households/date';
 export { supportServiceIn, type SupportService } from './households/support-services';
 export { isAdultOn } from './members/age';
+export { headCandidates, type HeadCandidate } from './members/succession';
 export {
   canForAccount,
   type Account,

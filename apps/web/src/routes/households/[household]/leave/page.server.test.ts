@@ -1,4 +1,10 @@
-import { createHousehold, membership } from '@householdr/application';
+import {
+  acceptInvitation,
+  addAdult,
+  createHousehold,
+  invite,
+  membership,
+} from '@householdr/application';
 import { createTestAccount, testSignInContext } from '@householdr/auth/testing';
 import { isHttpError, isRedirect } from '@sveltejs/kit';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -59,10 +65,14 @@ const opened = async (locals: object) => {
   }
 };
 
-/** Sends the leave form, choosing `shownAs` if given; a redirect comes back as where it goes. */
-const leave = async (locals: object, shownAs?: string) => {
+/**
+ * Sends the leave form, choosing `shownAs` and `successor` if given; a redirect comes back as where
+ * it goes.
+ */
+const leave = async (locals: object, shownAs?: string, successor?: string) => {
   const body = new FormData();
   if (shownAs !== undefined) body.set('shownAs', shownAs);
+  if (successor !== undefined) body.set('successor', successor);
   const request = new Request('https://householdr.example.org/', { method: 'POST', body });
   try {
     return await actions.default({ locals, request } as unknown as Parameters<
@@ -81,7 +91,7 @@ describe('the leave page (ADR-0005 §4, ADR-0018 §2, §8)', () => {
     expect(await opened({ ...on, membership })).toEqual({
       household: 'Ash Lane',
       name: 'Robin',
-      lastHead: false,
+      successors: null,
       support: { name: '1712', phone: '1712', website: 'https://www.1712.be' },
     });
   });
@@ -93,12 +103,42 @@ describe('the leave page (ADR-0005 §4, ADR-0018 §2, §8)', () => {
     expect(await opened({ ...on, membership })).toBe(403);
   });
 
-  it('tells the last head it can’t yet, and keeps the choice when it is refused', async () => {
+  it('asks the last head who becomes head, and passes the role as they leave', async () => {
     const head = await founded();
-    expect(await opened({ ...on, membership: head })).toMatchObject({ lastHead: true });
-    expect(await leave({ ...on, membership: head }, 'name')).toMatchObject({
+    // Alex accepts an invitation to their profile, made by Robin with two factors (ADR-0010 §5).
+    const context = { ...test.context, ...head, member: { ...head.member, twoFactor: true } };
+    const profile = await addAdult(context, { name: 'Alex' });
+    if (!profile.ok) throw new Error('No profile');
+    const link = await invite(context, { member: profile.memberId });
+    if (!link.ok) throw new Error('No link');
+    const alexAccount = await createTestAccount(test.context.auth, {
+      email: `alex-${crypto.randomUUID()}@example.org`,
+      password: 'correct horse battery staple',
+    });
+    expect(await acceptInvitation(test.context, alexAccount, link.token)).toMatchObject({
+      ok: true,
+    });
+    const loaded = await opened({ ...on, membership: head });
+    expect(loaded).toMatchObject({ successors: [{ name: 'Alex' }] });
+    const alex = typeof loaded === 'object' ? loaded.successors?.[0]?.id : undefined;
+    if (!alex) throw new Error('No successor');
+    // Someone who can't become head is refused, and the choices stay chosen (UI-10).
+    expect(await leave({ ...on, membership: head }, 'name', crypto.randomUUID())).toMatchObject({
       status: 409,
-      data: { problem: 'last-head', shownAs: 'name' },
+      data: { problem: 'successor', shownAs: 'name' },
+    });
+    expect(await leave({ ...on, membership: head }, 'name', alex)).toEqual({
+      status: 303,
+      location: '/?left',
+    });
+  });
+
+  it('tells the last head without an adult to pass it to that they can’t leave yet', async () => {
+    const head = await founded();
+    expect(await opened({ ...on, membership: head })).toMatchObject({ successors: [] });
+    expect(await leave({ ...on, membership: head }, 'name', '')).toMatchObject({
+      status: 409,
+      data: { problem: 'last-adult', shownAs: 'name', successor: '' },
     });
     const adult = as('adult', head);
     expect(await leave({ ...on, membership: adult }, 'nickname')).toMatchObject({

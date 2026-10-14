@@ -2170,8 +2170,16 @@
     "note": "Leaving was sent without a choice of how the history shows the member.",
     "needsReview": ["nl"]
   },
+  "leave.last-adult": {
+    "note": "Shown instead of the form to the household's last head when no other adult with an account is left: leaving would close the household, which isn't built yet (ADR-0018 §2, clarification). Plain, without blame.",
+    "needsReview": ["nl"]
+  },
+  "leave.successor-gone": {
+    "note": "Leaving didn't go through because the member the last head chose to become head has left, or can no longer become head, meanwhile (ADR-0018 §2, clarification).",
+    "needsReview": ["nl"]
+  },
   "leave.last-head": {
-    "note": "Shown instead of the form to the household's only head, who can't leave yet: naming a successor isn't built (ADR-0018 §2). Plain, without blame.",
+    "note": "Above the choice of who becomes head, for the household's last head: the head role passes as they leave (ADR-0018 §2, clarification). Plain, without blame.",
     "needsReview": ["nl"]
   },
   "leave.intro": {
@@ -2184,6 +2192,18 @@
   },
   "leave.rejoin": {
     "note": "Someone who left comes back only through a new invitation they accept themselves (ADR-0018 §2).",
+    "needsReview": ["nl"]
+  },
+  "leave.successor": {
+    "note": "Legend of the last head's choice of who becomes head when they leave (ADR-0018 §2, clarification).",
+    "needsReview": ["nl"]
+  },
+  "leave.successor-rule": {
+    "note": "First choice, chosen to begin with: naming no one, which gives the head role to the adult with an account who has been in the household longest, {name} (ADR-0018 §2). The other choices are the members' names.",
+    "needsReview": ["nl"]
+  },
+  "leave.successor-decline": {
+    "note": "Under that choice: a member the leaving head names is asked later whether they take it on; if they decline, the role goes to the adult with an account longest in the household after them (ADR-0018 §2, clarification).",
     "needsReview": ["nl"]
   },
   "leave.shown-as": {

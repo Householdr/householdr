@@ -51,6 +51,7 @@ export async function endMembership(
       accountId: null,
       sharePercent: null,
       showsName,
+      namedHead: false,
       version: sql`${members.version} + 1`,
     })
     .where(eq(members.id, memberId));
