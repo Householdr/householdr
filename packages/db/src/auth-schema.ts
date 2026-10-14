@@ -333,3 +333,20 @@ export const pushSubscriptions = auth.table(
     check('push_subscriptions_endpoint', sql`${t.endpoint} like 'https://%'`),
   ],
 );
+
+/**
+ * When a push was sent to an account, which the daily ceiling counts across its households
+ * (ADR-0014 §4, clarification): nothing about what was sent or from where, and forgotten after two
+ * days (ADR-0012 §2, clarification).
+ */
+export const sentPushes = auth.table(
+  'sent_pushes',
+  {
+    id: key(),
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    sentAt: timestamp({ withTimezone: true }).notNull(),
+  },
+  (t) => [index('sent_pushes_account').on(t.accountId, t.sentAt)],
+);

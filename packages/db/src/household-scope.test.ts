@@ -736,7 +736,7 @@ describe('the two roles (ADR-0008 §9, clarification)', () => {
 });
 
 describe('tables outside a household (ADR-0008 §9, clarification)', () => {
-  it('are the account tables, rate-limit counts, account e-mails, two factors, notification preferences and push subscriptions in auth, and no others', async () => {
+  it('are the account tables, rate-limit counts, account e-mails, two factors, notification preferences, push subscriptions and sent pushes in auth, and no others', async () => {
     // `drizzle` holds the list of migrations that have run, and `pgboss` the job queue, whose jobs
     // carry IDs only (ADR-0014 §7, clarification) and whose tables change with pg-boss itself.
     const { rows } = await db.execute<{ name: string }>(sql`
@@ -754,6 +754,7 @@ describe('tables outside a household (ADR-0008 §9, clarification)', () => {
       'auth.passkeys',
       'auth.push_subscriptions',
       'auth.rate_limits',
+      'auth.sent_pushes',
       'auth.sessions',
       'auth.two_factors',
       'auth.verifications',

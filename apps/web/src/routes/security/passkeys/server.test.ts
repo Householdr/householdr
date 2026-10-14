@@ -51,6 +51,7 @@ const on = {
   'page-transitions': false,
   notifications: false,
   'notification-preferences': false,
+  'push-notifications': false,
 };
 let next = 0;
 

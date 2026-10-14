@@ -83,6 +83,14 @@ export {
   type SavedPreferences,
 } from './notifications/preferences';
 export {
+  deleteExpiredPushes,
+  preparePush,
+  pushSent,
+  queueDuePushes,
+  type PreparedPush,
+  type PushDeliveryContext,
+} from './notifications/push-delivery';
+export {
   devicePushEndpoints,
   removePushSubscription,
   savePushSubscription,

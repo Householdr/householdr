@@ -119,6 +119,13 @@ export const flags = {
     owner: 'Jens',
     expires: '2027-03-31',
   },
+  'push-notifications': {
+    kind: 'release',
+    description:
+      'Sending each notification as a push to the devices its member turned push on for, as they chose, after quiet hours and within the daily ceiling (ADR-0014 §4, §7, clarifications). Doubles as its kill switch. Turn it on with notification-preferences, where push is turned on.',
+    owner: 'Jens',
+    expires: '2027-03-31',
+  },
 } as const satisfies Record<string, Flag>;
 
 export type FlagKey = keyof typeof flags;
