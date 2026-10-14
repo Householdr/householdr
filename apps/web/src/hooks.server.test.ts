@@ -117,6 +117,7 @@ describe('the flags of a request (ADR-0015 §3)', () => {
       balances: false,
       'page-transitions': false,
       notifications: false,
+      'notification-preferences': false,
     });
   });
 
@@ -140,6 +141,7 @@ describe('the flags of a request (ADR-0015 §3)', () => {
       balances: false,
       'page-transitions': false,
       notifications: false,
+      'notification-preferences': false,
     });
   });
 });

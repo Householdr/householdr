@@ -112,6 +112,13 @@ export const flags = {
     owner: 'Jens',
     expires: '2027-03-31',
   },
+  'notification-preferences': {
+    kind: 'release',
+    description:
+      'The account’s notification settings page: a channel for each category, quiet hours and the e-mail fallback (ADR-0014 §3, clarifications). Turn it on once push and e-mail delivery work, or its choices change nothing.',
+    owner: 'Jens',
+    expires: '2027-03-31',
+  },
 } as const satisfies Record<string, Flag>;
 
 export type FlagKey = keyof typeof flags;

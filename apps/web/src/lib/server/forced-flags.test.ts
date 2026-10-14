@@ -19,6 +19,7 @@ describe('withForcedFlags (ADR-0015 §10)', () => {
     balances: false,
     'page-transitions': false,
     notifications: false,
+    'notification-preferences': false,
   };
 
   it('turns the flags a test names on or off, and leaves the rest', () => {
