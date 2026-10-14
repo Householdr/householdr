@@ -1,6 +1,7 @@
 import type { Database } from '@householdr/db';
 import { testDatabase } from '@householdr/db/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { completeOccurrence } from '../completions/complete-occurrence';
 import { addAdult } from '../households/add-adult';
 import { draftPlan } from './draft-plan';
 import { publishPlan } from './publish-plan';
@@ -380,6 +381,113 @@ describe('the weeks after (ADR-0002 §2, ADR-0004 §4)', () => {
       expect.objectContaining({ occurrence: first?.occurrence, date: '2026-10-08' }),
     ]);
     expect(await h.occurrences()).toHaveLength(1);
+  });
+});
+
+describe('"since last done" tasks (ADR-0004 §8)', () => {
+  const week3 = '2026-10-26';
+  const week4 = '2026-11-02';
+  const rowsOf = async (h: PlannedHousehold, week: string) =>
+    ((await h.plan(week))?.rows ?? []).map((row) => [row.task, row.date]);
+
+  it('plans one in the week it is due, and again each week until it is done, as one occurrence', async () => {
+    const h = await household();
+    await h.sinceLastDone('Oven', 40, { count: 6, unit: 'weeks' }, '2026-10-14');
+    await drafted(h.scheduler, week1);
+    await publishPlan(h.scheduler, { week: week1 });
+    h.clock.advance({ hours: 9 * 24 });
+    await drafted(h.scheduler, week2);
+    expect(await rowsOf(h, week1)).toEqual([['Oven', '2026-10-14']]);
+    // Not done: it stays due, the same occurrence, and never closes as missed.
+    expect(await rowsOf(h, week2)).toEqual([['Oven', '2026-10-14']]);
+    const [week1Oven] = (await h.plan(week1))?.rows ?? [];
+    const [week2Oven] = (await h.plan(week2))?.rows ?? [];
+    expect(week2Oven?.occurrence).toBe(week1Oven?.occurrence);
+    expect(await h.occurrences()).toEqual([
+      expect.objectContaining({ task: 'Oven', status: 'open', closedByPlan: null }),
+    ]);
+  });
+
+  it('counts from the day it was last done', async () => {
+    const h = await household();
+    await h.sinceLastDone('Oven', 40, { count: 2, unit: 'weeks' }, '2026-10-14');
+    await drafted(h.scheduler, week1);
+    await publishPlan(h.scheduler, { week: week1 });
+    // Done on Thursday 15 October, so due again on 29 October, in the week after next.
+    h.clock.advance({ hours: 7 * 24 });
+    const [oven] = (await h.plan(week1))?.rows ?? [];
+    const done = await completeOccurrence(h.head, { occurrence: oven?.occurrence });
+    expect(done.ok).toBe(true);
+    h.clock.advance({ hours: 2 * 24 });
+    await drafted(h.scheduler, week2);
+    expect(await rowsOf(h, week2)).toEqual([]);
+    h.clock.advance({ hours: 7 * 24 });
+    await drafted(h.scheduler, week3);
+    expect(await rowsOf(h, week3)).toEqual([['Oven', '2026-10-29']]);
+  });
+
+  it('doesn’t count the days the household is away, even in a week before', async () => {
+    const h = await household();
+    await h.sinceLastDone('Oven', 40, { count: 2, unit: 'weeks' }, '2026-10-14');
+    await drafted(h.scheduler, week1);
+    await publishPlan(h.scheduler, { week: week1 });
+    h.clock.advance({ hours: 7 * 24 });
+    const [oven] = (await h.plan(week1))?.rows ?? [];
+    await completeOccurrence(h.head, { occurrence: oven?.occurrence });
+    // Five days away in week 2 move it from 29 October to 3 November.
+    await h.away('2026-10-20', '2026-10-24');
+    h.clock.advance({ hours: 9 * 24 });
+    await drafted(h.scheduler, week3);
+    expect(await rowsOf(h, week3)).toEqual([]);
+    h.clock.advance({ hours: 7 * 24 });
+    await drafted(h.scheduler, week4);
+    expect(await rowsOf(h, week4)).toEqual([['Oven', '2026-11-03']]);
+  });
+});
+
+describe('one-off tasks (ADR-0004 §4)', () => {
+  const twoWeeks = async (h: PlannedHousehold) => {
+    await drafted(h.scheduler, week1);
+    await publishPlan(h.scheduler, { week: week1 });
+    h.clock.advance({ hours: 9 * 24 });
+    return drafted(h.scheduler, week2);
+  };
+
+  it('plans one in the week of its date, and rolls it over or lets it lapse like any task', async () => {
+    const h = await household();
+    await h.oneOff('Fix the shelf', 30, '2026-10-14');
+    await h.oneOff('Post the parcel', 15, '2026-10-15', { onMiss: 'lapse' });
+    const week2Plan = await twoWeeks(h);
+    expect((await h.plan(week1))?.rows.map((row) => [row.task, row.date])).toEqual([
+      ['Fix the shelf', '2026-10-14'],
+      ['Post the parcel', '2026-10-15'],
+    ]);
+    // Not done in week 1: the shelf still needs fixing, the parcel's moment has passed.
+    expect((await h.plan(week2))?.rows.map((row) => [row.task, row.date])).toEqual([
+      ['Fix the shelf', '2026-10-14'],
+    ]);
+    expect(await h.occurrences()).toEqual([
+      expect.objectContaining({ task: 'Fix the shelf', status: 'open', closedByPlan: null }),
+      expect.objectContaining({ task: 'Post the parcel', status: 'open', closedByPlan: week2Plan }),
+    ]);
+  });
+
+  it('keeps a deadline as the end of its own window', async () => {
+    const h = await household();
+    await h.oneOff('Post the parcel', 15, '2026-10-14', { deadline: '2026-10-16' });
+    await drafted(h.scheduler, week1);
+    expect((await h.plan(week1))?.rows.map((row) => row.task)).toEqual(['Post the parcel']);
+    // The end of Friday 16 October in Brussels.
+    expect(await h.occurrences()).toEqual([
+      expect.objectContaining({ windowEnd: new Date('2026-10-16T22:00:00Z') }),
+    ]);
+  });
+
+  it('plans one whose date has passed no more once its window is over', async () => {
+    const h = await household();
+    await h.oneOff('Fix the shelf', 30, '2026-10-06', { onMiss: 'lapse' });
+    await drafted(h.scheduler, week1);
+    expect((await h.plan(week1))?.rows).toEqual([]);
   });
 });
 

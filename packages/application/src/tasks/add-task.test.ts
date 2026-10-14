@@ -252,3 +252,85 @@ describe('addTask (ADR-0001 §1, ADR-0004 §3)', () => {
     expect(await stored(head.householdId)).toEqual([]);
   });
 });
+
+describe('addTask counted from when it was last done (ADR-0004 §8)', () => {
+  const oven = {
+    name: 'Clean the oven',
+    duration: 40,
+    frequency: 'since-last-done',
+    everyCount: 6,
+    everyUnit: 'weeks',
+  };
+  const counted = (householdId: string) =>
+    inHousehold(db, householdId, (tx) =>
+      tx
+        .select({
+          scheduleId: tasks.scheduleId,
+          everyCount: tasks.everyCount,
+          everyUnit: tasks.everyUnit,
+          start: tasks.start,
+          timing: tasks.timing,
+          onMiss: tasks.onMiss,
+        })
+        .from(tasks),
+    );
+
+  it('adds it without a schedule, flexible and always rolling over, due from the day given', async () => {
+    const head = await founded();
+    const result = await addTask(head, { ...oven, start: '2026-10-20', onMiss: 'lapse' });
+    expect(result).toMatchObject({ ok: true, name: 'Clean the oven' });
+    expect(await counted(head.householdId)).toEqual([
+      {
+        scheduleId: null,
+        everyCount: 6,
+        everyUnit: 'weeks',
+        start: '2026-10-20',
+        timing: 'flexible',
+        onMiss: 'roll over',
+      },
+    ]);
+    expect(await inHousehold(db, head.householdId, (tx) => tx.select().from(schedules))).toEqual(
+      [],
+    );
+  });
+
+  it('is due from today without a day', async () => {
+    const head = await founded();
+    await addTask(head, oven);
+    expect(await counted(head.householdId)).toMatchObject([{ start: '2026-10-08' }]);
+  });
+
+  it('refuses an interval that isn’t a whole number from 1 up to a year, or has no unit', async () => {
+    const head = await founded();
+    for (const every of [
+      { everyCount: 0, everyUnit: 'days' },
+      { everyCount: 366, everyUnit: 'days' },
+      { everyCount: 53, everyUnit: 'weeks' },
+      { everyCount: 13, everyUnit: 'months' },
+      { everyCount: 1.5, everyUnit: 'weeks' },
+    ]) {
+      expect(await addTask(head, { ...oven, ...every })).toEqual({
+        ok: false,
+        error: 'invalid',
+        fields: ['everyCount'],
+      });
+    }
+    expect(await addTask(head, { ...oven, everyUnit: 'years' })).toEqual({
+      ok: false,
+      error: 'invalid',
+      fields: ['everyUnit'],
+    });
+    expect(await addTask(head, { ...oven, everyCount: undefined, everyUnit: undefined })).toEqual({
+      ok: false,
+      error: 'invalid',
+      fields: ['everyCount', 'everyUnit'],
+    });
+    // On a simple frequency, what happens if it isn't done is still needed.
+    expect(await addTask(head, { ...vacuum, onMiss: undefined })).toEqual({
+      ok: false,
+      error: 'invalid',
+      fields: ['onMiss'],
+    });
+    expect(await counted(head.householdId)).toEqual([]);
+  });
+});

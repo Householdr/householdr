@@ -4,9 +4,11 @@ import {
   inHousehold,
   members,
   passkeys,
+  tasks,
   type Database,
 } from '@householdr/db';
 import { testDatabase } from '@householdr/db/testing';
+import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createHousehold } from '../households/create-household';
 import { membership } from '../households/membership';
@@ -208,6 +210,38 @@ describe('comparisonGame (ADR-0003 §3a)', () => {
     await answer(head, Ironing ?? '', Dishes ?? '', 2);
     // Weighing by how often a task occurs rescales all of them alike, so it never reorders them.
     expect(orderOf(await played(head))).toEqual(['Ironing', 'Windows', 'Dishes']);
+  });
+
+  it('asks about "since last done" tasks too (ADR-0004 §8)', async () => {
+    const head = await founded();
+    const { Dishes } = await withTasks(head, 'Dishes');
+    const [oven] = await inHousehold(db, head.householdId, (tx) =>
+      tx
+        .insert(tasks)
+        .values({
+          householdId: head.householdId,
+          name: 'Oven',
+          duration: 40,
+          everyCount: 6,
+          everyUnit: 'weeks',
+          start: '2026-10-14',
+          timing: 'flexible',
+          onMiss: 'roll over',
+        })
+        .returning({ id: tasks.id }),
+    );
+    const result = await played(head);
+    expect(result.pair?.map((task) => task.id).sort()).toEqual([Dishes, oven?.id].sort());
+  });
+
+  it('leaves out a removed task, which stays only for what was done (ADR-0001 §1, clarification)', async () => {
+    const head = await founded();
+    const { Dishes, Ironing } = await withTasks(head, 'Dishes', 'Ironing', 'Vacuum');
+    await answer(head, Ironing ?? '', Dishes ?? '');
+    await inHousehold(db, head.householdId, (tx) =>
+      tx.update(tasks).set({ removed: true }).where(eq(tasks.name, 'Ironing')),
+    );
+    expect(orderOf(await played(head))).toEqual(['Dishes', 'Vacuum']);
   });
 
   it('lets every member with an account play for themselves', async () => {

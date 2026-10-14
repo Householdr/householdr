@@ -1,12 +1,15 @@
 <script lang="ts">
-  import { dayText, minutesText } from '#lib/intl.js';
+  import { dayText, listOf, minutesText } from '#lib/intl.js';
   import { m } from '#lib/paraglide/messages.js';
-  import { frequencyWords, onMissWords } from '#lib/task-words.js';
-  import type { Frequency, PlanTask } from '@householdr/domain';
+  import { duenessWords, howOften, onMissWords, windowWords } from '#lib/task-words.js';
+  import type { ScheduleData } from '#lib/task-schedule.js';
+  import type { Repeat } from '@householdr/application';
+  import type { Dueness, Interval, PlanTask } from '@householdr/domain';
 
   /**
-   * A task in words (ADR-0004 §3): how often, how long and what happens if it isn't done; `full`,
-   * with its name and its first time too, as its form has them.
+   * A task in words (ADR-0004 §3, §8): how often, how long and what happens if it isn't done;
+   * `full`, with its name and its first time too, as its form has them. A "since last done" task
+   * shows how due it is, as a bar from "just done" to "due" and in words, never by the bar alone.
    */
   let {
     task,
@@ -16,15 +19,30 @@
     task: {
       name: string;
       duration: number;
-      frequency: Frequency;
+      frequency: Repeat;
+      every?: Interval | undefined;
+      /** On an advanced schedule: its rules and dates, its days as `YYYY-MM-DD`. */
+      schedule?: ScheduleData | undefined;
+      /** The names of the other tasks on its schedule, if it shares one (ADR-0004 §1). */
+      sharedWith?: string[] | undefined;
+      /** The name of the task the same member does next (ADR-0001 §7). */
+      linkedTo?: string | undefined;
+      dueness?: Dueness | undefined;
       /** `YYYY-MM-DD`. */
       start?: string;
       onMiss: PlanTask['onMiss'];
+      /** At set times: the window around each date, its times as `HH:MM`. */
+      window?:
+        | { from: { dayOffset: number; time: string }; to: { dayOffset: number; time: string } }
+        | undefined;
     };
     full?: boolean;
     /** The locale values are written in: the page's language, the account's conventions (ADR-0008 §6). */
     locale: string;
   } = $props();
+
+  /** Ties the bar to its label, among the tasks of a list. */
+  const uid = $props.id();
 </script>
 
 <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
@@ -33,7 +51,26 @@
     <dd class="wrap-break-word">{task.name}</dd>
   {/if}
   <dt class="text-muted-foreground">{m['tasks.how-often']()}</dt>
-  <dd>{frequencyWords[task.frequency]()}</dd>
+  <dd>{howOften(task, locale)}</dd>
+  {#if task.sharedWith && task.sharedWith.length > 0}
+    <dt class="text-muted-foreground">{m['tasks.shared-with']()}</dt>
+    <dd class="wrap-break-word">{listOf(task.sharedWith, locale)}</dd>
+  {/if}
+  {#if typeof task.linkedTo === 'string'}
+    <dt class="text-muted-foreground">{m['tasks.linked-to']()}</dt>
+    <dd class="wrap-break-word">{task.linkedTo}</dd>
+  {/if}
+  {#if task.dueness}
+    <dt id="how-due-{uid}" class="text-muted-foreground">{m['tasks.how-due']()}</dt>
+    <dd class="flex flex-wrap items-center gap-2">
+      <meter aria-labelledby="how-due-{uid}" min={0} max={1} value={task.dueness.progress}></meter>
+      <span>{duenessWords(task.dueness)}</span>
+    </dd>
+  {/if}
+  {#if task.window}
+    <dt class="text-muted-foreground">{m['tasks.window']()}</dt>
+    <dd>{windowWords(task.window)}</dd>
+  {/if}
   <dt class="text-muted-foreground">{m['tasks.how-long']()}</dt>
   <dd>{minutesText(task.duration, locale)}</dd>
   {#if full && task.start}

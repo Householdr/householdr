@@ -172,7 +172,7 @@ describe('closing when the week it rolls into begins (ADR-0002 §2, clarificatio
     // would no longer replace week 1's: drafted again, the one it closed stays closed all the same.
     await h.inIt(async (tx) => {
       const [task] = await tx.select({ schedule: tasks.scheduleId }).from(tasks);
-      if (!task) throw new Error('No task');
+      if (!task?.schedule) throw new Error('No task on a schedule');
       await tx
         .update(schedules)
         .set({ rules: [{ rrule: 'FREQ=WEEKLY;INTERVAL=2', start: '2026-10-28' }] })

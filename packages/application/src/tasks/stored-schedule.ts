@@ -10,6 +10,15 @@ export function storedRules(rules: readonly Rule[]): StoredRule[] {
   }));
 }
 
+/** A schedule's columns as its row keeps them (ADR-0004 §2). */
+export function storedSchedule(schedule: Schedule) {
+  return {
+    rules: storedRules(schedule.rules),
+    extraDates: schedule.extraDates.map(String),
+    exceptionDates: schedule.exceptionDates.map(String),
+  };
+}
+
 /** The schedule a row of `schedules` holds, as the domain reads it. */
 export function scheduleOf(row: {
   rules: readonly StoredRule[];

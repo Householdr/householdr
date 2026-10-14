@@ -22,6 +22,7 @@ export const load = (async ({ locals }) => {
       actor: entry.actor,
       action: entry.action,
       subject: entry.subject,
+      task: entry.task,
       setBeforeStart: entry.setBeforeStart,
       byReader: entry.byReader,
       toReader: entry.toReader,
