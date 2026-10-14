@@ -7,6 +7,7 @@ import {
 } from '@householdr/auth';
 import { m } from './lib/paraglide/messages.js';
 import { baseLocale, type Locale } from './lib/paraglide/runtime.js';
+import { mail } from './mail';
 
 /** What delivering an account e-mail needs. */
 export interface DeliveryContext extends AccountEmailContext {
@@ -115,39 +116,5 @@ function content(email: AccountEmail, locale: Locale): Content {
 export function written(email: AccountEmail): Mail {
   const locale = baseLocale;
   const { subject, paragraphs } = content(email, locale);
-  return {
-    to: email.to,
-    subject,
-    text: paragraphs
-      .map((paragraph) =>
-        typeof paragraph === 'string' ? paragraph : `${paragraph.text}:\n${paragraph.link}`,
-      )
-      .join('\n\n'),
-    html: [
-      '<!doctype html>',
-      `<html lang="${escape(locale)}">`,
-      `<head><meta charset="utf-8"><title>${escape(subject)}</title></head>`,
-      '<body>',
-      ...paragraphs.map((paragraph) =>
-        typeof paragraph === 'string'
-          ? `<p>${escape(paragraph)}</p>`
-          : `<p><a href="${escape(paragraph.link)}">${escape(paragraph.text)}</a></p>`,
-      ),
-      '</body>',
-      '</html>',
-    ].join('\n'),
-  };
-}
-
-const entities: Record<string, string> = {
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  '"': '&quot;',
-  "'": '&#39;',
-};
-
-/** Text as it may stand in HTML, in an element or an attribute. */
-function escape(text: string) {
-  return text.replace(/[&<>"']/g, (character) => entities[character] ?? character);
+  return mail(email.to, subject, paragraphs, locale);
 }

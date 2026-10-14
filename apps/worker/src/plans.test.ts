@@ -78,6 +78,7 @@ describe('the plans’ jobs (ADR-0006 §2, ADR-0008 §10)', () => {
       clock,
       mailer: recordingMailer(),
       push: null,
+      origin: 'https://householdr.example.org',
       flags: settableFlags({ plans: true }),
     };
     const { head } = await started(context.db, clock);
@@ -98,7 +99,12 @@ describe('the plans’ jobs (ADR-0006 §2, ADR-0008 §10)', () => {
     const clock = settableClock(Temporal.Instant.from(draftTime));
     const off = { ...test.context, clock, flags: settableFlags() };
     const { householdId, head } = await started(off.db, clock);
-    const queue = await workQueues({ ...off, mailer: recordingMailer(), push: null });
+    const queue = await workQueues({
+      ...off,
+      mailer: recordingMailer(),
+      push: null,
+      origin: 'https://householdr.example.org',
+    });
     try {
       await tickPlans({ ...off, queue });
       const waiting = await queue.fetch<Jobs['plan-draft']>('plan-draft', { batchSize: 100 });
@@ -148,6 +154,7 @@ describe('the plans’ jobs (ADR-0006 §2, ADR-0008 §10)', () => {
       clock,
       mailer: recordingMailer(),
       push: null,
+      origin: 'https://householdr.example.org',
       flags: settableFlags({ plans: true, balances: true }),
     };
     const { householdId, head } = await started(context.db, clock);
@@ -229,6 +236,7 @@ describe('deleting expired notifications (ADR-0014 §7, clarification)', () => {
       flags: settableFlags(),
       mailer: recordingMailer(),
       push: null,
+      origin: 'https://householdr.example.org',
     });
     try {
       await queue.send('expired-notifications', {});

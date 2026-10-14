@@ -2114,6 +2114,26 @@
     "note": "A notification for each member with tasks in a week's plan: it is published, so everyone sees it (ADR-0014 §2). {days} is the week's first and last day, such as “12–18 October 2026”. A link to the plan.",
     "needsReview": ["nl"]
   },
+  "email.morning.subject": {
+    "note": "Subject of the morning e-mail, once a day for each household, with the member's notifications from it that they get by e-mail (ADR-0014 §5). {household} is the household's name, as its members wrote it; {day} is the day, such as “Friday 9 October 2026”.",
+    "needsReview": ["nl"]
+  },
+  "email.morning.intro": {
+    "note": "First line of the morning e-mail, above the list of notifications, each in the same sentence as in the app. {household} is the household's name.",
+    "needsReview": ["nl"]
+  },
+  "email.morning.list": {
+    "note": "Link in the morning e-mail to the member's list of notifications from the household.",
+    "needsReview": ["nl"]
+  },
+  "email.morning.why": {
+    "note": "Why the morning e-mail came: the member chose e-mail for these notifications, or gets them by e-mail because push doesn't reach any of their devices (ADR-0014 §5). Calm, no blame.",
+    "needsReview": ["nl"]
+  },
+  "email.morning.settings": {
+    "note": "Link in the morning e-mail to the account's notification settings, where e-mail can be turned off.",
+    "needsReview": ["nl"]
+  },
   "notification-settings.page-title": {
     "note": "Browser tab title of the account's notification settings. Householdr is the product name, not translated.",
     "needsReview": ["nl"]
