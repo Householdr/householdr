@@ -1,9 +1,11 @@
 import {
+  addAdult,
   addTask,
   createHousehold,
   draftPlan,
   membership,
   publishPlan,
+  removeMember,
   settlePlanWeek,
 } from '@householdr/application';
 import { settableClock } from '@householdr/application/testing';
@@ -25,9 +27,9 @@ afterAll(() => test.close());
 /**
  * Ash Lane in Brussels, founded by Robin, a head with two factors, with vacuuming on Wednesdays:
  * the week of Monday 12 October 2026 is published, and once it is over, settled with nobody having
- * vacuumed.
+ * vacuumed. With `sam`, Sam is a member that week too, removed once it is settled.
  */
-const settled = async () => {
+const settled = async ({ sam = false } = {}) => {
   const accountId = await createTestAccount(test.context.auth, {
     email: `robin-${crypto.randomUUID()}@example.org`,
     password: 'correct horse battery staple',
@@ -56,6 +58,7 @@ const settled = async () => {
   const head = { householdId, member: { ...member, twoFactor: true } };
   // Thursday 8 October 2026.
   const clock = settableClock(Temporal.Instant.from('2026-10-08T08:00:00Z'));
+  const added = sam ? await addAdult({ db, clock, ...head }, { name: 'Sam' }) : null;
   await addTask(
     { db, clock, ...head },
     { name: 'Vacuum', duration: 30, frequency: 'weekly', start: '2026-10-14', onMiss: 'roll over' },
@@ -67,7 +70,10 @@ const settled = async () => {
   // Monday 19 October in Brussels: the week is over.
   clock.advance({ hours: 11 * 24 });
   await settlePlanWeek(scheduler, { week: '2026-10-12' });
-  return head;
+  if (added?.ok) {
+    await removeMember({ db, clock, ...head, recentSignIn: true }, { member: added.memberId });
+  }
+  return { ...head, sam: added?.ok ? added.memberId : null };
 };
 
 const opened = async (locals: object) => {
@@ -92,11 +98,28 @@ describe('the balances page (ADR-0002 §6)', () => {
           history: [{ start: '2026-10-12', last: '2026-10-18', change: -30 }],
         },
       ],
+      former: [],
       you: head.member.id,
     };
-    expect(await opened({ flags: { balances: true }, membership: head })).toEqual(expected);
-    const adult = { ...head, member: { ...head.member, role: 'adult' as const } };
+    const membership = { householdId: head.householdId, member: head.member };
+    expect(await opened({ flags: { balances: true }, membership })).toEqual(expected);
+    const adult = { ...membership, member: { ...head.member, role: 'adult' as const } };
     expect(await opened({ flags: { balances: true }, membership: adult })).toEqual(expected);
+  });
+
+  it('shows a former member’s frozen balance after the members’ (ADR-0005 §4)', async () => {
+    const { sam, ...head } = await settled({ sam: true });
+    expect(await opened({ flags: { balances: true }, membership: head })).toMatchObject({
+      members: [{ name: 'Robin', balance: -15 }],
+      former: [
+        {
+          id: sam,
+          name: null,
+          balance: -15,
+          history: [{ start: '2026-10-12', last: '2026-10-18', change: -15 }],
+        },
+      ],
+    });
   });
 
   it('is not found until its flag is on (CODE-20), or outside a household', async () => {

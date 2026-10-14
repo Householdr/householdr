@@ -26,7 +26,7 @@ import {
   type Schedule,
   type Window,
 } from '@householdr/domain';
-import { and, eq, gte, inArray, lt, notExists, sql } from 'drizzle-orm';
+import { and, eq, gt, gte, inArray, lt, notExists, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { balancesOf } from '../ledger/balances';
 import { closeDue } from './closing';
@@ -100,6 +100,31 @@ export async function draftPlan(context: PlanContext, input: unknown): Promise<D
     if (planId === undefined) return { ok: true, planned: false };
     return { ok: true, planned: true, planId };
   });
+}
+
+/**
+ * Drafts again, at `now`, the drafts of weeks not yet over, as the household now is: without a
+ * member who just left (ADR-0005 §4, clarifications). Its caller holds the household's planning
+ * lock, as drafting does.
+ */
+export async function redraftOpen(
+  tx: Transaction,
+  {
+    householdId,
+    planning,
+    now,
+  }: { householdId: string; planning: Planning; now: Temporal.Instant },
+) {
+  const today = householdDate(now, planning.calendar.timeZone);
+  const drafts = await tx
+    .select({ id: plans.id, weekStart: plans.weekStart })
+    .from(plans)
+    .where(and(eq(plans.status, 'draft'), gt(plans.weekEnd, today.toString())));
+  for (const draft of drafts) {
+    const week = planWeek(Temporal.PlainDate.from(draft.weekStart), planning.calendar);
+    await undoDraft(tx, draft.id);
+    await draftWeek(tx, { householdId, planning, week, now, replacing: draft.id });
+  }
 }
 
 /**

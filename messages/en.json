@@ -499,6 +499,20 @@
   "availability.household-intro": "For when everyone is away together, such as a family holiday. Weeks spent entirely away get no plan, chores that fall while you’re all away are skipped, balances don’t change and nobody gets reminders. Only heads plan this.",
   "availability.household-none": "No time away together planned.",
   "availability.household-plan": "Plan time away together",
+  "availability.cant-legend": "Can’t today?",
+  "availability.cant-intro": "If something comes up, say so here, until the end of today or a later day this week. You won’t fall behind for the time you can’t. Others see only until which day, never why.",
+  "availability.cant-last-day": "Until the end of",
+  "availability.cant-today-option": "Today",
+  "availability.i-cant": "I can’t",
+  "availability.they-cant": "{name} can’t",
+  "availability.cant-today": "Can’t today.",
+  "availability.cant-until": "Can’t until the end of {day}.",
+  "availability.i-can": "I can after all",
+  "availability.they-can": "{name} can after all",
+  "availability.unavailable": "Noted. Others see until which day, never why.",
+  "availability.available": "Noted: can after all.",
+  "availability.already-available": "That had already ended.",
+  "availability.cant-invalid-day": "Choose today or a later day of this week.",
   "plan.title": "Plan",
   "plan.page-title": "Plan · {household} · Householdr",
   "plan.intro": "Who does what, week by week. Each task says why it went to whoever has it.",
@@ -530,6 +544,8 @@
   "plan.reason.assigned-by-head-you": "A head gave it to you.",
   "plan.reason.linked": "It goes with a task {name} had just before.",
   "plan.reason.linked-you": "It goes with a task you had just before.",
+  "plan.reason.reallocated": "It went to {name} when the person who had it couldn’t any more.",
+  "plan.reason.reallocated-you": "It went to you when the person who had it couldn’t any more.",
   "plan.cause.nobody-eligible": "Nobody can do it then: everyone is away, or not allowed to do it.",
   "plan.cause.bound-member-not-eligible": "The person it always goes to can’t do it then.",
   "plan.cause.linked-member-not-eligible": "Whoever had the task it goes with can’t do it then.",
@@ -601,6 +617,7 @@
     }
   ],
   "plan.you": "you",
+  "plan.a-former-member": "a former member",
   "plan.done": "Done {day} by {doers}.",
   "plan.done-at": "Done {day} at {time} by {doers}.",
   "plan.logged-by": "Logged by {name}.",
@@ -729,6 +746,26 @@
       }
     }
   ],
+  "activity.unavailable-reported": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You said {subject} can’t today.",
+        "who=*": "{actor} said {subject} can’t today."
+      }
+    }
+  ],
+  "activity.unavailable-ended": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You said {subject} can after all.",
+        "who=*": "{actor} said {subject} can after all."
+      }
+    }
+  ],
   "past.today": "Today",
   "past.yesterday": "Yesterday",
   "past.some-days-ago": "Some days ago",
@@ -756,5 +793,50 @@
         "who=*": "{actor} removed a time the household is away."
       }
     }
-  ]
+  ],
+  "leave.page-title": "Leave {household} · Householdr",
+  "leave.title": "Leave {household}",
+  "leave.failed": "You’re still in the household",
+  "leave.invalid": "Choose how the household’s history shows you.",
+  "leave.last-adult": "You’re the only adult with an account in the household, so leaving would close it. That isn’t possible yet.",
+  "leave.successor-gone": "The member you chose can’t become head any more. Choose again.",
+  "leave.last-head": "You’re the household’s last head, so someone else becomes head the moment you leave.",
+  "leave.intro": "You leave at once, without giving a reason. Nobody is told: the household only sees that you’re no longer in it.",
+  "leave.history": "What you did stays in the household’s history, and your balance stays as it is. What you still had to do goes to the others.",
+  "leave.rejoin": "To come back, you need a new invitation, which only you can accept.",
+  "leave.successor": "Who becomes head?",
+  "leave.successor-rule": "No one in particular: {name}, who has been in the household longest",
+  "leave.successor-decline": "Someone you choose can still say no. Then it goes to whoever else has been in the household longest.",
+  "leave.shown-as": "How should the household’s history show you?",
+  "leave.as-former": "As “Former member”",
+  "leave.as-name": "Under your name, {name}",
+  "leave.submit": "Leave the household",
+  "leave.support": "If you don’t feel safe at home, {service} can help: call {phone} or go to {website}.",
+  "home.left": "You’ve left the household.",
+  "household.leave": "Leave the household",
+  "remove.page-title": "Remove {name} · {household} · Householdr",
+  "remove.title": "Remove {name}",
+  "remove.intro": "{name} leaves {household} at once, as if they had left themselves.",
+  "remove.history": "What they did stays in the household’s history, shown as “Former member”, and their balance stays as it is. What they still had to do goes to the others.",
+  "remove.child": "Their account, their guardians and their other households stay as they are.",
+  "remove.logged": "Everyone in the household sees in the activity log that you removed them.",
+  "remove.confirm": "You signed in more than 10 minutes ago. Confirm it’s you on the security page first, then come back here.",
+  "remove.confirm-link": "Confirm it’s you",
+  "remove.submit": "Remove {name}",
+  "remove.keep": "Keep {name} in the household",
+  "household.remove": "Remove {name}",
+  "household.removed": "The member you removed is no longer in the household.",
+  "activity.member-removed": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You removed {subject} from the household.",
+        "who=*": "{actor} removed {subject} from the household."
+      }
+    }
+  ],
+  "balances.former-members": "Former members",
+  "balances.former-intro": "The balances of those who left stay as they were, each theirs alone.",
+  "balances.former-member": "Former member"
 }

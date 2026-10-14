@@ -1,6 +1,7 @@
 import { completionCredits, members, type Transaction } from '@householdr/db';
 import { householdDate, planWeek } from '@householdr/domain';
 import { asc, eq } from 'drizzle-orm';
+import { shownName } from '../households/former-members';
 import { planningOf } from '../plans/planning';
 
 // What completing and undoing both read.
@@ -29,10 +30,10 @@ export function inPlanWeek(
   );
 }
 
-/** The members completion `completionId` credits, by name. */
+/** The members completion `completionId` credits, by name: none for a former member. */
 export function creditedMembers(tx: Transaction, completionId: string) {
   return tx
-    .select({ id: members.id, name: members.name })
+    .select({ id: members.id, name: shownName() })
     .from(completionCredits)
     .innerJoin(members, eq(members.id, completionCredits.memberId))
     .where(eq(completionCredits.completionId, completionId))

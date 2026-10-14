@@ -50,6 +50,7 @@ export const load = (async ({ locals, url }) => {
       invitationDaysLeft: invitationExpiresAt ? daysUntil(now, invitationExpiresAt) : null,
     })),
     mayAddMembers: result.mayAddMembers,
+    mayLeave: result.mayLeave,
     mayChangeSettings: result.mayChangeSettings,
     mayStart: result.mayStart,
     started:
@@ -61,6 +62,8 @@ export const load = (async ({ locals, url }) => {
             timeZone: firstPlan.publishAt.timeZoneId,
           }
         : null,
+    // Right after a head removed a member, who isn't named (ADR-0018 §2, clarification).
+    removed: url.searchParams.has('removed'),
     you: context.member.id,
   };
 }) satisfies PageServerLoad;

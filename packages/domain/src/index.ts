@@ -26,6 +26,12 @@ export {
 } from './availability/availability';
 export { plannableDays, unplannableEnds, type AbsenceEnd } from './availability/planned-absence';
 export {
+  suddenUnavailability,
+  unavailableDays,
+  windowLeft,
+  windowToReallocate,
+} from './availability/sudden-unavailability';
+export {
   estimateBurdens,
   type BurdenEstimate,
   type BurdenTask,
@@ -50,7 +56,9 @@ export {
   type Country,
 } from './households/countries';
 export { householdDate } from './households/date';
+export { supportServiceIn, type SupportService } from './households/support-services';
 export { isAdultOn } from './members/age';
+export { headCandidates, type HeadCandidate } from './members/succession';
 export {
   canForAccount,
   type Account,

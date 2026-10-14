@@ -225,6 +225,48 @@
       "when": 1791840837031,
       "tag": "0031_household-away-log",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1791899559505,
+      "tag": "0032_unavailabilities",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1791911994666,
+      "tag": "0033_reallocated-reason",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1791913852555,
+      "tag": "0034_former-members",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1791916105413,
+      "tag": "0035_leaving",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1791920119695,
+      "tag": "0036_member-removed",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1791958222463,
+      "tag": "0037_named-head",
+      "breakpoints": true
     }
   ]
 }

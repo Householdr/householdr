@@ -1,5 +1,5 @@
 import type { SubmitFunction } from '$app/forms';
-import { calendarDay } from '#lib/intl.js';
+import { calendarDay, weekDay } from '#lib/intl.js';
 
 /**
  * What the page of who is away needs besides its data (CODE-9): days in the reader's language with
@@ -10,6 +10,8 @@ export function useAbsences(locale: () => string) {
   return {
     /** A day, `YYYY-MM-DD`, in words. */
     day: (date: string) => calendarDay(date, locale()),
+    /** A day of this week, `YYYY-MM-DD`, in words with its weekday, such as “Friday 9 October”. */
+    weekDay: (date: string) => weekDay(date, locale()),
     /** Removes an absence, then moves the focus to `target`, its member's heading. */
     removeThenFocus:
       (target: () => HTMLElement | undefined): SubmitFunction =>

@@ -19,8 +19,11 @@ export {
   type HouseholdAway,
   type MemberAvailability,
 } from './availability/absences';
+export { endUnavailable, reportUnavailable } from './availability/unavailability';
 export { addAdult } from './households/add-adult';
 export { addChild, type NewChildProblem } from './households/add-child';
+export { leaveHousehold, leaveOptions } from './households/leave';
+export { memberToRemove, removeMember } from './households/remove-member';
 export { name as nameField } from './households/name';
 export {
   changeHouseholdSettings,

@@ -3,6 +3,7 @@ import { can, pastDay, type PastDay } from '@householdr/domain';
 import { desc, eq } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { thisWeek } from '../shares/member-share';
+import { shownName } from './former-members';
 import type { HouseholdContext } from './membership';
 
 /** How many entries the log shows, newest first. */
@@ -67,10 +68,10 @@ export async function householdActivity(
         id: activityLog.id,
         at: activityLog.at,
         actorId: activityLog.actorId,
-        actor: members.name,
+        actor: shownName(),
         action: activityLog.action,
         subjectId: activityLog.subjectId,
-        subject: subjects.name,
+        subject: shownName(subjects),
         setBeforeStart: activityLog.setBeforeStart,
       })
       .from(activityLog)
@@ -80,7 +81,7 @@ export async function householdActivity(
       .limit(shown);
     const names = rows.some((row) => row.setBeforeStart !== null)
       ? new Map(
-          (await tx.select({ id: members.id, name: members.name }).from(members)).map((m) => [
+          (await tx.select({ id: members.id, name: shownName() }).from(members)).map((m) => [
             m.id,
             m.name,
           ]),

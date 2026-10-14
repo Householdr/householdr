@@ -75,11 +75,17 @@ export function useActivity(data: () => { locale: string; entries: ActivityEntry
         return m['activity.absence-added'](toWhom);
       case 'absence.removed':
         return m['activity.absence-removed'](toWhom);
+      case 'unavailable.reported':
+        return m['activity.unavailable-reported'](toWhom);
+      case 'unavailable.ended':
+        return m['activity.unavailable-ended'](toWhom);
       // That it happened, never the days (ADR-0018 §5, clarification).
       case 'away.added':
         return m['activity.away-added']({ who, actor });
       case 'away.removed':
         return m['activity.away-removed']({ who, actor });
+      case 'member.removed':
+        return m['activity.member-removed'](toWhom);
     }
   };
 

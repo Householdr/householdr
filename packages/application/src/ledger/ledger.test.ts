@@ -383,6 +383,7 @@ describe('householdBalances (ADR-0002 §6)', () => {
           ],
         },
       ],
+      former: [],
     };
     // Each member, the head and an adult alike, sees the same (ADR-0012 §3).
     expect(await householdBalances(h.head)).toEqual(expected);
@@ -410,6 +411,7 @@ describe('householdBalances (ADR-0002 §6)', () => {
       'balance',
       'change',
       'end',
+      'former',
       'history',
       'id',
       'members',
@@ -476,6 +478,7 @@ describe('householdBalances (ADR-0002 §6)', () => {
         { id: birch.robin, name: 'Robin', balance: 0, history: [] },
         { id: birch.alex, name: 'Alex', balance: 0, history: [] },
       ],
+      former: [],
     });
     expect(await birch.inIt((tx) => tx.select().from(ledgerEntries))).toEqual([]);
     expect(await ash.inIt((tx) => tx.select().from(ledgerEntries))).toHaveLength(2);

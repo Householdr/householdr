@@ -1598,6 +1598,62 @@
     "note": "Legend of the form where a head plans time when the whole household is away.",
     "needsReview": ["nl"]
   },
+  "availability.cant-legend": {
+    "note": "Legend of the form, under a member's name, where they say they can't today (ADR-0005 §3): for yourself, or as a head for a child or a member without an account.",
+    "needsReview": ["nl"]
+  },
+  "availability.cant-intro": {
+    "note": "Explains “I can't today” (ADR-0005 §3): the fair portion shrinks by that time, so it's an absence, not a deficit (ADR-0002 §1); others see only the days (ADR-0018 §3). No reason is asked. Kind and plain, never guilt (UI-24).",
+    "needsReview": ["nl"]
+  },
+  "availability.cant-last-day": {
+    "note": "Label of the choice of the last day someone can't: today, or a later day of this plan week, each written as a weekday and date. Read together with the chosen day.",
+    "needsReview": ["nl"]
+  },
+  "availability.cant-today-option": {
+    "note": "The first choice of the last day someone can't, chosen to begin with: the end of today.",
+    "needsReview": ["nl"]
+  },
+  "availability.i-cant": {
+    "note": "Button that says you can't, until the end of the day chosen (ADR-0005 §3). One tap, so short.",
+    "needsReview": ["nl"]
+  },
+  "availability.they-cant": {
+    "note": "Button with which a head says a child or a member without an account, {name}, can't, until the end of the day chosen (ADR-0005 §3).",
+    "needsReview": ["nl"]
+  },
+  "availability.cant-today": {
+    "note": "Under a member's name, which everyone sees: they said they can't, until the end of today. Never why (ADR-0018 §3).",
+    "needsReview": ["nl"]
+  },
+  "availability.cant-until": {
+    "note": "Under a member's name, which everyone sees: they said they can't, up to the end of {day}, a weekday and date such as “Friday 9 October”. Never why (ADR-0018 §3).",
+    "needsReview": ["nl"]
+  },
+  "availability.i-can": {
+    "note": "Button that ends your “I can't” now (ADR-0005 §3, clarification).",
+    "needsReview": ["nl"]
+  },
+  "availability.they-can": {
+    "note": "Button with which a head ends the “can't” of a child or a member without an account, {name}, now.",
+    "needsReview": ["nl"]
+  },
+  "availability.unavailable": {
+    "note": "Status message once someone said they can't (ADR-0005 §3, ADR-0018 §3).",
+    "needsReview": ["nl"]
+  },
+  "availability.available": {
+    "note": "Status message once someone said they can after all.",
+    "needsReview": ["nl"]
+  },
+  "availability.already-available": {
+    "note": "Status message when the “can't” had ended by itself, or someone else ended it a moment earlier.",
+    "needsReview": ["nl"]
+  },
+  "availability.cant-invalid-day": {
+    "note": "Why the last day wasn't accepted, next to its field: usually one that passed while the page was open.",
+    "needsReview": ["nl"]
+  },
   "plan.title": {
     "note": "Heading of the page with the week's plan, and the link to it on the household's page (ADR-0006).",
     "needsReview": ["nl"]
@@ -1720,6 +1776,14 @@
   },
   "plan.reason.linked-you": {
     "note": "Why a task went to the reader: it goes with a task they had before (ADR-0001 §7).",
+    "needsReview": ["nl"]
+  },
+  "plan.reason.reallocated": {
+    "note": "Why a task went to {name}: it moved to them in this week's plan because the member who had it said they can't today, without naming that member (ADR-0005 §3, ADR-0001 §7).",
+    "needsReview": ["nl"]
+  },
+  "plan.reason.reallocated-you": {
+    "note": "Why a task went to the reader: it moved to them in this week's plan because the member who had it said they can't today, without naming that member (ADR-0005 §3, ADR-0001 §7).",
     "needsReview": ["nl"]
   },
   "plan.cause.nobody-eligible": {
@@ -1852,6 +1916,10 @@
   },
   "plan.you": {
     "note": "Stands for the reader in the lists of who did a task and who logged it, as in 'Done on Thursday 15 October by you and Alex'. Lower case, as it sits in a sentence after 'by'.",
+    "needsReview": ["nl"]
+  },
+  "plan.a-former-member": {
+    "note": "Someone who did or logged a task and has since left the household, in the middle of a sentence such as 'Done today by a former member.' (ADR-0012 §6).",
     "needsReview": ["nl"]
   },
   "plan.done": {
@@ -2038,6 +2106,14 @@
     "note": "Activity log entry, after the household started: a head removed days away planned for {subject}, a member without an account. {actor} and {subject} are names, or “a former member”. Never the days. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
     "needsReview": ["nl"]
   },
+  "activity.unavailable-reported": {
+    "note": "Activity log entry, after the household started: a head said {subject}, a member without an account, can't today, acting for them (ADR-0005 §3, ADR-0018 §5). “Can't today” as on the availability page, also when it lasts to a later day. {actor} and {subject} are names, or “a former member”. Never until when or why. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
+    "needsReview": ["nl"]
+  },
+  "activity.unavailable-ended": {
+    "note": "Activity log entry, after the household started: a head said {subject}, a member without an account, can after all, ending their “can't today” (ADR-0005 §3, clarification; ADR-0018 §5). {actor} and {subject} are names, or “a former member”. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
+    "needsReview": ["nl"]
+  },
   "past.today": {
     "note": "The day something happened: today. One step of the scale of how long ago a day was (ADR-0008 §6, clarification), never finer than the day (ADR-0018 §3); the exact day shows in a tooltip. Starts with a capital, as it stands alone.",
     "needsReview": ["nl"]
@@ -2076,6 +2152,150 @@
   },
   "activity.away-removed": {
     "note": "Activity log entry: a head removed a time the whole household is away. {actor} is a name, or “A former member”. Never the days. {who} picks the wording: 'you' when the reader did it, '*' otherwise (ADR-0018 §5, clarification).",
+    "needsReview": ["nl"]
+  },
+  "leave.page-title": {
+    "note": "Browser tab title of the page where a member leaves the household {household} (ADR-0005 §4, ADR-0018 §2).",
+    "needsReview": ["nl"]
+  },
+  "leave.title": {
+    "note": "Heading of that page. {household} is the household's name.",
+    "needsReview": ["nl"]
+  },
+  "leave.failed": {
+    "note": "Heading of the error summary when leaving didn't go through.",
+    "needsReview": ["nl"]
+  },
+  "leave.invalid": {
+    "note": "Leaving was sent without a choice of how the history shows the member.",
+    "needsReview": ["nl"]
+  },
+  "leave.last-adult": {
+    "note": "Shown instead of the form to the household's last head when no other adult with an account is left: leaving would close the household, which isn't built yet (ADR-0018 §2, clarification). Plain, without blame.",
+    "needsReview": ["nl"]
+  },
+  "leave.successor-gone": {
+    "note": "Leaving didn't go through because the member the last head chose to become head has left, or can no longer become head, meanwhile (ADR-0018 §2, clarification).",
+    "needsReview": ["nl"]
+  },
+  "leave.last-head": {
+    "note": "Above the choice of who becomes head, for the household's last head: the head role passes as they leave (ADR-0018 §2, clarification). Plain, without blame.",
+    "needsReview": ["nl"]
+  },
+  "leave.intro": {
+    "note": "What leaving does: it is immediate, no reason is asked, and nobody is notified (ADR-0018 §2, §8). Quiet and reassuring.",
+    "needsReview": ["nl"]
+  },
+  "leave.history": {
+    "note": "What stays and what moves when a member leaves: their history and frozen balance stay, their open tasks go to the others (ADR-0005 §4).",
+    "needsReview": ["nl"]
+  },
+  "leave.rejoin": {
+    "note": "Someone who left comes back only through a new invitation they accept themselves (ADR-0018 §2).",
+    "needsReview": ["nl"]
+  },
+  "leave.successor": {
+    "note": "Legend of the last head's choice of who becomes head when they leave (ADR-0018 §2, clarification).",
+    "needsReview": ["nl"]
+  },
+  "leave.successor-rule": {
+    "note": "First choice, chosen to begin with: naming no one, which gives the head role to the adult with an account who has been in the household longest, {name} (ADR-0018 §2). The other choices are the members' names.",
+    "needsReview": ["nl"]
+  },
+  "leave.successor-decline": {
+    "note": "Under that choice: a member the leaving head names is asked later whether they take it on; if they decline, the role goes to the adult with an account longest in the household after them (ADR-0018 §2, clarification).",
+    "needsReview": ["nl"]
+  },
+  "leave.shown-as": {
+    "note": "Legend of the choice of how the household's history shows the member after they leave (ADR-0018 §2, clarification).",
+    "needsReview": ["nl"]
+  },
+  "leave.as-former": {
+    "note": "First choice, chosen to begin with: shown as 'Former member', the same words the history uses.",
+    "needsReview": ["nl"]
+  },
+  "leave.as-name": {
+    "note": "Second choice: shown under their own name, {name}.",
+    "needsReview": ["nl"]
+  },
+  "leave.submit": {
+    "note": "Button that leaves the household at once.",
+    "needsReview": ["nl"]
+  },
+  "leave.support": {
+    "note": "One plain line about a support service for domestic violence in the household's country (ADR-0018 §8). {service} is its name, such as '1712' or 'Veilig Thuis', {phone} its number and {website} a link to its website. Calm and discreet: it may be read on a shared screen.",
+    "needsReview": ["nl"]
+  },
+  "home.left": {
+    "note": "Status message on the list of the account's households right after leaving one.",
+    "needsReview": ["nl"]
+  },
+  "household.leave": {
+    "note": "Link on the household's page to the page where the member can leave it.",
+    "needsReview": ["nl"]
+  },
+  "remove.page-title": {
+    "note": "Browser tab title of the page where a head removes {name} from the household {household} (ADR-0005 §4, ADR-0018 §4).",
+    "needsReview": ["nl"]
+  },
+  "remove.title": {
+    "note": "Heading of that page. {name} is the member being removed.",
+    "needsReview": ["nl"]
+  },
+  "remove.intro": {
+    "note": "What removing does: the same as when the member leaves themselves, at once (ADR-0005 §4, clarification).",
+    "needsReview": ["nl"]
+  },
+  "remove.history": {
+    "note": "What stays and what moves: their history and frozen balance stay, shown as 'Former member' (as the history words it), their open tasks go to the others.",
+    "needsReview": ["nl"]
+  },
+  "remove.child": {
+    "note": "Shown when the member is a child: removing them doesn't touch their account, guardians or other households (ADR-0010 §10).",
+    "needsReview": ["nl"]
+  },
+  "remove.logged": {
+    "note": "Removing a member is shown to every member in the household's activity (ADR-0018 §5). 'Activity log' as the household's page names the activity page.",
+    "needsReview": ["nl"]
+  },
+  "remove.confirm": {
+    "note": "Shown instead of the button when the head signed in more than 10 minutes ago: they confirm their identity on the security page first (ADR-0010 §6).",
+    "needsReview": ["nl"]
+  },
+  "remove.confirm-link": {
+    "note": "Link to the security page, where the head confirms it's them; the same words as that page's heading.",
+    "needsReview": ["nl"]
+  },
+  "remove.submit": {
+    "note": "Button that removes {name} at once.",
+    "needsReview": ["nl"]
+  },
+  "remove.keep": {
+    "note": "Link back to the household's page without removing {name}.",
+    "needsReview": ["nl"]
+  },
+  "household.remove": {
+    "note": "Link, for heads, next to a member on the household's page, to the page that removes {name}.",
+    "needsReview": ["nl"]
+  },
+  "household.removed": {
+    "note": "Status message on the household's page right after a head removed a member, who isn't named: they show as a former member now (ADR-0018 §2, clarification).",
+    "needsReview": ["nl"]
+  },
+  "activity.member-removed": {
+    "note": "Activity log entry, after the household started: a head removed {subject} from the household (ADR-0005 §4, ADR-0018 §5). {actor} is a name or 'A former member'; {subject} is usually 'a former member', as someone removed shows as one until they choose otherwise. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
+    "needsReview": ["nl"]
+  },
+  "balances.former-members": {
+    "note": "Heading of the balances page's part for members who left or were removed, after the current members (ADR-0005 §4, clarification).",
+    "needsReview": ["nl"]
+  },
+  "balances.former-intro": {
+    "note": "Under that heading: a former member's balance is frozen, never handed on to anyone (ADR-0005 §4).",
+    "needsReview": ["nl"]
+  },
+  "balances.former-member": {
+    "note": "Heading of the balance of someone who left and didn't choose to appear under their name; the same words as the leave page's choice (ADR-0018 §2, clarification).",
     "needsReview": ["nl"]
   }
 }

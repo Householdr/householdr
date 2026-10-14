@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CantToday from '#lib/components/CantToday.svelte';
   import DaysAway from '#lib/components/DaysAway.svelte';
   import { m } from '#lib/paraglide/messages.js';
   import type { PageProps } from './$types';
@@ -17,6 +18,9 @@
     if (form.done === 'added') return m['availability.added']();
     if (form.done === 'removed') return m['availability.removed']();
     if (form.done === 'already-removed') return m['availability.already-removed']();
+    if (form.done === 'unavailable') return m['availability.unavailable']();
+    if (form.done === 'available') return m['availability.available']();
+    if (form.done === 'already-available') return m['availability.already-available']();
     return '';
   };
 </script>
@@ -75,7 +79,20 @@
         plannable={data.plannable}
         attempt={form}
         locale={data.locale}
-      />
+      >
+        {#if data.flags.unavailability}
+          <CantToday
+            owner={member.id}
+            name={member.name}
+            self={member.id === data.you}
+            until={member.unavailableUntil}
+            mayManage={member.mayManage}
+            days={data.unavailableDays}
+            refused={form?.member === member.id && 'unavailableDay' in form}
+            locale={data.locale}
+          />
+        {/if}
+      </DaysAway>
     </section>
   {/each}
 </main>

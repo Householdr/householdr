@@ -42,10 +42,11 @@ const household = async (accountId: string, name: string) => {
   return result.householdId;
 };
 
-const opened = async (accountId: string, onboarding = true) => {
+const opened = async (accountId: string, onboarding = true, search = '') => {
   try {
     return await load({
       locals: { flags: { onboarding }, session: { id: 'session', accountId } },
+      url: new URL(`https://householdr.example.org/${search}`),
     } as unknown as Parameters<typeof load>[0]);
   } catch (thrown) {
     if (isRedirect(thrown)) return `→ ${thrown.location}`;
@@ -69,8 +70,18 @@ describe('the start page (ADR-0005 §1)', () => {
         { id: ash, name: 'Ash Lane', role: 'head' },
         { id: birch, name: 'Birch Court', role: 'head' },
       ],
+      left: false,
     });
-    expect(await opened(await newAccount())).toEqual({ households: [] });
+    expect(await opened(await newAccount())).toEqual({ households: [], left: false });
+  });
+
+  it('says so right after leaving a household, instead of going to the one left', async () => {
+    const robin = await newAccount();
+    const id = await household(robin, 'Ash Lane');
+    expect(await opened(robin, true, '?left')).toEqual({
+      households: [{ id, name: 'Ash Lane', role: 'head' }],
+      left: true,
+    });
   });
 
   it('is the security page until onboarding’s flag is on (CODE-20)', async () => {

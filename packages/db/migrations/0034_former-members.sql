@@ -1,0 +1,2 @@
+ALTER TABLE "members" ADD COLUMN "left_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "members" ADD CONSTRAINT "members_former" CHECK ("members"."left_at" is null or ("members"."account_id" is null and "members"."share_percent" is null));
