@@ -5,6 +5,7 @@
   import { Label } from '#lib/components/ui/label/index.js';
   import { NativeSelect, NativeSelectOption } from '#lib/components/ui/native-select/index.js';
   import { useTaskRepeat } from '#lib/hooks/use-task-repeat.svelte.js';
+  import { listOf } from '#lib/intl.js';
   import { m } from '#lib/paraglide/messages.js';
   import type { ScheduleValues } from '#lib/task-schedule.js';
   import { edgeDays, edgeDayWords, onMissWords, repeatWords, unitWords } from '#lib/task-words.js';
@@ -18,7 +19,8 @@
    * it was last done, a task has an interval instead of a choice of what happens if it isn't done,
    * and of when it is done: any time that week, or at set times around each date (§4). On an
    * advanced schedule, its editor takes the first time's place, its buttons sending the form to
-   * `action` (§3).
+   * `action` (§3). Sharing the dates of one of the `shareable` tasks, it has neither (§1); a task
+   * that `sharesWith` others may give itself dates of its own instead of changing theirs.
    */
   let {
     values,
@@ -27,6 +29,8 @@
     starts,
     dates,
     today,
+    shareable,
+    sharesWith,
     startingOnMiss,
     action,
     submit,
@@ -45,6 +49,8 @@
       fromTime: string;
       toDay: string;
       toTime: string;
+      sharedWith: string;
+      ownDates: string;
     };
     invalid: readonly TaskField[];
     problems: Record<TaskField, () => string>;
@@ -53,6 +59,10 @@
     dates: { earliest: string; latest: string };
     /** `YYYY-MM-DD`: a new rule's first time. */
     today: string;
+    /** The tasks on a calendar schedule whose dates it can share (ADR-0004 §1). */
+    shareable: readonly { id: string; name: string }[];
+    /** The names of the other tasks on its schedule, if it shares one. */
+    sharesWith: readonly string[];
     startingOnMiss: PlanTask['onMiss'];
     action: string;
     /** The words of the form's own button, which Enter presses. */
@@ -61,7 +71,12 @@
   } = $props();
 
   const onMissChoices: PlanTask['onMiss'][] = ['roll over', 'lapse'];
-  const repeats = Object.keys(repeatWords) as Repeat[];
+  // Sharing another task's dates, once there is a task to share them with.
+  const repeats = $derived(
+    (Object.keys(repeatWords) as Repeat[]).filter(
+      (choice) => choice !== 'shared' || shareable.length > 0,
+    ),
+  );
   const units = Object.keys(unitWords) as Interval['unit'][];
 
   const whenChoices = ['week', 'set'] as const;
@@ -140,6 +155,42 @@
   </NativeSelect>
   <FieldProblem id="frequency-problem" problem={problemOf('frequency')} />
 </div>
+<!-- The task whose dates it shares (ADR-0004 §1, clarification). -->
+<div class="flex flex-col gap-2" hidden={repeat.running && !repeat.sharing}>
+  <Label for="sharedWith">{m['tasks.shared-with']()}</Label>
+  <NativeSelect
+    id="sharedWith"
+    name="sharedWith"
+    class="w-full"
+    disabled={repeat.running && !repeat.sharing}
+    required={repeat.running}
+    value={values.sharedWith}
+    {...described('sharedWith')}
+  >
+    {#each shareable as task (task.id)}
+      <NativeSelectOption value={task.id}>{task.name}</NativeSelectOption>
+    {/each}
+  </NativeSelect>
+  <FieldProblem id="sharedWith-problem" problem={problemOf('sharedWith')} />
+</div>
+{#if sharesWith.length > 0}
+  <!-- New dates for a task that shares them change theirs too, unless they are its own. -->
+  <div class="flex flex-col gap-1" hidden={repeat.running && (repeat.counted || repeat.sharing)}>
+    <p class="text-sm wrap-break-word">
+      {m['tasks.shared-note']({ tasks: listOf(sharesWith, locale) })}
+    </p>
+    <label class="flex min-h-11 items-center gap-3">
+      <input
+        type="checkbox"
+        name="ownDates"
+        checked={values.ownDates === 'on'}
+        disabled={repeat.running && (repeat.counted || repeat.sharing)}
+        class="size-5 shrink-0 accent-primary"
+      />
+      {m['tasks.own-dates']()}
+    </label>
+  </div>
+{/if}
 <!-- Made again with the form's values after each change of its rows, which the server sends. -->
 {#key values}
   <ScheduleFields
@@ -192,13 +243,13 @@
   <FieldProblem id="everyCount-problem" problem={problemOf('everyCount')} />
   <FieldProblem id="everyUnit-problem" problem={problemOf('everyUnit')} />
 </fieldset>
-<div class="flex flex-col gap-2" hidden={repeat.running && repeat.advanced}>
+<div class="flex flex-col gap-2" hidden={repeat.running && (repeat.advanced || repeat.sharing)}>
   <Label for="start">{m['tasks.start']()}</Label>
   <Input
     id="start"
     name="start"
     type="date"
-    disabled={repeat.running && repeat.advanced}
+    disabled={repeat.running && (repeat.advanced || repeat.sharing)}
     required
     min={starts.earliest}
     max={starts.latest}

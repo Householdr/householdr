@@ -90,7 +90,7 @@ export { oneOffToEdit } from './tasks/one-off-to-edit';
 export { removeOneOff } from './tasks/remove-one-off';
 export { removeTask } from './tasks/remove-task';
 export { type EditableOneOff } from './tasks/stored-one-off';
-export { advanced, sinceLastDone, type Repeat, type TaskField } from './tasks/task-fields';
+export { advanced, shared, sinceLastDone, type Repeat, type TaskField } from './tasks/task-fields';
 export { taskToEdit, type EditableTask } from './tasks/task-to-edit';
 // The household member as permissions see them, which the web app's guard keeps per request; why an
 // occurrence went where it did, which the plan's page puts in words; and how fast balances even

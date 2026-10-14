@@ -105,6 +105,8 @@ describe('a task’s page (ADR-0001 §2)', () => {
         toDay: '0',
         toTime: '20:00',
         version: 1,
+        sharedWith: [],
+        constraints: [],
         // One rule from today, should it turn to an advanced schedule (ADR-0004 §3).
         rules: [{ kind: 'weeks', every: '1', days: [], which: [], day: '1', start: '2026-10-08' }],
         extraDates: [],
@@ -113,6 +115,9 @@ describe('a task’s page (ADR-0001 §2)', () => {
       starts: { earliest: '2026-10-08', latest: '2027-10-08' },
       dates: { earliest: '2026-10-08', latest: '2028-10-08' },
       today: '2026-10-08',
+      shareable: [],
+      members: [{ id: membership.member.id, name: 'Robin', child: false }],
+      who: { minimumAge: '', constraints: {} },
     });
   });
 
@@ -143,6 +148,25 @@ describe('a task’s page (ADR-0001 §2)', () => {
         },
         rules: [{ kind: 'weeks', every: '2', days: ['1', '4'], start: '2026-10-12' }],
       },
+    });
+  });
+
+  it('saves who does it, and shows it again (ADR-0001 §3)', async () => {
+    const { membership, taskId } = await founded();
+    const robin = membership.member.id;
+    const who = { ...vacuum, version: '1', minimumAge: '12', [`constraint-${robin}`]: 'bound' };
+    expect(await saved({ ...on, membership }, taskId, who)).toEqual({ saved: true });
+    expect(await opened({ ...on, membership }, taskId)).toMatchObject({
+      who: { minimumAge: '12', constraints: { [robin]: 'bound' } },
+    });
+    const refused = await saved({ ...on, membership }, taskId, {
+      ...who,
+      version: '2',
+      minimumAge: '18',
+    });
+    expect(isActionFailure(refused) && refused.data).toMatchObject({
+      invalid: ['minimumAge'],
+      values: { minimumAge: '18', constraints: { [robin]: 'bound' } },
     });
   });
 

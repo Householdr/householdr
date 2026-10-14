@@ -133,6 +133,8 @@ describe('taskToEdit (ADR-0001 §2)', () => {
       start: '2026-10-12',
       onMiss: 'roll over',
       version: 1,
+      sharedWith: [],
+      constraints: [],
     });
     const { earliest, latest } = result.starts;
     expect([earliest.toString(), latest.toString()]).toEqual(['2026-10-08', '2027-10-08']);
@@ -279,6 +281,8 @@ describe('editTask (ADR-0001 §2, ADR-0019 §5)', () => {
       id: taskId,
       name: 'Hoover',
       version: 2,
+      sharedWith: [],
+      constraints: [],
     });
     expect(await stored(head.householdId)).toEqual([{ ...asAdded, name: 'Hoover', version: 2 }]);
     // Saved again from the version the conflict gave, it is saved.

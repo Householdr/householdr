@@ -118,6 +118,7 @@ describe('a household’s tasks page (ADR-0001 §1)', () => {
       mayChangeTasks: true,
       starts: { earliest: '2026-10-08', latest: '2027-10-08' },
       dates: { earliest: '2026-10-08', latest: '2028-10-08' },
+      shareable: [],
       removed: false,
     });
   });
@@ -264,6 +265,35 @@ describe('a household’s tasks page (ADR-0001 §1)', () => {
       values: { extraDates: [] },
     });
     expect(await opened({ ...on, membership })).toMatchObject({ tasks: [] });
+  });
+
+  it('adds a task on another task’s dates, which the list says (ADR-0004 §1)', async () => {
+    const membership = await founded();
+    expect(await add({ ...on, membership }, { ...vacuum, name: 'Bins out' })).toEqual({
+      added: 'Bins out',
+    });
+    const page = await opened({ ...on, membership });
+    if (typeof page === 'number') throw new Error(`No page: ${String(page)}`);
+    const [bins] = page.shareable;
+    if (!bins) throw new Error('Nothing to share.');
+    // A form without scripts sends the fields of the other kinds too.
+    const back = {
+      ...vacuum,
+      name: 'Bins in',
+      frequency: 'shared',
+      sharedWith: bins.id,
+      start: '',
+      'rule-0-kind': 'weeks',
+      'rule-0-every': '1',
+      'rule-0-start': '2026-10-08',
+    };
+    expect(await add({ ...on, membership }, back)).toEqual({ added: 'Bins in' });
+    expect(await opened({ ...on, membership })).toMatchObject({
+      tasks: [
+        { name: 'Bins in', frequency: 'weekly', sharedWith: ['Bins out'] },
+        { name: 'Bins out', frequency: 'weekly', sharedWith: ['Bins in'] },
+      ],
+    });
   });
 
   it('starts a task today when no day is sent', async () => {

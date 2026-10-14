@@ -18,6 +18,7 @@ export function useTaskRepeat(initial: () => string, initialWhen: () => string) 
   });
   const counted = $derived((chosen ?? initial()) === 'since-last-done');
   const advanced = $derived((chosen ?? initial()) === 'advanced');
+  const sharing = $derived((chosen ?? initial()) === 'shared');
   const when = $derived(
     chosenWhen ?? (advanced && initial() !== 'advanced' ? 'set' : initialWhen()),
   );
@@ -34,6 +35,10 @@ export function useTaskRepeat(initial: () => string, initialWhen: () => string) 
     /** Whether the fields of an advanced schedule apply, rather than a first time (ADR-0004 §3). */
     get advanced() {
       return advanced;
+    },
+    /** Whether it shares another task's dates, rather than having a first time (ADR-0004 §1). */
+    get sharing() {
+      return sharing;
     },
     /** When it is done: any time that week, or at set times. */
     get when() {

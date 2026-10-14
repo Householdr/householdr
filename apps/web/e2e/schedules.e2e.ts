@@ -90,6 +90,61 @@ for (const javaScriptEnabled of [true, false]) {
         /How often\s*Every 2nd and 4th Tuesday of the month; not on \d/,
       );
     });
+
+    test('a head gives a task the same dates as another, and later dates of its own (ADR-0004 §1)', async ({
+      page,
+      accounts,
+      account,
+    }) => {
+      await accounts.addSecondFactor(account.email);
+      const id = await accounts.addHousehold(account.email, 'Ash Lane');
+      await signIn(page, account, `/households/${id}`);
+      await page.goto(`/households/${id}/tasks`);
+      const form = adding(page);
+      // Nothing to share dates with yet.
+      await expect(
+        form.getByLabel('How often').getByRole('option', { name: 'Same dates as another task' }),
+      ).toHaveCount(0);
+      await form.getByLabel('What needs doing').fill('Put the bins out');
+      await form.getByLabel('How long it takes, in minutes').fill('5');
+      await page.getByRole('button', { name: 'Add task' }).click();
+      await expect(form.getByRole('status')).toHaveText('Put the bins out is added.');
+
+      await form.getByLabel('What needs doing').fill('Bring the bins in');
+      await form.getByLabel('How long it takes, in minutes').fill('5');
+      await form.getByLabel('How often').selectOption({ label: 'Same dates as another task' });
+      await form.getByLabel('Same dates as').selectOption({ label: 'Put the bins out' });
+      if (javaScriptEnabled) {
+        await expect(form.getByLabel('First time')).toBeHidden();
+        await expectAccessible(page, 'same dates as another task');
+      }
+      await page.getByRole('button', { name: 'Add task' }).click();
+      await expect(form.getByRole('status')).toHaveText('Bring the bins in is added.');
+      const listed = page.getByRole('list', { name: 'Tasks' }).getByRole('listitem');
+      /** The task `name` in the list, by its link, as another may name it too. */
+      const item = (name: string) =>
+        listed.filter({ has: page.getByRole('link', { name: `Edit ${name}` }) });
+      await expect(item('Bring the bins in')).toContainText('Same dates as Put the bins out');
+      await expect(item('Put the bins out')).toContainText('Same dates as Bring the bins in');
+
+      // New dates for it alone leave the other's as they are.
+      await page.getByRole('link', { name: 'Edit Bring the bins in' }).click();
+      await expect(
+        page.getByText('Same dates as Put the bins out. New dates change theirs too.'),
+      ).toBeVisible();
+      await page.getByLabel('How often').selectOption({ label: 'Every two weeks' });
+      await page
+        .getByRole('checkbox', {
+          name: 'Give it dates of its own instead, leaving theirs as they are',
+        })
+        .check();
+      await page.getByRole('button', { name: 'Save the task' }).click();
+      await expect(page.getByRole('status')).toHaveText('The task is saved.');
+      await page.goto(`/households/${id}/tasks`);
+      await expect(item('Put the bins out')).toContainText('Every week');
+      await expect(item('Bring the bins in')).toContainText('Every two weeks');
+      await expect(listed.filter({ hasText: 'Same dates as' })).toHaveCount(0);
+    });
   });
 }
 
