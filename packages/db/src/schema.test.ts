@@ -182,6 +182,19 @@ describe('members', () => {
     );
   });
 
+  it('names as head only a current head (ADR-0018 §2, clarification)', async () => {
+    expect(
+      await refusal(addMember({ name: 'Sam', role: 'head', namedHead: true })),
+    ).toBeUndefined();
+    expect(await refusal(addMember({ name: 'Sam', role: 'adult', namedHead: true }))).toBe(
+      'members_named_head',
+    );
+    const leftAt = new Date('2026-10-08T08:00:00Z');
+    expect(await refusal(addMember({ name: 'Sam', role: 'head', leftAt, namedHead: true }))).toBe(
+      'members_named_head',
+    );
+  });
+
   it('needs a name and a known role', async () => {
     expect(await refusal(addMember({ name: '', role: 'adult' }))).toBe('members_name');
     expect(await refusal(addMember({ name: 'Alex', role: 'owner' as 'adult' }))).toBe(

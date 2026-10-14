@@ -154,6 +154,12 @@ export const members = pgTable(
      * than as "Former member", which is chosen until they do (ADR-0018 §2, clarification).
      */
     showsName: boolean().notNull().default(false),
+    /**
+     * Whether the household's last head named them head as they left, and they haven't yet said
+     * whether they take it on: they hold the role meanwhile, and declining passes it on (ADR-0018
+     * §2, clarification).
+     */
+    namedHead: boolean().notNull().default(false),
     /** For versioned updates (CODE-14, ADR-0023 §1). */
     version: integer().notNull().default(1),
   },
@@ -172,6 +178,11 @@ export const members = pgTable(
     check(
       'members_former',
       sql`${t.leftAt} is null or (${t.accountId} is null and ${t.sharePercent} is null)`,
+    ),
+    // Only a current head can be one the last head named and who hasn't answered yet.
+    check(
+      'members_named_head',
+      sql`not ${t.namedHead} or (${t.role} = 'head' and ${t.leftAt} is null)`,
     ),
   ],
 );

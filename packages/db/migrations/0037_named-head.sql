@@ -1,0 +1,2 @@
+ALTER TABLE "members" ADD COLUMN "named_head" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "members" ADD CONSTRAINT "members_named_head" CHECK (not "members"."named_head" or ("members"."role" = 'head' and "members"."left_at" is null));

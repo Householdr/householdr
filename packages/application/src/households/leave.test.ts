@@ -1,5 +1,6 @@
 import {
   absences,
+  accounts,
   activityLog,
   assignments,
   comparisons,
@@ -9,7 +10,7 @@ import {
   type Database,
 } from '@householdr/db';
 import { testDatabase } from '@householdr/db/testing';
-import { eq } from 'drizzle-orm';
+import { eq, isNull } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { reportUnavailable } from '../availability/unavailability';
 import { completeOccurrence } from '../completions/complete-occurrence';
@@ -238,7 +239,7 @@ describe('leaveHousehold (ADR-0005 §4, ADR-0018 §2)', () => {
     expect(await membership({ db }, accountId, other.householdId)).not.toBeNull();
   });
 
-  it('is for the member themselves, never a child, and not yet for the last head', async () => {
+  it('is for the member themselves, never a child', async () => {
     const h = await published();
     expect(await leave({ ...h.adult, member: { ...h.adult.member, role: 'child' } })).toEqual({
       ok: false,
@@ -248,7 +249,6 @@ describe('leaveHousehold (ADR-0005 §4, ADR-0018 §2)', () => {
       ok: false,
       error: 'not-allowed',
     });
-    expect(await leave(h.head)).toEqual({ ok: false, error: 'last-head' });
     expect(await leaveHousehold(h.adult, { shownAs: 'nickname' })).toEqual({
       ok: false,
       error: 'invalid',
@@ -262,6 +262,154 @@ describe('leaveHousehold (ADR-0005 §4, ADR-0018 §2)', () => {
   });
 });
 
+/** Adds a member to `h` who joined on `joinedAt`, with an account of their own if `account`. */
+const addMember = async (
+  h: PlannedHousehold,
+  name: string,
+  { role = 'adult', account = true, joinedAt = '2026-10-02T00:00:00Z' } = {},
+) => {
+  const accountId = account
+    ? (
+        await db
+          .insert(accounts)
+          .values({ name, email: `${name}-${crypto.randomUUID()}@example.org`, culture: 'en-BE' })
+          .returning({ id: accounts.id })
+      )[0]?.id
+    : undefined;
+  const [row] = await h.inIt((tx) =>
+    tx
+      .insert(members)
+      .values({
+        householdId: h.householdId,
+        name,
+        role: role as 'adult' | 'child',
+        birthDate: role === 'child' ? '2016-03-01' : null,
+        accountId,
+        joinedAt: new Date(joinedAt),
+      })
+      .returning({ id: members.id }),
+  );
+  if (!row) throw new Error('No member');
+  return row.id;
+};
+
+/** Each current member's name and role, and whether they were named head, by name. */
+const roles = async (h: PlannedHousehold) =>
+  (
+    await h.inIt((tx) =>
+      tx
+        .select({ name: members.name, role: members.role, namedHead: members.namedHead })
+        .from(members)
+        .where(isNull(members.leftAt)),
+    )
+  ).sort((a, b) => a.name.localeCompare(b.name));
+
+describe('leaveHousehold, as the last head (ADR-0018 §2, clarification)', () => {
+  it('passes the role at once to the adult they name, who is asked later', async () => {
+    const h = await published();
+    await addMember(h, 'Sam', { joinedAt: '2026-10-02T00:00:00Z' });
+    expect(await leaveHousehold(h.head, { shownAs: 'name', successor: h.alex })).toEqual({
+      ok: true,
+    });
+    expect(await roles(h)).toEqual([
+      { name: 'Alex', role: 'head', namedHead: true },
+      { name: 'Sam', role: 'adult', namedHead: false },
+    ]);
+    // Robin left all the same, and nothing is logged (ADR-0018 §8).
+    const view = await viewHousehold(h.adult);
+    expect(view.ok && view.members.map((m) => m.name)).toEqual(['Alex', 'Sam']);
+    expect(await h.inIt((tx) => tx.select().from(activityLog))).toEqual([]);
+  });
+
+  it('passes it to the adult with an account longest in the household when they name no one', async () => {
+    const h = await published();
+    // Sam's profile is older than Alex's, though their account was linked later; Kim has no account
+    // and Jo is a child, so neither can be head.
+    const sam = await addMember(h, 'Sam', { joinedAt: '2026-09-01T00:00:00Z' });
+    await addMember(h, 'Kim', { account: false, joinedAt: '2026-01-01T00:00:00Z' });
+    await addMember(h, 'Jo', { role: 'child', joinedAt: '2026-01-01T00:00:00Z' });
+    expect(await leave(h.head)).toEqual({ ok: true });
+    expect((await roles(h)).filter(({ role }) => role === 'head')).toEqual([
+      { name: 'Sam', role: 'head', namedHead: false },
+    ]);
+    // Sam acts as head once their account has two factors (ADR-0010 §3).
+    const [account] = await h.inIt((tx) =>
+      tx.select({ id: members.accountId }).from(members).where(eq(members.id, sam)),
+    );
+    if (!account?.id) throw new Error('No account');
+    expect(await membership({ db }, account.id, h.householdId)).toMatchObject({
+      role: 'head',
+      twoFactor: false,
+    });
+  });
+
+  it('orders profiles added at the same moment by their id, so the same one always gets it', async () => {
+    const h = await published();
+    const sam = await addMember(h, 'Sam', { joinedAt: '2026-10-01T00:00:00Z' });
+    const first = [h.alex, sam].sort()[0];
+    expect(await leave(h.head)).toEqual({ ok: true });
+    const [head] = await h.inIt((tx) =>
+      tx.select({ id: members.id }).from(members).where(eq(members.role, 'head')),
+    );
+    expect(head?.id).toBe(first);
+  });
+
+  it('can only name a current adult with an account', async () => {
+    const h = await published();
+    const kim = await addMember(h, 'Kim', { account: false });
+    const jo = await addMember(h, 'Jo', { role: 'child' });
+    for (const successor of [kim, jo, h.robin, crypto.randomUUID()]) {
+      expect(await leaveHousehold(h.head, { shownAs: 'name', successor })).toEqual({
+        ok: false,
+        error: 'successor',
+      });
+    }
+    expect(await leaveHousehold(h.head, { shownAs: 'name', successor: 'Alex' })).toEqual({
+      ok: false,
+      error: 'invalid',
+    });
+    // Alex has gone meanwhile; Sam is still there to name.
+    await addMember(h, 'Sam');
+    expect(await leave(h.adult)).toEqual({ ok: true });
+    expect(await leaveHousehold(h.head, { shownAs: 'name', successor: h.alex })).toEqual({
+      ok: false,
+      error: 'successor',
+    });
+    expect((await roles(h)).find(({ name }) => name === 'Robin')).toMatchObject({ role: 'head' });
+  });
+
+  it('is refused for now when no adult with an account is left, which would close the household', async () => {
+    const h = await published();
+    await addMember(h, 'Kim', { account: false });
+    expect(await leave(h.adult)).toEqual({ ok: true });
+    expect(await leave(h.head)).toEqual({ ok: false, error: 'last-adult' });
+    expect((await roles(h)).find(({ name }) => name === 'Robin')).toMatchObject({ role: 'head' });
+  });
+
+  it('passes nothing on when another head stays, whoever they named', async () => {
+    const h = await published();
+    await h.inIt((tx) => tx.update(members).set({ role: 'head' }).where(eq(members.id, h.alex)));
+    const sam = await addMember(h, 'Sam');
+    expect(await leaveHousehold(h.head, { shownAs: 'name', successor: sam })).toEqual({
+      ok: true,
+    });
+    expect(await roles(h)).toEqual([
+      { name: 'Alex', role: 'head', namedHead: false },
+      { name: 'Sam', role: 'adult', namedHead: false },
+    ]);
+  });
+
+  it('leaves a named head who leaves in turn as an ordinary former member', async () => {
+    const h = await published();
+    await addMember(h, 'Sam');
+    await leaveHousehold(h.head, { shownAs: 'name', successor: h.alex });
+    const asHead = { ...h.adult, member: { ...h.adult.member, role: 'head' as const } };
+    expect(await leave(asHead)).toEqual({ ok: true });
+    expect(await alexRow(h)).toMatchObject({ role: 'head', namedHead: false });
+    expect(await roles(h)).toEqual([{ name: 'Sam', role: 'head', namedHead: false }]);
+  });
+});
+
 describe('leaveOptions (ADR-0018 §2, §8)', () => {
   it('gives the household, the member’s name and the support line of its country', async () => {
     const h = await plannedHousehold(db);
@@ -269,10 +417,28 @@ describe('leaveOptions (ADR-0018 §2, §8)', () => {
       ok: true,
       household: 'Ash Lane',
       name: 'Alex',
-      lastHead: false,
+      successors: null,
       support: { name: '1712', phone: '1712', website: 'https://www.1712.be' },
     });
-    expect(await leaveOptions(h.head)).toMatchObject({ ok: true, lastHead: true });
+  });
+
+  it('gives the last head who can become head, longest in the household first', async () => {
+    const h = await plannedHousehold(db);
+    expect(await leaveOptions(h.head)).toMatchObject({
+      ok: true,
+      successors: [{ id: h.alex, name: 'Alex' }],
+    });
+    const sam = await addMember(h, 'Sam', { joinedAt: '2026-09-01T00:00:00Z' });
+    await addMember(h, 'Kim', { account: false, joinedAt: '2026-01-01T00:00:00Z' });
+    expect(await leaveOptions(h.head)).toMatchObject({
+      successors: [
+        { id: sam, name: 'Sam' },
+        { id: h.alex, name: 'Alex' },
+      ],
+    });
+    await leave(h.adult);
+    await h.inIt((tx) => tx.delete(members).where(eq(members.id, sam)));
+    expect(await leaveOptions(h.head)).toMatchObject({ successors: [] });
   });
 
   it('has no support line yet for a country without one', async () => {

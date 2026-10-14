@@ -17,22 +17,27 @@ async function householdContext(locals: App.Locals) {
 export const load = (async ({ locals }) => {
   const result = await leaveOptions(await householdContext(locals));
   if (!result.ok) error(403);
-  const { household, name, lastHead, support } = result;
-  return { household, name, lastHead, support };
+  const { household, name, successors, support } = result;
+  return { household, name, successors, support };
 }) satisfies PageServerLoad;
+
+/** A field as sent, if it was. */
+const sent = (value: FormDataEntryValue | null) => (typeof value === 'string' ? value : undefined);
 
 export const actions = {
   // Leaves at once, then to the account's households, which say so (ADR-0018 §2).
   default: async ({ locals, request }) => {
     const context = await householdContext(locals);
-    const shownAs = (await request.formData()).get('shownAs');
-    const result = await leaveHousehold(context, { shownAs });
+    const form = await request.formData();
+    const [shownAs, successor] = [sent(form.get('shownAs')), sent(form.get('successor'))];
+    const result = await leaveHousehold(context, { shownAs, successor });
     if (result.ok) redirect(303, '/?left');
     if (result.error === 'not-allowed') error(403);
-    // The choice stays chosen (UI-10).
+    // The choices stay chosen (UI-10).
     return fail(result.error === 'invalid' ? 400 : 409, {
       problem: result.error,
-      shownAs: typeof shownAs === 'string' ? shownAs : null,
+      shownAs: shownAs ?? null,
+      successor: successor ?? null,
     });
   },
 } satisfies Actions;

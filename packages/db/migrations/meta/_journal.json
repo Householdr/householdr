@@ -260,6 +260,13 @@
       "when": 1791920119695,
       "tag": "0036_member-removed",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1791958222463,
+      "tag": "0037_named-head",
+      "breakpoints": true
     }
   ]
 }

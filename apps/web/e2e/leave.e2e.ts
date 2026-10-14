@@ -60,6 +60,39 @@ for (const javaScriptEnabled of [true, false]) {
       await signIn(page, account, `/households/${id}`);
       await expect(page.getByRole('list').getByText('Alex')).toHaveCount(0);
     });
+
+    test('the last head names who becomes head, who is head once they have left', async ({
+      page,
+      accounts,
+      account,
+    }, testInfo) => {
+      const { id } = await household(accounts, account, testInfo);
+      const sam = { email: `${testInfo.testId}-sam@example.org`, password: account.password };
+      await accounts.add(sam);
+      await accounts.addMember(sam.email, id, 'Sam');
+      await signIn(page, account, `/households/${id}`);
+      await page.goto(`/households/${id}/leave`);
+      await expect(page.getByText('You’re the household’s last head')).toBeVisible();
+      const successor = page.getByRole('group', { name: 'Who becomes head?' });
+      // No one in particular to begin with, which gives it to whoever has been there longest.
+      await expect(
+        successor.getByRole('radio', {
+          name: 'No one in particular: Alex, who has been in the household longest',
+        }),
+      ).toBeChecked();
+      await expect(successor.getByRole('radio')).toHaveCount(3);
+      if (javaScriptEnabled) await expectAccessible(page, 'last head');
+      await successor.getByRole('radio', { name: 'Sam', exact: true }).check();
+      await page.getByRole('button', { name: 'Leave the household' }).click();
+      await expect(page).toHaveURL('/?left');
+
+      await signIn(page, sam, `/households/${id}`);
+      const members = page.getByRole('list', { name: 'Members' });
+      await expect(members.getByRole('listitem')).toHaveCount(2);
+      await expect(members.getByRole('listitem').filter({ hasText: 'Sam (you)' })).toContainText(
+        'Head',
+      );
+    });
   });
 }
 
@@ -83,13 +116,19 @@ test('names the support service of the household’s country in one plain line',
   await expect(page.getByRole('heading')).toHaveCount(1);
 });
 
-test('the last head can’t leave yet, and is told why', async ({ page, accounts, account }) => {
+test('the last head with no other adult with an account can’t leave yet, and is told why', async ({
+  page,
+  accounts,
+  account,
+}) => {
   const id = await accounts.addHousehold(account.email, 'Ash Lane');
   await signIn(page, account, `/households/${id}`);
   await page.goto(`/households/${id}/leave`);
-  await expect(page.getByText('You’re the household’s only head.')).toBeVisible();
+  await expect(
+    page.getByText('You’re the only adult with an account in the household'),
+  ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Leave the household' })).toHaveCount(0);
-  await expectAccessible(page, 'last head');
+  await expectAccessible(page, 'last adult');
 });
 
 test('is not there while its flag is off (CODE-20)', async ({
