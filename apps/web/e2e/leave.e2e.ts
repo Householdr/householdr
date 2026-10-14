@@ -91,6 +91,54 @@ for (const javaScriptEnabled of [true, false]) {
       await expect(members.getByRole('listitem').filter({ hasText: 'Sam (you)' })).toContainText(
         'Head',
       );
+      // Sam is asked whether they take it on, and to set up two factors (ADR-0010 §3).
+      const named = page.getByRole('region', { name: 'You’re head now' });
+      await expect(named).toContainText('named you head when they left. Do you take it on?');
+      const secure = page.getByRole('region', { name: 'Secure your account' });
+      await expect(secure.getByRole('link', { name: 'Go to the security page' })).toHaveAttribute(
+        'href',
+        '/security',
+      );
+      if (javaScriptEnabled) await expectAccessible(page, 'named head');
+      // Declining passes it to Alex, who has been in the household longest.
+      await named.getByRole('button', { name: 'Decline' }).click();
+      await expect(page.getByRole('status').filter({ hasText: 'declined' })).toHaveText(
+        'You declined. Someone else is head now.',
+      );
+      await expect(named).toHaveCount(0);
+      await expect(secure).toHaveCount(0);
+      await expect(members.getByRole('listitem').filter({ hasText: 'Alex' })).toContainText('Head');
+      await expect(members.getByRole('listitem').filter({ hasText: 'Sam (you)' })).toContainText(
+        'Adult',
+      );
+    });
+
+    test('a member named head takes it on, and isn’t asked again', async ({
+      page,
+      accounts,
+      account,
+    }, testInfo) => {
+      const { id, alex } = await household(accounts, account, testInfo);
+      await signIn(page, account, `/households/${id}/leave`);
+      await page
+        .getByRole('group', { name: 'Who becomes head?' })
+        .getByRole('radio', { name: 'Alex', exact: true })
+        .check();
+      await page.getByRole('button', { name: 'Leave the household' }).click();
+      await expect(page).toHaveURL('/?left');
+
+      await signIn(page, alex, `/households/${id}`);
+      const named = page.getByRole('region', { name: 'You’re head now' });
+      // The only adult with an account can't decline it.
+      await expect(named).toContainText('you stay head');
+      await expect(named.getByRole('button', { name: 'Decline' })).toHaveCount(0);
+      await named.getByRole('button', { name: 'Take it on' }).click();
+      await expect(page.getByRole('status').filter({ hasText: 'head' })).toHaveText(
+        'You’re the household’s head.',
+      );
+      await expect(named).toHaveCount(0);
+      await page.reload();
+      await expect(named).toHaveCount(0);
     });
   });
 }

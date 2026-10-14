@@ -27,6 +27,7 @@ import * as v from 'valibot';
 import { planningOf, type Planning } from '../plans/planning';
 import type { HouseholdContext, HouseholdsContext } from './context';
 import { isCurrentMember } from './former-members';
+import { isLastHead, successors } from './succession';
 
 export type { HouseholdContext, HouseholdsContext } from './context';
 
@@ -184,6 +185,17 @@ type ViewHouseholdResult =
       /** Whether they may start it: a head, while it is in setup (ADR-0007 §2 step 7). */
       mayStart: boolean;
       /**
+       * If the household's last head named them head as they left, and they haven't said yet
+       * whether they take it on: whether they may decline it, which the only adult with an account
+       * can't (ADR-0018 §2, clarification). Null otherwise.
+       */
+      namedHead: { mayDecline: boolean } | null;
+      /**
+       * Whether they are a head who acts as head only once their account signs in with two factors,
+       * and is asked to set them up (ADR-0010 §3, ADR-0018 §2).
+       */
+      needsTwoFactors: boolean;
+      /**
        * Once it started on the week start day, until that first plan week begins: the week, and
        * when the heads see its draft and everyone its plan (ADR-0006 §2, ADR-0007 §3).
        */
@@ -252,6 +264,15 @@ export async function viewHousehold(context: HouseholdContext): Promise<ViewHous
     list.sort((a, b) => roleOrder[a.role] - roleOrder[b.role] || a.name.localeCompare(b.name));
     const mayChangeSettings = can(context.member, { action: 'household.settings' });
     const planning = await planningOf(tx);
+    const [own] = await tx
+      .select({ namedHead: members.namedHead })
+      .from(members)
+      .where(eq(members.id, context.member.id));
+    const namedHead = own?.namedHead
+      ? {
+          mayDecline: !(await isLastHead(tx, context.member)) || (await successors(tx)).length > 0,
+        }
+      : null;
     return {
       ok: true as const,
       name: household.name,
@@ -261,6 +282,8 @@ export async function viewHousehold(context: HouseholdContext): Promise<ViewHous
       mayChangeSettings,
       // Starting is a setting of the household's, which only heads change (ADR-0007 §2).
       mayStart: mayChangeSettings && !planning.firstWeek,
+      namedHead,
+      needsTwoFactors: context.member.role === 'head' && !context.member.twoFactor,
       firstPlan: firstPlanOf(planning, context.clock.now()),
     };
   });
