@@ -17,7 +17,8 @@
   timeouts, size caps; push endpoints only to known push services).
 - **SEC-6 — Never weaken the browser hardening**: no inline scripts, no `unsafe-eval`, no third-party
   scripts, no loosened CSP or cookie settings.
-- **SEC-7 — Tokens in links** are random, single-use, short-lived and stored only as a hash.
+- **SEC-7 — Tokens in links** are random, single-use, short-lived and stored only as a hash. An
+  e-mail's unsubscribe link lasts 30 days, and can only turn e-mails off.
 - **SEC-8 — No user-written text in e-mails to other people.**
 - **SEC-9 — Rate limits on anything that sends e-mail or creates accounts, invitations or device
   codes.**

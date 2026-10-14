@@ -101,6 +101,15 @@ A CSP violation during end-to-end tests fails the test (§10).
 > link's own address to the page it leads to, send `Referrer-Policy: same-origin` instead: other
 > sites still get no referrer at all, and the site's own forms keep their origin.
 
+> **Clarification (2026-10-14):** an e-mail's **unsubscribe link**
+> ([ADR-0014](0014-notifications-and-reminders.md) §6, clarification) has to work days after the
+> e-mail came, so its token lasts **30 days** from when the e-mail is sent, not minutes. It is still
+> random, works once and is stored only as a hash, and all it can do is turn the account's
+> e-mails off. Each e-mail gets its own, made by the worker as it sends
+> ([ADR-0014](0014-notifications-and-reminders.md) §7, clarification). Its page is a token-link
+> page like the others: the token moves into a cookie and out of the address bar, and the page
+> sends `Referrer-Policy: same-origin`.
+
 ### 5. Rate limits and abuse
 
 | What | Limit (initial values, tuned with use) |
