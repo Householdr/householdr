@@ -13,20 +13,44 @@ import {
   occurrenceId,
   planWeek,
   rebalanceRates,
+  windowLeft,
   windowToReallocate,
   type Absence,
+  type Availability,
   type AllocationMember,
   type AllocationTask,
   type PlannedOccurrence,
   type PlanWeek,
+  type Window,
 } from '@householdr/domain';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, gt } from 'drizzle-orm';
 import { balancesOf } from '../ledger/balances';
 import { fairPortions } from './fair-portions';
 import { awayIn, type Planning } from './planning';
 
 // Re-allocation after publishing (ADR-0006 §3): the normal allocator on some occurrences of a
 // published plan only, with the week's current loads as its starting point.
+
+/** When re-allocating happens, and in which household. */
+interface Moment {
+  planning: Planning;
+  now: Temporal.Instant;
+}
+
+/** A published plan, as re-allocating reads it. */
+interface Plan {
+  id: string;
+  weekStart: string;
+  weekEnd: string;
+  draftedAt: Date;
+}
+
+const planColumns = {
+  id: plans.id,
+  weekStart: plans.weekStart,
+  weekEnd: plans.weekEnd,
+  draftedAt: plans.draftedAt,
+};
 
 /**
  * Re-allocates member `memberId`'s open occurrences in this plan week's published plan that they
@@ -37,19 +61,65 @@ import { awayIn, type Planning } from './planning';
  * unavailable" (ADR-0001 §7). Those nobody else can do stay theirs and follow their on-miss policy,
  * as does one whose window has passed. Nothing else in the plan changes: it stays frozen.
  */
-export async function reallocateUnavailable(
-  tx: Transaction,
-  { planning, now }: { planning: Planning; now: Temporal.Instant },
-  memberId: string,
-) {
-  const { calendar } = planning;
-  const { timeZone } = calendar;
-  const week = planWeek(householdDate(now, timeZone), calendar);
+export async function reallocateUnavailable(tx: Transaction, moment: Moment, memberId: string) {
+  const { calendar } = moment.planning;
+  const week = planWeek(householdDate(moment.now, calendar.timeZone), calendar);
   const [plan] = await tx
-    .select({ id: plans.id, draftedAt: plans.draftedAt })
+    .select(planColumns)
     .from(plans)
     .where(and(eq(plans.weekStart, week.start.toString()), eq(plans.status, 'published')));
   if (!plan) return;
+  await reallocateIn(tx, moment, plan, memberId, {
+    left: (window, availability) =>
+      availability && windowToReallocate(availability, window, moment.now, calendar),
+    nobody: 'stays',
+  });
+}
+
+/**
+ * Re-allocates every open occurrence of member `memberId`, who left at `now`, in the published
+ * plans of weeks not yet over (ADR-0005 §4, clarifications): each from what is left of its window,
+ * as for "I can't today". One nobody else can do, or whose window has passed, is left unassigned,
+ * charging nobody (ADR-0001 §7, clarification).
+ */
+export async function reallocateLeaver(tx: Transaction, moment: Moment, memberId: string) {
+  const { timeZone } = moment.planning.calendar;
+  const today = householdDate(moment.now, timeZone);
+  const published = await tx
+    .select(planColumns)
+    .from(plans)
+    .where(and(eq(plans.status, 'published'), gt(plans.weekEnd, today.toString())));
+  for (const plan of published) {
+    await reallocateIn(tx, moment, plan, memberId, {
+      left: (window) => windowLeft(window, moment.now, moment.planning.calendar) ?? null,
+      nobody: 'unassigned',
+    });
+  }
+}
+
+/** What re-allocating takes from a member, and what becomes of what nobody else can take. */
+interface Rule {
+  /**
+   * What is left of an open occurrence's `window` to re-allocate, given the member's availability
+   * in its week if the plan includes them: none to keep it theirs, null to leave it unassigned.
+   */
+  left: (window: Window, availability: Availability | undefined) => Window | null | undefined;
+  nobody: 'stays' | 'unassigned';
+}
+
+/**
+ * Runs the allocator on member `memberId`'s open occurrences in published plan `plan` that `rule`
+ * takes from them, among the others, with the members' loads in the plan as its starting point.
+ */
+async function reallocateIn(
+  tx: Transaction,
+  { planning }: Moment,
+  plan: Plan,
+  memberId: string,
+  rule: Rule,
+) {
+  const { calendar } = planning;
+  const { timeZone } = calendar;
   const rows = await tx
     .select({
       id: assignments.id,
@@ -68,22 +138,27 @@ export async function reallocateUnavailable(
     .where(eq(assignments.planId, plan.id));
 
   // The members as the plan was made for, from its draft (ADR-0002 §1, clarification), with what
-  // came up since, this "I can't today" included.
+  // came up since: this "I can't today", or leaving.
+  const week = {
+    start: Temporal.PlainDate.from(plan.weekStart),
+    end: Temporal.PlainDate.from(plan.weekEnd),
+  };
   const draftedOn = householdDate(
     Temporal.Instant.fromEpochMilliseconds(plan.draftedAt.getTime()),
     timeZone,
   );
   const away = [...(await awayIn(tx, week)), ...goneDays(week, draftedOn)];
   const people = await membersOf(tx, planning, week, away, plan.draftedAt);
-  const theirs = people.find((member) => member.id === memberId);
-  if (!theirs) return;
+  const availability = people.find((member) => member.id === memberId)?.availability;
 
   const zoned = (at: Date) =>
     Temporal.Instant.fromEpochMilliseconds(at.getTime()).toZonedDateTimeISO(timeZone);
+  const unassign: string[] = [];
   const affected = rows.flatMap((row) => {
     if (row.memberId !== memberId || row.status !== 'open') return [];
     const window = { start: zoned(row.windowStart), end: zoned(row.windowEnd) };
-    const left = windowToReallocate(theirs.availability, window, now, calendar);
+    const left = rule.left(window, availability);
+    if (left === null) unassign.push(row.id);
     if (!left) return [];
     const date = Temporal.PlainDate.from(row.date);
     const occurrence: PlannedOccurrence = {
@@ -94,7 +169,7 @@ export async function reallocateUnavailable(
     };
     return [{ row, occurrence }];
   });
-  if (affected.length === 0) return;
+  if (affected.length === 0 && unassign.length === 0) return;
 
   const loads = new Map<string, number>();
   for (const row of rows) {
@@ -124,15 +199,33 @@ export async function reallocateUnavailable(
     carried: new Map(),
   });
   const rowOf = new Map(affected.map(({ row, occurrence }) => [occurrence.id, row.id]));
+  const idOf = (occurrence: string) => {
+    const id = rowOf.get(occurrence);
+    if (id === undefined) throw new Error(`No assignment of ${occurrence}.`);
+    return id;
+  };
   for (const given of allocation.assignments) {
-    const id = rowOf.get(given.occurrence);
-    if (id === undefined) throw new Error(`No assignment of ${given.occurrence}.`);
     await tx
       .update(assignments)
       .set({
         memberId: given.member,
         cost: given.cost,
         reason: 're-allocated: member unavailable',
+        version: nextVersion(assignments),
+      })
+      .where(eq(assignments.id, idOf(given.occurrence)));
+  }
+  if (rule.nobody === 'unassigned') {
+    unassign.push(...allocation.unassigned.map(({ occurrence }) => idOf(occurrence)));
+  }
+  for (const id of unassign) {
+    await tx
+      .update(assignments)
+      .set({
+        memberId: null,
+        cost: null,
+        reason: null,
+        unassignedCause: 'nobody eligible',
         version: nextVersion(assignments),
       })
       .where(eq(assignments.id, id));

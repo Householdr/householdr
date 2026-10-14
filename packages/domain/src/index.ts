@@ -28,6 +28,7 @@ export { plannableDays, unplannableEnds, type AbsenceEnd } from './availability/
 export {
   suddenUnavailability,
   unavailableDays,
+  windowLeft,
   windowToReallocate,
 } from './availability/sudden-unavailability';
 export {

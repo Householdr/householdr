@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { HouseholdCalendar } from '../schedules/week';
-import { suddenUnavailability, unavailableDays, windowToReallocate } from './sudden-unavailability';
+import {
+  suddenUnavailability,
+  unavailableDays,
+  windowLeft,
+  windowToReallocate,
+} from './sudden-unavailability';
 
 const date = (iso: string) => Temporal.PlainDate.from(iso);
 const brussels: HouseholdCalendar = { timeZone: 'Europe/Brussels', weekStartDay: 1 };
@@ -125,5 +130,21 @@ describe('windowToReallocate (ADR-0005 §3, clarification)', () => {
       '2026-10-25T09:30:00+01:00[Europe/Brussels]',
       '2026-10-26T00:00:00+01:00[Europe/Brussels]',
     ]);
+  });
+});
+
+describe('windowLeft (ADR-0005 §4, clarification)', () => {
+  const zoned = (iso: string) => Temporal.ZonedDateTime.from(`${iso}[Europe/Brussels]`);
+  const now = instant('2026-10-14T09:30');
+
+  it('is what is left of a window from now, all of one still to come, none of one gone by', () => {
+    const today = { start: zoned('2026-10-14T07:00'), end: zoned('2026-10-14T22:00') };
+    expect(windowLeft(today, now, brussels)?.start.toString()).toBe(
+      '2026-10-14T09:30:00+02:00[Europe/Brussels]',
+    );
+    const tomorrow = { start: zoned('2026-10-15T07:00'), end: zoned('2026-10-15T22:00') };
+    expect(windowLeft(tomorrow, now, brussels)).toEqual(tomorrow);
+    const morning = { start: zoned('2026-10-14T07:00'), end: zoned('2026-10-14T09:30') };
+    expect(windowLeft(morning, now, brussels)).toBeUndefined();
   });
 });

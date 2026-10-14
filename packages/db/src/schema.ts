@@ -149,6 +149,11 @@ export const members = pgTable(
      * clarifications).
      */
     leftAt: timestamp({ withTimezone: true }),
+    /**
+     * Whether a former member chose to appear under their name in the household's history, rather
+     * than as "Former member", which is chosen until they do (ADR-0018 §2, clarification).
+     */
+    showsName: boolean().notNull().default(false),
     /** For versioned updates (CODE-14, ADR-0023 §1). */
     version: integer().notNull().default(1),
   },
