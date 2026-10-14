@@ -205,6 +205,52 @@ for (const javaScriptEnabled of [true, false]) {
       await expect(page.getByRole('status')).toHaveText('The task is removed.');
       await expect(page.getByText('There are no tasks yet.')).toBeVisible();
     });
+
+    test('a head sets who does a task, which only its page shows (ADR-0001 §3)', async ({
+      page,
+      accounts,
+      account,
+    }) => {
+      await headWithTasks(page, accounts, account, 'Clean the oven');
+      await openTask(page, 'Clean the oven');
+      const who = page.getByRole('group', { name: 'Who does it' });
+      await who.getByLabel('Minimum age, in years').fill('12');
+      await expect(who.getByLabel('Robin')).toHaveValue('');
+      await who.getByLabel('Robin').selectOption({ label: 'Always theirs' });
+      if (javaScriptEnabled) await expectAccessible(page, 'who does it');
+      await page.getByRole('button', { name: 'Save the task' }).click();
+      await expect(page.getByRole('status')).toHaveText('The task is saved.');
+      await page.reload();
+      await expect(who.getByLabel('Minimum age, in years')).toHaveValue('12');
+      await expect(who.getByLabel('Robin')).toHaveValue('bound');
+    });
+
+    test('a head links a task to the next, which the list shows (ADR-0001 §7)', async ({
+      page,
+      accounts,
+      account,
+    }) => {
+      const id = await headWithTasks(
+        page,
+        accounts,
+        account,
+        'Put the bins out',
+        'Bring the bins in',
+      );
+      await openTask(page, 'Put the bins out');
+      await page
+        .getByLabel('Whoever does it also does the next')
+        .selectOption({ label: 'Bring the bins in' });
+      await page.getByRole('button', { name: 'Save the task' }).click();
+      await expect(page.getByRole('status')).toHaveText('The task is saved.');
+      await page.goto(`/households/${id}/tasks`);
+      await expect(
+        page
+          .getByRole('list', { name: 'Tasks' })
+          .getByRole('listitem')
+          .filter({ has: page.getByRole('link', { name: 'Edit Put the bins out' }) }),
+      ).toContainText('Same person also does Bring the bins in');
+    });
   });
 }
 

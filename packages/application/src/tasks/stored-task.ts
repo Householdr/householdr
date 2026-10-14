@@ -13,7 +13,7 @@ import {
   type WindowEdge,
 } from '@householdr/domain';
 import { scheduleOf } from './stored-schedule';
-import { advanced, sinceLastDone, type Repeat, type TaskInput } from './task-fields';
+import { advanced, shared, sinceLastDone, type Repeat, type TaskInput } from './task-fields';
 
 /** The columns of a task that say when in its week it is done (ADR-0004 §4). */
 export const timingColumns = {
@@ -120,14 +120,24 @@ export function repeatOf(
   return { frequency: advanced, schedule: built, start: first, ...timed };
 }
 
+/** How a task on `schedule` is timed any time that week: as its frequency has it, or flexible. */
+const timingOn = (schedule: Schedule) => {
+  const frequency = frequencyOf(schedule);
+  return frequency ? defaultTiming(frequency).kind : 'flexible';
+};
+
 /**
  * What a task's valid input writes: its columns, and its own schedule: the one rule of a simple
  * frequency, or what the advanced editor built, unless it is counted from when it was last done,
- * which is flexible and always rolls over (ADR-0004 §3–§4, §8). On a schedule, it is fixed with its
- * window at set times, or as its frequency has it; an advanced one any time that week is flexible
- * (§3, clarification).
+ * which is flexible and always rolls over (ADR-0004 §3–§4, §8), or it shares the schedule of
+ * another task, `sharing` (§1, clarification). On a schedule, it is fixed with its window at set
+ * times, or as its frequency has it; an advanced one any time that week is flexible (§3,
+ * clarification).
  */
-export function written(input: TaskInput): {
+export function written(
+  input: TaskInput,
+  sharing?: Schedule,
+): {
   schedule: Schedule | undefined;
   columns: Pick<
     typeof tasks.$inferInsert,
@@ -155,15 +165,19 @@ export function written(input: TaskInput): {
       },
     };
   }
-  const custom = input.frequency === advanced;
+  let schedule: Schedule | undefined;
+  if (input.frequency === advanced) schedule = scheduleOfAdvanced(input.schedule);
+  else if (input.frequency !== shared) {
+    schedule = {
+      rules: [frequencyRule(input.frequency, input.start)],
+      extraDates: [],
+      exceptionDates: [],
+    };
+  }
+  const dates = schedule ?? sharing;
+  if (!dates) throw new Error('A task that shares a schedule is written with it.');
   return {
-    schedule: custom
-      ? scheduleOfAdvanced(input.schedule)
-      : {
-          rules: [frequencyRule(input.frequency, input.start)],
-          extraDates: [],
-          exceptionDates: [],
-        },
+    schedule,
     columns: {
       everyCount: null,
       everyUnit: null,
@@ -177,10 +191,7 @@ export function written(input: TaskInput): {
             windowToDay: input.window.to.dayOffset,
             windowToTime: input.window.to.time.toString(),
           }
-        : {
-            timing: custom ? 'flexible' : defaultTiming(input.frequency).kind,
-            ...noWindow,
-          }),
+        : { timing: timingOn(dates), ...noWindow }),
     },
   };
 }

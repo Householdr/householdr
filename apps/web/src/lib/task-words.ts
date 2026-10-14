@@ -27,6 +27,7 @@ const frequencyWords: Record<Frequency, () => string> = {
 export const repeatWords: Record<Repeat, () => string> = {
   ...frequencyWords,
   advanced: m['tasks.advanced'],
+  shared: m['tasks.shared'],
   'since-last-done': m['tasks.since-last-done'],
 };
 
@@ -71,6 +72,7 @@ export const onMissWords: Record<PlanTask['onMiss'], () => string> = {
 export const taskProblems: Record<TaskField, () => string> = {
   name: m['tasks.invalid-name'],
   duration: () => m['tasks.invalid-duration'](taskDuration),
+  area: m['tasks.invalid-area'],
   frequency: m['tasks.invalid-frequency'],
   everyCount: m['tasks.invalid-every-count'],
   everyUnit: m['tasks.invalid-every-unit'],
@@ -81,6 +83,10 @@ export const taskProblems: Record<TaskField, () => string> = {
   rules: m['tasks.invalid-rules'],
   extraDates: m['tasks.invalid-extra-dates'],
   exceptionDates: m['tasks.invalid-exception-dates'],
+  sharedWith: m['tasks.invalid-shared-with'],
+  minimumAge: m['tasks.invalid-minimum-age'],
+  constraints: m['tasks.invalid-constraints'],
+  linkedTo: m['tasks.invalid-linked-to'],
 };
 
 /** Why the server refused a field of a one-off task's form, in words (CODE-13). */
