@@ -139,6 +139,11 @@ so a head's or a guardian's account must never depend on a password alone:
 > without a passkey may not. Removing a passkey or turning TOTP off is refused only when what is
 > left meets neither.
 
+> **Clarification (2026-10-14):** a successor named by the household's **last** head takes the role
+> the moment that head leaves, since leaving waits for no one, and declines it afterwards if they
+> don't want it ([ADR-0018](0018-household-safety.md) §2, clarification). Every other promotion
+> waits for the adult to accept, as above.
+
 ### 4. Device sign-in
 
 A new device gets signed in by approval from a device that already is, in the style of the OAuth

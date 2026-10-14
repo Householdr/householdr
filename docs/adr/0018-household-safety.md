@@ -70,6 +70,25 @@ will then be closed.
 > after leaving or being removed, on their account's own pages; until they make it there, a member
 > who was removed shows as "Former member".
 
+> **Clarification (2026-10-14):** the **last head** leaves at once like anyone else, and the head
+> role passes at that moment, so the household is never without a head and leaving waits for no
+> one's answer. The leave page asks who becomes head: one of the adult members with an account, or
+> no one in particular, which is chosen until they pick someone and leaves it to the rule above; the
+> page names who that gives it to. A successor they **named** is asked on the household's page
+> whether they take it on: accepting keeps it, declining makes them an adult member again and
+> passes the role on by the same rule, without them. Someone who is the only adult with an account
+> left can't decline it. Whoever becomes head by the rule isn't asked. A head without two factors
+> is asked on the household's page to set them up, and acts as head once they have
+> ([ADR-0010](0010-identity-invitations-and-childrens-accounts.md) §3). The role passing isn't
+> logged, as leaving isn't (§8); everyone sees who the heads are (§7).
+>
+> With **no other adult with an account**, the leave page warns that leaving closes the household.
+> It closes the moment they leave: nobody can open it any more, and nothing is planned or sent for
+> it. Fourteen days later it is deleted like any deleted household
+> ([ADR-0012](0012-privacy-and-data-protection.md) §6); with no head left, nobody can restore it.
+> Children's accounts and guardianships stay as they are; the household no longer appears among
+> their households.
+
 ### 3. Whereabouts: no more than the plan needs
 
 | Information | What others in the household see |
