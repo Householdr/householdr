@@ -25,6 +25,8 @@
       schedule?: ScheduleData | undefined;
       /** The names of the other tasks on its schedule, if it shares one (ADR-0004 §1). */
       sharedWith?: string[] | undefined;
+      /** The name of the task the same member does next (ADR-0001 §7). */
+      linkedTo?: string | undefined;
       dueness?: Dueness | undefined;
       /** `YYYY-MM-DD`. */
       start?: string;
@@ -53,6 +55,10 @@
   {#if task.sharedWith && task.sharedWith.length > 0}
     <dt class="text-muted-foreground">{m['tasks.shared-with']()}</dt>
     <dd class="wrap-break-word">{listOf(task.sharedWith, locale)}</dd>
+  {/if}
+  {#if typeof task.linkedTo === 'string'}
+    <dt class="text-muted-foreground">{m['tasks.linked-to']()}</dt>
+    <dd class="wrap-break-word">{task.linkedTo}</dd>
   {/if}
   {#if task.dueness}
     <dt id="how-due-{uid}" class="text-muted-foreground">{m['tasks.how-due']()}</dt>

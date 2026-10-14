@@ -36,6 +36,8 @@ const shown = (task: EditableTask) => ({
   window: task.window && windowData(task.window),
   schedule: task.schedule && scheduleData(task.schedule),
   sharedWith: task.sharedWith.map(({ name }) => name),
+  // Its link is the form's to show, by the task's id.
+  linkedTo: undefined,
   ...windowValues(task.window),
 });
 
@@ -55,6 +57,8 @@ export const load = (async ({ locals, params }) => {
     today,
     shareable: result.shareable,
     members: result.members,
+    linkable: result.linkable,
+    areas: result.areas,
     // Who does it, as its form's fields have it (ADR-0001 §3).
     who: rulesValues(result.task),
   };
@@ -86,6 +90,7 @@ export const actions = {
       fromTime: text(form, 'fromTime'),
       toDay: text(form, 'toDay'),
       toTime: text(form, 'toTime'),
+      areaId: text(form, 'areaId'),
       sharedWith: text(form, 'sharedWith'),
       ownDates: text(form, 'ownDates'),
       ...sentRules(form),
@@ -106,6 +111,7 @@ export const actions = {
       start: values.start || undefined,
       ...windowInput(values),
       ...scheduleFields(values),
+      areaId: values.areaId || undefined,
       // Only when sharing: a form without scripts sends its first choice with any other.
       sharedWith: values.frequency === 'shared' ? values.sharedWith || undefined : undefined,
       ownDates: values.ownDates === 'on',

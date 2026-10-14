@@ -267,6 +267,20 @@
       "when": 1791917976176,
       "tag": "0037_task-constraints",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1791919605449,
+      "tag": "0038_task-links",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1791920885091,
+      "tag": "0039_areas",
+      "breakpoints": true
     }
   ]
 }

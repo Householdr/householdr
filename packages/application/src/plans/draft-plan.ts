@@ -32,6 +32,7 @@ import { lastDoneOf } from '../tasks/last-done';
 import { scheduleOf } from '../tasks/stored-schedule';
 import { timingColumns, timingOf } from '../tasks/stored-task';
 import { rulesByTask } from '../tasks/task-rules';
+import { carriedLinks } from './carried-links';
 import { membersOf } from './allocation-members';
 import {
   awayIn,
@@ -207,7 +208,18 @@ export async function draftWeek(tx: Transaction, draft: Draft): Promise<string |
     })),
     occurrences: weekResult.occurrences,
     preAssigned: new Map(),
-    carried: new Map(),
+    // A link from an occurrence assigned last week goes to the same member (ADR-0001 §7).
+    carried: await carriedLinks(
+      tx,
+      week.start,
+      calendar.timeZone,
+      new Map(
+        [...rules].flatMap(([id, { linkedTo }]) =>
+          linkedTo === undefined ? [] : [[id, linkedTo] as const],
+        ),
+      ),
+      weekResult.occurrences,
+    ),
   });
 
   const planId = await storePlan(tx, draft);

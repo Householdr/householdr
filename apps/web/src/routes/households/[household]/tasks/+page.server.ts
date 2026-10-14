@@ -44,6 +44,7 @@ export const load = (async ({ locals, url }) => {
     starts: { earliest: earliest.toString(), latest: latest.toString() },
     dates: { earliest: result.dates.earliest.toString(), latest: result.dates.latest.toString() },
     shareable: result.shareable,
+    areas: result.areas,
     removed: url.searchParams.get('task') === 'removed',
   };
 }) satisfies PageServerLoad;
@@ -74,6 +75,7 @@ export const actions = {
       fromTime: text(form, 'fromTime'),
       toDay: text(form, 'toDay'),
       toTime: text(form, 'toTime'),
+      areaId: text(form, 'areaId'),
       sharedWith: text(form, 'sharedWith'),
       ownDates: text(form, 'ownDates'),
       ...sentSchedule(form),
@@ -91,6 +93,7 @@ export const actions = {
       start: values.start || undefined,
       ...windowInput(values),
       ...scheduleFields(values),
+      areaId: values.areaId || undefined,
       // Only when sharing: a form without scripts sends its first choice with any other.
       sharedWith: values.frequency === 'shared' ? values.sharedWith || undefined : undefined,
       ownDates: values.ownDates === 'on',

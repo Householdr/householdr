@@ -10,17 +10,19 @@
   /**
    * Who does a task, on its page, which only heads see (ADR-0001 §3, clarification): its minimum
    * age, and for each of the household's `members` whether it is always theirs, never theirs, or,
-   * for a child, theirs below that age too. Shows `values`, with the `problems` of the fields the
-   * server refused (UI-10).
+   * for a child, theirs below that age too; and which of the `linkable` tasks goes to the same
+   * member next (§7). Shows `values`, with the `problems` of the fields the server refused (UI-10).
    */
   let {
     values,
     members,
+    linkable,
     invalid,
     problems,
   }: {
-    values: { minimumAge: string; constraints: Record<string, string> };
+    values: { minimumAge: string; constraints: Record<string, string>; linkedTo: string };
     members: readonly { id: string; name: string; child: boolean }[];
+    linkable: readonly { id: string; name: string }[];
     invalid: readonly TaskField[];
     problems: Record<TaskField, () => string>;
   } = $props();
@@ -76,4 +78,26 @@
     </div>
   {/each}
   <FieldProblem id="constraints-problem" problem={problemOf('constraints')} />
+  {#if linkable.length > 0}
+    <div class="flex flex-col gap-2">
+      <Label for="linkedTo">{m['task.linked-to']()}</Label>
+      <NativeSelect
+        id="linkedTo"
+        name="linkedTo"
+        class="w-full"
+        value={values.linkedTo}
+        aria-invalid={invalid.includes('linkedTo') || undefined}
+        aria-describedby={['linkedTo-hint', problemOf('linkedTo') ? 'linkedTo-problem' : '']
+          .filter(Boolean)
+          .join(' ')}
+      >
+        <NativeSelectOption value="">{m['task.linked-to-none']()}</NativeSelectOption>
+        {#each linkable as task (task.id)}
+          <NativeSelectOption value={task.id}>{task.name}</NativeSelectOption>
+        {/each}
+      </NativeSelect>
+      <p id="linkedTo-hint" class="text-sm text-muted-foreground">{m['task.linked-to-hint']()}</p>
+      <FieldProblem id="linkedTo-problem" problem={problemOf('linkedTo')} />
+    </div>
+  {/if}
 </fieldset>

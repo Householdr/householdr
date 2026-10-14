@@ -26,6 +26,7 @@ import { and, eq, gte, isNotNull, isNull } from 'drizzle-orm';
 import type { HouseholdContext } from '../households/membership';
 import { planningOf } from '../plans/planning';
 import { lastDoneOf } from './last-done';
+import { areasOf, type Area } from './areas';
 import { othersOn, tasksBySchedule, type TaskName } from './shared-schedules';
 import { repeatColumns, repeatOf } from './stored-task';
 import type { Repeat } from './task-fields';
@@ -41,6 +42,10 @@ export interface TaskSummary {
   schedule?: AdvancedSchedule;
   /** The names of the other tasks on its schedule, if it shares one (ADR-0004 §1, clarification). */
   sharedWith?: string[];
+  /** The name of the task whose next occurrence goes to the same member (ADR-0001 §7). */
+  linkedTo?: string;
+  /** The area it is in, if any (ADR-0001 §1). */
+  areaId?: string;
   /** For a "since last done" task: how long after it is due again, and how due it is now (ADR-0004 §8). */
   every?: Interval;
   dueness?: Dueness;
@@ -84,6 +89,8 @@ type ListTasksResult =
       dates: { earliest: Temporal.PlainDate; latest: Temporal.PlainDate };
       /** The tasks on a calendar schedule, by name, whose dates a new task can share (ADR-0004 §1). */
       shareable: TaskName[];
+      /** The household's areas, by name, which group the tasks (ADR-0001 §1, clarification). */
+      areas: Area[];
     }
   | { ok: false; error: 'not-allowed' };
 
@@ -110,6 +117,8 @@ export async function listTasks(context: HouseholdContext): Promise<ListTasksRes
         name: tasks.name,
         duration: tasks.duration,
         scheduleId: tasks.scheduleId,
+        linkedTo: tasks.linkedTo,
+        areaId: tasks.areaId,
         ...repeatColumns,
       })
       .from(tasks)
@@ -141,6 +150,16 @@ export async function listTasks(context: HouseholdContext): Promise<ListTasksRes
         }))
       : [];
     const bySchedule = await tasksBySchedule(tx);
+    // Its area, and its link to a task still in the list: one to a removed task no longer counts
+    // (ADR-0001 §1, §7).
+    const names = new Map(rows.map(({ id, name }) => [id, name]));
+    const detailsOf = (row: { linkedTo: string | null; areaId: string | null }) => {
+      const name = row.linkedTo === null ? undefined : names.get(row.linkedTo);
+      return {
+        ...(name !== undefined && { linkedTo: name }),
+        ...(row.areaId !== null && { areaId: row.areaId }),
+      };
+    };
     const list = repeats.map(({ row, repeat }): TaskSummary => {
       const { id, name, duration } = row;
       const { frequency, every, schedule, start, onMiss, window } = repeat;
@@ -155,10 +174,11 @@ export async function listTasks(context: HouseholdContext): Promise<ListTasksRes
           ...(schedule && { schedule }),
           ...(window && { window }),
           ...(sharedWith.length > 0 && { sharedWith }),
+          ...detailsOf(row),
         };
       }
       const due = dueness({ every, start }, lastDone.get(id), away, today);
-      return { id, name, duration, frequency, every, dueness: due, onMiss };
+      return { id, name, duration, frequency, every, dueness: due, onMiss, ...detailsOf(row) };
     });
     list.sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
     return {
@@ -170,6 +190,7 @@ export async function listTasks(context: HouseholdContext): Promise<ListTasksRes
       mayChangeTasks: can(context.member, { action: 'household.tasks' }),
       starts: startRange(today),
       dates: scheduleDateRange(today),
+      areas: await areasOf(tx),
       shareable: [...bySchedule.values()]
         .flat()
         .toSorted((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id)),

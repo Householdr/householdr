@@ -6,6 +6,7 @@ import * as v from 'valibot';
 import type { HouseholdContext } from '../households/membership';
 import { storedSchedule } from './stored-schedule';
 import { written } from './stored-task';
+import { areasOf } from './areas';
 import { scheduleToShare } from './shared-schedules';
 import {
   advanced,
@@ -18,7 +19,13 @@ import {
   type TaskField,
 } from './task-fields';
 import { readTask, type EditableTask } from './task-to-edit';
-import { constrainedMembers, sameRules, taskRulesInput, writeRules } from './task-rules';
+import {
+  constrainedMembers,
+  linkableTasks,
+  sameRules,
+  taskRulesInput,
+  writeRules,
+} from './task-rules';
 
 type EditTaskResult =
   | { ok: true }
@@ -42,8 +49,9 @@ type EditTaskResult =
  * dates it had (§3, clarification). Sharing another task's schedule, it follows that one, and its
  * own goes unless another task uses it; new dates for a task that shares its schedule change them
  * for every task on it, or give it dates of its own (§1, clarification). On a schedule, it is done
- * any time that week or at set times (§4, clarification). Its minimum age and constraints are
- * replaced by those sent, for members of the household (ADR-0001 §3, clarification). Saved
+ * any time that week or at set times (§4, clarification). Its minimum age, constraints and link
+ * are replaced by those sent, for members and other tasks of the household (ADR-0001 §3, §7, with
+ * their clarifications). Saved
  * unchanged, the task keeps its version.
  */
 export async function editTask(context: HouseholdContext, input: unknown): Promise<EditTaskResult> {
@@ -73,7 +81,8 @@ export async function editTask(context: HouseholdContext, input: unknown): Promi
     const parsed = v.safeParse(taskInput(today, kept), input);
     const seen = v.safeParse(v.looseObject({ version }), input);
     const memberIds = new Set((await constrainedMembers(tx)).map(({ id }) => id));
-    const rules = v.safeParse(taskRulesInput(memberIds), input);
+    const linkable = new Set((await linkableTasks(tx, taskId)).map(({ id }) => id));
+    const rules = v.safeParse(taskRulesInput(memberIds, linkable), input);
     if (!parsed.success || !seen.success || !rules.success) {
       // A form loaded before someone else's change hears of that change first: what is refused
       // now, such as a first time the task no longer has, may be what the form was loaded with.
@@ -85,6 +94,11 @@ export async function editTask(context: HouseholdContext, input: unknown): Promi
       return { ok: false, error: 'invalid', fields: refusedFields(issues) };
     }
     const next = parsed.output;
+    const areaId = next.areaId ?? null;
+    // In one of the household's areas, if any (ADR-0001 §1, clarification).
+    if (areaId !== null && !(await areasOf(tx)).some(({ id }) => id === areaId)) {
+      return { ok: false, error: 'invalid', fields: ['area'] };
+    }
     // The schedule it is to share, which must be one of the household's (ADR-0004 §1).
     const sharing =
       next.frequency === shared ? await scheduleToShare(tx, next.sharedWith) : undefined;
@@ -116,6 +130,7 @@ export async function editTask(context: HouseholdContext, input: unknown): Promi
     const changed =
       !sameRepeat ||
       !sameWho ||
+      areaId !== (current.areaId ?? null) ||
       !sameWindow ||
       next.name !== current.name ||
       next.duration !== current.duration ||
@@ -157,7 +172,7 @@ export async function editTask(context: HouseholdContext, input: unknown): Promi
     }
     await tx
       .update(tasks)
-      .set({ name: next.name, duration: next.duration, scheduleId, ...columns })
+      .set({ name: next.name, duration: next.duration, areaId, scheduleId, ...columns })
       .where(eq(tasks.id, taskId));
     if (!sameWho) await writeRules(tx, context.householdId, taskId, rules.output);
     if (schedule && scheduleId !== schedule.id) {

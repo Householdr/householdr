@@ -117,7 +117,9 @@ describe('a task’s page (ADR-0001 §2)', () => {
       today: '2026-10-08',
       shareable: [],
       members: [{ id: membership.member.id, name: 'Robin', child: false }],
-      who: { minimumAge: '', constraints: {} },
+      linkable: [],
+      areas: [],
+      who: { minimumAge: '', linkedTo: '', constraints: {} },
     });
   });
 

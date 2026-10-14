@@ -1,6 +1,6 @@
 import { members, taskConstraints, tasks, type Transaction } from '@householdr/db';
 import type { Constraint } from '@householdr/domain';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull, ne } from 'drizzle-orm';
 import * as v from 'valibot';
 
 /** A head's setting for one member of a task (ADR-0001 §3, clarification). */
@@ -9,11 +9,16 @@ interface MemberConstraint {
   constraint: Constraint;
 }
 
-/** Who a task is for, besides when it is: its minimum age and its constraints, by member. */
+/**
+ * Who a task is for, besides when it is: its minimum age, its constraints by member, and the task
+ * whose next occurrence goes to the same member (ADR-0001 §3, §7).
+ */
 export interface TaskRules {
   /** In whole years. */
   minimumAge?: number;
   constraints: MemberConstraint[];
+  /** The id of the linked task. */
+  linkedTo?: string;
 }
 
 /** A member of the household, as the task's page offers them a constraint. */
@@ -27,12 +32,18 @@ export interface ConstrainedMember {
 const constraintChoices: readonly Constraint[] = ['bound', 'excluded', 'allowed'];
 
 /**
- * What the task's page sends about who does it (CODE-12; ADR-0001 §3, clarification): a minimum
- * age in whole years from 1 to 17, or none, and a constraint for some of the household's
- * `memberIds`, each at most once.
+ * What the task's page sends about who does it (CODE-12; ADR-0001 §3, §7 with their
+ * clarifications): a minimum age in whole years from 1 to 17, or none; a constraint for some of the
+ * household's `memberIds`, each at most once; and a link to one of the `linkable` tasks, or none.
  */
-export function taskRulesInput(memberIds: ReadonlySet<string>) {
+export function taskRulesInput(memberIds: ReadonlySet<string>, linkable: ReadonlySet<string>) {
   return v.object({
+    linkedTo: v.optional(
+      v.pipe(
+        v.string(),
+        v.check((id) => linkable.has(id)),
+      ),
+    ),
     minimumAge: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(17))),
     constraints: v.optional(
       v.pipe(
@@ -55,12 +66,25 @@ export async function constrainedMembers(tx: Transaction): Promise<ConstrainedMe
     .toSorted((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
 }
 
-/** The rules of task `taskId`, its constraints by member id. */
+/**
+ * The household's tasks a task `taskId` can be linked to (ADR-0001 §7, clarification): any other,
+ * neither a one-off nor removed, by name.
+ */
+export async function linkableTasks(tx: Transaction, taskId: string) {
+  const rows = await tx
+    .select({ id: tasks.id, name: tasks.name })
+    .from(tasks)
+    .where(and(ne(tasks.id, taskId), isNull(tasks.once), eq(tasks.removed, false)));
+  return rows.toSorted((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+}
+
+/** The rules of task `taskId`, from its `row`, with its constraints by member id. */
 export async function rulesOf(
   tx: Transaction,
   taskId: string,
-  minimumAge: number | null,
+  row: { minimumAge: number | null; linkedTo: string | null },
 ): Promise<TaskRules> {
+  const { minimumAge, linkedTo } = row;
   const constraints = await tx
     .select({ memberId: taskConstraints.memberId, constraint: taskConstraints.constraint })
     .from(taskConstraints)
@@ -68,6 +92,7 @@ export async function rulesOf(
   return {
     ...(minimumAge !== null && { minimumAge }),
     constraints: constraints.toSorted((a, b) => a.memberId.localeCompare(b.memberId)),
+    ...(linkedTo !== null && { linkedTo }),
   };
 }
 
@@ -76,6 +101,7 @@ export function sameRules(a: TaskRules, b: TaskRules) {
   const key = (rules: TaskRules) =>
     JSON.stringify([
       rules.minimumAge ?? null,
+      rules.linkedTo ?? null,
       rules.constraints.map(({ memberId, constraint }) => `${memberId}:${constraint}`).toSorted(),
     ]);
   return key(a) === key(b);
@@ -90,7 +116,7 @@ export async function writeRules(
 ) {
   await tx
     .update(tasks)
-    .set({ minimumAge: rules.minimumAge ?? null })
+    .set({ minimumAge: rules.minimumAge ?? null, linkedTo: rules.linkedTo ?? null })
     .where(eq(tasks.id, taskId));
   await tx.delete(taskConstraints).where(eq(taskConstraints.taskId, taskId));
   if (rules.constraints.length > 0) {
@@ -101,11 +127,19 @@ export async function writeRules(
 }
 
 /**
- * Every task's rules as the allocator takes them (ADR-0001 §7): its minimum age, if any, and its
- * constraints by member id, by task id.
+ * Every task's rules as the allocator takes them (ADR-0001 §7): its minimum age, if any, its
+ * constraints by member id, and its link, unless the task linked to is removed, by task id.
  */
 export async function rulesByTask(tx: Transaction) {
-  const ages = await tx.select({ id: tasks.id, minimumAge: tasks.minimumAge }).from(tasks);
+  const ages = await tx
+    .select({
+      id: tasks.id,
+      minimumAge: tasks.minimumAge,
+      linkedTo: tasks.linkedTo,
+      removed: tasks.removed,
+    })
+    .from(tasks);
+  const removed = new Set(ages.filter((task) => task.removed).map(({ id }) => id));
   const constraints = await tx
     .select({
       taskId: taskConstraints.taskId,
@@ -115,10 +149,11 @@ export async function rulesByTask(tx: Transaction) {
     .from(taskConstraints);
   const byTask = Map.groupBy(constraints, ({ taskId }) => taskId);
   return new Map(
-    ages.map(({ id, minimumAge }) => [
+    ages.map(({ id, minimumAge, linkedTo }) => [
       id,
       {
         ...(minimumAge !== null && { minimumAge }),
+        ...(linkedTo !== null && !removed.has(linkedTo) && { linkedTo }),
         constraints: new Map(
           (byTask.get(id) ?? []).map(({ memberId, constraint }) => [memberId, constraint]),
         ),

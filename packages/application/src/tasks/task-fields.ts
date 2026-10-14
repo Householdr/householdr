@@ -99,6 +99,8 @@ export const onMisses: readonly PlanTask['onMiss'][] = ['roll over', 'lapse'];
 export type TaskInput = {
   name: string;
   duration: number;
+  /** The area it is in, if any: the use cases check it is one of the household's (ADR-0001 §1). */
+  areaId?: string;
 } & (
   | {
       frequency: Frequency;
@@ -191,6 +193,7 @@ export function taskInput(today: Temporal.PlainDate, kept?: KeptDays) {
       extraDates: v.optional(dates),
       exceptionDates: v.optional(dates),
       sharedWith: v.optional(v.pipe(v.string(), v.uuid())),
+      areaId: v.optional(v.pipe(v.string(), v.uuid())),
       ownDates: v.optional(v.boolean()),
       onMiss: v.optional(v.picklist(onMisses)),
       when: v.optional(v.picklist(whens)),
@@ -274,7 +277,8 @@ export function taskInput(today: Temporal.PlainDate, kept?: KeptDays) {
       const { name, duration, frequency, everyCount, everyUnit, start, onMiss } = dataset.value;
       const { rules, extraDates, exceptionDates, sharedWith, ownDates = false } = dataset.value;
       const { when, fromDay, fromTime, toDay, toTime } = dataset.value;
-      const common = { name, duration };
+      const { areaId } = dataset.value;
+      const common = { name, duration, ...(areaId !== undefined && { areaId }) };
       if (frequency === sinceLastDone && everyCount !== undefined && everyUnit !== undefined) {
         if (start) return { ...common, frequency, start, everyCount, everyUnit };
       }
@@ -313,6 +317,7 @@ export function taskInput(today: Temporal.PlainDate, kept?: KeptDays) {
 export type TaskField =
   | 'name'
   | 'duration'
+  | 'area'
   | 'frequency'
   | 'sharedWith'
   | 'everyCount'
@@ -325,12 +330,14 @@ export type TaskField =
   | 'extraDates'
   | 'exceptionDates'
   | 'minimumAge'
-  | 'constraints';
+  | 'constraints'
+  | 'linkedTo';
 
 /** The fields in the order the form shows them, which its error summary follows. */
 const order: TaskField[] = [
   'name',
   'duration',
+  'area',
   'frequency',
   'sharedWith',
   'everyCount',
@@ -344,6 +351,7 @@ const order: TaskField[] = [
   'window',
   'minimumAge',
   'constraints',
+  'linkedTo',
 ];
 
 /** The fields of a fixed window, which the form names as one (ADR-0004 §4). */
@@ -354,6 +362,7 @@ export function refusedFields(issues: readonly v.BaseIssue<unknown>[]): TaskFiel
   const keys = new Set(
     issues.map(({ path }) => {
       const key = path?.[0]?.key;
+      if (key === 'areaId') return 'area';
       return typeof key === 'string' && windowFields.has(key) ? 'window' : key;
     }),
   );

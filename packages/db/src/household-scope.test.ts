@@ -5,6 +5,7 @@ import { connect, inHousehold, refuseBypass, type Database } from './connection'
 import { accounts } from './auth-schema';
 import {
   absences,
+  areas,
   assignments,
   comparisons,
   completionCredits,
@@ -690,6 +691,54 @@ describe('task constraints (ADR-0001 §3, clarification)', () => {
   });
 });
 
+describe('areas (ADR-0001 §1, clarification)', () => {
+  it('are seen in their own household only, each name once whatever the case', async () => {
+    await inHousehold(db, ash, (tx) =>
+      tx.insert(areas).values({ householdId: ash, name: 'Kitchen' }),
+    );
+    const seen = (id: string) =>
+      inHousehold(db, id, (tx) => tx.select({ name: areas.name }).from(areas));
+    expect(await seen(ash)).toEqual([{ name: 'Kitchen' }]);
+    expect(await seen(birch)).toEqual([]);
+    expect(
+      await refusal(
+        inHousehold(db, ash, (tx) =>
+          tx.insert(areas).values({ householdId: ash, name: 'kitchen' }),
+        ),
+      ),
+    ).toBe('areas_household_name');
+    // Another household may have its own kitchen.
+    await inHousehold(db, birch, (tx) =>
+      tx.insert(areas).values({ householdId: birch, name: 'Kitchen' }),
+    );
+    expect(await seen(birch)).toEqual([{ name: 'Kitchen' }]);
+  });
+
+  it('never hold another household’s task', async () => {
+    const [garden] = await inHousehold(db, birch, (tx) =>
+      tx.insert(areas).values({ householdId: birch, name: 'Garden' }).returning({ id: areas.id }),
+    );
+    if (!garden) throw new Error('No area');
+    expect(
+      await refusal(
+        inHousehold(db, ash, (tx) =>
+          tx.insert(tasks).values({
+            householdId: ash,
+            name: 'Mow the lawn',
+            duration: 40,
+            everyCount: 2,
+            everyUnit: 'weeks',
+            start: '2026-10-12',
+            timing: 'flexible',
+            onMiss: 'roll over',
+            areaId: garden.id,
+          }),
+        ),
+      ),
+    ).toBe('tasks_area');
+  });
+});
+
 describe('connect (ADR-0008 §9)', () => {
   it('refuses a superuser, whom row-level security does not bind', async () => {
     await expect(connect(testServerUrl())).rejects.toThrow('bypasses row-level security');
@@ -743,6 +792,7 @@ describe('every household-owned table (CODE-17)', () => {
     expect(rows.map((r) => r.table)).toEqual([
       'absences',
       'activity_log',
+      'areas',
       'assignments',
       'away_periods',
       'comparisons',
