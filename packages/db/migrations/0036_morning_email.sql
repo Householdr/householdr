@@ -1,0 +1,2 @@
+ALTER TABLE "notifications" ADD COLUMN "email_after" timestamp with time zone;--> statement-breakpoint
+CREATE INDEX "notifications_email_after" ON "notifications" USING btree ("household_id","email_after") WHERE "notifications"."email_after" is not null;

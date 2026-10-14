@@ -1,5 +1,17 @@
 // Use cases: authorise, validate, transact, emit events, return a result (ADR-0023).
-export type { Clock, Flags, LogFields, Logger, Mail, Mailer, Random } from './ports';
+export type {
+  Clock,
+  Flags,
+  LogFields,
+  Logger,
+  Mail,
+  Mailer,
+  Push,
+  PushContent,
+  PushOutcome,
+  PushTarget,
+  Random,
+} from './ports';
 export { flags, type FlagKey } from './flags/registry';
 export {
   householdActivity,
@@ -59,6 +71,37 @@ export { completeOccurrence } from './completions/complete-occurrence';
 export { undoCompletion } from './completions/undo-completion';
 export { householdBalances, type MemberBalance, type SettledWeek } from './ledger/balances';
 export { settlePlanWeek } from './ledger/settle-plan-week';
+export { deleteExpiredNotifications } from './notifications/expired';
+export {
+  householdNotifications,
+  type HouseholdNotification,
+} from './notifications/household-notifications';
+export {
+  changeNotificationPreferences,
+  notificationPreferencesOf,
+  type PreferencesField,
+  type SavedPreferences,
+} from './notifications/preferences';
+export {
+  morningEmailFailed,
+  prepareMorningEmail,
+  queueDueEmails,
+  type MorningEmailContext,
+  type PreparedEmail,
+} from './notifications/morning-email';
+export {
+  deleteExpiredPushes,
+  preparePush,
+  pushSent,
+  queueDuePushes,
+  type PreparedPush,
+  type PushDeliveryContext,
+} from './notifications/push-delivery';
+export {
+  devicePushEndpoints,
+  removePushSubscription,
+  savePushSubscription,
+} from './notifications/push-subscriptions';
 export { closeDueOccurrences } from './plans/closing';
 export { draftPlan } from './plans/draft-plan';
 export { queueDuePlanSteps, type ScheduleContext } from './plans/plan-schedule';
@@ -88,9 +131,13 @@ export type { TaskField } from './tasks/task-fields';
 export { taskToEdit, type EditableTask } from './tasks/task-to-edit';
 // The household member as permissions see them, which the web app's guard keeps per request; why an
 // occurrence went where it did, which the plan's page puts in words; and how fast balances even
-// out, which the balances page does; and how long ago a day was, which pages say vaguely.
+// out, which the balances page does; how long ago a day was, which pages say vaguely; and what a
+// notification says happened, which the notifications page puts in words, and the channels a
+// member chooses from, which their settings page does.
 export type {
+  ChannelChoice,
   Member,
+  NotificationKind,
   PastDay,
   Reason,
   RebalancePreset,

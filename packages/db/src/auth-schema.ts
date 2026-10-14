@@ -1,11 +1,14 @@
+import type { ChannelChoice, NotificationKind } from '@householdr/domain';
 import { sql } from 'drizzle-orm';
 import {
   boolean,
   check,
   index,
   integer,
+  jsonb,
   pgSchema,
   text,
+  time,
   timestamp,
   uuid,
   type AnyPgColumn,
@@ -265,4 +268,85 @@ export const rateLimits = auth.table(
     index('rate_limits_expires_at').on(t.expiresAt),
     check('rate_limits_count', sql`${t.count} >= 0`),
   ],
+);
+
+/**
+ * An account's notification preferences, once it has saved any (ADR-0014 §3, clarifications): kept
+ * with the account, apart from any household, and gone with it (ADR-0012 §2, clarification). An
+ * account without a row has the defaults.
+ */
+export const notificationPreferences = auth.table(
+  'notification_preferences',
+  {
+    accountId: uuid()
+      .primaryKey()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    /** The channel chosen for each category; a category added since takes its default. */
+    channels: jsonb().$type<Partial<Record<NotificationKind, ChannelChoice>>>().notNull(),
+    /** Quiet hours, from the start up to the end, as times of day (ADR-0014 §4). */
+    quietStart: time().notNull(),
+    quietEnd: time().notNull(),
+    emailFallback: boolean().notNull(),
+    /** What a change is made from (ADR-0019 §5). */
+    version: integer().notNull(),
+  },
+  (t) => [
+    // An object of the categories there are, each with one of the choices.
+    check(
+      'notification_preferences_channels',
+      sql`jsonb_typeof(${t.channels}) = 'object'
+        and ${t.channels} - array['plan.published', 'plan.drafted'] = '{}'::jsonb
+        and not jsonb_path_exists(${t.channels}, '$.* ? (!(@ == "push-and-email" || @ == "push" || @ == "email" || @ == "app"))')`,
+    ),
+    // Equal times could mean none or all day (ADR-0014 §3, clarification).
+    check('notification_preferences_quiet_hours', sql`${t.quietStart} <> ${t.quietEnd}`),
+    check('notification_preferences_version', sql`${t.version} >= 1`),
+  ],
+);
+
+/**
+ * A browser's push subscription (ADR-0014 §7, clarification): its endpoint on a known push service
+ * (ADR-0017 §6) and the keys its pushes are encrypted with (RFC 8291). It belongs to the account
+ * and to the session of the device it was made on, and goes when that session ends, so signing a
+ * device out stops its pushes (ADR-0018 §2, ADR-0012 §2).
+ */
+export const pushSubscriptions = auth.table(
+  'push_subscriptions',
+  {
+    id: key(),
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    sessionId: uuid()
+      .notNull()
+      .references(() => sessions.id, { onDelete: 'cascade' }),
+    /** A browser has one per site, which the account that turned push on there last holds. */
+    endpoint: text().notNull().unique(),
+    /** The browser's P-256 public key and its authentication secret, as base64url. */
+    p256dh: text().notNull(),
+    auth: text().notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('push_subscriptions_account').on(t.accountId),
+    index('push_subscriptions_session').on(t.sessionId),
+    check('push_subscriptions_endpoint', sql`${t.endpoint} like 'https://%'`),
+  ],
+);
+
+/**
+ * When a push was sent to an account, which the daily ceiling counts across its households
+ * (ADR-0014 §4, clarification): nothing about what was sent or from where, and forgotten after two
+ * days (ADR-0012 §2, clarification).
+ */
+export const sentPushes = auth.table(
+  'sent_pushes',
+  {
+    id: key(),
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    sentAt: timestamp({ withTimezone: true }).notNull(),
+  },
+  (t) => [index('sent_pushes_account').on(t.accountId, t.sentAt)],
 );

@@ -77,6 +77,7 @@ describe('the plans’ jobs (ADR-0006 §2, ADR-0008 §10)', () => {
       ...test.context,
       clock,
       mailer: recordingMailer(),
+      push: null,
       flags: settableFlags({ plans: true }),
     };
     const { head } = await started(context.db, clock);
@@ -97,7 +98,7 @@ describe('the plans’ jobs (ADR-0006 §2, ADR-0008 §10)', () => {
     const clock = settableClock(Temporal.Instant.from(draftTime));
     const off = { ...test.context, clock, flags: settableFlags() };
     const { householdId, head } = await started(off.db, clock);
-    const queue = await workQueues({ ...off, mailer: recordingMailer() });
+    const queue = await workQueues({ ...off, mailer: recordingMailer(), push: null });
     try {
       await tickPlans({ ...off, queue });
       const waiting = await queue.fetch<Jobs['plan-draft']>('plan-draft', { batchSize: 100 });
@@ -146,6 +147,7 @@ describe('the plans’ jobs (ADR-0006 §2, ADR-0008 §10)', () => {
       ...test.context,
       clock,
       mailer: recordingMailer(),
+      push: null,
       flags: settableFlags({ plans: true, balances: true }),
     };
     const { householdId, head } = await started(context.db, clock);
@@ -194,5 +196,45 @@ describe('the plans’ jobs (ADR-0006 §2, ADR-0008 §10)', () => {
     const on = settableFlags({ balances: true });
     await settleScheduledWeek({ ...test.context, clock, flags: on }, job);
     expect(await balance()).toEqual([[-30, 1]]);
+  });
+});
+
+describe('deleting expired notifications (ADR-0014 §7, clarification)', () => {
+  /** How many notifications household `householdId` keeps, read under its row-level security. */
+  const kept = async (householdId: string) => {
+    const client = await test.context.db.$client.connect();
+    try {
+      await client.query('begin');
+      await client.query("select set_config('householdr.household_id', $1, true)", [householdId]);
+      const { rows } = await client.query<{ count: number }>(
+        'select count(*)::int as count from notifications',
+      );
+      await client.query('commit');
+      return rows[0]?.count;
+    } finally {
+      client.release();
+    }
+  };
+
+  it('is what the worker does with the scheduled job, whatever the flags', async () => {
+    const clock = settableClock(Temporal.Instant.from(draftTime));
+    const { householdId } = await started(test.context.db, clock);
+    const on = { ...test.context, clock, flags: settableFlags({ plans: true }) };
+    // Robin hears that the scheduler's draft is ready.
+    await draftScheduledPlan(on, { household: householdId, week: '2026-10-12' });
+    expect(await kept(householdId)).toBe(1);
+    clock.advance({ hours: 91 * 24 });
+    const queue = await workQueues({
+      ...on,
+      flags: settableFlags(),
+      mailer: recordingMailer(),
+      push: null,
+    });
+    try {
+      await queue.send('expired-notifications', {});
+      await expect.poll(() => kept(householdId), { timeout: 10_000 }).toBe(0);
+    } finally {
+      await queue.stop({ graceful: false });
+    }
   });
 });

@@ -225,6 +225,41 @@
       "when": 1791840837031,
       "tag": "0031_household-away-log",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1791900604930,
+      "tag": "0032_notifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1791913390177,
+      "tag": "0033_notification_preferences",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1791915941374,
+      "tag": "0034_push_subscriptions",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1791919429570,
+      "tag": "0035_push_delivery",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1791958619664,
+      "tag": "0036_morning_email",
+      "breakpoints": true
     }
   ]
 }

@@ -53,12 +53,37 @@ describe('the job queue', () => {
     expect(tables.rows).toEqual([{ name: 'queue' }]);
   });
 
-  it('sends a job to delete expired sign-up links every hour (ADR-0012 §5), and the plans’ tick every minute (ADR-0008 §10)', async () => {
+  it('sends a job to delete expired notifications every night (ADR-0014 §7), expired sign-up links (ADR-0012 §5) and push times (ADR-0014 §4) every hour, and the plans’ and pushes’ ticks every minute (ADR-0008 §10, ADR-0014 §7)', async () => {
     const schedules = await queue.getSchedules();
     expect(schedules.sort((a, b) => a.name.localeCompare(b.name))).toEqual([
+      expect.objectContaining({ name: 'expired-notifications', cron: '41 3 * * *' }),
+      expect.objectContaining({ name: 'expired-pushes', cron: '53 * * * *' }),
       expect.objectContaining({ name: 'expired-sign-up-links', cron: '23 * * * *' }),
       expect.objectContaining({ name: 'plan-tick', cron: '* * * * *' }),
+      expect.objectContaining({ name: 'push-tick', cron: '* * * * *' }),
     ]);
+  });
+
+  it('queues a notification’s push once while it waits, by its key (ADR-0014 §7)', async () => {
+    const household = crypto.randomUUID();
+    const notification = crypto.randomUUID();
+    const send = () =>
+      db.transaction((tx) => queueJob(queue, tx, 'notification-push', { household, notification }));
+    await send();
+    await send();
+    const waitingPushes = await queue.fetch('notification-push', { batchSize: 10 });
+    expect(waitingPushes.map((job) => job.data)).toEqual([{ household, notification }]);
+  });
+
+  it('queues a member’s morning e-mail once while it waits, by its key (ADR-0014 §5)', async () => {
+    const household = crypto.randomUUID();
+    const member = crypto.randomUUID();
+    const send = () =>
+      db.transaction((tx) => queueJob(queue, tx, 'morning-email', { household, member }));
+    await send();
+    await send();
+    const waitingEmails = await queue.fetch('morning-email', { batchSize: 10 });
+    expect(waitingEmails.map((job) => job.data)).toEqual([{ household, member }]);
   });
 
   it('queues a household’s step for a week once while it waits, by its key (ADR-0008 §10)', async () => {

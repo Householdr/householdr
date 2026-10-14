@@ -11,7 +11,7 @@
     "build:test": "vite build --mode test",
     "preview": "vite preview",
     "prepare": "paraglide-js compile --project ../../project.inlang --outdir ./src/lib/paraglide && svelte-kit sync",
-    "typecheck": "pnpm prepare && svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
+    "typecheck": "pnpm prepare && svelte-check --tsconfig ./tsconfig.json --fail-on-warnings && tsc --noEmit --project src/service-worker",
     "test:e2e": "playwright test"
   },
   "dependencies": {

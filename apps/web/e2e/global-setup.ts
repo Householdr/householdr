@@ -1,5 +1,5 @@
 import { spawn, type ChildProcess } from 'node:child_process';
-import { randomBytes } from 'node:crypto';
+import { createECDH, randomBytes } from 'node:crypto';
 import { once } from 'node:events';
 import { createInterface } from 'node:readline';
 import { serverDatabase } from '@householdr/auth/testing';
@@ -44,6 +44,8 @@ export default async function startServer(config: FullConfig) {
       // A key of its own for two-factor secrets, as every instance has (ADR-0017 §7).
       TOTP_ENCRYPTION_KEYS: `1:${randomBytes(32).toString('base64')}`,
       TOTP_ENCRYPTION_KEY_CURRENT: '1',
+      // A VAPID key of its own, so the settings page offers push (ADR-0014 §7, clarification).
+      VAPID_PUBLIC_KEY: vapidPublicKey(),
     },
     stdio: ['ignore', 'ignore', 'inherit'],
   });
@@ -103,4 +105,10 @@ async function started(worker: ChildProcess) {
   worker.stdout.resume();
   if (!up)
     throw new Error('The worker stopped while starting (pnpm --filter @householdr/worker build).');
+}
+
+/** A fresh P-256 public key, as an instance's VAPID public key is set (.env.example). */
+function vapidPublicKey() {
+  const ecdh = createECDH('prime256v1');
+  return ecdh.generateKeys().toString('base64url');
 }
