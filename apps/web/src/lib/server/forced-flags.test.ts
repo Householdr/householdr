@@ -15,6 +15,8 @@ describe('withForcedFlags (ADR-0015 §10)', () => {
     comparisons: false,
     availability: false,
     unavailability: false,
+    leaving: false,
+    'removing-members': false,
     plans: false,
     completions: false,
     balances: false,

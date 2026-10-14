@@ -1,4 +1,4 @@
-import { householdBalances } from '@householdr/application';
+import { householdBalances, type SettledWeek } from '@householdr/application';
 import { error } from '@sveltejs/kit';
 import { authContext } from '#lib/server/auth.js';
 import type { PageServerLoad } from './$types';
@@ -14,18 +14,18 @@ export const load = (async ({ locals }) => {
   const context = { db, clock, ...locals.membership };
   const result = await householdBalances(context);
   if (!result.ok) error(403);
+  const shown = <T extends { history: SettledWeek[] }>({ history, ...balance }: T) => ({
+    ...balance,
+    history: history.map(({ start, end, change }) => ({
+      start: start.toString(),
+      last: end.subtract({ days: 1 }).toString(),
+      change,
+    })),
+  });
   return {
     rebalance: result.rebalance,
-    members: result.members.map(({ id, name, balance, history }) => ({
-      id,
-      name,
-      balance,
-      history: history.map(({ start, end, change }) => ({
-        start: start.toString(),
-        last: end.subtract({ days: 1 }).toString(),
-        change,
-      })),
-    })),
+    members: result.members.map(shown),
+    former: result.former.map(shown),
     you: context.member.id,
   };
 }) satisfies PageServerLoad;

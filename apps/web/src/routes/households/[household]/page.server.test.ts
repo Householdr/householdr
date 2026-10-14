@@ -126,13 +126,24 @@ describe('a household’s page (ADR-0007 §1)', () => {
           account: null,
           invitable: false,
           invitationDaysLeft: null,
+          removable: false,
         },
       ],
       mayAddMembers: false,
+      mayLeave: true,
       mayChangeSettings: false,
       mayStart: false,
       started: null,
+      removed: false,
       you: membership.member.id,
+    });
+  });
+
+  it('offers leaving to anyone but a child (ADR-0010 §10)', async () => {
+    const { householdId, member } = await founded();
+    const child = { householdId, member: { ...member, role: 'child' as const } };
+    expect(await opened({ flags: { onboarding: true }, membership: child })).toMatchObject({
+      mayLeave: false,
     });
   });
 

@@ -84,6 +84,20 @@ export const flags = {
     owner: 'Jens',
     expires: '2027-03-31',
   },
+  leaving: {
+    kind: 'release',
+    description:
+      'Leaving a household at once, from its leave page, with the support line of its country; what the member had still to do goes to others (ADR-0005 §4, ADR-0018 §2, §8).',
+    owner: 'Jens',
+    expires: '2027-03-31',
+  },
+  'removing-members': {
+    kind: 'release',
+    description:
+      'Heads removing a member who isn’t a head, after confirming it is them, shown in the activity log; what the member had still to do goes to others (ADR-0005 §4, ADR-0018 §4–§5).',
+    owner: 'Jens',
+    expires: '2027-03-31',
+  },
   plans: {
     kind: 'release',
     description:

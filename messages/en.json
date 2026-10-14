@@ -793,5 +793,45 @@
         "who=*": "{actor} removed a time the household is away."
       }
     }
-  ]
+  ],
+  "leave.page-title": "Leave {household} · Householdr",
+  "leave.title": "Leave {household}",
+  "leave.failed": "You’re still in the household",
+  "leave.invalid": "Choose how the household’s history shows you.",
+  "leave.last-head": "You’re the household’s only head. Leaving as the last head, which hands the household on to someone else, isn’t possible yet.",
+  "leave.intro": "You leave at once, without giving a reason. Nobody is told: the household only sees that you’re no longer in it.",
+  "leave.history": "What you did stays in the household’s history, and your balance stays as it is. What you still had to do goes to the others.",
+  "leave.rejoin": "To come back, you need a new invitation, which only you can accept.",
+  "leave.shown-as": "How should the household’s history show you?",
+  "leave.as-former": "As “Former member”",
+  "leave.as-name": "Under your name, {name}",
+  "leave.submit": "Leave the household",
+  "leave.support": "If you don’t feel safe at home, {service} can help: call {phone} or go to {website}.",
+  "home.left": "You’ve left the household.",
+  "household.leave": "Leave the household",
+  "remove.page-title": "Remove {name} · {household} · Householdr",
+  "remove.title": "Remove {name}",
+  "remove.intro": "{name} leaves {household} at once, as if they had left themselves.",
+  "remove.history": "What they did stays in the household’s history, shown as “Former member”, and their balance stays as it is. What they still had to do goes to the others.",
+  "remove.child": "Their account, their guardians and their other households stay as they are.",
+  "remove.logged": "Everyone in the household sees in the activity log that you removed them.",
+  "remove.confirm": "You signed in more than 10 minutes ago. Confirm it’s you on the security page first, then come back here.",
+  "remove.confirm-link": "Confirm it’s you",
+  "remove.submit": "Remove {name}",
+  "remove.keep": "Keep {name} in the household",
+  "household.remove": "Remove {name}",
+  "household.removed": "The member you removed is no longer in the household.",
+  "activity.member-removed": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You removed {subject} from the household.",
+        "who=*": "{actor} removed {subject} from the household."
+      }
+    }
+  ],
+  "balances.former-members": "Former members",
+  "balances.former-intro": "The balances of those who left stay as they were, each theirs alone.",
+  "balances.former-member": "Former member"
 }

@@ -20,6 +20,8 @@
 <main class="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-12">
   <h1 class="text-2xl font-semibold">{m['home.title']()}</h1>
 
+  <p role="status" class="empty:hidden">{data.left ? m['home.left']() : ''}</p>
+
   {#if data.households.length > 0}
     <ul class="flex flex-col divide-y rounded-lg border">
       {#each data.households as household (household.id)}
