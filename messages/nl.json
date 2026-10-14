@@ -794,5 +794,16 @@
   "notification-settings.invalid-time": "Vul een tijd in, zoals 21:30.",
   "notification-settings.invalid-quiet-end": "Vul een andere tijd in dan het begin, zoals 07:30.",
   "notification-settings.invalid-fallback": "Vink het vakje aan, of laat het leeg.",
+  "notification-settings.push-title": "Push op dit toestel",
+  "notification-settings.push-intro": "Pushmeldingen bereiken dit toestel, ook als Householdr niet open is. Elk toestel dat je gebruikt heeft een eigen instelling, en een toestel afmelden zet er push uit.",
+  "notification-settings.push-on": "Push staat aan op dit toestel.",
+  "notification-settings.push-off": "Push staat uit op dit toestel.",
+  "notification-settings.push-turn-on": "Push aanzetten op dit toestel",
+  "notification-settings.push-turn-off": "Push uitzetten op dit toestel",
+  "notification-settings.push-no-script": "Om push aan te zetten heeft deze browser JavaScript nodig.",
+  "notification-settings.push-unsupported": "Deze browser kan geen pushmeldingen ontvangen. Op een iPhone of iPad zet je Householdr eerst op je beginscherm en open je het van daar.",
+  "notification-settings.push-blocked": "Deze browser blokkeert meldingen van Householdr. Sta ze toe in de instellingen van de browser voor deze site en kom dan hier terug.",
+  "notification-settings.push-failed": "Push kon niet aangezet worden op dit toestel. Probeer het later opnieuw.",
+  "notification-settings.push-unavailable": "Pushmeldingen zijn niet ingesteld op deze server. Kies e-mail om meldingen buiten de app te krijgen.",
   "notification-settings.back": "Terug naar je huishoudens"
 }

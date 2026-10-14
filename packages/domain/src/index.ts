@@ -60,6 +60,7 @@ export {
   type NotificationPreferences,
   type QuietHours,
 } from './notifications/preferences';
+export { isKnownPushService } from './notifications/push-services';
 export {
   recipients,
   type Notifiable,

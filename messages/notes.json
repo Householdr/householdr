@@ -2226,6 +2226,50 @@
     "note": "Next to the e-mail fallback's checkbox if the server didn't accept it, which a normal browser never causes.",
     "needsReview": ["nl"]
   },
+  "notification-settings.push-title": {
+    "note": "Heading of the section that turns push notifications on or off for the device in hand (ADR-0014 §7).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.push-intro": {
+    "note": "Under “Push on this device”: what push does, that it is per device, and that it goes with the device's session (ADR-0014 §7, clarification).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.push-on": {
+    "note": "Status: this device receives push notifications.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.push-off": {
+    "note": "Status: this device receives no push notifications.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.push-turn-on": {
+    "note": "Button. Asks the browser's permission for notifications, then turns push on for this device (ADR-0014 §7, clarification).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.push-turn-off": {
+    "note": "Button that turns push off for this device.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.push-no-script": {
+    "note": "Shown instead of the push button while JavaScript doesn't run.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.push-unsupported": {
+    "note": "When the browser has no Web Push, such as Safari on iOS outside an app added to the home screen (ADR-0008 §7, ADR-0014 §5).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.push-blocked": {
+    "note": "When the person, or the browser, refused notifications for the site. Only the browser can undo that.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.push-failed": {
+    "note": "When the browser or its push service refused to subscribe, or saving the subscription failed.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.push-unavailable": {
+    "note": "On an instance without VAPID keys, which offers no push (ADR-0014 §7, clarification).",
+    "needsReview": ["nl"]
+  },
   "notification-settings.back": {
     "note": "Link from the notification settings to the list of the account's households.",
     "needsReview": ["nl"]

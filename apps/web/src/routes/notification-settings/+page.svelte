@@ -7,6 +7,7 @@
   import { Label } from '#lib/components/ui/label/index.js';
   import { NativeSelect, NativeSelectOption } from '#lib/components/ui/native-select/index.js';
   import { useNotificationSettings } from '#lib/hooks/use-notification-settings.svelte.js';
+  import { usePush, type PushState } from '#lib/hooks/use-push.svelte.js';
   import { m } from '#lib/paraglide/messages.js';
   import type { PreferencesField } from '@householdr/application';
   import type { PageProps } from './$types';
@@ -17,6 +18,16 @@
   // The locale is the account's, which doesn't change while the page is open.
   // svelte-ignore state_referenced_locally
   const settings = useNotificationSettings(data.locale);
+  const push = usePush(() => data.push);
+  /** Where push stands on this device, in words. */
+  const pushSaid: Record<PushState, () => string> = {
+    'no-script': m['notification-settings.push-no-script'],
+    unsupported: m['notification-settings.push-unsupported'],
+    blocked: m['notification-settings.push-blocked'],
+    off: m['notification-settings.push-off'],
+    on: m['notification-settings.push-on'],
+    failed: m['notification-settings.push-failed'],
+  };
 
   /** A field's id on the page, which a summary's link points to. */
   const idOf = (field: PreferencesField) => field.replace('.', '-');
@@ -172,6 +183,27 @@
 
     <Button type="submit" class="w-full">{m['settings.save']()}</Button>
   </form>
+
+  <!-- Turned on and off for the device in hand, apart from the form: it needs JavaScript and the
+       browser's permission (ADR-0014 §7, clarification). -->
+  <section aria-labelledby="push" class="flex flex-col gap-3 rounded-lg border p-4">
+    <h2 id="push" class="text-lg font-semibold">{m['notification-settings.push-title']()}</h2>
+    <p>{m['notification-settings.push-intro']()}</p>
+    {#if data.push}
+      <p role="status">{pushSaid[push.state]()}</p>
+      {#if push.state === 'off' || push.state === 'failed'}
+        <Button type="button" variant="outline" disabled={push.busy} onclick={push.turnOn}>
+          {m['notification-settings.push-turn-on']()}
+        </Button>
+      {:else if push.state === 'on'}
+        <Button type="button" variant="outline" disabled={push.busy} onclick={push.turnOff}>
+          {m['notification-settings.push-turn-off']()}
+        </Button>
+      {/if}
+    {:else}
+      <p>{m['notification-settings.push-unavailable']()}</p>
+    {/if}
+  </section>
 
   <a href="/" class="underline underline-offset-4">{m['notification-settings.back']()}</a>
 </main>

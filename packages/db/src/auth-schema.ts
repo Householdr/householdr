@@ -303,3 +303,33 @@ export const notificationPreferences = auth.table(
     check('notification_preferences_version', sql`${t.version} >= 1`),
   ],
 );
+
+/**
+ * A browser's push subscription (ADR-0014 §7, clarification): its endpoint on a known push service
+ * (ADR-0017 §6) and the keys its pushes are encrypted with (RFC 8291). It belongs to the account
+ * and to the session of the device it was made on, and goes when that session ends, so signing a
+ * device out stops its pushes (ADR-0018 §2, ADR-0012 §2).
+ */
+export const pushSubscriptions = auth.table(
+  'push_subscriptions',
+  {
+    id: key(),
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    sessionId: uuid()
+      .notNull()
+      .references(() => sessions.id, { onDelete: 'cascade' }),
+    /** A browser has one per site, which the account that turned push on there last holds. */
+    endpoint: text().notNull().unique(),
+    /** The browser's P-256 public key and its authentication secret, as base64url. */
+    p256dh: text().notNull(),
+    auth: text().notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('push_subscriptions_account').on(t.accountId),
+    index('push_subscriptions_session').on(t.sessionId),
+    check('push_subscriptions_endpoint', sql`${t.endpoint} like 'https://%'`),
+  ],
+);

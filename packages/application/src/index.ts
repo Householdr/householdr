@@ -1,5 +1,17 @@
 // Use cases: authorise, validate, transact, emit events, return a result (ADR-0023).
-export type { Clock, Flags, LogFields, Logger, Mail, Mailer, Random } from './ports';
+export type {
+  Clock,
+  Flags,
+  LogFields,
+  Logger,
+  Mail,
+  Mailer,
+  Push,
+  PushContent,
+  PushOutcome,
+  PushTarget,
+  Random,
+} from './ports';
 export { flags, type FlagKey } from './flags/registry';
 export {
   householdActivity,
@@ -70,6 +82,11 @@ export {
   type PreferencesField,
   type SavedPreferences,
 } from './notifications/preferences';
+export {
+  devicePushEndpoints,
+  removePushSubscription,
+  savePushSubscription,
+} from './notifications/push-subscriptions';
 export { closeDueOccurrences } from './plans/closing';
 export { draftPlan } from './plans/draft-plan';
 export { queueDuePlanSteps, type ScheduleContext } from './plans/plan-schedule';

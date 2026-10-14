@@ -6,6 +6,7 @@ import {
   accountEmails,
   accounts,
   notificationPreferences,
+  pushSubscriptions,
   sessions,
   twoFactors,
 } from './auth-schema';
@@ -1064,5 +1065,58 @@ describe('notification_preferences (ADR-0014 §3, clarifications)', () => {
       .from(notificationPreferences)
       .where(eq(notificationPreferences.accountId, accountId));
     expect(left).toEqual([]);
+  });
+});
+
+describe('push_subscriptions (ADR-0014 §7, clarification)', () => {
+  /** An account signed in on a device, with a push subscription there. */
+  const subscribed = async (endpoint = `https://fcm.googleapis.com/fcm/send/${String(++next)}`) => {
+    const [account] = await db
+      .insert(accounts)
+      .values({ name: 'Robin', email: `robin-${String(++next)}@example.org`, culture: 'en-BE' })
+      .returning();
+    if (!account) throw new Error('No account');
+    const [session] = await db
+      .insert(sessions)
+      .values({
+        userId: account.id,
+        token: `token-${String(++next)}`,
+        expiresAt: new Date('2026-11-08T08:00:00Z'),
+      })
+      .returning();
+    if (!session) throw new Error('No session');
+    await db.insert(pushSubscriptions).values({
+      accountId: account.id,
+      sessionId: session.id,
+      endpoint,
+      p256dh: 'the-browser-public-key',
+      auth: 'the-browser-secret',
+    });
+    return { account, session };
+  };
+  const left = (accountId: string) =>
+    db.select().from(pushSubscriptions).where(eq(pushSubscriptions.accountId, accountId));
+
+  it('keeps one per endpoint, an https one', async () => {
+    expect(await refusal(subscribed('https://fcm.googleapis.com/fcm/send/same'))).toBeUndefined();
+    expect(await refusal(subscribed('https://fcm.googleapis.com/fcm/send/same'))).toBe(
+      'push_subscriptions_endpoint_unique',
+    );
+    expect(await refusal(subscribed('http://fcm.googleapis.com/fcm/send/plain'))).toBe(
+      'push_subscriptions_endpoint',
+    );
+  });
+
+  it('goes when its session ends, so a device signed out gets no more pushes', async () => {
+    const { account, session } = await subscribed();
+    expect(await left(account.id)).toHaveLength(1);
+    await db.delete(sessions).where(eq(sessions.id, session.id));
+    expect(await left(account.id)).toEqual([]);
+  });
+
+  it('goes with the account', async () => {
+    const { account } = await subscribed();
+    await db.delete(accounts).where(eq(accounts.id, account.id));
+    expect(await left(account.id)).toEqual([]);
   });
 });

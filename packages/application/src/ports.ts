@@ -50,3 +50,32 @@ export interface Random {
 export interface Flags {
   isOn: (flag: FlagKey) => boolean;
 }
+
+/** A browser's push subscription, as saved (ADR-0014 §7, clarification): where and for whom. */
+export interface PushTarget {
+  endpoint: string;
+  /** The browser's P-256 public key and its 16-byte secret, in base64url (RFC 8291). */
+  p256dh: string;
+  auth: string;
+}
+
+/**
+ * What a push carries, and nothing more (ADR-0014 §6, clarification): a title naming the household,
+ * the notification's sentence, and the page of the app it opens.
+ */
+export interface PushContent {
+  title: string;
+  body: string;
+  path: string;
+}
+
+/**
+ * What the push service said: it took the push; the subscription is gone, so it is deleted
+ * (ADR-0014 §7); or it failed, and may be tried again.
+ */
+export type PushOutcome = 'sent' | 'gone' | 'failed';
+
+/** Sends pushes: Web Push in the app, recorded in tests (ADR-0023 §3). */
+export interface Push {
+  send: (to: PushTarget, content: PushContent) => Promise<PushOutcome>;
+}
