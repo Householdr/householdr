@@ -32,6 +32,14 @@ A **schedule** produces dates. A **task** references a schedule plus an **offset
 This lets one schedule ("PMD collection") drive several tasks ("put PMD bin out", "bring PMD bin in")
 without repeating the rule.
 
+> **Clarification (2026-10-13):** a task **shares** another task's schedule when a head chooses
+> *same dates as* that task, in the same household. Both then follow one schedule, each with its own
+> timing, window and on-miss policy. Only tasks on a calendar schedule share one; a "since last
+> done" or one-off task has none. Changing the dates of a task that shares them changes them for
+> every task on that schedule, unless the head gives it **dates of its own**, which leaves the others
+> as they were. A schedule has no name of its own: the task list says which tasks share it. It goes
+> when the last task on it does.
+
 ### 2. A schedule is a set of rules
 
 ```
