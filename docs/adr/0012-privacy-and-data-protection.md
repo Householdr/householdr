@@ -174,6 +174,11 @@ by the fewest people possible, and every such access is logged with its reason.
 > **Clarification (2026-10-08):** **rate-limit counters** are forgotten when their window ends, at
 > most 24 hours after they last changed ([ADR-0017](0017-security-baseline.md) §5, clarification).
 
+> **Clarification (2026-10-14):** an e-mail's **unsubscribe link**
+> ([ADR-0014](0014-notifications-and-reminders.md) §6, clarification) is account data on the basis
+> of the contract (b): only its token's hash, the account and when it expires. It is deleted when
+> it is used, or when it expires 30 days after its e-mail was sent.
+
 Deletion jobs run in the worker like any other scheduled job ([ADR-0008](0008-tech-stack.md) §10).
 
 ### 6. People's rights, built into the product
