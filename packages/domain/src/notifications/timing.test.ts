@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { channelsFor, isTooLate, pushTime, underCeiling, type Reach } from './timing';
+import { channelsFor, emailTime, isTooLate, pushTime, underCeiling, type Reach } from './timing';
 
 // When a push goes out, how many a day, and by which channels (ADR-0014 §3–§5, clarifications).
 // Fixed dates and zones (TEST-2), across midnight and daylight-saving changes.
@@ -86,6 +86,71 @@ describe('pushTime (ADR-0014 §4, clarification)', () => {
     );
     // At 02:15 the first time, 00:15 UTC, at 02:45 the first time.
     expect(pushTime(at('2026-10-25T00:15:00Z'), repeated, brussels)).toEqual(
+      at('2026-10-25T00:45:00Z'),
+    );
+  });
+});
+
+describe('emailTime (ADR-0014 §5, clarification)', () => {
+  it('sends what came since the last morning e-mail when quiet hours next end', () => {
+    // 07:31 on Thursday and 23:00: on Friday at 07:30.
+    expect(emailTime(at('2026-10-08T05:31:00Z'), night, brussels)).toEqual(
+      at('2026-10-09T05:30:00Z'),
+    );
+    expect(emailTime(at('2026-10-08T21:00:00Z'), night, brussels)).toEqual(
+      at('2026-10-09T05:30:00Z'),
+    );
+    // 03:00 on Friday: that morning.
+    expect(emailTime(at('2026-10-09T01:00:00Z'), night, brussels)).toEqual(
+      at('2026-10-09T05:30:00Z'),
+    );
+  });
+
+  it('sends one made as they end in that e-mail', () => {
+    expect(emailTime(at('2026-10-09T05:30:00Z'), night, brussels)).toEqual(
+      at('2026-10-09T05:30:00Z'),
+    );
+  });
+
+  it('comes when they end, whenever that is, such as after a night shift', () => {
+    const day = { start: time('08:00'), end: time('15:00') };
+    expect(emailTime(at('2026-10-08T14:00:00Z'), day, brussels)).toEqual(
+      at('2026-10-09T13:00:00Z'),
+    );
+  });
+
+  it('reads them in the time zone of the household it comes from', () => {
+    // 06:00 UTC is 08:00 in Brussels, past 07:30, and 07:00 in Lisbon, not yet.
+    expect(emailTime(at('2026-10-08T06:00:00Z'), night, brussels)).toEqual(
+      at('2026-10-09T05:30:00Z'),
+    );
+    expect(emailTime(at('2026-10-08T06:00:00Z'), night, 'Europe/Lisbon')).toEqual(
+      at('2026-10-08T06:30:00Z'),
+    );
+  });
+
+  it('comes at 07:30 on the clock when clocks change that night', () => {
+    expect(emailTime(at('2026-10-24T21:00:00Z'), night, brussels)).toEqual(
+      at('2026-10-25T06:30:00Z'),
+    );
+    expect(emailTime(at('2026-03-28T22:00:00Z'), night, brussels)).toEqual(
+      at('2026-03-29T05:30:00Z'),
+    );
+  });
+
+  it('comes as late as the clock allows when the change skips their end', () => {
+    const short = { start: time('01:00'), end: time('02:30') };
+    expect(emailTime(at('2026-03-29T00:15:00Z'), short, brussels)).toEqual(
+      at('2026-03-29T01:30:00Z'),
+    );
+  });
+
+  it('comes the second time round in the hour clocks repeat', () => {
+    const repeated = { start: time('02:00'), end: time('02:45') };
+    expect(emailTime(at('2026-10-25T01:15:00Z'), repeated, brussels)).toEqual(
+      at('2026-10-25T01:45:00Z'),
+    );
+    expect(emailTime(at('2026-10-25T00:15:00Z'), repeated, brussels)).toEqual(
       at('2026-10-25T00:45:00Z'),
     );
   });

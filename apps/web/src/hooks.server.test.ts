@@ -119,6 +119,7 @@ describe('the flags of a request (ADR-0015 §3)', () => {
       notifications: false,
       'notification-preferences': false,
       'push-notifications': false,
+      'morning-email': false,
     });
   });
 
@@ -144,6 +145,7 @@ describe('the flags of a request (ADR-0015 §3)', () => {
       notifications: false,
       'notification-preferences': false,
       'push-notifications': false,
+      'morning-email': false,
     });
   });
 });

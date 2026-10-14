@@ -36,8 +36,10 @@ export async function notify(
       kind: event.kind,
       at: new Date(at.epochMilliseconds),
       week: week.toString(),
-      // Its push is due at once; the worker decides whether, and when, it goes (ADR-0014 §7).
+      // Its push is due at once, and it may go in the next morning e-mail; the worker decides
+      // whether, and when, each goes (ADR-0014 §5, §7).
       pushAfter: new Date(at.epochMilliseconds),
+      emailAfter: new Date(at.epochMilliseconds),
     })),
   );
 }

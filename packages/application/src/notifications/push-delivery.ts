@@ -51,6 +51,27 @@ const sentKept = Temporal.Duration.from({ hours: 48 });
 const asDate = (instant: Temporal.Instant) => new Date(instant.epochMilliseconds);
 
 /**
+ * Where the account's pushes go at `now` (ADR-0014 §5, §7, clarification): the devices still signed
+ * in, on a push service still known (ADR-0017 §6). None means the account has no working push.
+ */
+export async function workingPush(
+  tx: Transaction,
+  account: string,
+  now: Temporal.Instant,
+): Promise<PushTarget[]> {
+  const targets = await tx
+    .select({
+      endpoint: pushSubscriptions.endpoint,
+      p256dh: pushSubscriptions.p256dh,
+      auth: pushSubscriptions.auth,
+    })
+    .from(pushSubscriptions)
+    .innerJoin(sessions, eq(sessions.id, pushSubscriptions.sessionId))
+    .where(and(eq(pushSubscriptions.accountId, account), gt(sessions.expiresAt, asDate(now))));
+  return targets.filter((target) => isKnownPushService(target.endpoint));
+}
+
+/**
  * Queues a job for each notification whose push is due, household by household, while push is
  * offered and released (ADR-0014 §7, CODE-20). Each is keyed by its notification, so a tick that
  * runs twice queues it once (CODE-19). Notifications so far are all about plans, which only
@@ -134,20 +155,7 @@ export async function preparePush(
       return null;
     }
     const preferences = await savedOf(tx, row.account);
-    // Only devices still signed in, on a push service still known (ADR-0014 §7, ADR-0017 §6).
-    const targets = (
-      await tx
-        .select({
-          endpoint: pushSubscriptions.endpoint,
-          p256dh: pushSubscriptions.p256dh,
-          auth: pushSubscriptions.auth,
-        })
-        .from(pushSubscriptions)
-        .innerJoin(sessions, eq(sessions.id, pushSubscriptions.sessionId))
-        .where(
-          and(eq(pushSubscriptions.accountId, row.account), gt(sessions.expiresAt, asDate(now))),
-        )
-    ).filter((target) => isKnownPushService(target.endpoint));
+    const targets = await workingPush(tx, row.account, now);
     const { push } = channelsFor(row.kind, {
       choice: preferences.channels[row.kind],
       child: row.role === 'child',
