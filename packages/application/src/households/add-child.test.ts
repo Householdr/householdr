@@ -173,6 +173,8 @@ describe('addChild (ADR-0007 §2, ADR-0010 §9)', () => {
       mayLeave: true,
       mayChangeSettings: true,
       mayStart: true,
+      namedHead: null,
+      needsTwoFactors: false,
       firstPlan: null,
     });
   });

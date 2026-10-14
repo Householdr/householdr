@@ -40,6 +40,14 @@
     return '';
   });
 
+  /** What answering the last head's naming did, or why it didn't (ADR-0018 §2, clarification). */
+  const headStatus = $derived.by(() => {
+    if (form?.answered === 'took on') return m['household.took-on']();
+    if (form?.answered === 'declined') return m['household.declined-head']();
+    if (form?.headProblem === 'only-adult') return m['household.named-head-only']();
+    return '';
+  });
+
   /** A role in words. */
   const roles: Record<Role, () => string> = {
     head: m['household.head'],
@@ -78,6 +86,45 @@
 
   {#if data.flags.plans}
     <p role="status" class="wrap-break-word empty:hidden">{started}</p>
+  {/if}
+
+  {#if data.flags.leaving}
+    <p role="status" class="wrap-break-word empty:hidden">{headStatus}</p>
+  {/if}
+
+  <!-- The last head named them head as they left: they take it on or decline it (ADR-0018 §2,
+       clarification). -->
+  {#if data.flags.leaving && data.namedHead}
+    <section aria-labelledby="named-head" class="flex flex-col gap-4 rounded-lg border p-4">
+      <h2 id="named-head" class="text-lg font-semibold">{m['household.named-head-title']()}</h2>
+      <p>
+        {data.namedHead.mayDecline ? m['household.named-head']() : m['household.named-head-only']()}
+      </p>
+      <form method="POST" action="?/answerHeadRole" use:enhance class="flex flex-col gap-3">
+        <Button type="submit" name="answer" value="take on" class="w-full">
+          {m['household.take-on']()}
+        </Button>
+        {#if data.namedHead.mayDecline}
+          <Button type="submit" name="answer" value="decline" variant="outline" class="w-full">
+            {m['household.decline-head']()}
+          </Button>
+        {/if}
+      </form>
+    </section>
+  {/if}
+
+  <!-- Head powers wait for two factors (ADR-0010 §3, ADR-0018 §2). -->
+  {#if data.flags.leaving && data.needsTwoFactors}
+    <section aria-labelledby="two-factors" class="flex flex-col gap-2 rounded-lg border p-4">
+      <h2 id="two-factors" class="text-lg font-semibold">{m['household.two-factors-title']()}</h2>
+      <p>{m['household.two-factors']()}</p>
+      <a
+        href="/security"
+        class="flex min-h-11 items-center self-start underline underline-offset-4"
+      >
+        {m['household.two-factors-link']()}
+      </a>
+    </section>
   {/if}
 
   <!-- The last step of setting up, for heads, until the household has started (ADR-0007 §2). -->

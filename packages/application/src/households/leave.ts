@@ -1,16 +1,11 @@
-import { households, inHousehold, members, type Transaction } from '@householdr/db';
-import {
-  can,
-  headCandidates,
-  supportServiceIn,
-  type Member,
-  type SupportService,
-} from '@householdr/domain';
-import { and, eq, ne, sql } from 'drizzle-orm';
+import { households, inHousehold, members } from '@householdr/db';
+import { can, supportServiceIn, type SupportService } from '@householdr/domain';
+import { and, eq, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { planningOf } from '../plans/planning';
 import { endMembership } from './end-membership';
 import { isCurrentMember } from './former-members';
+import { isLastHead, successors } from './succession';
 import type { HouseholdContext } from './membership';
 
 /**
@@ -91,43 +86,6 @@ export async function leaveHousehold(
     }
     return { ok: true };
   });
-}
-
-/** Whether `member` is the household's last head, whose role passes as they leave. */
-async function isLastHead(tx: Transaction, member: Member) {
-  if (member.role !== 'head') return false;
-  const [otherHead] = await tx
-    .select({ id: members.id })
-    .from(members)
-    .where(and(eq(members.role, 'head'), ne(members.id, member.id), isCurrentMember));
-  return !otherHead;
-}
-
-/**
- * The household's members who can become head when its last head leaves, longest in it first
- * (ADR-0018 §2, with its clarifications). Leaving holds the planning lock, as ending any membership
- * does, so they are still members when the role passes.
- */
-async function successors(tx: Transaction) {
-  const rows = await tx
-    .select({
-      id: members.id,
-      name: members.name,
-      role: members.role,
-      accountId: members.accountId,
-      joinedAt: members.joinedAt,
-    })
-    .from(members)
-    .where(isCurrentMember);
-  return headCandidates(
-    rows.map((row) => ({
-      id: row.id,
-      name: row.name,
-      role: row.role,
-      hasAccount: row.accountId !== null,
-      joinedAt: Temporal.Instant.fromEpochMilliseconds(row.joinedAt.getTime()),
-    })),
-  ).map(({ id, name }) => ({ id, name }));
 }
 
 type LeaveOptionsResult =
