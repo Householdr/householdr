@@ -83,6 +83,13 @@ export {
   type SavedPreferences,
 } from './notifications/preferences';
 export {
+  morningEmailFailed,
+  prepareMorningEmail,
+  queueDueEmails,
+  type MorningEmailContext,
+  type PreparedEmail,
+} from './notifications/morning-email';
+export {
   deleteExpiredPushes,
   preparePush,
   pushSent,

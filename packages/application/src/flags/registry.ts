@@ -126,6 +126,13 @@ export const flags = {
     owner: 'Jens',
     expires: '2027-03-31',
   },
+  'morning-email': {
+    kind: 'release',
+    description:
+      'Sending each member, once a day for each household as their quiet hours end, an e-mail with the notifications they get by e-mail, or by e-mail because push doesn’t reach them (ADR-0014 §5, clarification). Doubles as its kill switch. Turn it on with notification-preferences, where e-mail and the fallback are chosen.',
+    owner: 'Jens',
+    expires: '2027-03-31',
+  },
 } as const satisfies Record<string, Flag>;
 
 export type FlagKey = keyof typeof flags;

@@ -61,7 +61,14 @@ export {
   type QuietHours,
 } from './notifications/preferences';
 export { isKnownPushService } from './notifications/push-services';
-export { channelsFor, isTooLate, pushTime, underCeiling, type Reach } from './notifications/timing';
+export {
+  channelsFor,
+  emailTime,
+  isTooLate,
+  pushTime,
+  underCeiling,
+  type Reach,
+} from './notifications/timing';
 export {
   recipients,
   type Notifiable,

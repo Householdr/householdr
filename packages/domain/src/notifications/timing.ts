@@ -52,6 +52,29 @@ export function pushTime(
 }
 
 /**
+ * When the morning e-mail with a notification made at `at` comes (ADR-0014 §5, clarification): the
+ * first time the member's quiet hours end from then on, read in `timeZone`, the zone of the
+ * household it comes from, so it never comes before a push would. Those ends are once a day, so
+ * everything made since the last e-mail comes in the next. An end that a daylight-saving change
+ * skips comes as late as the clock allows, as for a push.
+ */
+export function emailTime(
+  at: Temporal.Instant,
+  { end }: QuietHours,
+  timeZone: string,
+): Temporal.Instant {
+  const day = at.toZonedDateTimeISO(timeZone).toPlainDate();
+  const endOn = (date: Temporal.PlainDate, disambiguation: 'compatible' | 'later') =>
+    date.toPlainDateTime(end).toZonedDateTime(timeZone, { disambiguation }).toInstant();
+  // In the hour clocks repeat when they go back, the end may come round a second time.
+  for (const disambiguation of ['compatible', 'later'] as const) {
+    const today = endOn(day, disambiguation);
+    if (Temporal.Instant.compare(today, at) >= 0) return today;
+  }
+  return endOn(day.add({ days: 1 }), 'compatible');
+}
+
+/**
  * Whether one more push may go to an account at `at`, given when its pushes were `sent`: fewer
  * than 5 since the day began in `timeZone`, the zone of the household it comes from, whatever
  * household they came from (ADR-0014 §4, clarification).
@@ -71,7 +94,8 @@ export function underCeiling(
 
 /**
  * Whether a push for a notification made at `notifiedAt` is too late at `at`: a day on, it is
- * dropped, and its notification stays in the list (ADR-0014 §4, clarification).
+ * dropped, and its notification stays in the list (ADR-0014 §4, clarification). So is its place in
+ * a morning e-mail (§5, clarification).
  */
 export function isTooLate(notifiedAt: Temporal.Instant, at: Temporal.Instant): boolean {
   return Temporal.Instant.compare(at, notifiedAt.add(pushWindow)) >= 0;

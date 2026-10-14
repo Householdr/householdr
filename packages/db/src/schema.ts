@@ -962,6 +962,11 @@ export const notifications = pgTable(
      * hours end; empty once it went out or won't (ADR-0014 §4, §7, clarifications).
      */
     pushAfter: timestamp({ withTimezone: true }),
+    /**
+     * When it may go in a morning e-mail, while it may still: from when it is made, or until a
+     * failed send is tried again; empty once it went or won't (ADR-0014 §5, clarification).
+     */
+    emailAfter: timestamp({ withTimezone: true }),
   },
   (t) => [
     householdOnly(t.householdId),
@@ -983,6 +988,10 @@ export const notifications = pgTable(
     index('notifications_push_after')
       .on(t.householdId, t.pushAfter)
       .where(sql`${t.pushAfter} is not null`),
+    // The notifications a morning e-mail may still take, which the worker looks at every minute.
+    index('notifications_email_after')
+      .on(t.householdId, t.emailAfter)
+      .where(sql`${t.emailAfter} is not null`),
     check('notifications_kind', sql`${t.kind} in ('plan.drafted', 'plan.published')`),
     // A plan's notifications, and only they, name its week. Both sides are true or false, never
     // null, which a check would let through.

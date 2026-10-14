@@ -52,6 +52,7 @@ const on = {
   notifications: false,
   'notification-preferences': false,
   'push-notifications': false,
+  'morning-email': false,
 };
 let next = 0;
 

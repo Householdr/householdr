@@ -82,6 +82,7 @@ const on = {
   notifications: false,
   'notification-preferences': false,
   'push-notifications': false,
+  'morning-email': false,
 };
 type Locals = App.Locals;
 const loadFor = (locals: Partial<Locals>, address = 'https://householdr.example.org/security') =>

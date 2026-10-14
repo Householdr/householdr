@@ -1,6 +1,6 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { pushTime } from './timing';
+import { emailTime, pushTime } from './timing';
 
 // Invariants of when a push goes out, over generated moments, quiet hours and zones (TEST-1,
 // ADR-0014 §4, clarification).
@@ -26,6 +26,22 @@ describe('pushTime invariants (ADR-0014 §4, clarification)', () => {
         expect(sent.since(at).total('hours')).toBeLessThan(25);
         // Sending then needs no more waiting.
         expect(pushTime(sent, hours, timeZone)).toEqual(sent);
+      }),
+    );
+  });
+});
+
+describe('emailTime invariants (ADR-0014 §5, clarification)', () => {
+  it('never comes before a push would, comes within a day, and as quiet hours end', () => {
+    fc.assert(
+      fc.property(moment, quiet, zone, (at, hours, timeZone) => {
+        const sent = emailTime(at, hours, timeZone);
+        expect(
+          Temporal.Instant.compare(sent, pushTime(at, hours, timeZone)),
+        ).toBeGreaterThanOrEqual(0);
+        expect(sent.since(at).total('hours')).toBeLessThan(25);
+        // What is made as it comes goes in it.
+        expect(emailTime(sent, hours, timeZone)).toEqual(sent);
       }),
     );
   });

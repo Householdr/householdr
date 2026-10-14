@@ -253,6 +253,13 @@
       "when": 1791919429570,
       "tag": "0035_push_delivery",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1791958619664,
+      "tag": "0036_morning_email",
+      "breakpoints": true
     }
   ]
 }

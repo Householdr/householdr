@@ -19,6 +19,11 @@ export interface Jobs {
   'push-tick': Record<string, never>;
   /** A notification's push: its household's id, and its own (ADR-0014 §7). */
   'notification-push': { household: string; notification: string };
+  /**
+   * A member's morning e-mail from a household: the household's id, and the member's
+   * (ADR-0014 §5, clarification).
+   */
+  'morning-email': { household: string; member: string };
   /** Queues the plan steps that are due, household by household: carries nothing (ADR-0008 §10). */
   'plan-tick': Record<string, never>;
   /** Drafts a household's plan: its id, and the first day of the plan week (ADR-0006 §2). */
@@ -57,6 +62,9 @@ const queues: Record<QueueName, Parameters<PgBoss['createQueue']>[1]> = {
   // One job for a notification's push at a time, by its key (ADR-0014 §7); one that fails is
   // queued again by a later tick, while it is still due.
   'notification-push': { policy: 'exclusive', retryLimit: 0 },
+  // One job for a member's morning e-mail at a time, by its key; one that fails is queued again by
+  // a later tick, while it is still due.
+  'morning-email': { policy: 'exclusive', retryLimit: 0 },
   // One tick at a time; a failed one waits for the next.
   'plan-tick': { policy: 'exclusive', retryLimit: 0 },
   // One job for a household's week at a time, by its key (ADR-0008 §10); a failed one is queued
@@ -69,8 +77,8 @@ const queues: Record<QueueName, Parameters<PgBoss['createQueue']>[1]> = {
 
 /**
  * What a job of the queues with one is known by while it waits or runs, so it is never queued twice
- * (ADR-0008 §10, ADR-0014 §7): the household, the week and, by its queue, the step; or the
- * notification, for its push.
+ * (ADR-0008 §10, ADR-0014 §7): the household, the week and, by its queue, the step; the
+ * notification, for its push; or the member, for their morning e-mail.
  */
 const keys: { [Q in QueueName]?: (data: Jobs[Q]) => string } = {
   'plan-draft': ({ household, week }) => `${household}/${week}`,
@@ -78,6 +86,7 @@ const keys: { [Q in QueueName]?: (data: Jobs[Q]) => string } = {
   'plan-close': ({ household, week }) => `${household}/${week}`,
   'plan-settle': ({ household, week }) => `${household}/${week}`,
   'notification-push': ({ notification }) => notification,
+  'morning-email': ({ member }) => member,
 };
 
 /**

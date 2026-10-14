@@ -75,6 +75,17 @@ describe('the job queue', () => {
     expect(waitingPushes.map((job) => job.data)).toEqual([{ household, notification }]);
   });
 
+  it('queues a member’s morning e-mail once while it waits, by its key (ADR-0014 §5)', async () => {
+    const household = crypto.randomUUID();
+    const member = crypto.randomUUID();
+    const send = () =>
+      db.transaction((tx) => queueJob(queue, tx, 'morning-email', { household, member }));
+    await send();
+    await send();
+    const waitingEmails = await queue.fetch('morning-email', { batchSize: 10 });
+    expect(waitingEmails.map((job) => job.data)).toEqual([{ household, member }]);
+  });
+
   it('queues a household’s step for a week once while it waits, by its key (ADR-0008 §10)', async () => {
     const household = crypto.randomUUID();
     const send = (week: string) =>
