@@ -1056,5 +1056,6 @@
         "who=*": "{actor} antwoordde op een ruil namens {subject}."
       }
     }
-  ]
+  ],
+  "plan.redraft-intro": "Opnieuw opstellen plant de week opnieuw met het huishouden zoals het nu is. Taken die een hoofd verplaatste, blijven waar ze zijn."
 }

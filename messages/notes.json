@@ -2765,5 +2765,9 @@
   "activity.swap-answered": {
     "note": "Activity log entry: a head accepted or declined a swap for a profile without an account.",
     "needsReview": ["nl"]
+  },
+  "plan.redraft-intro": {
+    "note": "For heads, above the 'Draft it again' button of a draft: re-running the allocator keeps what heads moved (ADR-0006 §2).",
+    "needsReview": ["nl"]
   }
 }
