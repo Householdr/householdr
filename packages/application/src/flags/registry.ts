@@ -98,6 +98,13 @@ export const flags = {
     owner: 'Jens',
     expires: '2027-03-31',
   },
+  'plan-moves': {
+    kind: 'release',
+    description:
+      'Heads moving an open task of a draft, or of a published plan whose week isn’t over, to another member, kept when the draft is drafted again, and logged once published (ADR-0006 §2–§3, ADR-0018 §5).',
+    owner: 'Jens',
+    expires: '2027-03-31',
+  },
   'page-transitions': {
     kind: 'release',
     description:

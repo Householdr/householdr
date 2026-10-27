@@ -281,6 +281,13 @@
       "when": 1791920885091,
       "tag": "0039_areas",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1793124488993,
+      "tag": "0040_plan-moves-log",
+      "breakpoints": true
     }
   ]
 }

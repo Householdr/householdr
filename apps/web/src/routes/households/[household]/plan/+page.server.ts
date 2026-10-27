@@ -1,6 +1,7 @@
 import {
   completeOccurrence,
   draftPlan,
+  moveAssignment,
   publishPlan,
   undoCompletion,
   viewPlan,
@@ -27,6 +28,12 @@ async function completionContext(locals: App.Locals) {
   return householdContext(locals);
 }
 
+/** The same, for moving tasks, while their release flag is on too. */
+async function moveContext(locals: App.Locals) {
+  if (!locals.flags['plan-moves']) error(404);
+  return householdContext(locals);
+}
+
 /** A completion as page data: its day as `YYYY-MM-DD`, its moment as epoch milliseconds. */
 const completionData = ({ id, day, when, at, doers, loggedBy, mayUndo }: PlanCompletion) => ({
   id,
@@ -40,9 +47,13 @@ const completionData = ({ id, day, when, at, doers, loggedBy, mayUndo }: PlanCom
 
 /**
  * A week's plan as page data: days as `YYYY-MM-DD`, a moment as epoch milliseconds. What is done,
- * and marking it done, only while completions' flag is on (CODE-20).
+ * and marking it done, only while completions' flag is on, and moving a task only while moves'
+ * flag is (CODE-20).
  */
-const weekData = (plan: WeekPlan | null, completions: boolean) => {
+const weekData = (
+  plan: WeekPlan | null,
+  { completions, moves }: { completions: boolean; moves: boolean },
+) => {
   if (!plan) return null;
   const item = (i: Omit<WeekPlan['unassigned'][number], 'cause'>) => ({
     id: i.id,
@@ -55,6 +66,8 @@ const weekData = (plan: WeekPlan | null, completions: boolean) => {
       : null,
     completable: completions && i.completable,
     completion: completions && i.completion ? completionData(i.completion) : null,
+    // What moving it sends, for a head who may (ADR-0006 §2–§3, ADR-0019 §5).
+    move: moves && i.movable ? { version: i.version } : null,
   });
   return {
     start: plan.start.toString(),
@@ -77,12 +90,12 @@ export const load = (async ({ locals }) => {
   const context = await householdContext(locals);
   const result = await viewPlan(context);
   if (!result.ok) error(403);
-  const completions = locals.flags.completions;
+  const shown = { completions: locals.flags.completions, moves: locals.flags['plan-moves'] };
   return {
     household: result.household,
     timeZone: result.timeZone,
-    thisWeek: weekData(result.thisWeek, completions),
-    nextWeek: weekData(result.nextWeek, completions),
+    thisWeek: weekData(result.thisWeek, shown),
+    nextWeek: weekData(result.nextWeek, shown),
     mayPublish: result.mayPublish,
     // From the plan, as from the tasks page, while the tasks' flag is on (CODE-20).
     mayAddOneOffs: locals.flags.tasks && result.mayAddOneOffs,
@@ -136,6 +149,26 @@ export const actions = {
     if (result.error === 'invalid') error(400);
     // Published or no longer drafted in the meantime: the page then shows what there is.
     return fail(409, { week, problem: 'redraft-gone' as const });
+  },
+
+  // A head gives a task to someone else: in a draft, or after publishing (ADR-0006 §2–§3).
+  move: async ({ locals, request }) => {
+    const context = await moveContext(locals);
+    const form = await request.formData();
+    const occurrence = field(form, 'occurrence');
+    const result = await moveAssignment(context, {
+      assignment: field(form, 'assignment'),
+      version: Number(form.get('version')),
+      member: field(form, 'member'),
+    });
+    if (result.ok) return { occurrence, moved: true };
+    if (result.error === 'not-allowed') error(403);
+    if (result.error === 'invalid') error(400);
+    // Changed or gone in the meantime: the page then shows what there is.
+    return fail(409, {
+      occurrence,
+      problem: result.error === 'conflict' ? ('move-conflict' as const) : ('not-movable' as const),
+    });
   },
 
   // One tap: the member marks a task done that they did themselves (ADR-0006 §4).
