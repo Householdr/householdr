@@ -10,6 +10,7 @@ import {
 import {
   can,
   householdDate,
+  planWeek,
   plannableDays,
   unplannableEnds,
   type Absence,
@@ -21,6 +22,8 @@ import { and, asc, eq, gte } from 'drizzle-orm';
 import * as v from 'valibot';
 import { changeLog } from '../households/change-log';
 import type { HouseholdContext } from '../households/membership';
+import { planningOf } from '../plans/planning';
+import { unavailableUntil } from './unavailable';
 
 /** A field of the form that adds an absence, as a refusal names it. */
 export type AbsenceField = 'firstDay' | 'lastDay';
@@ -202,6 +205,11 @@ export interface MemberAvailability {
   absences: AbsenceView[];
   /** Whether the member viewing may add and remove their absences (ADR-0005 §2, ADR-0018 §4). */
   mayManage: boolean;
+  /**
+   * The last day of their "I can't" while it lasts, all that others see of it (ADR-0005 §3,
+   * ADR-0018 §3); none otherwise.
+   */
+  unavailableUntil: Temporal.PlainDate | null;
 }
 
 /** When the whole household is away together, which every member sees (ADR-0005 §5). */
@@ -219,6 +227,8 @@ type ViewAvailabilityResult =
       members: MemberAvailability[];
       /** The days a new absence can fall on, for the form's hints (CODE-12). */
       plannable: Absence;
+      /** The days "I can't" can last until: today, and the rest of the current plan week. */
+      cantUntil: Temporal.PlainDate[];
     }
   | { ok: false; error: 'not-allowed' };
 
@@ -236,6 +246,13 @@ export async function viewAvailability(context: HouseholdContext): Promise<ViewA
   }
   return inHousehold(context.db, context.householdId, async (tx) => {
     const date = await today(tx, context);
+    const { calendar } = await planningOf(tx);
+    const cannot = await unavailableUntil(tx, context.clock.now(), calendar.timeZone);
+    const { end } = planWeek(date, calendar);
+    const cantUntil: Temporal.PlainDate[] = [];
+    for (let day = date; Temporal.PlainDate.compare(day, end) < 0; day = day.add({ days: 1 })) {
+      cantUntil.push(day);
+    }
     const list = await tx.select({ ...profile, name: members.name }).from(members);
     list.sort((a, b) => roleOrder[a.role] - roleOrder[b.role] || a.name.localeCompare(b.name));
     const away = await tx
@@ -264,6 +281,7 @@ export async function viewAvailability(context: HouseholdContext): Promise<ViewA
         mayManage: can(context.member, { action: 'household.away' }),
       },
       plannable: plannableDays(date),
+      cantUntil,
       members: list.map((row) => ({
         id: row.id,
         name: row.name,
@@ -276,6 +294,7 @@ export async function viewAvailability(context: HouseholdContext): Promise<ViewA
             to: Temporal.PlainDate.from(absence.lastDay),
           })),
         mayManage: can(context.member, { action: 'availability.manage', member: asMember(row) }),
+        unavailableUntil: cannot.get(row.id) ?? null,
       })),
     };
   });

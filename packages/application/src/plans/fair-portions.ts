@@ -1,4 +1,10 @@
-import { absences, members, temporaryShares, type Transaction } from '@householdr/db';
+import {
+  absences,
+  members,
+  temporaryShares,
+  unavailablePeriods,
+  type Transaction,
+} from '@householdr/db';
 import {
   availabilityInWeek,
   fairFractions,
@@ -8,7 +14,7 @@ import {
   type HouseholdCalendar,
   type PlanWeek,
 } from '@householdr/domain';
-import { and, gte, lt } from 'drizzle-orm';
+import { and, gt, gte, lt } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { basisOf } from '../shares/member-share';
 import { sharesInWeek } from '../shares/share-changes';
@@ -20,7 +26,10 @@ export interface FairPortion {
   id: string;
   /** A child's; none for an adult (ADR-0012 §2). */
   birthDate: Temporal.PlainDate | undefined;
-  /** Their absences in the week, and the days the household is away, which are nobody's. */
+  /**
+   * Their absences in the week, the days the household is away, which are nobody's, and the times
+   * they reported they can't (ADR-0005 §3).
+   */
   availability: Availability;
   /** Their fraction of the week's work: all members' add up to 1, or are all 0. */
   fairFraction: number;
@@ -59,6 +68,24 @@ export async function fairPortions(
     .select({ memberId: absences.memberId, from: absences.firstDay, to: absences.lastDay })
     .from(absences)
     .where(inWeek(absences.firstDay, absences.lastDay));
+  // "I can't today": what the week holds of it, which shrinks the fair portion (ADR-0005 §3).
+  const weekStart = week.start.toZonedDateTime({ timeZone: calendar.timeZone });
+  const weekEnd = week.end.toZonedDateTime({ timeZone: calendar.timeZone });
+  const cannot = await tx
+    .select({
+      memberId: unavailablePeriods.memberId,
+      start: unavailablePeriods.start,
+      end: unavailablePeriods.end,
+    })
+    .from(unavailablePeriods)
+    .where(
+      and(
+        gt(unavailablePeriods.end, new Date(weekStart.epochMilliseconds)),
+        lt(unavailablePeriods.start, new Date(weekEnd.epochMilliseconds)),
+      ),
+    );
+  const zoned = (at: Date) =>
+    Temporal.Instant.fromEpochMilliseconds(at.getTime()).toZonedDateTimeISO(calendar.timeZone);
   const temporary = await tx
     .select({
       memberId: temporaryShares.memberId,
@@ -95,7 +122,9 @@ export async function fairPortions(
         // home, with fair portions over those days (ADR-0005 §5).
         ...away,
       ],
-      unavailable: [],
+      unavailable: cannot
+        .filter((c) => c.memberId === row.id)
+        .map((c) => ({ start: zoned(c.start), end: zoned(c.end) })),
     };
     return { row, share, availability };
   });

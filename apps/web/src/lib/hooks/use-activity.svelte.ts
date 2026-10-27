@@ -86,6 +86,11 @@ export function useActivity(data: () => { locale: string; entries: ActivityEntry
         return m['activity.one-off-added']({ who, actor, task: entry.task ?? '' });
       case 'one-off.removed':
         return m['activity.one-off-removed']({ who, actor, task: entry.task ?? '' });
+      // Whose, never the days (ADR-0018 §5).
+      case 'unavailable.reported':
+        return m['activity.unavailable-reported'](toWhom);
+      case 'unavailable.ended':
+        return m['activity.unavailable-ended'](toWhom);
       // Whose task, and which, never its points (ADR-0018 §5).
       case 'assignment.given':
         return m['activity.assignment-given']({ ...toWhom, task: entry.task ?? '' });

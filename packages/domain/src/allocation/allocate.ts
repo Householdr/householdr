@@ -45,7 +45,9 @@ export type Reason =
   | 'linked'
   | 'only eligible member'
   | 'lowest relative load'
-  | 'catching up';
+  | 'catching up'
+  /** Moved off a member who reported they can't after publishing (ADR-0005 §3). */
+  | 're-allocated: member unavailable';
 
 export interface Assignment {
   occurrence: string;

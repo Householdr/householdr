@@ -2661,5 +2661,57 @@
   "activity.assignment-taken": {
     "note": "Activity log entry: a head took a task of the published plan off a member, to give it to someone else (ADR-0006 §3, ADR-0018 §5). {actor} and {subject} are names, or “A former member”; {task} is the task's name as typed. {who} picks the wording as for activity.assignment-given.",
     "needsReview": ["nl"]
+  },
+  "availability.cant": {
+    "note": "Button: “I can't today”, reporting that a member can't do tasks from now until the end of the day chosen (ADR-0005 §3). No reason is asked.",
+    "needsReview": ["nl"]
+  },
+  "availability.cant-move": {
+    "note": "Button that moves the end of a member's “I can't” while it lasts.",
+    "needsReview": ["nl"]
+  },
+  "availability.cant-until-label": {
+    "note": "Label of the choice of the last day a member can't on: today or a later day of this plan week.",
+    "needsReview": ["nl"]
+  },
+  "availability.today": {
+    "note": "The first choice of that day: today.",
+    "needsReview": ["nl"]
+  },
+  "availability.cant-until": {
+    "note": "Under a member's name while their “I can't” lasts: {day} is its last day, such as 'Wednesday 14 October'. Only the day, never when it was reported (ADR-0018 §3).",
+    "needsReview": ["nl"]
+  },
+  "availability.you-cant-until": {
+    "note": "The same, for the reader's own.",
+    "needsReview": ["nl"]
+  },
+  "availability.can-after-all": {
+    "note": "Button that ends a member's “I can't” at once (ADR-0005 §3, clarification).",
+    "needsReview": ["nl"]
+  },
+  "availability.cant-reported": {
+    "note": "Status once “I can't” is saved: what can't be done any more this week went to others.",
+    "needsReview": ["nl"]
+  },
+  "availability.can-again": {
+    "note": "Status once “I can after all” is saved.",
+    "needsReview": ["nl"]
+  },
+  "plan.reason.reallocated": {
+    "note": "Why a task of the plan went to {name}: re-allocated after someone reported they can't (ADR-0005 §3; reason 're-allocated: member unavailable'). Never says who couldn't.",
+    "needsReview": ["nl"]
+  },
+  "plan.reason.reallocated-you": {
+    "note": "The same, for the reader's own task.",
+    "needsReview": ["nl"]
+  },
+  "activity.unavailable-reported": {
+    "note": "Activity log entry: a head reported a profile without an account can't for a while, acting for them (ADR-0005 §3, ADR-0018 §5). Never the days. {actor} and {subject} are names, or “A former member”. {who}: 'you' when the reader did it, '*' otherwise.",
+    "needsReview": ["nl"]
+  },
+  "activity.unavailable-ended": {
+    "note": "Activity log entry: a head said a profile without an account can after all. Never the days.",
+    "needsReview": ["nl"]
   }
 }

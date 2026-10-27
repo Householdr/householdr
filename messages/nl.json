@@ -1012,5 +1012,36 @@
         "who=*": "{actor} nam een taak af van {subject}: {task}"
       }
     }
+  ],
+  "availability.cant": "Ik kan niet",
+  "availability.cant-move": "Wijzigen tot wanneer",
+  "availability.cant-until-label": "Kan niet tot het einde van",
+  "availability.today": "Vandaag",
+  "availability.cant-until": "Kan niet tot het einde van {day}.",
+  "availability.you-cant-until": "Je kunt niet tot het einde van {day}.",
+  "availability.can-after-all": "Ik kan toch",
+  "availability.cant-reported": "Opgeslagen. Taken van deze week die niet meer kunnen, gingen naar de anderen.",
+  "availability.can-again": "Opgeslagen: weer beschikbaar.",
+  "plan.reason.reallocated": "Iemand kon toch niet, dus ging het naar {name}.",
+  "plan.reason.reallocated-you": "Iemand kon toch niet, dus ging het naar jou.",
+  "activity.unavailable-reported": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je gaf aan dat {subject} even niet kan.",
+        "who=*": "{actor} gaf aan dat {subject} even niet kan."
+      }
+    }
+  ],
+  "activity.unavailable-ended": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je gaf aan dat {subject} toch kan.",
+        "who=*": "{actor} gaf aan dat {subject} toch kan."
+      }
+    }
   ]
 }

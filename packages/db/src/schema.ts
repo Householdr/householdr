@@ -372,7 +372,14 @@ export type ActivityAction =
    */
   | 'assignment.given'
   /** A head moved an occurrence of a published plan off its subject, naming its task. */
-  | 'assignment.taken';
+  | 'assignment.taken'
+  /**
+   * A head reported its subject, a profile without an account, unavailable, or moved its end,
+   * acting for them, never which days (ADR-0005 §3, clarification).
+   */
+  | 'unavailable.reported'
+  /** A head said its subject, a profile without an account, can after all. */
+  | 'unavailable.ended';
 
 /** The actions whose entries name the task they were about, by its name (ADR-0018 §5). */
 const aboutTask = sql.raw(`'one-off.added', 'one-off.removed', 'assignment.given',
@@ -381,7 +388,8 @@ const aboutTask = sql.raw(`'one-off.added', 'one-off.removed', 'assignment.given
 /** The actions whose entries name whom they were done to (ADR-0018 §5). */
 const toWhom = sql.raw(`'completion.logged', 'completion.undone', 'completion.picked-up',
   'share.changed', 'temporary-share.added', 'temporary-share.removed', 'absence.added',
-  'absence.removed', 'assignment.given', 'assignment.taken'`);
+  'absence.removed', 'assignment.given', 'assignment.taken', 'unavailable.reported',
+  'unavailable.ended'`);
 
 /**
  * What was set before the household started, which its start entry lists
@@ -444,7 +452,7 @@ export const activityLog = pgTable(
         'completion.picked-up', 'share.changed', 'temporary-share.added',
         'temporary-share.removed', 'absence.added', 'absence.removed', 'away.added',
         'away.removed', 'one-off.added', 'one-off.removed', 'assignment.given',
-        'assignment.taken')`,
+        'assignment.taken', 'unavailable.reported', 'unavailable.ended')`,
     ),
     // The actions about a task name it, and only they.
     check(
@@ -759,6 +767,39 @@ export const absences = pgTable(
 );
 
 /**
+ * A member's sudden unavailability, "I can't today" (ADR-0005 §3, clarification): from the moment
+ * it was reported to the end of a day of the current plan week the member picked, the domain's
+ * unavailable window. Reporting it again while it lasts moves its end; "I can after all" ends it
+ * at once. No reason is asked or stored (ADR-0012 §2), and others see only its days (ADR-0018 §3).
+ * It goes with the member's profile.
+ */
+export const unavailablePeriods = pgTable(
+  'unavailable_periods',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    memberId: uuid().notNull(),
+    start: timestamp({ withTimezone: true }).notNull(),
+    end: timestamp({ withTimezone: true }).notNull(),
+  },
+  (t) => [
+    householdOnly(t.householdId),
+    // A member of its own household: foreign keys are checked past row-level security (CODE-17).
+    foreignKey({
+      name: 'unavailable_periods_member_household',
+      columns: [t.householdId, t.memberId],
+      foreignColumns: [members.householdId, members.id],
+    }).onDelete('cascade'),
+    // Who can't when in a week: those whose period ends in or after it.
+    index('unavailable_periods_household_end').on(t.householdId, t.end),
+    index('unavailable_periods_member').on(t.memberId),
+    check('unavailable_periods_window', sql`${t.start} < ${t.end}`),
+  ],
+);
+
+/**
  * A head's setting for one task and one member (ADR-0001 §1, §3 with its clarification): always
  * theirs, never theirs, or allowed below the task's minimum age, the domain's `Constraint`. A member
  * without one takes the task if they fit. Only heads see them. It goes with the task or the member.
@@ -970,7 +1011,7 @@ export const assignments = pgTable(
     check(
       'assignments_reason',
       sql`${t.reason} in ('bound', 'assigned by head', 'linked', 'only eligible member',
-        'lowest relative load', 'catching up')`,
+        'lowest relative load', 'catching up', 're-allocated: member unavailable')`,
     ),
     check(
       'assignments_unassigned_cause',

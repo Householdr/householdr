@@ -105,6 +105,13 @@ export const flags = {
     owner: 'Jens',
     expires: '2027-03-31',
   },
+  'cant-today': {
+    kind: 'release',
+    description:
+      '“I can’t today” on the availability page: a member, or a head for a child or a profile without an account, says they can’t until the end of a day this plan week, which re-allocates what they can no longer do in this week’s published plan and shrinks their fair portion, and “I can after all” ends it (ADR-0005 §3).',
+    owner: 'Jens',
+    expires: '2027-03-31',
+  },
   'page-transitions': {
     kind: 'release',
     description:

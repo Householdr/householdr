@@ -19,6 +19,7 @@ export {
   type HouseholdAway,
   type MemberAvailability,
 } from './availability/absences';
+export { endUnavailable, reportUnavailable } from './availability/unavailable';
 export { addAdult } from './households/add-adult';
 export { addChild, type NewChildProblem } from './households/add-child';
 export { name as nameField } from './households/name';

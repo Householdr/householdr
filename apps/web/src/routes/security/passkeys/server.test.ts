@@ -50,6 +50,7 @@ const on = {
   balances: false,
   'page-transitions': false,
   'plan-moves': false,
+  'cant-today': false,
 };
 let next = 0;
 

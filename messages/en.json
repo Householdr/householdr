@@ -1012,5 +1012,36 @@
         "who=*": "{actor} took a task off {subject}: {task}"
       }
     }
+  ],
+  "availability.cant": "I can’t",
+  "availability.cant-move": "Change until when",
+  "availability.cant-until-label": "Can’t until the end of",
+  "availability.today": "Today",
+  "availability.cant-until": "Can’t until the end of {day}.",
+  "availability.you-cant-until": "You can’t until the end of {day}.",
+  "availability.can-after-all": "I can after all",
+  "availability.cant-reported": "Saved. Tasks this week that can’t be done any more went to the others.",
+  "availability.can-again": "Saved: available again.",
+  "plan.reason.reallocated": "Someone couldn’t after all, so it went to {name}.",
+  "plan.reason.reallocated-you": "Someone couldn’t after all, so it moved to you.",
+  "activity.unavailable-reported": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You said {subject} can’t for a while.",
+        "who=*": "{actor} said {subject} can’t for a while."
+      }
+    }
+  ],
+  "activity.unavailable-ended": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You said {subject} can after all.",
+        "who=*": "{actor} said {subject} can after all."
+      }
+    }
   ]
 }

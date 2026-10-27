@@ -90,16 +90,26 @@ describe('the page of who is away (ADR-0005 §2, ADR-0018 §3)', () => {
     expect(page).toEqual({
       household: { periods: [], mayManage: true },
       members: [
-        { id: head.member.id, name: 'Robin', role: 'head', absences: [], mayManage: true },
+        {
+          id: head.member.id,
+          name: 'Robin',
+          role: 'head',
+          absences: [],
+          mayManage: true,
+          unavailableUntil: null,
+        },
         {
           id: sam,
           name: 'Sam',
           role: 'adult',
           absences: [{ id: expect.any(String) as string, from: '2026-10-12', to: '2026-10-16' }],
           mayManage: true,
+          unavailableUntil: null,
         },
       ],
       plannable: { from: '2026-10-08', to: '2027-10-08' },
+      // Not until "I can't today"'s flag is on (CODE-20).
+      cantUntil: [],
       you: head.member.id,
     });
   });
@@ -118,6 +128,30 @@ describe('the page of who is away (ADR-0005 §2, ADR-0018 §3)', () => {
     const { head } = await founded();
     const profile = { ...head, member: { ...head.member, hasAccount: false } };
     expect(await opened({ flags: on, membership: profile })).toBe(403);
+  });
+});
+
+describe('"I can’t today" (ADR-0005 §3)', () => {
+  const cant = { flags: { ...on, 'cant-today': true } };
+
+  it('offers today to the end of the plan week, shows until when, and ends it', async () => {
+    const { head, sam } = await founded();
+    const locals = { ...cant, membership: head };
+    expect(await opened(locals)).toMatchObject({
+      // Thursday 8 October, to Sunday 11 October, the last day of the plan week.
+      cantUntil: ['2026-10-08', '2026-10-09', '2026-10-10', '2026-10-11'],
+    });
+    expect(await send('cant', locals, { member: sam, lastDay: '2026-10-09' })).toEqual({
+      done: 'cant',
+      member: sam,
+    });
+    expect(await opened(locals)).toMatchObject({
+      members: [{ unavailableUntil: null }, { id: sam, unavailableUntil: '2026-10-09' }],
+    });
+    expect(await send('can', locals, { member: sam })).toEqual({ done: 'can', member: sam });
+    expect(await opened(locals)).toMatchObject({ members: [{}, { unavailableUntil: null }] });
+    expect(await send('cant', locals, { member: sam, lastDay: '2026-10-12' })).toBe(400);
+    expect(await send('cant', { flags: on, membership: head }, { member: sam })).toBe(404);
   });
 });
 
