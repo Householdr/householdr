@@ -80,6 +80,7 @@ const on = {
   balances: false,
   'page-transitions': false,
   'plan-moves': false,
+  'security-txt': false,
 };
 type Locals = App.Locals;
 const loadFor = (locals: Partial<Locals>, address = 'https://householdr.example.org/security') =>

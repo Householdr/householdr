@@ -94,6 +94,8 @@ const open = new Set([
   '/invitation/passkey/options',
   '/invitation/passkey',
   '/health',
+  // How to report a vulnerability, for anyone (ADR-0017 §11).
+  '/.well-known/security.txt',
 ]);
 
 /**
