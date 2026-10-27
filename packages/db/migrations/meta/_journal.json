@@ -288,6 +288,13 @@
       "when": 1793124488993,
       "tag": "0040_plan-moves-log",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1793176611506,
+      "tag": "0041_swaps",
+      "breakpoints": true
     }
   ]
 }

@@ -808,6 +808,7 @@ describe('every household-owned table (CODE-17)', () => {
       'profile_guardians',
       'schedules',
       'share_changes',
+      'swaps',
       'task_constraints',
       'tasks',
       'temporary_shares',

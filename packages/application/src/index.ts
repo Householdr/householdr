@@ -65,6 +65,7 @@ export { queueDuePlanSteps, type ScheduleContext } from './plans/plan-schedule';
 export type { PlanContext } from './plans/planning';
 export { moveAssignment } from './plans/move-assignment';
 export { publishPlan } from './plans/publish-plan';
+export { answerSwap, proposeSwap, type PendingSwap } from './plans/swaps';
 export {
   viewPlan,
   type MemberPlan,

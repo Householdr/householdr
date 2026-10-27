@@ -10,6 +10,8 @@ type SetForMember = Extract<
   | 'temporary-share.removed'
   | 'absence.added'
   | 'absence.removed'
+  | 'swap.proposed'
+  | 'swap.answered'
 >;
 
 /**

@@ -1,7 +1,9 @@
 import {
+  answerSwap,
   completeOccurrence,
   draftPlan,
   moveAssignment,
+  proposeSwap,
   publishPlan,
   undoCompletion,
   viewPlan,
@@ -34,6 +36,12 @@ async function moveContext(locals: App.Locals) {
   return householdContext(locals);
 }
 
+/** The same, for swaps, while their release flag is on too. */
+async function swapContext(locals: App.Locals) {
+  if (!locals.flags.swaps) error(404);
+  return householdContext(locals);
+}
+
 /** A completion as page data: its day as `YYYY-MM-DD`, its moment as epoch milliseconds. */
 const completionData = ({ id, day, when, at, doers, loggedBy, mayUndo }: PlanCompletion) => ({
   id,
@@ -52,7 +60,7 @@ const completionData = ({ id, day, when, at, doers, loggedBy, mayUndo }: PlanCom
  */
 const weekData = (
   plan: WeekPlan | null,
-  { completions, moves }: { completions: boolean; moves: boolean },
+  { completions, moves, swaps }: { completions: boolean; moves: boolean; swaps: boolean },
 ) => {
   if (!plan) return null;
   const item = (i: Omit<WeekPlan['unassigned'][number], 'cause'>) => ({
@@ -68,6 +76,8 @@ const weekData = (
     completion: completions && i.completion ? completionData(i.completion) : null,
     // What moving it sends, for a head who may (ADR-0006 §2–§3, ADR-0019 §5).
     move: moves && i.movable ? { version: i.version } : null,
+    // Whether the reader may offer it in a swap (ADR-0002 §5).
+    swappable: i.swappable && swaps,
   });
   return {
     start: plan.start.toString(),
@@ -90,13 +100,18 @@ export const load = (async ({ locals }) => {
   const context = await householdContext(locals);
   const result = await viewPlan(context);
   if (!result.ok) error(403);
-  const shown = { completions: locals.flags.completions, moves: locals.flags['plan-moves'] };
+  const shown = {
+    completions: locals.flags.completions,
+    moves: locals.flags['plan-moves'],
+    swaps: locals.flags.swaps,
+  };
   return {
     household: result.household,
     timeZone: result.timeZone,
     thisWeek: weekData(result.thisWeek, shown),
     nextWeek: weekData(result.nextWeek, shown),
     mayPublish: result.mayPublish,
+    swaps: shown.swaps ? result.swaps : [],
     // From the plan, as from the tasks page, while the tasks' flag is on (CODE-20).
     mayAddOneOffs: locals.flags.tasks && result.mayAddOneOffs,
     you: context.member.id,
@@ -169,6 +184,45 @@ export const actions = {
       occurrence,
       problem: result.error === 'conflict' ? ('move-conflict' as const) : ('not-movable' as const),
     });
+  },
+
+  // Offers a task to another member, for one of theirs or nothing (ADR-0002 §5). The choice is
+  // `member:assignment`, the assignment empty for a hand-off.
+  propose: async ({ locals, request }) => {
+    const context = await swapContext(locals);
+    const form = await request.formData();
+    const occurrence = field(form, 'occurrence');
+    const [to = '', take = ''] = field(form, 'choice').split(':');
+    const result = await proposeSwap(context, {
+      from: field(form, 'from'),
+      give: field(form, 'give'),
+      to,
+      ...(take ? { take } : {}),
+    });
+    if (result.ok) return { occurrence, proposed: true };
+    if (result.error === 'not-allowed') error(403);
+    if (result.error === 'invalid') error(400);
+    // Done, moved or offered already in the meantime: the page then shows what there is.
+    return fail(409, {
+      occurrence,
+      problem:
+        result.error === 'already-proposed'
+          ? ('swap-already' as const)
+          : ('swap-not-swappable' as const),
+    });
+  },
+
+  // Accepts or declines a swap proposed to the member, or to a profile a head acts for.
+  answer: async ({ locals, request }) => {
+    const context = await swapContext(locals);
+    const form = await request.formData();
+    const accept = field(form, 'answer') === 'accept';
+    const result = await answerSwap(context, { swap: field(form, 'swap'), accept });
+    if (result.ok) return { answered: accept ? ('accepted' as const) : ('declined' as const) };
+    if (result.error === 'not-allowed') error(403);
+    if (result.error === 'invalid') error(400);
+    // Answered already, or something in it was done or moved since.
+    return fail(409, { swapProblem: result.error });
   },
 
   // One tap: the member marks a task done that they did themselves (ADR-0006 §4).

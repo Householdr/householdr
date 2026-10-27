@@ -86,7 +86,11 @@ export function useActivity(data: () => { locale: string; entries: ActivityEntry
         return m['activity.one-off-added']({ who, actor, task: entry.task ?? '' });
       case 'one-off.removed':
         return m['activity.one-off-removed']({ who, actor, task: entry.task ?? '' });
-      // Whose task, and which, never its points (ADR-0018 §5).
+      // For whom, never what it moved (ADR-0018 §5).
+      case 'swap.proposed':
+        return m['activity.swap-proposed'](toWhom);
+      case 'swap.answered':
+        return m['activity.swap-answered'](toWhom);
       case 'assignment.given':
         return m['activity.assignment-given']({ ...toWhom, task: entry.task ?? '' });
       case 'assignment.taken':

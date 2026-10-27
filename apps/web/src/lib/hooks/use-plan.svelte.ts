@@ -45,6 +45,30 @@ interface ItemData {
   } | null;
   /** What moving it sends, for a head who may (ADR-0006 §2–§3). */
   move: { version: number } | null;
+  /** Whether the reader may offer it in a swap (ADR-0002 §5). */
+  swappable: boolean;
+}
+
+/** A swap waiting for an answer, as page data (ADR-0002 §5). */
+export interface SwapData {
+  id: string;
+  from: Named;
+  to: Named;
+  /** The assignments it moves, by id. */
+  give: string;
+  take: string | null;
+  balances: { from: { now: number; after: number }; to: { now: number; after: number } };
+  mayAnswer: boolean;
+}
+
+/** A swap as the page shows it: what is offered, what it does to both balances, and answering it. */
+export interface ShownSwap {
+  id: string;
+  said: string;
+  balances: string[];
+  /** Whether the reader may accept or decline it; else it waits for the other. */
+  mayAnswer: boolean;
+  waiting: string | null;
 }
 
 /** A week's plan, as page data. */
@@ -125,6 +149,11 @@ export interface ShownItem {
    * whoever has it, and the version it is moved from (ADR-0006 §2–§3, ADR-0019 §5).
    */
   move: { label: string; version: number; choices: Choice[] } | null;
+  /**
+   * While the reader may offer it in a swap: whose it is, and the choice of to whom and for what,
+   * one of their open tasks in the same plan or nothing (ADR-0002 §5).
+   */
+  swap: { from: string; label: string; choices: { value: string; label: string }[] } | null;
 }
 
 /** A week's plan as the page shows it, all in words. */
@@ -153,6 +182,9 @@ export interface ItemOutcome {
   completed?: boolean;
   undone?: boolean;
   moved?: boolean;
+  proposed?: boolean;
+  answered?: 'accepted' | 'declined';
+  swapProblem?: string;
   problem?: string;
   doers?: Named[];
 }
@@ -174,6 +206,10 @@ const reasons: Record<Reason, { other: (name: string) => string; you: () => stri
     you: m['plan.reason.assigned-by-head-you'],
   },
   linked: { other: (name) => m['plan.reason.linked']({ name }), you: m['plan.reason.linked-you'] },
+  swapped: {
+    other: (name) => m['plan.reason.swapped']({ name }),
+    you: m['plan.reason.swapped-you'],
+  },
 };
 
 /** Stands for the day in a sentence, to split it there: a character no message has. */
@@ -200,6 +236,7 @@ export function usePlan(
     mayPublish: boolean;
     thisWeek: WeekData | null;
     nextWeek: WeekData | null;
+    swaps: SwapData[];
   },
   outcome: () => ItemOutcome | null | undefined,
 ) {
@@ -316,6 +353,31 @@ export function usePlan(
           version: row.move.version,
           choices: people.map((person) => ({ ...person, checked: person.id === assignee })),
         },
+        swap:
+          row.swappable && assignee !== null
+            ? {
+                from: assignee,
+                label: m['plan.swap-label']({ task: row.task, day }),
+                choices: week.members
+                  .filter((member) => member.id !== assignee)
+                  .flatMap((member) => {
+                    const name = people.find((person) => person.id === member.id)?.name ?? '';
+                    return [
+                      { value: `${member.id}:`, label: m['plan.swap-hand-off']({ name }) },
+                      ...member.assignments
+                        .filter((a) => a.completion === null)
+                        .map((a) => ({
+                          value: `${member.id}:${a.id}`,
+                          label: m['plan.swap-trade']({
+                            name,
+                            task: a.task,
+                            day: a.date < week.start ? anyDay() : weekDay(a.date, locale),
+                          }),
+                        })),
+                    ];
+                  }),
+              }
+            : null,
       };
     };
     return {
@@ -383,6 +445,51 @@ export function usePlan(
     ].filter((week) => week !== null);
   });
 
+  /** Each swap waiting for an answer, in words, with the reader as "you" (UI-21). */
+  const swaps = $derived.by((): ShownSwap[] => {
+    const { you } = data();
+    const items = weeks.flatMap((week) => [
+      ...week.members.flatMap((member) => member.items),
+      ...week.unassigned,
+    ]);
+    const what = (assignment: string) => {
+      const item = items.find((i) => i.id === assignment);
+      return item ? m['plan.swap-task']({ task: item.task, day: item.day }) : '';
+    };
+    const named = ({ id, name }: Named) => (id === you ? m['household.you']({ name }) : name);
+    const points = (count: number) => m['plan.points']({ count: Math.round(count) });
+    return data().swaps.map((swap) => ({
+      id: swap.id,
+      said:
+        swap.take === null
+          ? m['plan.swap-offer-hand-off']({
+              from: named(swap.from),
+              to: named(swap.to),
+              give: what(swap.give),
+            })
+          : m['plan.swap-offer-trade']({
+              from: named(swap.from),
+              to: named(swap.to),
+              give: what(swap.give),
+              take: what(swap.take),
+            }),
+      balances: [
+        m['plan.swap-balance']({
+          name: named(swap.from),
+          now: points(swap.balances.from.now),
+          after: points(swap.balances.from.after),
+        }),
+        m['plan.swap-balance']({
+          name: named(swap.to),
+          now: points(swap.balances.to.now),
+          after: points(swap.balances.to.after),
+        }),
+      ],
+      mayAnswer: swap.mayAnswer,
+      waiting: swap.mayAnswer ? null : m['plan.swap-waiting']({ name: swap.to.name }),
+    }));
+  });
+
   /** The task the last form sent was about, with the week it is in. */
   const lastItem = $derived.by(() => {
     const occurrence = outcome()?.occurrence;
@@ -398,6 +505,22 @@ export function usePlan(
     get weeks() {
       return weeks;
     },
+    get swaps() {
+      return swaps;
+    },
+    /** What the last answer to a swap did, or why it didn't go through, in words (UI-12). */
+    swapStatus: () => {
+      const last = outcome();
+      if (last?.answered === 'accepted') return m['plan.swap-accepted']();
+      if (last?.answered === 'declined') return m['plan.swap-declined']();
+      return '';
+    },
+    swapProblem: () => {
+      const problem = outcome()?.swapProblem;
+      if (problem === 'gone') return m['plan.swap-gone']();
+      if (problem === 'not-found') return m['plan.swap-answered-already']();
+      return '';
+    },
     /** What marking a task of `week` done, or undoing it, did, in words (UI-12). */
     statusOf: (week: string) => {
       const last = outcome();
@@ -406,6 +529,7 @@ export function usePlan(
       if (last.completed) return m['plan.completed']({ task });
       if (last.undone) return m['plan.reopened']({ task });
       if (last.moved) return m['plan.moved']({ task });
+      if (last.proposed) return m['plan.swap-proposed']({ task });
       return '';
     },
     /** Why marking a task of `week` done, or undoing it, didn't go through, in words. */
@@ -442,6 +566,18 @@ export function usePlan(
           return {
             heading: m['plan.move-failed'](),
             message: m['plan.move-changed']({ task }),
+            fields: [],
+          };
+        case 'swap-already':
+          return {
+            heading: m['plan.swap-failed'](),
+            message: m['plan.swap-already']({ task }),
+            fields: [],
+          };
+        case 'swap-not-swappable':
+          return {
+            heading: m['plan.swap-failed'](),
+            message: m['plan.swap-not-swappable']({ task }),
             fields: [],
           };
         case 'not-movable':
