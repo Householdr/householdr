@@ -77,6 +77,13 @@ interface PlanItem {
   completable: boolean;
   /** Its completion, once it is done. */
   completion: PlanCompletion | null;
+  /**
+   * Whether the member viewing may move it to someone: a head, while it is open, in a draft or a
+   * published plan whose week isn't over (ADR-0006 §2–§3).
+   */
+  movable: boolean;
+  /** Its assignment's version, which moving it is done from (ADR-0019 §5). */
+  version: number;
 }
 
 /** An occurrence given to a member, and why (ADR-0001 §7). */
@@ -202,6 +209,7 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
               cost: assignments.cost,
               reason: assignments.reason,
               cause: assignments.unassignedCause,
+              version: assignments.version,
               windowStart: assignments.windowStart,
               windowEnd: assignments.windowEnd,
               occurrence: occurrences.id,
@@ -266,6 +274,7 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
     };
     // Only this plan week's published plan is done from (ADR-0006 §4).
     const mayLog = can(context.member, { action: 'completion.log', member: context.member });
+    const mayReassign = can(context.member, { action: 'plan.reassign' });
     const item = (row: (typeof items)[number], plan: (typeof visible)[number]): PlanItem => ({
       id: row.id,
       occurrence: row.occurrence,
@@ -280,6 +289,13 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
         plan.weekStart === current.start.toString(),
       completion:
         row.status === 'done' ? completionOf(row.occurrence, row.timing === 'fixed') : null,
+      movable:
+        row.status === 'open' &&
+        (plan.status === 'draft'
+          ? mayPublish
+          : mayReassign &&
+            Temporal.PlainDate.compare(today, Temporal.PlainDate.from(plan.weekEnd)) < 0),
+      version: row.version,
     });
     const inOrder = (a: PlanItem, b: PlanItem) =>
       Temporal.ZonedDateTime.compare(a.window.start, b.window.start) ||

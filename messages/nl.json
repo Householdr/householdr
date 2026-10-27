@@ -982,5 +982,35 @@
         "who=*": "{actor} heeft een eenmalige taak verwijderd: {task}"
       }
     }
+  ],
+  "plan.move": "Aan iemand anders geven",
+  "plan.move-to": "Wie doet het?",
+  "plan.move-button": "Verplaatsen",
+  "plan.move-label": "Verplaatsen: {task}, {day}",
+  "plan.moved": "{task} is verplaatst.",
+  "plan.move-failed": "Verplaatsen is niet gelukt",
+  "plan.move-changed": "{task} is veranderd sinds je het plan opende. Het plan toont het zoals het nu is.",
+  "plan.not-movable": "{task} kan niet meer verplaatst worden: het is gedaan, of de week is voorbij.",
+  "activity.assignment-given": [
+    {
+      "declarations": ["input who", "input actor", "input subject", "input task"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je gaf {subject} een taak: {task}",
+        "who=to-you": "{actor} gaf je een taak: {task}",
+        "who=*": "{actor} gaf {subject} een taak: {task}"
+      }
+    }
+  ],
+  "activity.assignment-taken": [
+    {
+      "declarations": ["input who", "input actor", "input subject", "input task"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je nam een taak af van {subject}: {task}",
+        "who=to-you": "{actor} nam een taak van je af: {task}",
+        "who=*": "{actor} nam een taak af van {subject}: {task}"
+      }
+    }
   ]
 }

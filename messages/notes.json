@@ -2621,5 +2621,45 @@
   "activity.one-off-removed": {
     "note": "Activity log entry: a member removed a one-off task. {actor} is a name, or “A former member”. {task} is the task's name as it was, never translated. {who} picks the wording: 'you' when the reader did it, '*' otherwise (ADR-0018 §5, clarification).",
     "needsReview": ["nl"]
+  },
+  "plan.move": {
+    "note": "Opens the choice of whom a head gives a task of the plan to instead (ADR-0006 §2–§3). Heads only.",
+    "needsReview": ["nl"]
+  },
+  "plan.move-to": {
+    "note": "Heading of the list of members a head can give a task to.",
+    "needsReview": ["nl"]
+  },
+  "plan.move-button": {
+    "note": "Button that gives the task to the member chosen.",
+    "needsReview": ["nl"]
+  },
+  "plan.move-label": {
+    "note": "Accessible name of the Move button: {task} is the task's name, {day} its day, such as 'Wednesday' or 'any day this week'.",
+    "needsReview": ["nl"]
+  },
+  "plan.moved": {
+    "note": "Status once a head moved a task to someone else. {task} is the task's name.",
+    "needsReview": ["nl"]
+  },
+  "plan.move-failed": {
+    "note": "Heading of the error summary when moving a task didn't work.",
+    "needsReview": ["nl"]
+  },
+  "plan.move-changed": {
+    "note": "When someone else moved or changed the task since the head opened the plan (ADR-0019 §5). The page shows the plan as it is now.",
+    "needsReview": ["nl"]
+  },
+  "plan.not-movable": {
+    "note": "When a task can no longer be moved: it is done, or its plan week is over.",
+    "needsReview": ["nl"]
+  },
+  "activity.assignment-given": {
+    "note": "Activity log entry: a head gave a member a task of the published plan (ADR-0006 §3, ADR-0018 §5). {actor} and {subject} are names, or “A former member”; {task} is the task's name as typed. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was given to the reader, '*' otherwise.",
+    "needsReview": ["nl"]
+  },
+  "activity.assignment-taken": {
+    "note": "Activity log entry: a head took a task of the published plan off a member, to give it to someone else (ADR-0006 §3, ADR-0018 §5). {actor} and {subject} are names, or “A former member”; {task} is the task's name as typed. {who} picks the wording as for activity.assignment-given.",
+    "needsReview": ["nl"]
   }
 }

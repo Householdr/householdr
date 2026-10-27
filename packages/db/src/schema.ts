@@ -365,15 +365,23 @@ export type ActivityAction =
    */
   | 'one-off.added'
   /** A member removed a one-off task, named by its name. */
-  | 'one-off.removed';
+  | 'one-off.removed'
+  /**
+   * A head moved an occurrence of a published plan to its subject, naming its task, which every
+   * member sees in the plan anyway (ADR-0006 §3, ADR-0018 §5).
+   */
+  | 'assignment.given'
+  /** A head moved an occurrence of a published plan off its subject, naming its task. */
+  | 'assignment.taken';
 
 /** The actions whose entries name the task they were about, by its name (ADR-0018 §5). */
-const aboutTask = sql.raw(`'one-off.added', 'one-off.removed'`);
+const aboutTask = sql.raw(`'one-off.added', 'one-off.removed', 'assignment.given',
+  'assignment.taken'`);
 
 /** The actions whose entries name whom they were done to (ADR-0018 §5). */
 const toWhom = sql.raw(`'completion.logged', 'completion.undone', 'completion.picked-up',
   'share.changed', 'temporary-share.added', 'temporary-share.removed', 'absence.added',
-  'absence.removed'`);
+  'absence.removed', 'assignment.given', 'assignment.taken'`);
 
 /**
  * What was set before the household started, which its start entry lists
@@ -435,7 +443,8 @@ export const activityLog = pgTable(
         'household.country', 'household.started', 'completion.logged', 'completion.undone',
         'completion.picked-up', 'share.changed', 'temporary-share.added',
         'temporary-share.removed', 'absence.added', 'absence.removed', 'away.added',
-        'away.removed', 'one-off.added', 'one-off.removed')`,
+        'away.removed', 'one-off.added', 'one-off.removed', 'assignment.given',
+        'assignment.taken')`,
     ),
     // The actions about a task name it, and only they.
     check(
