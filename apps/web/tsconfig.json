@@ -2,6 +2,7 @@
   "extends": ["../../tsconfig.base.json", "$app/tsconfig"],
   "include": [
     "src",
+    "src/routes/.well-known/**/*.ts",
     "e2e",
     "vite.config.ts",
     "playwright.config.ts",

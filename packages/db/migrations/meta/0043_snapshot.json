@@ -1,6 +1,6 @@
 {
-  "id": "2f1c75d5-4928-4c0a-8caf-4ae5bcd317a9",
-  "prevId": "3bebbf37-e3b4-4188-ad7f-852a40c66102",
+  "id": "5e38bd1f-dc61-4f5d-85df-2b2dd95f6838",
+  "prevId": "10c40611-a405-4996-a03b-e974ab575eb1",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1630,12 +1630,6 @@
           "type": "date",
           "primaryKey": false,
           "notNull": false
-        },
-        "push_after": {
-          "name": "push_after",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {
@@ -1662,28 +1656,6 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "notifications_push_after": {
-          "name": "notifications_push_after",
-          "columns": [
-            {
-              "expression": "household_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "push_after",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "\"notifications\".\"push_after\" is not null",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -3286,136 +3258,6 @@
       },
       "isRLSEnabled": false
     },
-    "auth.push_subscriptions": {
-      "name": "push_subscriptions",
-      "schema": "auth",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "account_id": {
-          "name": "account_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "session_id": {
-          "name": "session_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "endpoint": {
-          "name": "endpoint",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "p256dh": {
-          "name": "p256dh",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "auth": {
-          "name": "auth",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "push_subscriptions_account": {
-          "name": "push_subscriptions_account",
-          "columns": [
-            {
-              "expression": "account_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "push_subscriptions_session": {
-          "name": "push_subscriptions_session",
-          "columns": [
-            {
-              "expression": "session_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "push_subscriptions_account_id_accounts_id_fk": {
-          "name": "push_subscriptions_account_id_accounts_id_fk",
-          "tableFrom": "push_subscriptions",
-          "tableTo": "accounts",
-          "schemaTo": "auth",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "push_subscriptions_session_id_sessions_id_fk": {
-          "name": "push_subscriptions_session_id_sessions_id_fk",
-          "tableFrom": "push_subscriptions",
-          "tableTo": "sessions",
-          "schemaTo": "auth",
-          "columnsFrom": [
-            "session_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "push_subscriptions_endpoint_unique": {
-          "name": "push_subscriptions_endpoint_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "endpoint"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {
-        "push_subscriptions_endpoint": {
-          "name": "push_subscriptions_endpoint",
-          "value": "\"auth\".\"push_subscriptions\".\"endpoint\" like 'https://%'"
-        }
-      },
-      "isRLSEnabled": false
-    },
     "auth.rate_limits": {
       "name": "rate_limits",
       "schema": "auth",
@@ -3472,75 +3314,6 @@
           "value": "\"auth\".\"rate_limits\".\"count\" >= 0"
         }
       },
-      "isRLSEnabled": false
-    },
-    "auth.sent_pushes": {
-      "name": "sent_pushes",
-      "schema": "auth",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "account_id": {
-          "name": "account_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "sent_at": {
-          "name": "sent_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "sent_pushes_account": {
-          "name": "sent_pushes_account",
-          "columns": [
-            {
-              "expression": "account_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "sent_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "sent_pushes_account_id_accounts_id_fk": {
-          "name": "sent_pushes_account_id_accounts_id_fk",
-          "tableFrom": "sent_pushes",
-          "tableTo": "accounts",
-          "schemaTo": "auth",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "auth.sessions": {

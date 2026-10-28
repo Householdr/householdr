@@ -26,6 +26,7 @@ import { asc, eq, inArray } from 'drizzle-orm';
 import { inPlanWeek } from '../completions/completion-week';
 import type { HouseholdContext } from '../households/membership';
 import { planningOf } from './planning';
+import { pendingSwaps, type PendingSwap } from './swaps';
 
 /** A member a completion names, by id and name. */
 interface Named {
@@ -77,6 +78,18 @@ interface PlanItem {
   completable: boolean;
   /** Its completion, once it is done. */
   completion: PlanCompletion | null;
+  /**
+   * Whether the member viewing may move it to someone: a head, while it is open, in a draft or a
+   * published plan whose week isn't over (ADR-0006 §2–§3).
+   */
+  movable: boolean;
+  /** Its assignment's version, which moving it is done from (ADR-0019 §5). */
+  version: number;
+  /**
+   * Whether the member viewing may offer it in a swap: open, in a published plan whose week isn't
+   * over, and theirs, or a profile's they act for as a head (ADR-0002 §5, clarification).
+   */
+  swappable: boolean;
 }
 
 /** An occurrence given to a member, and why (ADR-0001 §7). */
@@ -140,6 +153,8 @@ type ViewPlanResult =
       nextWeek: WeekPlan | null;
       /** Whether they see drafts, and may publish one early: heads with two factors. */
       mayPublish: boolean;
+      /** The swaps waiting for an answer that they are in, or may act in (ADR-0002 §5). */
+      swaps: PendingSwap[];
       /**
        * Whether they may add a one-off task for this week from the plan: every member with an
        * account (ADR-0006 §3, clarification).
@@ -202,6 +217,7 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
               cost: assignments.cost,
               reason: assignments.reason,
               cause: assignments.unassignedCause,
+              version: assignments.version,
               windowStart: assignments.windowStart,
               windowEnd: assignments.windowEnd,
               occurrence: occurrences.id,
@@ -266,6 +282,7 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
     };
     // Only this plan week's published plan is done from (ADR-0006 §4).
     const mayLog = can(context.member, { action: 'completion.log', member: context.member });
+    const mayReassign = can(context.member, { action: 'plan.reassign' });
     const item = (row: (typeof items)[number], plan: (typeof visible)[number]): PlanItem => ({
       id: row.id,
       occurrence: row.occurrence,
@@ -280,6 +297,19 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
         plan.weekStart === current.start.toString(),
       completion:
         row.status === 'done' ? completionOf(row.occurrence, row.timing === 'fixed') : null,
+      movable:
+        row.status === 'open' &&
+        (plan.status === 'draft'
+          ? mayPublish
+          : mayReassign &&
+            Temporal.PlainDate.compare(today, Temporal.PlainDate.from(plan.weekEnd)) < 0),
+      version: row.version,
+      swappable:
+        row.status === 'open' &&
+        row.memberId !== null &&
+        plan.status === 'published' &&
+        Temporal.PlainDate.compare(today, Temporal.PlainDate.from(plan.weekEnd)) < 0 &&
+        can(context.member, { action: 'swaps.act', member: asMember(row.memberId) }),
     });
     const inOrder = (a: PlanItem, b: PlanItem) =>
       Temporal.ZonedDateTime.compare(a.window.start, b.window.start) ||
@@ -347,6 +377,7 @@ export async function viewPlan(context: HouseholdContext): Promise<ViewPlanResul
       thisWeek: weekPlan(current.start),
       nextWeek: weekPlan(next.start),
       mayPublish,
+      swaps: await pendingSwaps(tx, context.member),
       mayAddOneOffs: can(context.member, { action: 'oneOff.add' }),
     };
   });

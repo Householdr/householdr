@@ -22,6 +22,9 @@ describe('withForcedFlags (ADR-0015 §10)', () => {
     'notification-preferences': false,
     'push-notifications': false,
     'morning-email': false,
+    'plan-moves': false,
+    'security-txt': false,
+    swaps: false,
   };
 
   it('turns the flags a test names on or off, and leaves the rest', () => {

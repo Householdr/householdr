@@ -120,6 +120,9 @@ describe('the flags of a request (ADR-0015 §3)', () => {
       'notification-preferences': false,
       'push-notifications': false,
       'morning-email': false,
+      'plan-moves': false,
+      'security-txt': false,
+      swaps: false,
     });
   });
 
@@ -146,6 +149,9 @@ describe('the flags of a request (ADR-0015 §3)', () => {
       'notification-preferences': false,
       'push-notifications': false,
       'morning-email': false,
+      'plan-moves': false,
+      'security-txt': false,
+      swaps: false,
     });
   });
 });
@@ -227,6 +233,7 @@ describe('the guard (ADR-0017 §2)', () => {
       '/health',
       '/unsubscribe/[token]',
       '/unsubscribe',
+      '/.well-known/security.txt',
     ]) {
       expect(await outcome(signedOut, route)).toBe(200);
     }

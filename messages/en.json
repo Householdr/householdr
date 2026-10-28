@@ -1045,5 +1045,80 @@
   "unsubscribe.submit": "Stop e-mails",
   "unsubscribe.done": "E-mails are off. You can turn them back on in your notification settings.",
   "unsubscribe.expired": "This link no longer works: it was used already, or it is more than 30 days old. You can turn e-mails off in your notification settings.",
-  "unsubscribe.settings": "Notification settings"
+  "unsubscribe.settings": "Notification settings",
+  "plan.move": "Move to someone else",
+  "plan.move-to": "Who does it?",
+  "plan.move-button": "Move",
+  "plan.move-label": "Move: {task}, {day}",
+  "plan.moved": "{task} is moved.",
+  "plan.move-failed": "Moving it didn’t work",
+  "plan.move-changed": "{task} changed since you opened the plan. The plan shows it as it is now.",
+  "plan.not-movable": "{task} can’t be moved any more: it’s done, or its week is over.",
+  "activity.assignment-given": [
+    {
+      "declarations": ["input who", "input actor", "input subject", "input task"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You gave {subject} a task: {task}",
+        "who=to-you": "{actor} gave you a task: {task}",
+        "who=*": "{actor} gave {subject} a task: {task}"
+      }
+    }
+  ],
+  "activity.assignment-taken": [
+    {
+      "declarations": ["input who", "input actor", "input subject", "input task"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You took a task off {subject}: {task}",
+        "who=to-you": "{actor} took a task off you: {task}",
+        "who=*": "{actor} took a task off {subject}: {task}"
+      }
+    }
+  ],
+  "plan.swap": "Swap or hand off",
+  "plan.swap-with": "Offer it to",
+  "plan.swap-hand-off": "{name}, for nothing in return",
+  "plan.swap-trade": "{name}, for {task} ({day})",
+  "plan.swap-button": "Offer",
+  "plan.swap-label": "Offer: {task}, {day}",
+  "plan.swap-proposed": "{task} is offered. It moves once they accept.",
+  "plan.swaps": "Swaps waiting for an answer",
+  "plan.swap-task": "{task} ({day})",
+  "plan.swap-offer-hand-off": "{from} offers {to}: {give}, for nothing in return.",
+  "plan.swap-offer-trade": "{from} offers {to}: {give}, for {take}.",
+  "plan.swap-balance": "{name}: {now} now, {after} once it’s done",
+  "plan.swap-accept": "Accept",
+  "plan.swap-decline": "Decline",
+  "plan.swap-waiting": "Waiting for {name} to answer.",
+  "plan.swap-accepted": "The swap is done.",
+  "plan.swap-declined": "The swap is declined.",
+  "plan.swap-failed": "The swap didn’t work",
+  "plan.swap-gone": "Something in the swap was done or moved since, so it can’t go through any more.",
+  "plan.swap-answered-already": "That swap was answered already.",
+  "plan.swap-already": "{task} is already offered in a swap that waits for an answer.",
+  "plan.swap-not-swappable": "{task} can’t be swapped any more.",
+  "plan.reason.swapped": "{name} took it over in a swap.",
+  "plan.reason.swapped-you": "You took it over in a swap.",
+  "activity.swap-proposed": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You proposed a swap for {subject}.",
+        "who=*": "{actor} proposed a swap for {subject}."
+      }
+    }
+  ],
+  "activity.swap-answered": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You answered a swap for {subject}.",
+        "who=*": "{actor} answered a swap for {subject}."
+      }
+    }
+  ],
+  "plan.redraft-intro": "Drafting it again plans the week anew from the household as it is now. Tasks a head moved stay where they are."
 }

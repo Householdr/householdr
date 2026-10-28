@@ -1,6 +1,9 @@
 <script lang="ts">
+  import { enhance } from '$app/forms';
   import { page } from '$app/state';
+  import ErrorSummary from '#lib/components/ErrorSummary.svelte';
   import PlanWeek from '#lib/components/PlanWeek.svelte';
+  import { Button } from '#lib/components/ui/button/index.js';
   import { usePlan } from '#lib/hooks/use-plan.svelte.js';
   import { m } from '#lib/paraglide/messages.js';
   import type { PageProps } from './$types';
@@ -49,6 +52,55 @@
     <p>{m['plan.any-time']()}</p>
   {:else}
     <p>{m['plan.none']()}</p>
+  {/if}
+
+  <!-- Swaps waiting for an answer, with what each does to both balances (ADR-0002 §5). -->
+  {#if plan.swaps.length > 0 || plan.swapStatus() || plan.swapProblem()}
+    <section aria-labelledby="swaps" class="flex flex-col gap-3">
+      <h2 id="swaps" class="text-xl font-semibold">{m['plan.swaps']()}</h2>
+      <p role="status" class="wrap-break-word empty:hidden">{plan.swapStatus()}</p>
+      {#key form}
+        {#if plan.swapProblem()}
+          <ErrorSummary heading={m['plan.swap-failed']()} message={plan.swapProblem()} />
+        {/if}
+      {/key}
+      <ul aria-labelledby="swaps" class="flex flex-col divide-y rounded-lg border">
+        {#each plan.swaps as swap (swap.id)}
+          <li class="flex flex-col gap-2 p-4">
+            <p id="swap-{swap.id}" class="font-medium wrap-break-word">{swap.said}</p>
+            <ul class="text-sm">
+              {#each swap.balances as line, index (index)}
+                <li class="wrap-break-word">{line}</li>
+              {/each}
+            </ul>
+            {#if swap.mayAnswer}
+              <form method="POST" action="?/answer" use:enhance class="flex flex-wrap gap-3">
+                <input type="hidden" name="swap" value={swap.id} />
+                <Button
+                  type="submit"
+                  name="answer"
+                  value="accept"
+                  aria-describedby="swap-{swap.id}"
+                >
+                  {m['plan.swap-accept']()}
+                </Button>
+                <Button
+                  type="submit"
+                  name="answer"
+                  value="decline"
+                  variant="outline"
+                  aria-describedby="swap-{swap.id}"
+                >
+                  {m['plan.swap-decline']()}
+                </Button>
+              </form>
+            {:else}
+              <p class="text-sm wrap-break-word text-muted-foreground">{swap.waiting}</p>
+            {/if}
+          </li>
+        {/each}
+      </ul>
+    </section>
   {/if}
 
   {#each plan.weeks as week (week.id)}

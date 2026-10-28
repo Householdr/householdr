@@ -53,6 +53,9 @@ const on = {
   'notification-preferences': false,
   'push-notifications': false,
   'morning-email': false,
+  'plan-moves': false,
+  'security-txt': false,
+  swaps: false,
 };
 let next = 0;
 

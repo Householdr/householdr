@@ -99,6 +99,8 @@ const open = new Set([
   // An e-mail's one-click unsubscribe works without signing in (ADR-0014 §6, clarification).
   '/unsubscribe/[token]',
   '/unsubscribe',
+  // How to report a vulnerability, for anyone (ADR-0017 §11).
+  '/.well-known/security.txt',
 ]);
 
 /**

@@ -86,7 +86,8 @@ const opened = async (locals: object) => {
 
 /** Sends the form of `action`, publishing a draft early or drafting it again, with `fields`. */
 const sent =
-  (action: 'publish' | 'redraft') => async (locals: object, fields: Record<string, string>) => {
+  (action: 'publish' | 'redraft' | 'move') =>
+  async (locals: object, fields: Record<string, string>) => {
     const body = new FormData();
     for (const [name, value] of Object.entries(fields)) body.set(name, value);
     const request = new Request('https://householdr.example.org/', { method: 'POST', body });
@@ -101,6 +102,7 @@ const sent =
   };
 const publish = sent('publish');
 const redraft = sent('redraft');
+const move = sent('move');
 
 describe('a household’s plan page (ADR-0006 §2)', () => {
   it('shows a head next week’s draft, with when it is published and why each task went where', async () => {
@@ -129,6 +131,9 @@ describe('a household’s plan page (ADR-0006 §2)', () => {
                 // A draft is never done from (ADR-0006 §4).
                 completable: false,
                 completion: null,
+                // Not until moves' and swaps' flags are on (CODE-20).
+                move: null,
+                swappable: false,
                 cost: 30,
                 reason: 'only eligible member',
                 // Done any time that week, so without set times (ADR-0004 §4).
@@ -141,6 +146,7 @@ describe('a household’s plan page (ADR-0006 §2)', () => {
         joinedSince: [],
       },
       mayPublish: true,
+      swaps: [],
       you: membership.member.id,
     });
   });
@@ -298,6 +304,55 @@ const itemsOf = async (locals: object, name: string) => {
   if (typeof page === 'number') throw new Error(`Status ${String(page)}`);
   return page.thisWeek?.members.find((member) => member.name === name)?.assignments ?? [];
 };
+
+describe('moving a task to someone else (ADR-0006 §2–§3)', () => {
+  const moves = { flags: { ...on.flags, 'plan-moves': true } };
+
+  it('lets a head move a task of the draft, which then says a head assigned it', async () => {
+    const membership = await drafted();
+    const { db, clock } = test.context;
+    const added = await addAdult({ db, clock, ...membership }, { name: 'Alex' });
+    if (!added.ok) throw new Error('No adult');
+    const page = (await opened({ ...moves, membership })) as {
+      nextWeek: {
+        members: {
+          id: string;
+          assignments: { id: string; occurrence: string; move: { version: number } | null }[];
+        }[];
+      };
+    };
+    const [robin, alex] = page.nextWeek.members;
+    const [item] = robin?.assignments ?? [];
+    if (!item?.move || !alex) throw new Error('Nothing to move');
+    const fields = {
+      occurrence: item.occurrence,
+      assignment: item.id,
+      version: String(item.move.version),
+      member: alex.id,
+    };
+    expect(await move({ ...moves, membership }, fields)).toEqual({
+      occurrence: item.occurrence,
+      moved: true,
+    });
+    expect(await opened({ ...moves, membership })).toMatchObject({
+      nextWeek: {
+        members: [
+          { assignments: [] },
+          { id: alex.id, assignments: [{ id: item.id, reason: 'assigned by head' }] },
+        ],
+      },
+    });
+    // The same form again comes too late: the task moved on since.
+    const again = await move({ ...moves, membership }, fields);
+    expect(isActionFailure(again) && again).toMatchObject({
+      status: 409,
+      data: { occurrence: item.occurrence, problem: 'move-conflict' },
+    });
+    expect(await move({ ...moves, membership }, { ...fields, member: 'Alex' })).toBe(400);
+    expect(await move({ ...moves, membership: asAdult(membership) }, fields)).toBe(403);
+    expect(await move({ ...on, membership }, fields)).toBe(404);
+  });
+});
 
 describe('marking a task done, and undoing it (ADR-0006 §4)', () => {
   it('lets a member mark their own done with one tap, and undo it', async () => {

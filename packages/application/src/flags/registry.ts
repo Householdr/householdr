@@ -98,6 +98,27 @@ export const flags = {
     owner: 'Jens',
     expires: '2027-03-31',
   },
+  'plan-moves': {
+    kind: 'release',
+    description:
+      'Heads moving an open task of a draft, or of a published plan whose week isn’t over, to another member, kept when the draft is drafted again, and logged once published (ADR-0006 §2–§3, ADR-0018 §5).',
+    owner: 'Jens',
+    expires: '2027-03-31',
+  },
+  'security-txt': {
+    kind: 'release',
+    description:
+      'Serving /.well-known/security.txt with the instance’s security contact and policy, from SECURITY_CONTACT and SECURITY_POLICY_URL (ADR-0017 §11).',
+    owner: 'Jens',
+    expires: '2027-03-31',
+  },
+  swaps: {
+    kind: 'release',
+    description:
+      'Swaps on the plan page: offering an open task of this week’s published plan to another member, for one of theirs or nothing, which they accept or decline after seeing what it does to both balances (ADR-0002 §5).',
+    owner: 'Jens',
+    expires: '2027-03-31',
+  },
   'page-transitions': {
     kind: 'release',
     description:

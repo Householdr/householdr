@@ -1,6 +1,6 @@
 {
-  "id": "bfddb5da-e848-4801-8b45-984956cd5bf9",
-  "prevId": "2f1c75d5-4928-4c0a-8caf-4ae5bcd317a9",
+  "id": "3bebbf37-e3b4-4188-ad7f-852a40c66102",
+  "prevId": "5e38bd1f-dc61-4f5d-85df-2b2dd95f6838",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -182,12 +182,6 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": false
-        },
-        "task_name": {
-          "name": "task_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {
@@ -271,11 +265,7 @@
       "checkConstraints": {
         "activity_log_action": {
           "name": "activity_log_action",
-          "value": "\"activity_log\".\"action\" in ('household.name', 'household.timeZone', 'household.language',\n        'household.country', 'household.started', 'completion.logged', 'completion.undone',\n        'completion.picked-up', 'share.changed', 'temporary-share.added',\n        'temporary-share.removed', 'absence.added', 'absence.removed', 'away.added',\n        'away.removed', 'one-off.added', 'one-off.removed')"
-        },
-        "activity_log_task_name": {
-          "name": "activity_log_task_name",
-          "value": "(\"activity_log\".\"action\" in ('one-off.added', 'one-off.removed')) = (\"activity_log\".\"task_name\" is not null)"
+          "value": "\"activity_log\".\"action\" in ('household.name', 'household.timeZone', 'household.language',\n        'household.country', 'household.started', 'completion.logged', 'completion.undone',\n        'completion.picked-up', 'share.changed', 'temporary-share.added',\n        'temporary-share.removed', 'absence.added', 'absence.removed', 'away.added',\n        'away.removed')"
         },
         "activity_log_subject": {
           "name": "activity_log_subject",
@@ -284,99 +274,6 @@
         "activity_log_set_before_start": {
           "name": "activity_log_set_before_start",
           "value": "(\"activity_log\".\"action\" = 'household.started') = (\"activity_log\".\"set_before_start\" is not null)\n        and case\n          when \"activity_log\".\"set_before_start\" is null then true\n          when jsonb_typeof(\"activity_log\".\"set_before_start\") <> 'object' then false\n          else \"activity_log\".\"set_before_start\" ?& array['shares', 'daysAway']\n            and not jsonb_path_exists(\"activity_log\".\"set_before_start\", '$.keyvalue() ? ((@.key != \"shares\" && @.key != \"daysAway\")\n  || @.value.type() != \"array\"\n  || exists(@.value[*] ? (@.type() != \"string\"\n    || !(@ like_regex \"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$\"))))')\n        end"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.areas": {
-      "name": "areas",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "household_id": {
-          "name": "household_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "areas_household_name": {
-          "name": "areas_household_name",
-          "columns": [
-            {
-              "expression": "household_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "lower(\"name\")",
-              "asc": true,
-              "isExpression": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "areas_household_id_households_id_fk": {
-          "name": "areas_household_id_households_id_fk",
-          "tableFrom": "areas",
-          "tableTo": "households",
-          "columnsFrom": [
-            "household_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "areas_household_area": {
-          "name": "areas_household_area",
-          "nullsNotDistinct": false,
-          "columns": [
-            "household_id",
-            "id"
-          ]
-        }
-      },
-      "policies": {
-        "household_only": {
-          "name": "household_only",
-          "as": "PERMISSIVE",
-          "for": "ALL",
-          "to": [
-            "public"
-          ],
-          "using": "\"areas\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid",
-          "withCheck": "\"areas\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid"
-        }
-      },
-      "checkConstraints": {
-        "areas_name": {
-          "name": "areas_name",
-          "value": "\"areas\".\"name\" <> '' and char_length(\"areas\".\"name\") <= 50"
         }
       },
       "isRLSEnabled": false
@@ -1733,18 +1630,6 @@
           "type": "date",
           "primaryKey": false,
           "notNull": false
-        },
-        "push_after": {
-          "name": "push_after",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "email_after": {
-          "name": "email_after",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {
@@ -1771,50 +1656,6 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "notifications_push_after": {
-          "name": "notifications_push_after",
-          "columns": [
-            {
-              "expression": "household_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "push_after",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "\"notifications\".\"push_after\" is not null",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "notifications_email_after": {
-          "name": "notifications_email_after",
-          "columns": [
-            {
-              "expression": "household_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "email_after",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "\"notifications\".\"email_after\" is not null",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -2628,127 +2469,6 @@
       },
       "isRLSEnabled": false
     },
-    "public.task_constraints": {
-      "name": "task_constraints",
-      "schema": "",
-      "columns": {
-        "household_id": {
-          "name": "household_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "task_id": {
-          "name": "task_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "member_id": {
-          "name": "member_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "constraint": {
-          "name": "constraint",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "task_constraints_member": {
-          "name": "task_constraints_member",
-          "columns": [
-            {
-              "expression": "member_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "task_constraints_household_id_households_id_fk": {
-          "name": "task_constraints_household_id_households_id_fk",
-          "tableFrom": "task_constraints",
-          "tableTo": "households",
-          "columnsFrom": [
-            "household_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "task_constraints_task_household": {
-          "name": "task_constraints_task_household",
-          "tableFrom": "task_constraints",
-          "tableTo": "tasks",
-          "columnsFrom": [
-            "household_id",
-            "task_id"
-          ],
-          "columnsTo": [
-            "household_id",
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "task_constraints_member_household": {
-          "name": "task_constraints_member_household",
-          "tableFrom": "task_constraints",
-          "tableTo": "members",
-          "columnsFrom": [
-            "household_id",
-            "member_id"
-          ],
-          "columnsTo": [
-            "household_id",
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "task_constraints_task_id_member_id_pk": {
-          "name": "task_constraints_task_id_member_id_pk",
-          "columns": [
-            "task_id",
-            "member_id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {
-        "household_only": {
-          "name": "household_only",
-          "as": "PERMISSIVE",
-          "for": "ALL",
-          "to": [
-            "public"
-          ],
-          "using": "\"task_constraints\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid",
-          "withCheck": "\"task_constraints\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid"
-        }
-      },
-      "checkConstraints": {
-        "task_constraints_constraint": {
-          "name": "task_constraints_constraint",
-          "value": "\"task_constraints\".\"constraint\" in ('bound', 'excluded', 'allowed')"
-        }
-      },
-      "isRLSEnabled": false
-    },
     "public.tasks": {
       "name": "tasks",
       "schema": "",
@@ -2782,50 +2502,7 @@
           "name": "schedule_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": false
-        },
-        "every_count": {
-          "name": "every_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "every_unit": {
-          "name": "every_unit",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "start": {
-          "name": "start",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "once": {
-          "name": "once",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "deadline": {
-          "name": "deadline",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "added_by": {
-          "name": "added_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "removed": {
-          "name": "removed",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
+          "notNull": true
         },
         "timing": {
           "name": "timing",
@@ -2833,53 +2510,11 @@
           "primaryKey": false,
           "notNull": true
         },
-        "window_from_day": {
-          "name": "window_from_day",
-          "type": "smallint",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "window_from_time": {
-          "name": "window_from_time",
-          "type": "time",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "window_to_day": {
-          "name": "window_to_day",
-          "type": "smallint",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "window_to_time": {
-          "name": "window_to_time",
-          "type": "time",
-          "primaryKey": false,
-          "notNull": false
-        },
         "on_miss": {
           "name": "on_miss",
           "type": "text",
           "primaryKey": false,
           "notNull": true
-        },
-        "minimum_age": {
-          "name": "minimum_age",
-          "type": "smallint",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "linked_to": {
-          "name": "linked_to",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "area_id": {
-          "name": "area_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
         },
         "version": {
           "name": "version",
@@ -2940,51 +2575,6 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
-        },
-        "tasks_linked_to": {
-          "name": "tasks_linked_to",
-          "tableFrom": "tasks",
-          "tableTo": "tasks",
-          "columnsFrom": [
-            "household_id",
-            "linked_to"
-          ],
-          "columnsTo": [
-            "household_id",
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "tasks_area": {
-          "name": "tasks_area",
-          "tableFrom": "tasks",
-          "tableTo": "areas",
-          "columnsFrom": [
-            "household_id",
-            "area_id"
-          ],
-          "columnsTo": [
-            "household_id",
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "tasks_added_by": {
-          "name": "tasks_added_by",
-          "tableFrom": "tasks",
-          "tableTo": "members",
-          "columnsFrom": [
-            "household_id",
-            "added_by"
-          ],
-          "columnsTo": [
-            "household_id",
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -3021,35 +2611,11 @@
         },
         "tasks_timing": {
           "name": "tasks_timing",
-          "value": "\"tasks\".\"timing\" in ('flexible', 'floating', 'fixed')"
-        },
-        "tasks_window": {
-          "name": "tasks_window",
-          "value": "(\"tasks\".\"timing\" = 'fixed') = (\"tasks\".\"window_from_day\" is not null and \"tasks\".\"window_from_time\" is not null\n          and \"tasks\".\"window_to_day\" is not null and \"tasks\".\"window_to_time\" is not null)\n        and (\"tasks\".\"window_from_day\" is null or \"tasks\".\"window_from_day\" between -3 and 3)\n        and (\"tasks\".\"window_to_day\" is null or \"tasks\".\"window_to_day\" between -3 and 3)"
+          "value": "\"tasks\".\"timing\" in ('flexible', 'floating')"
         },
         "tasks_on_miss": {
           "name": "tasks_on_miss",
           "value": "\"tasks\".\"on_miss\" in ('roll over', 'lapse')"
-        },
-        "tasks_minimum_age": {
-          "name": "tasks_minimum_age",
-          "value": "\"tasks\".\"minimum_age\" is null or \"tasks\".\"minimum_age\" between 1 and 17"
-        },
-        "tasks_linked_to_other": {
-          "name": "tasks_linked_to_other",
-          "value": "\"tasks\".\"linked_to\" <> \"tasks\".\"id\""
-        },
-        "tasks_recurrence": {
-          "name": "tasks_recurrence",
-          "value": "(\"tasks\".\"schedule_id\" is not null and \"tasks\".\"every_count\" is null and \"tasks\".\"every_unit\" is null\n          and \"tasks\".\"start\" is null and \"tasks\".\"once\" is null)\n        or (\"tasks\".\"schedule_id\" is null and \"tasks\".\"timing\" = 'flexible' and \"tasks\".\"on_miss\" = 'roll over'\n          and \"tasks\".\"once\" is null\n          and \"tasks\".\"start\" is not null and (\"tasks\".\"every_unit\" = 'days' and \"tasks\".\"every_count\" between 1 and 365\n            or \"tasks\".\"every_unit\" = 'weeks' and \"tasks\".\"every_count\" between 1 and 52\n            or \"tasks\".\"every_unit\" = 'months' and \"tasks\".\"every_count\" between 1 and 12))\n        or (\"tasks\".\"schedule_id\" is null and \"tasks\".\"every_count\" is null and \"tasks\".\"every_unit\" is null\n          and \"tasks\".\"start\" is null and \"tasks\".\"timing\" = 'flexible' and \"tasks\".\"once\" is not null\n          and \"tasks\".\"added_by\" is not null)"
-        },
-        "tasks_deadline": {
-          "name": "tasks_deadline",
-          "value": "\"tasks\".\"deadline\" is null or \"tasks\".\"once\" <= \"tasks\".\"deadline\""
-        },
-        "tasks_one_off": {
-          "name": "tasks_one_off",
-          "value": "\"tasks\".\"once\" is not null or (\"tasks\".\"deadline\" is null and \"tasks\".\"added_by\" is null)"
         }
       },
       "isRLSEnabled": false
@@ -3878,75 +3444,6 @@
           "value": "\"auth\".\"rate_limits\".\"count\" >= 0"
         }
       },
-      "isRLSEnabled": false
-    },
-    "auth.sent_pushes": {
-      "name": "sent_pushes",
-      "schema": "auth",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "account_id": {
-          "name": "account_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "sent_at": {
-          "name": "sent_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "sent_pushes_account": {
-          "name": "sent_pushes_account",
-          "columns": [
-            {
-              "expression": "account_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "sent_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "sent_pushes_account_id_accounts_id_fk": {
-          "name": "sent_pushes_account_id_accounts_id_fk",
-          "tableFrom": "sent_pushes",
-          "tableTo": "accounts",
-          "schemaTo": "auth",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "auth.sessions": {

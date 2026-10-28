@@ -1045,5 +1045,80 @@
   "unsubscribe.submit": "E-mails stoppen",
   "unsubscribe.done": "E-mails staan uit. Je kunt ze weer aanzetten in je meldingsinstellingen.",
   "unsubscribe.expired": "Deze link werkt niet meer: hij is al gebruikt, of hij is ouder dan 30 dagen. Je kunt e-mails uitzetten in je meldingsinstellingen.",
-  "unsubscribe.settings": "Meldingsinstellingen"
+  "unsubscribe.settings": "Meldingsinstellingen",
+  "plan.move": "Aan iemand anders geven",
+  "plan.move-to": "Wie doet het?",
+  "plan.move-button": "Verplaatsen",
+  "plan.move-label": "Verplaatsen: {task}, {day}",
+  "plan.moved": "{task} is verplaatst.",
+  "plan.move-failed": "Verplaatsen is niet gelukt",
+  "plan.move-changed": "{task} is veranderd sinds je het plan opende. Het plan toont het zoals het nu is.",
+  "plan.not-movable": "{task} kan niet meer verplaatst worden: het is gedaan, of de week is voorbij.",
+  "activity.assignment-given": [
+    {
+      "declarations": ["input who", "input actor", "input subject", "input task"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je gaf {subject} een taak: {task}",
+        "who=to-you": "{actor} gaf je een taak: {task}",
+        "who=*": "{actor} gaf {subject} een taak: {task}"
+      }
+    }
+  ],
+  "activity.assignment-taken": [
+    {
+      "declarations": ["input who", "input actor", "input subject", "input task"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je nam een taak af van {subject}: {task}",
+        "who=to-you": "{actor} nam een taak van je af: {task}",
+        "who=*": "{actor} nam een taak af van {subject}: {task}"
+      }
+    }
+  ],
+  "plan.swap": "Ruilen of doorgeven",
+  "plan.swap-with": "Aanbieden aan",
+  "plan.swap-hand-off": "{name}, zonder iets terug",
+  "plan.swap-trade": "{name}, voor {task} ({day})",
+  "plan.swap-button": "Aanbieden",
+  "plan.swap-label": "Aanbieden: {task}, {day}",
+  "plan.swap-proposed": "{task} is aangeboden. Het verhuist zodra de ander aanvaardt.",
+  "plan.swaps": "Ruilen die op een antwoord wachten",
+  "plan.swap-task": "{task} ({day})",
+  "plan.swap-offer-hand-off": "{from} biedt {to} aan: {give}, zonder iets terug.",
+  "plan.swap-offer-trade": "{from} biedt {to} aan: {give}, voor {take}.",
+  "plan.swap-balance": "{name}: nu {now}, {after} als het gedaan is",
+  "plan.swap-accept": "Aanvaarden",
+  "plan.swap-decline": "Weigeren",
+  "plan.swap-waiting": "Wacht op een antwoord van {name}.",
+  "plan.swap-accepted": "De ruil is gebeurd.",
+  "plan.swap-declined": "De ruil is geweigerd.",
+  "plan.swap-failed": "De ruil is niet gelukt",
+  "plan.swap-gone": "Iets in de ruil is intussen gedaan of verplaatst, dus hij kan niet meer doorgaan.",
+  "plan.swap-answered-already": "Op die ruil is al geantwoord.",
+  "plan.swap-already": "{task} is al aangeboden in een ruil die op een antwoord wacht.",
+  "plan.swap-not-swappable": "{task} kan niet meer geruild worden.",
+  "plan.reason.swapped": "{name} nam het over in een ruil.",
+  "plan.reason.swapped-you": "Je nam het over in een ruil.",
+  "activity.swap-proposed": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je stelde een ruil voor namens {subject}.",
+        "who=*": "{actor} stelde een ruil voor namens {subject}."
+      }
+    }
+  ],
+  "activity.swap-answered": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je antwoordde op een ruil namens {subject}.",
+        "who=*": "{actor} antwoordde op een ruil namens {subject}."
+      }
+    }
+  ],
+  "plan.redraft-intro": "Opnieuw opstellen plant de week opnieuw met het huishouden zoals het nu is. Taken die een hoofd verplaatste, blijven waar ze zijn."
 }
