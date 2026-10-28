@@ -24,6 +24,7 @@ import {
   type Window,
 } from '@householdr/domain';
 import { and, eq, gt } from 'drizzle-orm';
+import { householdBurdens } from '../burdens/household-burdens';
 import { balancesOf } from '../ledger/balances';
 import { fairPortions } from './fair-portions';
 import { awayIn, type Planning } from './planning';
@@ -113,7 +114,7 @@ interface Rule {
  */
 async function reallocateIn(
   tx: Transaction,
-  { planning }: Moment,
+  { planning, now }: Moment,
   plan: Plan,
   memberId: string,
   rule: Rule,
@@ -181,17 +182,18 @@ async function reallocateIn(
     .filter((member) => member.id !== memberId)
     .map((member) => ({ ...member, load: loads.get(member.id) ?? 0 }));
   const durations = new Map(affected.map(({ row }) => [row.taskId, row.duration]));
+  const burdenOf = await householdBurdens(tx, householdDate(now, timeZone));
   const allocation = allocate({
     week: week.start,
     calendar,
     rebalanceRate: rebalanceRates[planning.rebalance],
     members: others,
-    // As when drafting: every burden is the prior, 1.0, until the comparison game brings evidence
-    // (ADR-0003 §2, clarification).
+    // As when drafting: each member's own burden, from their answers in the comparison game
+    // (ADR-0003 §1–§4).
     tasks: Array.from(durations, ([id, duration]): AllocationTask => ({
       id,
       duration,
-      burden: new Map(others.map((member) => [member.id, 1])),
+      burden: new Map(others.map((member) => [member.id, burdenOf(id, member.id)])),
       constraints: new Map(),
     })),
     occurrences: affected.map(({ occurrence }) => occurrence),
