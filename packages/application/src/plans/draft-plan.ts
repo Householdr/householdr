@@ -92,6 +92,8 @@ export async function draftPlan(context: PlanContext, input: unknown): Promise<D
     if (existing && context.member === 'scheduler') {
       return { ok: true, planned: true, planId: existing.id };
     }
+    // What heads moved in the draft they replace stays where they put it (ADR-0006 §2).
+    const preAssigned = existing ? await headAssigned(tx, existing.id) : new Map<string, string>();
     if (existing) await undoDraft(tx, existing.id);
     const planId = await draftWeek(tx, {
       householdId,
@@ -99,6 +101,7 @@ export async function draftPlan(context: PlanContext, input: unknown): Promise<D
       week,
       now: context.clock.now(),
       replacing: existing?.id,
+      preAssigned,
     });
     if (planId === undefined) return { ok: true, planned: false };
     return { ok: true, planned: true, planId };
@@ -122,6 +125,23 @@ async function undoDraft(tx: Transaction, planId: string) {
     .delete(occurrences)
     .where(and(eq(occurrences.closedByPlan, planId), eq(occurrences.status, 'away')));
   await tx.delete(assignments).where(eq(assignments.planId, planId));
+}
+
+/**
+ * The occurrences heads moved in draft `planId`, by their ids, `task@date`, with the members they
+ * gave them to (ADR-0006 §2).
+ */
+async function headAssigned(tx: Transaction, planId: string) {
+  const rows = await tx
+    .select({ task: occurrences.taskId, date: occurrences.date, member: assignments.memberId })
+    .from(assignments)
+    .innerJoin(occurrences, eq(occurrences.id, assignments.occurrenceId))
+    .where(and(eq(assignments.planId, planId), eq(assignments.reason, 'assigned by head')));
+  return new Map(
+    rows.flatMap(({ task, date, member }) =>
+      member === null ? [] : [[occurrenceId(task, Temporal.PlainDate.from(date)), member] as const],
+    ),
+  );
 }
 
 /**
@@ -149,6 +169,8 @@ interface Draft {
   now: Temporal.Instant;
   /** The draft of the week being drafted again, if any. */
   replacing: string | undefined;
+  /** Members by occurrence id, `task@date`, as heads moved them in the draft it replaces. */
+  preAssigned?: ReadonlyMap<string, string>;
 }
 
 /**
@@ -207,7 +229,14 @@ export async function draftWeek(tx: Transaction, draft: Draft): Promise<string |
       ...(rules.get(task.id) ?? { constraints: new Map() }),
     })),
     occurrences: weekResult.occurrences,
-    preAssigned: new Map(),
+    // Those still in the week, for members who are still in the allocation.
+    preAssigned: new Map(
+      [...(draft.preAssigned ?? [])].filter(
+        ([occurrence, member]) =>
+          weekResult.occurrences.some((o) => o.id === occurrence) &&
+          people.some((person) => person.id === member),
+      ),
+    ),
     // A link from an occurrence assigned last week goes to the same member (ADR-0001 §7).
     carried: await carriedLinks(
       tx,

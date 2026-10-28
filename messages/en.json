@@ -982,5 +982,35 @@
         "who=*": "{actor} removed a one-off task: {task}"
       }
     }
+  ],
+  "plan.move": "Move to someone else",
+  "plan.move-to": "Who does it?",
+  "plan.move-button": "Move",
+  "plan.move-label": "Move: {task}, {day}",
+  "plan.moved": "{task} is moved.",
+  "plan.move-failed": "Moving it didn’t work",
+  "plan.move-changed": "{task} changed since you opened the plan. The plan shows it as it is now.",
+  "plan.not-movable": "{task} can’t be moved any more: it’s done, or its week is over.",
+  "activity.assignment-given": [
+    {
+      "declarations": ["input who", "input actor", "input subject", "input task"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You gave {subject} a task: {task}",
+        "who=to-you": "{actor} gave you a task: {task}",
+        "who=*": "{actor} gave {subject} a task: {task}"
+      }
+    }
+  ],
+  "activity.assignment-taken": [
+    {
+      "declarations": ["input who", "input actor", "input subject", "input task"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You took a task off {subject}: {task}",
+        "who=to-you": "{actor} took a task off you: {task}",
+        "who=*": "{actor} took a task off {subject}: {task}"
+      }
+    }
   ]
 }

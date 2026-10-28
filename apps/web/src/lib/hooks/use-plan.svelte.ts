@@ -43,6 +43,8 @@ interface ItemData {
     loggedBy: Named;
     mayUndo: boolean;
   } | null;
+  /** What moving it sends, for a head who may (ADR-0006 §2–§3). */
+  move: { version: number } | null;
 }
 
 /** A week's plan, as page data. */
@@ -118,6 +120,11 @@ export interface ShownItem {
     /** Why the choice wasn't accepted, which opens it. */
     problem: string | null;
   } | null;
+  /**
+   * For a head, while it can be moved: the choice of whom to give it to instead, starting with
+   * whoever has it, and the version it is moved from (ADR-0006 §2–§3, ADR-0019 §5).
+   */
+  move: { label: string; version: number; choices: Choice[] } | null;
 }
 
 /** A week's plan as the page shows it, all in words. */
@@ -145,6 +152,7 @@ export interface ItemOutcome {
   occurrence?: string;
   completed?: boolean;
   undone?: boolean;
+  moved?: boolean;
   problem?: string;
   doers?: Named[];
 }
@@ -303,6 +311,11 @@ export function usePlan(
               problem: choiceProblem(row.occurrence),
             }
           : null,
+        move: row.move && {
+          label: m['plan.move-label']({ task: row.task, day }),
+          version: row.move.version,
+          choices: people.map((person) => ({ ...person, checked: person.id === assignee })),
+        },
       };
     };
     return {
@@ -392,6 +405,7 @@ export function usePlan(
       const { task } = lastItem.item;
       if (last.completed) return m['plan.completed']({ task });
       if (last.undone) return m['plan.reopened']({ task });
+      if (last.moved) return m['plan.moved']({ task });
       return '';
     },
     /** Why marking a task of `week` done, or undoing it, didn't go through, in words. */
@@ -422,6 +436,18 @@ export function usePlan(
           return {
             heading: m['plan.undo-failed'](),
             message: m['plan.undone-already']({ task }),
+            fields: [],
+          };
+        case 'move-conflict':
+          return {
+            heading: m['plan.move-failed'](),
+            message: m['plan.move-changed']({ task }),
+            fields: [],
+          };
+        case 'not-movable':
+          return {
+            heading: m['plan.move-failed'](),
+            message: m['plan.not-movable']({ task }),
             fields: [],
           };
         default:

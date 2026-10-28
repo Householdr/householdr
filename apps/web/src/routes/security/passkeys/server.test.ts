@@ -49,6 +49,7 @@ const on = {
   completions: false,
   balances: false,
   'page-transitions': false,
+  'plan-moves': false,
 };
 let next = 0;
 
