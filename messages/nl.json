@@ -1036,5 +1036,14 @@
         "who=*": "{actor} heeft een eenmalige taak verwijderd: {task}"
       }
     }
-  ]
+  ],
+  "email.morning.unsubscribe": "Stop deze e-mails",
+  "unsubscribe.page-title": "E-mails stoppen – Householdr",
+  "unsubscribe.title": "E-mails stoppen",
+  "unsubscribe.intro": "Dit zet alle e-mails over je huishoudens uit: wat per e-mail kwam, komt alleen nog in de app, of als pushmelding als je die ook koos, en e-mails vallen niet meer in als pushmeldingen je niet bereiken.",
+  "unsubscribe.still": "E-mails over je account en de beveiliging ervan blijven komen. Je kunt dit allemaal weer aanzetten in je meldingsinstellingen.",
+  "unsubscribe.submit": "E-mails stoppen",
+  "unsubscribe.done": "E-mails staan uit. Je kunt ze weer aanzetten in je meldingsinstellingen.",
+  "unsubscribe.expired": "Deze link werkt niet meer: hij is al gebruikt, of hij is ouder dan 30 dagen. Je kunt e-mails uitzetten in je meldingsinstellingen.",
+  "unsubscribe.settings": "Meldingsinstellingen"
 }

@@ -9,6 +9,11 @@ export interface Mail {
   subject: string;
   text: string;
   html: string;
+  /**
+   * For an e-mail that isn't mandatory, its one-click unsubscribe link, for the `List-Unsubscribe`
+   * header (ADR-0014 §6, clarification).
+   */
+  unsubscribe?: string;
 }
 
 /** Sends e-mail: over SMTP in the app, recorded in tests (ADR-0023 §3). */

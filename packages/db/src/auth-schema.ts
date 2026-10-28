@@ -350,3 +350,21 @@ export const sentPushes = auth.table(
   },
   (t) => [index('sent_pushes_account').on(t.accountId, t.sentAt)],
 );
+
+/**
+ * The token of an e-mail's unsubscribe link (ADR-0014 §6, ADR-0017 §4, clarifications): random,
+ * stored only as its hash, for 30 days from when the e-mail was sent, and used once. All it can do
+ * is turn the account's e-mails off. One for each e-mail; expired ones are deleted as new ones are
+ * made.
+ */
+export const unsubscribeTokens = auth.table(
+  'unsubscribe_tokens',
+  {
+    tokenHash: text().primaryKey(),
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+  },
+  (t) => [index('unsubscribe_tokens_expires').on(t.expiresAt)],
+);

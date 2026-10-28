@@ -72,6 +72,7 @@ export { undoCompletion } from './completions/undo-completion';
 export { householdBalances, type MemberBalance, type SettledWeek } from './ledger/balances';
 export { settlePlanWeek } from './ledger/settle-plan-week';
 export { deleteExpiredNotifications } from './notifications/expired';
+export { unsubscribe, unsubscribeLinkWorks } from './notifications/unsubscribe';
 export {
   householdNotifications,
   type HouseholdNotification,

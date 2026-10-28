@@ -13,6 +13,7 @@ import { channelsFor, emailTime, isTooLate, type NotificationKind } from '@house
 import { and, asc, eq, inArray, isNotNull, isNull, lte } from 'drizzle-orm';
 import { savedOf, type SavedPreferences } from './preferences';
 import { workingPush, type PushDeliveryContext } from './push-delivery';
+import { newUnsubscribeToken } from './unsubscribe';
 
 /**
  * What the morning e-mails need: what delivering pushes needs, since whether a member has working
@@ -88,6 +89,8 @@ export interface PreparedEmail {
   }[];
   /** The notifications it takes, to give back if sending it fails. */
   taken: string[];
+  /** Its unsubscribe link's token, made for this e-mail (ADR-0014 §6, clarification). */
+  unsubscribe: string;
 }
 
 /**
@@ -188,6 +191,7 @@ export async function prepareMorningEmail(
         },
       })),
       taken: told.map(({ id }) => id),
+      unsubscribe: await newUnsubscribeToken(tx, member.account, now),
     };
   });
 }

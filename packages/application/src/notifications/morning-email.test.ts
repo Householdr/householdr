@@ -24,6 +24,8 @@ import {
   queueDueEmails,
   type MorningEmailContext,
 } from './morning-email';
+import { savedOf } from './preferences';
+import { unsubscribe, unsubscribeLinkWorks } from './unsubscribe';
 
 // Deciding each member's morning e-mail from a household (ADR-0014 §3, §5, clarification), on a
 // real database (TEST-11). Invented households and addresses (TEST-8).
@@ -54,6 +56,8 @@ const household = async () => {
   const h = await plannedHousehold(db);
   await h.task('Dishes', 20, 'daily', '2026-10-08');
   await draftPlan(h.scheduler, { week });
+  // A minute apart, so the two notifications come in a fixed order.
+  h.clock.advance({ minutes: 1 });
   await publishPlan(h.scheduler, { week });
   const [robin] = await h.inIt((tx) =>
     tx
@@ -148,6 +152,7 @@ describe('prepareMorningEmail (ADR-0014 §3, §5, clarification)', () => {
         { kind: 'plan.published', week: days },
       ],
       taken: expect.any(Array) as unknown,
+      unsubscribe: expect.any(String) as unknown,
     });
     expect(prepared?.taken).toHaveLength(2);
     // Taken off the notifications before it is sent, so it never goes twice.
@@ -171,7 +176,7 @@ describe('prepareMorningEmail (ADR-0014 §3, §5, clarification)', () => {
     expect(await prepareMorningEmail(context, job)).toBeNull();
     expect(await emailAfter(h, h.robin)).toEqual([
       '2026-10-08T08:00:00.000Z',
-      '2026-10-08T08:00:00.000Z',
+      '2026-10-08T08:01:00.000Z',
     ]);
     h.clock.advance({ minutes: 1 });
     expect(await prepareMorningEmail(context, job)).not.toBeNull();
@@ -266,5 +271,38 @@ describe('morningEmailFailed (ADR-0014 §7)', () => {
     expect(await prepareMorningEmail(context, job)).toMatchObject({
       notifications: [{ kind: 'plan.published', week: days }],
     });
+  });
+});
+
+describe('the one-click unsubscribe (ADR-0014 §6, ADR-0017 §4, clarifications)', () => {
+  it('turns every e-mail choice off, once, with the token its e-mail came with', async () => {
+    const { h, account, context, job } = await household();
+    await choose(account, { channels: { 'plan.drafted': 'email' } });
+    h.clock.advance(h.clock.now().until(friday));
+    const prepared = await prepareMorningEmail(context, job);
+    const token = prepared?.unsubscribe;
+    const links = { db, clock: h.clock };
+    // Opening the link changes nothing: mail filters open links too.
+    expect(await unsubscribeLinkWorks(links, token)).toBe(true);
+    expect((await savedOf(db, account)).channels['plan.drafted']).toBe('email');
+    expect(await unsubscribe(links, token)).toEqual({ ok: true });
+    const saved = await savedOf(db, account);
+    expect(saved.channels).toEqual({ 'plan.drafted': 'app', 'plan.published': 'push' });
+    expect(saved.emailFallback).toBe(false);
+    // It works once.
+    expect(await unsubscribeLinkWorks(links, token)).toBe(false);
+    expect(await unsubscribe(links, token)).toEqual({ ok: false, error: 'expired' });
+  });
+
+  it('works for 30 days from its e-mail, and never with a made-up token', async () => {
+    const { h, account, context, job } = await household();
+    await choose(account, { channels: { 'plan.drafted': 'email' } });
+    h.clock.advance(h.clock.now().until(friday));
+    const token = (await prepareMorningEmail(context, job))?.unsubscribe;
+    const links = { db, clock: h.clock };
+    h.clock.advance({ hours: 30 * 24 });
+    expect(await unsubscribe(links, token)).toEqual({ ok: false, error: 'expired' });
+    expect(await unsubscribe(links, 'made-up')).toEqual({ ok: false, error: 'expired' });
+    expect(await unsubscribe(links, undefined)).toEqual({ ok: false, error: 'expired' });
   });
 });

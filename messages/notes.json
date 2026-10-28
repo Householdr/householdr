@@ -2837,5 +2837,41 @@
   "activity.one-off-removed": {
     "note": "Activity log entry: a member removed a one-off task. {actor} is a name, or “A former member”. {task} is the task's name as it was, never translated. {who} picks the wording: 'you' when the reader did it, '*' otherwise (ADR-0018 §5, clarification).",
     "needsReview": ["nl"]
+  },
+  "email.morning.unsubscribe": {
+    "note": "The morning e-mail's one-click unsubscribe link (ADR-0014 §6, clarification). It opens a page that asks before anything changes.",
+    "needsReview": ["nl"]
+  },
+  "unsubscribe.page-title": {
+    "note": "Browser tab title of the unsubscribe page. Householdr is the product name.",
+    "needsReview": ["nl"]
+  },
+  "unsubscribe.title": {
+    "note": "Heading of the page an e-mail's unsubscribe link opens, without signing in.",
+    "needsReview": ["nl"]
+  },
+  "unsubscribe.intro": {
+    "note": "What the button does: every e-mail choice off (e-mail → only in the app, push and e-mail → push) and the e-mail fallback off (ADR-0014 §6, clarification).",
+    "needsReview": ["nl"]
+  },
+  "unsubscribe.still": {
+    "note": "Account and security e-mails can't be turned off (ADR-0014 §2); every choice can be turned back on in the settings.",
+    "needsReview": ["nl"]
+  },
+  "unsubscribe.submit": {
+    "note": "The one button that turns e-mails off.",
+    "needsReview": ["nl"]
+  },
+  "unsubscribe.done": {
+    "note": "Status once e-mails are off.",
+    "needsReview": ["nl"]
+  },
+  "unsubscribe.expired": {
+    "note": "When the link is used up or older than 30 days (ADR-0017 §4, clarification).",
+    "needsReview": ["nl"]
+  },
+  "unsubscribe.settings": {
+    "note": "Link to the account's notification settings page.",
+    "needsReview": ["nl"]
   }
 }

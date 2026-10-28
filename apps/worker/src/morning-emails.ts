@@ -42,17 +42,19 @@ function cut(text: string, length: number) {
 /**
  * What a morning e-mail says (ADR-0014 §5–§6, clarifications): the household and the day, each
  * notification in the sentence of its list, in the order they came, and a link to that list; then
- * why it came, with a link to choose otherwise. The household's name is plain, escaped text, cut to
- * a fixed length, never a link (ADR-0017 §5, clarification).
+ * why it came, with a link to choose otherwise, and one to turn its e-mails off at once (§6,
+ * clarification). The household's name is plain, escaped text, cut to a fixed length, never a link
+ * (ADR-0017 §5, clarification).
  */
 export function morningEmail(email: PreparedEmail, householdId: string, origin: string): Mail {
+  const unsubscribe = `${origin}/unsubscribe/${email.unsubscribe}`;
   const locale = localeOf(email.culture);
   const say = { locale: baseLocale };
   const household = cut(email.household, nameLength);
   const day = new Intl.DateTimeFormat(locale, { dateStyle: 'full', timeZone: 'UTC' }).format(
     Date.UTC(email.day.year, email.day.month - 1, email.day.day),
   );
-  return mail(
+  const written = mail(
     email.to,
     m['email.morning.subject']({ household, day }, say),
     [
@@ -64,9 +66,12 @@ export function morningEmail(email: PreparedEmail, householdId: string, origin: 
       },
       m['email.morning.why']({}, say),
       { text: m['email.morning.settings']({}, say), link: `${origin}/notification-settings` },
+      { text: m['email.morning.unsubscribe']({}, say), link: unsubscribe },
     ],
     baseLocale,
   );
+  // Not mandatory, so one click turns e-mails off, in the e-mail and its header (ADR-0014 §6).
+  return { ...written, unsubscribe };
 }
 
 /**

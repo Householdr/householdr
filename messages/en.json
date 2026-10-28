@@ -1036,5 +1036,14 @@
         "who=*": "{actor} removed a one-off task: {task}"
       }
     }
-  ]
+  ],
+  "email.morning.unsubscribe": "Stop these e-mails",
+  "unsubscribe.page-title": "Stop e-mails – Householdr",
+  "unsubscribe.title": "Stop e-mails",
+  "unsubscribe.intro": "This turns off every e-mail about your households: what came by e-mail comes only in the app, or by push if you chose push too, and e-mails no longer stand in when push doesn’t reach you.",
+  "unsubscribe.still": "E-mails about your account and its security keep coming. You can turn any of this back on in your notification settings.",
+  "unsubscribe.submit": "Stop e-mails",
+  "unsubscribe.done": "E-mails are off. You can turn them back on in your notification settings.",
+  "unsubscribe.expired": "This link no longer works: it was used already, or it is more than 30 days old. You can turn e-mails off in your notification settings.",
+  "unsubscribe.settings": "Notification settings"
 }
