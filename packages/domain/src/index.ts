@@ -59,6 +59,7 @@ export {
   type ChannelChoice,
   type NotificationPreferences,
   type QuietHours,
+  withoutEmail,
 } from './notifications/preferences';
 export { isKnownPushService } from './notifications/push-services';
 export {

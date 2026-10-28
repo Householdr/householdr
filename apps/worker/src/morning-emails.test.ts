@@ -83,11 +83,12 @@ const prepared: PreparedEmail = {
     { kind: 'plan.published', week: days },
   ],
   taken: ['n-1', 'n-2'],
+  unsubscribe: 'a-token',
 };
 
 describe('morningEmail (ADR-0014 §5–§6, clarifications)', () => {
   it('names the household and the day, says each notification as its list does, and links to it', () => {
-    const { to, subject, text } = morningEmail(prepared, 'h-1', origin);
+    const { to, subject, text, unsubscribe } = morningEmail(prepared, 'h-1', origin);
     expect(to).toBe('robin@example.org');
     expect(subject).toBe('Ash Lane: your notifications for Friday, 9 October 2026');
     expect(text).toBe(
@@ -100,8 +101,11 @@ describe('morningEmail (ADR-0014 §5–§6, clarifications)', () => {
         `See all your notifications from this household:\n${origin}/households/h-1/notifications`,
         'You get this e-mail because you chose e-mail for these notifications, or because push notifications don’t reach you.',
         `Choose how you get notifications:\n${origin}/notification-settings`,
+        `Stop these e-mails:\n${origin}/unsubscribe/a-token`,
       ].join('\n\n'),
     );
+    // The same link goes in its List-Unsubscribe header (ADR-0014 §6, clarification).
+    expect(unsubscribe).toBe(`${origin}/unsubscribe/a-token`);
   });
 
   it('has an accessible HTML part with a list, and nothing that tracks', () => {

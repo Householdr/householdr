@@ -60,3 +60,29 @@ export function channelsWith(
 export function areQuietHours({ start, end }: QuietHours): boolean {
   return !start.equals(end);
 }
+
+/** What each channel choice becomes without e-mail. */
+const withoutEmailChoice: Record<ChannelChoice, ChannelChoice> = {
+  'push-and-email': 'push',
+  push: 'push',
+  email: 'app',
+  app: 'app',
+};
+
+/**
+ * `preferences` with every e-mail choice turned off, as the one-click unsubscribe does (ADR-0014
+ * §6, clarification): *e-mail* becomes *only in the app*, *push and e-mail* becomes *push*, and the
+ * e-mail fallback goes off. Quiet hours stay as they are.
+ */
+export function withoutEmail(preferences: NotificationPreferences): NotificationPreferences {
+  return {
+    ...preferences,
+    channels: Object.fromEntries(
+      Object.entries(preferences.channels).map(([kind, choice]) => [
+        kind,
+        withoutEmailChoice[choice],
+      ]),
+    ) as Record<NotificationKind, ChannelChoice>,
+    emailFallback: false,
+  };
+}

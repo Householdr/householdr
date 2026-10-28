@@ -225,6 +225,8 @@ describe('the guard (ADR-0017 §2)', () => {
       '/invitation/passkey/options',
       '/invitation/passkey',
       '/health',
+      '/unsubscribe/[token]',
+      '/unsubscribe',
     ]) {
       expect(await outcome(signedOut, route)).toBe(200);
     }

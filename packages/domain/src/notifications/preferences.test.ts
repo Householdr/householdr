@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { areQuietHours, channelsWith, defaultPreferences } from './preferences';
+import { areQuietHours, channelsWith, defaultPreferences, withoutEmail } from './preferences';
 
 // An account's notification preferences (ADR-0014 §3, §4, clarifications).
 
@@ -43,5 +43,21 @@ describe('areQuietHours (ADR-0014 §3, clarification)', () => {
 
   it('refuses equal times, which could mean none or all day', () => {
     expect(areQuietHours({ start: time('07:30'), end: time('07:30') })).toBe(false);
+  });
+});
+
+describe('withoutEmail (ADR-0014 §6, clarification)', () => {
+  it('turns every e-mail choice off, and the fallback, and keeps the rest', () => {
+    const before = {
+      ...defaultPreferences,
+      channels: { 'plan.published': 'push-and-email', 'plan.drafted': 'email' } as const,
+      emailFallback: true,
+    };
+    expect(withoutEmail(before)).toEqual({
+      ...before,
+      channels: { 'plan.published': 'push', 'plan.drafted': 'app' },
+      emailFallback: false,
+    });
+    expect(withoutEmail(withoutEmail(before))).toEqual(withoutEmail(before));
   });
 });
