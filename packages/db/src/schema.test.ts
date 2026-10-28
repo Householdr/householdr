@@ -71,6 +71,7 @@ describe('households', () => {
       // ADR-0002 §3).
       firstPlanWeek: null,
       startedNow: false,
+      closedAt: null,
       draftHours: 48,
       publishHours: 12,
       rebalance: 'normal',

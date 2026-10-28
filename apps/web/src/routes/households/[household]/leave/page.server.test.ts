@@ -133,13 +133,19 @@ describe('the leave page (ADR-0005 §4, ADR-0018 §2, §8)', () => {
     });
   });
 
-  it('tells the last head without an adult to pass it to that they can’t leave yet', async () => {
+  it('lets the last head without an adult to pass it to leave, which closes the household', async () => {
     const head = await founded();
+    // No one to pass it to: the page warns that leaving closes it (ADR-0018 §2, clarification).
     expect(await opened({ ...on, membership: head })).toMatchObject({ successors: [] });
-    expect(await leave({ ...on, membership: head }, 'name', '')).toMatchObject({
-      status: 409,
-      data: { problem: 'last-adult', shownAs: 'name', successor: '' },
+    expect(await leave({ ...on, membership: head }, 'name', '')).toEqual({
+      status: 303,
+      location: '/?left',
     });
+    expect(await opened({ ...on, membership: head })).toBe(403);
+  });
+
+  it('refuses what isn’t a way to be shown (CODE-12)', async () => {
+    const head = await founded();
     const adult = as('adult', head);
     expect(await leave({ ...on, membership: adult }, 'nickname')).toMatchObject({
       status: 400,

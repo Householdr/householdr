@@ -20,17 +20,13 @@ const leaving = v.object({
 });
 
 type LeaveHouseholdResult =
-  | { ok: true }
+  /** `closed` when leaving closed the household, as nobody with an account was left to head it. */
+  | { ok: true; closed?: true }
   /**
    * Not a member who can leave on their own: a child can't (ADR-0010 §10), or they left a moment
    * ago.
    */
   | { ok: false; error: 'not-allowed' }
-  /**
-   * The household's last head, without another adult with an account to become head: leaving
-   * closes the household (ADR-0018 §2, clarification), which isn't built yet.
-   */
-  | { ok: false; error: 'last-adult' }
   /** The member the last head named can't become head: not an adult of it with an account. */
   | { ok: false; error: 'successor' }
   /** Not a way to be shown, or not a member to name. */
@@ -41,7 +37,9 @@ type LeaveHouseholdResult =
  * ADR-0018 §2, with their clarifications): they become a former member, shown as they chose, and
  * leave every plan of a week not yet over. The last head's role passes at that moment, to whoever
  * they named, who is asked later whether they take it on, or else to the adult with an account
- * longest in the household. The household sees only that they are no longer in it, and who its
+ * longest in the household. With no other adult with an account to become head, leaving closes
+ * the household at that moment: nobody can open it any more, and nothing is planned or sent for it
+ * (ADR-0018 §2, clarification). The household sees only that they are no longer in it, and who its
  * heads are: nothing is logged and nobody is told (ADR-0018 §7–§8).
  */
 export async function leaveHousehold(
@@ -67,17 +65,24 @@ export async function leaveHousehold(
     const { shownAs, successor } = parsed.output;
     // The role passes as they leave (ADR-0018 §2, clarification).
     let next: { id: string; named: boolean } | null = null;
+    let closes = false;
     if (await isLastHead(tx, self)) {
       const candidates = await successors(tx);
       const [longest] = candidates;
-      if (!longest) return { ok: false, error: 'last-adult' };
       const named = successor === '' ? null : candidates.find(({ id }) => id === successor);
       if (named === undefined) return { ok: false, error: 'successor' };
-      next = named ? { id: named.id, named: true } : { id: longest.id, named: false };
+      if (named) next = { id: named.id, named: true };
+      else if (longest) next = { id: longest.id, named: false };
+      else closes = true;
     }
-    await endMembership(tx, { householdId, planning, now: context.clock.now() }, self.id, {
+    const now = context.clock.now();
+    await endMembership(tx, { householdId, planning, now }, self.id, {
       showsName: shownAs === 'name',
     });
+    if (closes) {
+      await tx.update(households).set({ closedAt: new Date(now.epochMilliseconds) });
+      return { ok: true, closed: true };
+    }
     if (next) {
       await tx
         .update(members)
@@ -97,7 +102,8 @@ type LeaveOptionsResult =
       /**
        * For the household's last head, who can become head as they leave, longest in it first,
        * the first being who the role goes to if they name no one (ADR-0018 §2, clarification); null
-       * for anyone else. Empty when nobody can, which leaving closes the household for.
+       * for anyone else. Empty when nobody can: leaving then closes the household, which the page
+       * warns of (ADR-0018 §2, clarification).
        */
       successors: { id: string; name: string }[] | null;
       /** The support service of the household's country, if there is one (ADR-0018 §8). */

@@ -2171,7 +2171,7 @@
     "needsReview": ["nl"]
   },
   "leave.last-adult": {
-    "note": "Shown instead of the form to the household's last head when no other adult with an account is left: leaving would close the household, which isn't built yet (ADR-0018 §2, clarification). Plain, without blame.",
+    "note": "Warning on the leave page for the last adult with an account: leaving closes the household at once, and it is deleted 14 days later (ADR-0018 §2, clarification).",
     "needsReview": ["nl"]
   },
   "leave.successor-gone": {
@@ -2880,6 +2880,10 @@
   },
   "activity.one-off-removed": {
     "note": "Activity log entry: a member removed a one-off task. {actor} is a name, or “A former member”. {task} is the task's name as it was, never translated. {who} picks the wording: 'you' when the reader did it, '*' otherwise (ADR-0018 §5, clarification).",
+    "needsReview": ["nl"]
+  },
+  "leave.submit-closes": {
+    "note": "The leave button for the last adult with an account, whose leaving closes the household.",
     "needsReview": ["nl"]
   }
 }

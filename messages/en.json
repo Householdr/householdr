@@ -798,7 +798,7 @@
   "leave.title": "Leave {household}",
   "leave.failed": "You’re still in the household",
   "leave.invalid": "Choose how the household’s history shows you.",
-  "leave.last-adult": "You’re the only adult with an account in the household, so leaving would close it. That isn’t possible yet.",
+  "leave.last-adult": "You’re the only adult with an account in the household, so leaving closes it: nobody can open it any more, nothing is planned for it, and it is deleted 14 days later. Children’s accounts stay as they are.",
   "leave.successor-gone": "The member you chose can’t become head any more. Choose again.",
   "leave.last-head": "You’re the household’s last head, so someone else becomes head the moment you leave.",
   "leave.intro": "You leave at once, without giving a reason. Nobody is told: the household only sees that you’re no longer in it.",
@@ -1074,5 +1074,6 @@
         "who=*": "{actor} removed a one-off task: {task}"
       }
     }
-  ]
+  ],
+  "leave.submit-closes": "Leave and close the household"
 }

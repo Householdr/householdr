@@ -798,7 +798,7 @@
   "leave.title": "{household} verlaten",
   "leave.failed": "Je bent nog lid van het huishouden",
   "leave.invalid": "Kies hoe de geschiedenis van het huishouden je toont.",
-  "leave.last-adult": "Je bent de enige volwassene met een account in het huishouden, dus als je vertrekt, wordt het gesloten. Dat kan nog niet.",
+  "leave.last-adult": "Je bent de enige volwassene met een account in het huishouden, dus als je vertrekt, wordt het gesloten: niemand kan het nog openen, er wordt niets meer voor gepland, en 14 dagen later wordt het verwijderd. De accounts van kinderen blijven zoals ze zijn.",
   "leave.successor-gone": "Wie je koos, kan geen hoofd meer worden. Kies opnieuw.",
   "leave.last-head": "Je bent het laatste hoofd van het huishouden, dus iemand anders wordt hoofd zodra je vertrekt.",
   "leave.intro": "Je vertrekt meteen, zonder een reden te geven. Niemand krijgt een bericht: het huishouden ziet alleen dat je er niet meer bij bent.",
@@ -1074,5 +1074,6 @@
         "who=*": "{actor} heeft een eenmalige taak verwijderd: {task}"
       }
     }
-  ]
+  ],
+  "leave.submit-closes": "Vertrekken en het huishouden sluiten"
 }

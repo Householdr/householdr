@@ -2,11 +2,10 @@ import { m } from '#lib/paraglide/messages.js';
 import type { SupportService } from '@householdr/domain';
 
 /** Why leaving didn't go through, from the form action's error code. */
-type LeaveProblem = 'invalid' | 'last-adult' | 'successor';
+type LeaveProblem = 'invalid' | 'successor';
 
 const problems: Record<LeaveProblem, () => string> = {
   invalid: m['leave.invalid'],
-  'last-adult': m['leave.last-adult'],
   successor: m['leave.successor-gone'],
 };
 
