@@ -1056,5 +1056,6 @@
         "who=*": "{actor} answered a swap for {subject}."
       }
     }
-  ]
+  ],
+  "plan.redraft-intro": "Drafting it again plans the week anew from the household as it is now. Tasks a head moved stay where they are."
 }

@@ -120,7 +120,7 @@ for (const javaScriptEnabled of [true, false]) {
   test.describe(javaScriptEnabled ? 'with JavaScript' : 'without JavaScript (CODE-13)', () => {
     test.use({ javaScriptEnabled });
 
-    test('tells a head who joined after the draft, and drafts it again for them (ADR-0002 §1)', async ({
+    test('tells a head who joined after the draft, and drafts it again for them (ADR-0002 §1, ADR-0006 §2)', async ({
       page,
       accounts,
       account,
@@ -148,7 +148,13 @@ for (const javaScriptEnabled of [true, false]) {
       await expect(week.getByRole('status')).toHaveText(
         'The draft is made again, with everyone in the household.',
       );
-      await expect(week.getByRole('button', { name: 'Draft it again' })).toHaveCount(0);
+      // Nobody joined since this draft, so it only says what drafting again does (ADR-0006 §2).
+      await expect(week.getByText(/joined after this draft/)).toHaveCount(0);
+      await expect(
+        week.getByText(
+          'Drafting it again plans the week anew from the household as it is now. Tasks a head moved stay where they are.',
+        ),
+      ).toBeVisible();
       await expect(
         week.getByRole('region', { name: 'Alex' }).getByRole('listitem'),
       ).not.toHaveCount(0);

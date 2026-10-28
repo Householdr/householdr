@@ -168,8 +168,9 @@ export interface ShownWeek {
   /** What publishing it early sends, for a head who may. */
   publish: { week: string; version: number } | null;
   /**
-   * For heads, while it is a draft that gives some members nothing as they joined after it was
-   * made: who, in words, and what drafting it again sends (ADR-0002 §1, clarification).
+   * For heads, while it is a draft: what drafting it again does, or who joined after it was made
+   * and gets nothing from it, in words, and what drafting it again sends (ADR-0002 §1,
+   * clarification; ADR-0006 §2).
    */
   redraft: { said: string; week: string } | null;
   members: { id: string; heading: string; items: ShownItem[] }[];
@@ -392,16 +393,21 @@ export function usePlan(
           : m['plan.draft']({ when: dayAndTime(week.publishAt, timeZone, locale) })
         : null,
       publish: draft && mayPublish ? { week: week.start, version: week.version } : null,
+      // Heads re-run the allocator on a draft at any time, keeping what they moved (ADR-0006 §2);
+      // above all once someone joined after it was made (ADR-0002 §1, clarification).
       redraft:
-        draft && mayPublish && week.joinedSince.length > 0
+        draft && mayPublish
           ? {
-              said: m['plan.joined-since']({
-                count: week.joinedSince.length,
-                names: listOf(
-                  week.joinedSince.map(({ name }) => name),
-                  locale,
-                ),
-              }),
+              said:
+                week.joinedSince.length > 0
+                  ? m['plan.joined-since']({
+                      count: week.joinedSince.length,
+                      names: listOf(
+                        week.joinedSince.map(({ name }) => name),
+                        locale,
+                      ),
+                    })
+                  : m['plan.redraft-intro'](),
               week: week.start,
             }
           : null,
