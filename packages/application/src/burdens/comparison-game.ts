@@ -1,18 +1,9 @@
-import { comparisons, households, inHousehold, schedules, tasks } from '@householdr/db';
-import {
-  can,
-  estimateBurdens,
-  inRandomOrder,
-  intervalTimesPerYear,
-  nextPair,
-  timesPerYear,
-  type Evidence,
-} from '@householdr/domain';
-import { and, eq, isNull } from 'drizzle-orm';
+import { households, inHousehold } from '@householdr/db';
+import { can, inRandomOrder, nextPair } from '@householdr/domain';
 import * as v from 'valibot';
 import type { HouseholdContext } from '../households/membership';
 import type { Random } from '../ports';
-import { scheduleOf } from '../tasks/stored-schedule';
+import { burdenTasks, memberBurdens } from './household-burdens';
 
 /** A task of the household, as the comparison game names it. */
 export interface ComparedTask {
@@ -83,43 +74,9 @@ export async function comparisonGame(
       .from(households);
     if (!household) throw new Error('The household of a member is gone.');
     const today = context.clock.now().toZonedDateTimeISO(household.timeZone).toPlainDate();
-    const rows = await tx
-      .select({
-        id: tasks.id,
-        name: tasks.name,
-        everyCount: tasks.everyCount,
-        everyUnit: tasks.everyUnit,
-        rules: schedules.rules,
-        extraDates: schedules.extraDates,
-        exceptionDates: schedules.exceptionDates,
-      })
-      .from(tasks)
-      .leftJoin(schedules, eq(schedules.id, tasks.scheduleId))
-      // One-off tasks come and go, and aren't compared (ADR-0003 §3a, clarification); removed ones
-      // are gone (ADR-0001 §1, clarification).
-      .where(and(isNull(tasks.once), eq(tasks.removed, false)));
-    // Row-level security keeps other households out, but not the other members: the member's own
-    // answers only (ADR-0003 §5, ADR-0018 §4).
-    const answers = await tx
-      .select({ harder: comparisons.harderTaskId, easier: comparisons.easierTaskId })
-      .from(comparisons)
-      .where(eq(comparisons.memberId, self.id));
-    // How often a task comes round in a year: by its schedule, or 365 / N for a "since last done"
-    // task (ADR-0004 §7–§8).
-    const weightOf = ({ id, everyCount, everyUnit, ...schedule }: (typeof rows)[number]) => {
-      const { rules, extraDates, exceptionDates } = schedule;
-      if (rules && extraDates && exceptionDates) {
-        return timesPerYear(scheduleOf({ rules, extraDates, exceptionDates }), today);
-      }
-      if (everyCount === null || everyUnit === null) {
-        throw new Error(`Task ${id} has neither a schedule nor an interval.`);
-      }
-      return intervalTimesPerYear({ count: everyCount, unit: everyUnit });
-    };
-    const estimates = estimateBurdens(
-      rows.map((row) => ({ id: row.id, prior: 1, weight: weightOf(row) })),
-      answers.map(({ harder, easier }): Evidence => ({ kind: 'comparison', harder, easier })),
-    );
+    const rows = await burdenTasks(tx, today);
+    // The member's own answers only, never another's (ADR-0003 §5, ADR-0018 §4).
+    const { estimates, answered } = await memberBurdens(tx, self.id, rows);
     const named = new Map(rows.map(({ id, name }) => [id, { id, name }]));
     const ids = nextPair(estimates, skipped);
     const shown = ids && inRandomOrder(ids, context.random.next());
@@ -140,7 +97,7 @@ export async function comparisonGame(
       household: household.name,
       pair: first && second ? ([first, second] as const) : null,
       skipped,
-      answered: answers.length > 0,
+      answered: answered > 0,
       hardestFirst,
     };
   });

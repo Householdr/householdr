@@ -15,6 +15,7 @@ import { and, eq, inArray } from 'drizzle-orm';
 import * as v from 'valibot';
 import type { HouseholdContext } from '../households/membership';
 import { balancesOf } from '../ledger/balances';
+import { householdBurdens } from '../burdens/household-burdens';
 import { planningOf } from './planning';
 
 const id = v.pipe(v.string(), v.uuid());
@@ -55,6 +56,7 @@ async function swappable(tx: Transaction, ids: string[], today: Temporal.PlainDa
       planStatus: plans.status,
       weekEnd: plans.weekEnd,
       duration: tasks.duration,
+      taskId: tasks.id,
     })
     .from(assignments)
     .innerJoin(plans, eq(plans.id, assignments.planId))
@@ -210,14 +212,25 @@ export async function answerSwap(
       await answered('void');
       return { ok: false, error: 'gone' };
     }
-    // Each at their own cost: the prior burden, until the comparison game brings evidence.
+    // Each at their own cost: their own burden (ADR-0003 §1).
+    const burdenOf = await householdBurdens(tx, today);
     const reassign = (assignment: string, member: string, cost: number) =>
       tx
         .update(assignments)
         .set({ memberId: member, cost, reason: 'swapped', version: nextVersion(assignments) })
         .where(eq(assignments.id, assignment));
-    await reassign(swap.give, swap.toMember, given.duration);
-    if (swap.take && taken) await reassign(swap.take, swap.fromMember, taken.duration);
+    await reassign(
+      swap.give,
+      swap.toMember,
+      given.duration * burdenOf(given.taskId, swap.toMember),
+    );
+    if (swap.take && taken) {
+      await reassign(
+        swap.take,
+        swap.fromMember,
+        taken.duration * burdenOf(taken.taskId, swap.fromMember),
+      );
+    }
     await answered('accepted');
     // Another swap that offered either occurrence can no longer go through.
     const moved = swap.take ? [swap.give, swap.take] : [swap.give];

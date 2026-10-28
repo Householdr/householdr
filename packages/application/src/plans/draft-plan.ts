@@ -27,6 +27,7 @@ import {
 } from '@householdr/domain';
 import { and, eq, gte, inArray, lt, notExists, sql } from 'drizzle-orm';
 import * as v from 'valibot';
+import { householdBurdens } from '../burdens/household-burdens';
 import { closeDue } from './closing';
 import { lastDoneOf } from '../tasks/last-done';
 import { scheduleOf } from '../tasks/stored-schedule';
@@ -214,17 +215,18 @@ export async function draftWeek(tx: Transaction, draft: Draft): Promise<string |
   // Shares and availability count over the days at home still to come (ADR-0005 §5, ADR-0007 §3).
   const people = await membersOf(tx, planning, week, [...away, ...goneDays(week, today)]);
   const rules = await rulesByTask(tx);
+  const burdenOf = await householdBurdens(tx, today);
   const allocation = allocate({
     week: week.start,
     calendar,
     rebalanceRate: rebalanceRates[planning.rebalance],
     members: people,
-    // Every burden is the prior until the comparison game brings evidence: 1.0 for a custom task
-    // (ADR-0003 §2, clarification).
+    // Each member's own burden, from their answers in the comparison game, around the prior of
+    // 1.0 for a custom task (ADR-0003 §1–§4); a change counts from the next draft (§4).
     tasks: household.map(({ task }): AllocationTask => ({
       id: task.id,
       duration: task.duration,
-      burden: new Map(people.map((member) => [member.id, 1])),
+      burden: new Map(people.map((member) => [member.id, burdenOf(task.id, member.id)])),
       // Who it is for: old enough, and as heads bound, excluded or allowed (ADR-0001 §3).
       ...(rules.get(task.id) ?? { constraints: new Map() }),
     })),
