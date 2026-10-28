@@ -1,4 +1,6 @@
 import type { PlanTask } from '../plans/week-occurrences';
+import type { WindowEdge } from '../schedules/occurrence';
+import type { Interval } from '../schedules/since-last-done';
 
 /**
  * How long one occurrence of a task takes, in whole minutes (ADR-0001 §5): at least a minute, and at
@@ -11,6 +13,19 @@ export const taskDuration = { min: 1, max: 24 * 60 } as const;
 /** Whether `minutes` can be a task's duration: a whole number within `taskDuration`. */
 export function isTaskDuration(minutes: number): boolean {
   return Number.isInteger(minutes) && minutes >= taskDuration.min && minutes <= taskDuration.max;
+}
+
+/**
+ * The longest interval of a "since last done" task in each unit: a year, as for its first time
+ * (ADR-0004 §8). A chore that comes round less often than that has a date of its own.
+ */
+export const taskInterval = { days: 365, weeks: 52, months: 12 } as const;
+
+/** Whether `every` can be a "since last done" task's interval: a whole number from 1 up to a year. */
+export function isTaskInterval(every: Interval): boolean {
+  return (
+    Number.isInteger(every.count) && every.count >= 1 && every.count <= taskInterval[every.unit]
+  );
 }
 
 /**
@@ -53,7 +68,44 @@ export function changedStartRange(today: Temporal.PlainDate, kept: Temporal.Plai
 }
 
 /**
+ * Whether a one-off task due on `date` can have `deadline` as the last day it can be done on
+ * (ADR-0004 §4), given `today` in the household's time zone: on or after its date, and within
+ * `startRange(today)`, as its date is, so no one-off floats more than a year ahead; or, when a
+ * one-off is changed, the deadline it has already (`kept`), which may have passed.
+ */
+export function isOneOffDeadline(
+  deadline: Temporal.PlainDate,
+  date: Temporal.PlainDate,
+  today: Temporal.PlainDate,
+  kept?: Temporal.PlainDate,
+): boolean {
+  if (kept?.equals(deadline)) return true;
+  return Temporal.PlainDate.compare(deadline, date) >= 0 && isStartDay(deadline, today);
+}
+
+/**
  * The on-miss policy a task's form starts on, before whoever adds the task picks: roll over, since
  * a chore that still needs doing is the safer guess (ADR-0002 §2, clarification).
  */
 export const defaultOnMiss: PlanTask['onMiss'] = 'roll over';
+
+/**
+ * How far a fixed window's edges may lie from the schedule date, in days either way, and how long
+ * the window may last, in days (ADR-0004 §4, clarification).
+ */
+export const fixedWindow = { dayOffset: 3, days: 7 } as const;
+
+/**
+ * Whether a fixed task's window can run from `from` to `to` (ADR-0004 §4, clarification): each edge
+ * a whole number of days from 3 before to 3 after the schedule date, and the window ending after it
+ * starts and lasting at most 7 days, counted on the local clock.
+ */
+export function isFixedWindow(from: WindowEdge, to: WindowEdge): boolean {
+  const edgeOk = ({ dayOffset }: WindowEdge) =>
+    Number.isInteger(dayOffset) && Math.abs(dayOffset) <= fixedWindow.dayOffset;
+  if (!edgeOk(from) || !edgeOk(to)) return false;
+  const minutes = ({ dayOffset, time }: WindowEdge) =>
+    dayOffset * 24 * 60 + time.hour * 60 + time.minute;
+  const length = minutes(to) - minutes(from);
+  return length > 0 && length <= fixedWindow.days * 24 * 60;
+}

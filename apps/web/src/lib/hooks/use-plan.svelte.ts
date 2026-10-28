@@ -3,6 +3,7 @@ import { tick } from 'svelte';
 import {
   calendarDays,
   dayAndTime,
+  dayTime,
   fullDay,
   listOf,
   timeOf,
@@ -26,6 +27,8 @@ interface ItemData {
   task: string;
   /** `YYYY-MM-DD`. */
   date: string;
+  /** For a task at set times: its window, as epoch milliseconds, which everyone sees. */
+  window: { start: number; end: number } | null;
   /** Whether the reader may mark it done now. */
   completable: boolean;
   completion: {
@@ -34,7 +37,7 @@ interface ItemData {
     day: string;
     /** How long ago that day was. */
     when: PastDay;
-    /** Epoch milliseconds, for those it credits only (ADR-0018 §3). */
+    /** Epoch milliseconds, for those it credits, and for everyone at set times (ADR-0018 §3). */
     at: number | null;
     doers: Named[];
     loggedBy: Named;
@@ -80,6 +83,8 @@ export interface ShownItem {
   day: string;
   /** Whether `day` says "any day" of the week rather than naming one. */
   anyDay: boolean;
+  /** For a task at set times: when its window opens and closes, as a weekday and a time. */
+  times: { from: string; to: string } | null;
   points: string | null;
   why: string;
   /** Who did it and when, who logged it if not only they did, and undoing it, if the reader may. */
@@ -281,6 +286,10 @@ export function usePlan(
         date: row.date,
         day,
         anyDay: earlier,
+        times: row.window && {
+          from: dayTime(row.window.start, timeZone, locale),
+          to: dayTime(row.window.end, timeZone, locale),
+        },
         done: row.completion && doneOf(row.completion, row.task, day),
         check,
         complete: row.completable

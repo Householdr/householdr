@@ -1,6 +1,6 @@
 {
-  "id": "5e38bd1f-dc61-4f5d-85df-2b2dd95f6838",
-  "prevId": "10c40611-a405-4996-a03b-e974ab575eb1",
+  "id": "4f2fd7a7-be60-4c45-94a7-4b8d449295c1",
+  "prevId": "bbb7c9a0-876d-4090-9d25-2a14f84d3910",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1590,148 +1590,6 @@
       },
       "isRLSEnabled": false
     },
-    "public.notifications": {
-      "name": "notifications",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "household_id": {
-          "name": "household_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "member_id": {
-          "name": "member_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "kind": {
-          "name": "kind",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "at": {
-          "name": "at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "week": {
-          "name": "week",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "notifications_member_at": {
-          "name": "notifications_member_at",
-          "columns": [
-            {
-              "expression": "household_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "member_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "notifications_household_id_households_id_fk": {
-          "name": "notifications_household_id_households_id_fk",
-          "tableFrom": "notifications",
-          "tableTo": "households",
-          "columnsFrom": [
-            "household_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "notifications_member": {
-          "name": "notifications_member",
-          "tableFrom": "notifications",
-          "tableTo": "members",
-          "columnsFrom": [
-            "household_id",
-            "member_id"
-          ],
-          "columnsTo": [
-            "household_id",
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "notifications_plan": {
-          "name": "notifications_plan",
-          "tableFrom": "notifications",
-          "tableTo": "plans",
-          "columnsFrom": [
-            "household_id",
-            "week"
-          ],
-          "columnsTo": [
-            "household_id",
-            "week_start"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {
-        "household_only": {
-          "name": "household_only",
-          "as": "PERMISSIVE",
-          "for": "ALL",
-          "to": [
-            "public"
-          ],
-          "using": "\"notifications\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid",
-          "withCheck": "\"notifications\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid"
-        }
-      },
-      "checkConstraints": {
-        "notifications_kind": {
-          "name": "notifications_kind",
-          "value": "\"notifications\".\"kind\" in ('plan.drafted', 'plan.published')"
-        },
-        "notifications_week": {
-          "name": "notifications_week",
-          "value": "(\"notifications\".\"kind\" in ('plan.drafted', 'plan.published')) = (\"notifications\".\"week\" is not null)"
-        }
-      },
-      "isRLSEnabled": false
-    },
     "public.occurrences": {
       "name": "occurrences",
       "schema": "",
@@ -2502,7 +2360,43 @@
           "name": "schedule_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
+        },
+        "every_count": {
+          "name": "every_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "every_unit": {
+          "name": "every_unit",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "start": {
+          "name": "start",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "once": {
+          "name": "once",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deadline": {
+          "name": "deadline",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "added_by": {
+          "name": "added_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
         },
         "timing": {
           "name": "timing",
@@ -2575,6 +2469,21 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "tasks_added_by": {
+          "name": "tasks_added_by",
+          "tableFrom": "tasks",
+          "tableTo": "members",
+          "columnsFrom": [
+            "household_id",
+            "added_by"
+          ],
+          "columnsTo": [
+            "household_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -2616,6 +2525,18 @@
         "tasks_on_miss": {
           "name": "tasks_on_miss",
           "value": "\"tasks\".\"on_miss\" in ('roll over', 'lapse')"
+        },
+        "tasks_recurrence": {
+          "name": "tasks_recurrence",
+          "value": "(\"tasks\".\"schedule_id\" is not null and \"tasks\".\"every_count\" is null and \"tasks\".\"every_unit\" is null\n          and \"tasks\".\"start\" is null and \"tasks\".\"once\" is null)\n        or (\"tasks\".\"schedule_id\" is null and \"tasks\".\"timing\" = 'flexible' and \"tasks\".\"on_miss\" = 'roll over'\n          and \"tasks\".\"once\" is null\n          and \"tasks\".\"start\" is not null and (\"tasks\".\"every_unit\" = 'days' and \"tasks\".\"every_count\" between 1 and 365\n            or \"tasks\".\"every_unit\" = 'weeks' and \"tasks\".\"every_count\" between 1 and 52\n            or \"tasks\".\"every_unit\" = 'months' and \"tasks\".\"every_count\" between 1 and 12))\n        or (\"tasks\".\"schedule_id\" is null and \"tasks\".\"every_count\" is null and \"tasks\".\"every_unit\" is null\n          and \"tasks\".\"start\" is null and \"tasks\".\"timing\" = 'flexible' and \"tasks\".\"once\" is not null\n          and \"tasks\".\"added_by\" is not null)"
+        },
+        "tasks_deadline": {
+          "name": "tasks_deadline",
+          "value": "\"tasks\".\"deadline\" is null or \"tasks\".\"once\" <= \"tasks\".\"deadline\""
+        },
+        "tasks_one_off": {
+          "name": "tasks_one_off",
+          "value": "\"tasks\".\"once\" is not null or (\"tasks\".\"deadline\" is null and \"tasks\".\"added_by\" is null)"
         }
       },
       "isRLSEnabled": false
@@ -3042,83 +2963,6 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "auth.notification_preferences": {
-      "name": "notification_preferences",
-      "schema": "auth",
-      "columns": {
-        "account_id": {
-          "name": "account_id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "channels": {
-          "name": "channels",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "quiet_start": {
-          "name": "quiet_start",
-          "type": "time",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "quiet_end": {
-          "name": "quiet_end",
-          "type": "time",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "email_fallback": {
-          "name": "email_fallback",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "version": {
-          "name": "version",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "notification_preferences_account_id_accounts_id_fk": {
-          "name": "notification_preferences_account_id_accounts_id_fk",
-          "tableFrom": "notification_preferences",
-          "tableTo": "accounts",
-          "schemaTo": "auth",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "notification_preferences_channels": {
-          "name": "notification_preferences_channels",
-          "value": "jsonb_typeof(\"auth\".\"notification_preferences\".\"channels\") = 'object'\n        and \"auth\".\"notification_preferences\".\"channels\" - array['plan.published', 'plan.drafted'] = '{}'::jsonb\n        and not jsonb_path_exists(\"auth\".\"notification_preferences\".\"channels\", '$.* ? (!(@ == \"push-and-email\" || @ == \"push\" || @ == \"email\" || @ == \"app\"))')"
-        },
-        "notification_preferences_quiet_hours": {
-          "name": "notification_preferences_quiet_hours",
-          "value": "\"auth\".\"notification_preferences\".\"quiet_start\" <> \"auth\".\"notification_preferences\".\"quiet_end\""
-        },
-        "notification_preferences_version": {
-          "name": "notification_preferences_version",
-          "value": "\"auth\".\"notification_preferences\".\"version\" >= 1"
-        }
-      },
       "isRLSEnabled": false
     },
     "auth.passkeys": {

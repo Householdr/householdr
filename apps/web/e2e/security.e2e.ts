@@ -1,4 +1,11 @@
-import { expect, expectAccessible, forceFlags, otherDevice, signIn, test } from './fixtures';
+import {
+  expect,
+  expectAccessible,
+  forceFlags,
+  otherDevice,
+  signInWithForm,
+  test,
+} from './fixtures';
 
 // The security page's signed-in devices (ADR-0010 §6, ADR-0018 §2), behind sign-in's flag
 // (CODE-20).
@@ -29,8 +36,8 @@ for (const javaScriptEnabled of [true, false]) {
     }) => {
       const laptop = await otherDevice(browser, baseURL, firefoxOnLinux, flags);
       const elsewhere = await laptop.newPage();
-      await signIn(elsewhere, account);
-      await signIn(page, account);
+      await signInWithForm(elsewhere, account);
+      await signInWithForm(page, account);
 
       const devices = page.getByRole('list', { name: 'Signed-in devices' });
       await expect(devices.getByRole('listitem').first()).toContainText('This device');
@@ -52,7 +59,7 @@ for (const javaScriptEnabled of [true, false]) {
     });
 
     test('signs this device out', async ({ page, account }) => {
-      await signIn(page, account);
+      await signInWithForm(page, account);
       await page
         .getByRole('listitem')
         .filter({ hasText: 'This device' })
@@ -69,8 +76,8 @@ test('signs every other device out at once', async ({ page, browser, baseURL, ac
   const laptop = await otherDevice(browser, baseURL, firefoxOnLinux, flags);
   const phone = await otherDevice(browser, baseURL, safariOnIphone, flags);
   const others = [await laptop.newPage(), await phone.newPage()];
-  for (const other of others) await signIn(other, account);
-  await signIn(page, account);
+  for (const other of others) await signInWithForm(other, account);
+  await signInWithForm(page, account);
   await expect(page.getByRole('listitem')).toHaveCount(3);
 
   await page.getByRole('button', { name: 'Sign out all other devices' }).click();

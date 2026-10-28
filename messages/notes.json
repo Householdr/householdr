@@ -2293,5 +2293,549 @@
   "notification-settings.back": {
     "note": "Link from the notification settings to the list of the account's households.",
     "needsReview": ["nl"]
+  },
+  "tasks.since-last-done": {
+    "note": "A choice under 'How often', next to the fixed frequencies: the task is due a while after it was last done, not on set dates (for example cleaning the oven).",
+    "needsReview": ["nl"]
+  },
+  "tasks.every": {
+    "note": "Heading over the two fields that say how long after the last time a task counted from when it was last done is due again.",
+    "needsReview": ["nl"]
+  },
+  "tasks.every-count": {
+    "note": "Label of the number in 'Due again after', such as the 6 in 'every 6 weeks'.",
+    "needsReview": ["nl"]
+  },
+  "tasks.every-unit": {
+    "note": "Label of the choice of unit in 'Due again after'.",
+    "needsReview": ["nl"]
+  },
+  "tasks.unit-days": {
+    "note": "A unit to choose in 'Due again after', after the number.",
+    "needsReview": ["nl"]
+  },
+  "tasks.unit-weeks": {
+    "note": "A unit to choose in 'Due again after', after the number.",
+    "needsReview": ["nl"]
+  },
+  "tasks.unit-months": {
+    "note": "A unit to choose in 'Due again after', after the number.",
+    "needsReview": ["nl"]
+  },
+  "tasks.first-due-hint": {
+    "note": "Hint under 'First time' for a task counted from when it was last done.",
+    "needsReview": ["nl"]
+  },
+  "tasks.every-days": {
+    "note": "How often a task counted from when it was last done is due, in the list of tasks. 'About' because it follows when it's really done.",
+    "needsReview": ["nl"]
+  },
+  "tasks.every-weeks": {
+    "note": "As tasks.every-days, in weeks.",
+    "needsReview": ["nl"]
+  },
+  "tasks.every-months": {
+    "note": "As tasks.every-days, in months.",
+    "needsReview": ["nl"]
+  },
+  "tasks.how-due": {
+    "note": "Label in the list of tasks, next to a bar from 'just done' to 'due' and its state in words.",
+    "needsReview": ["nl"]
+  },
+  "tasks.due-today": {
+    "note": "The state next to the bar: the task is due today.",
+    "needsReview": ["nl"]
+  },
+  "tasks.due-in": {
+    "note": "The state next to the bar: days until the task is due. Days the household is away don't count.",
+    "needsReview": ["nl"]
+  },
+  "tasks.overdue": {
+    "note": "The state next to the bar: days since the task became due.",
+    "needsReview": ["nl"]
+  },
+  "tasks.invalid-every-count": {
+    "note": "Why adding or saving a task didn't work: the number in 'Due again after' is not a whole number from 1 up to a year.",
+    "needsReview": ["nl"]
+  },
+  "tasks.invalid-every-unit": {
+    "note": "Why adding or saving a task didn't work: no unit was chosen in 'Due again after'.",
+    "needsReview": ["nl"]
+  },
+  "tasks.when": {
+    "note": "Legend of the choice between doing a task any time in its plan week or at set times around each date (ADR-0004 §4).",
+    "needsReview": ["nl"]
+  },
+  "tasks.when-week": {
+    "note": "Choice: the task can be done any day of the plan week its date falls in.",
+    "needsReview": ["nl"]
+  },
+  "tasks.when-set": {
+    "note": "Choice: the task is done within a window of set times around each date, such as putting the bins out the evening before collection.",
+    "needsReview": ["nl"]
+  },
+  "tasks.window": {
+    "note": "Legend of a task's set times, and their label in its details.",
+    "needsReview": ["nl"]
+  },
+  "tasks.window-hint": {
+    "note": "Hint under the set times, with the example of bins collected on a Wednesday morning.",
+    "needsReview": ["nl"]
+  },
+  "tasks.window-from-day": {
+    "note": "Label of the day the window starts on, relative to the task's date: “the day before”, “the day itself”…",
+    "needsReview": ["nl"]
+  },
+  "tasks.window-from-time": {
+    "note": "Label of the time the window starts at.",
+    "needsReview": ["nl"]
+  },
+  "tasks.window-to-day": {
+    "note": "Label of the day the window ends on, relative to the task's date.",
+    "needsReview": ["nl"]
+  },
+  "tasks.window-to-time": {
+    "note": "Label of the time the window ends at; it ends before this time.",
+    "needsReview": ["nl"]
+  },
+  "tasks.day-itself": {
+    "note": "A window's day: the task's date itself. Lower case, as it is also used inside “From {from} at …”.",
+    "needsReview": ["nl"]
+  },
+  "tasks.day-before": {
+    "note": "A window's day: the day before the task's date. Lower case.",
+    "needsReview": ["nl"]
+  },
+  "tasks.day-after": {
+    "note": "A window's day: the day after the task's date. Lower case.",
+    "needsReview": ["nl"]
+  },
+  "tasks.days-before": {
+    "note": "A window's day: {count} (2 or 3) days before the task's date. Lower case.",
+    "needsReview": ["nl"]
+  },
+  "tasks.days-after": {
+    "note": "A window's day: {count} (2 or 3) days after the task's date. Lower case.",
+    "needsReview": ["nl"]
+  },
+  "tasks.window-words": {
+    "note": "A task's set times in words. {from} and {to} are days such as “the day before”; {fromTime} and {toTime} are times as HH:MM.",
+    "needsReview": ["nl"]
+  },
+  "tasks.invalid-when": {
+    "note": "Problem: neither choice of when the task is done was sent.",
+    "needsReview": ["nl"]
+  },
+  "tasks.invalid-window": {
+    "note": "Problem with a task's set times: missing, more than 3 days from its date, or ending before they start.",
+    "needsReview": ["nl"]
+  },
+  "tasks.advanced": {
+    "note": "The choice of how often a task is done for a schedule built from rules and dates in the advanced editor (ADR-0004 §3).",
+    "needsReview": ["nl"]
+  },
+  "schedule.weeks": {
+    "note": "A rule of an advanced schedule, inside a sentence (it starts lower case). {days} lists weekdays, such as 'Monday and Thursday'.",
+    "needsReview": ["nl"]
+  },
+  "schedule.months": {
+    "note": "A rule of an advanced schedule, inside a sentence (it starts lower case). {day} is a day of the month, 1 to 31.",
+    "needsReview": ["nl"]
+  },
+  "schedule.weekdays-of-month": {
+    "note": "A rule of an advanced schedule, inside a sentence (it starts lower case), such as 'every 2nd and 4th Tuesday of the month'. {which} lists words like '2nd' or 'last'; {day} is a weekday.",
+    "needsReview": ["nl"]
+  },
+  "schedule.year": {
+    "note": "A rule of an advanced schedule, inside a sentence (it starts lower case). {date} is a day and month, such as '3 March'.",
+    "needsReview": ["nl"]
+  },
+  "schedule.first": {
+    "note": "Which of a weekday in its month, as in 'every 1st Monday of the month'.",
+    "needsReview": ["nl"]
+  },
+  "schedule.second": {
+    "note": "Which of a weekday in its month, as in 'every 2nd Tuesday of the month'.",
+    "needsReview": ["nl"]
+  },
+  "schedule.third": {
+    "note": "Which of a weekday in its month, as in 'every 3rd Wednesday of the month'.",
+    "needsReview": ["nl"]
+  },
+  "schedule.fourth": {
+    "note": "Which of a weekday in its month, as in 'every 4th Thursday of the month'.",
+    "needsReview": ["nl"]
+  },
+  "schedule.last": {
+    "note": "Which of a weekday in its month, as in 'every last Friday of the month'.",
+    "needsReview": ["nl"]
+  },
+  "schedule.on": {
+    "note": "An advanced schedule made of extra dates only, in a sentence (it starts lower case). {dates} lists days.",
+    "needsReview": ["nl"]
+  },
+  "schedule.also-on": {
+    "note": "The extra dates of an advanced schedule, after its rules, separated by a semicolon. {dates} lists days.",
+    "needsReview": ["nl"]
+  },
+  "schedule.not-on": {
+    "note": "The exception dates of an advanced schedule, after its rules, separated by a semicolon. {dates} lists days.",
+    "needsReview": ["nl"]
+  },
+  "schedule.rules": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Legend of the group of rules.",
+    "needsReview": ["nl"]
+  },
+  "schedule.rules-hint": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Hint under the rules' legend.",
+    "needsReview": ["nl"]
+  },
+  "schedule.rule": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Legend of one rule; {number} counts from 1.",
+    "needsReview": ["nl"]
+  },
+  "schedule.kind": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Label of the choice of what kind of rule it is.",
+    "needsReview": ["nl"]
+  },
+  "schedule.kind-weeks": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). A kind of rule.",
+    "needsReview": ["nl"]
+  },
+  "schedule.kind-months": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). A kind of rule: it repeats on the day of the month of its first time.",
+    "needsReview": ["nl"]
+  },
+  "schedule.kind-weekdays-of-month": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). A kind of rule, such as the 2nd and 4th Tuesday.",
+    "needsReview": ["nl"]
+  },
+  "schedule.kind-year": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). A kind of rule: it repeats on the day and month of its first time.",
+    "needsReview": ["nl"]
+  },
+  "schedule.every": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Label of the number of weeks or months between dates; 1 is every week or month.",
+    "needsReview": ["nl"]
+  },
+  "schedule.days": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Legend of the weekdays a rule every few weeks falls on.",
+    "needsReview": ["nl"]
+  },
+  "schedule.which": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Legend of the choice of 1st, 2nd, 3rd, 4th or last of a weekday.",
+    "needsReview": ["nl"]
+  },
+  "schedule.weekday": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Label of the weekday of a rule on a weekday of the month.",
+    "needsReview": ["nl"]
+  },
+  "schedule.start": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Label of the first date of a rule.",
+    "needsReview": ["nl"]
+  },
+  "schedule.start-hint": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Hint under a rule's first time.",
+    "needsReview": ["nl"]
+  },
+  "schedule.remove-rule": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Button that removes one rule.",
+    "needsReview": ["nl"]
+  },
+  "schedule.add-rule": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Button that adds a rule.",
+    "needsReview": ["nl"]
+  },
+  "schedule.extra-dates": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Legend of the days the schedule adds.",
+    "needsReview": ["nl"]
+  },
+  "schedule.extra-dates-hint": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Hint under the extra dates' legend.",
+    "needsReview": ["nl"]
+  },
+  "schedule.extra-date": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Label of one extra date; {number} counts from 1.",
+    "needsReview": ["nl"]
+  },
+  "schedule.remove-extra": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Button that removes one extra date.",
+    "needsReview": ["nl"]
+  },
+  "schedule.add-extra": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Button that adds an extra date.",
+    "needsReview": ["nl"]
+  },
+  "schedule.exception-dates": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Legend of the days the schedule leaves out.",
+    "needsReview": ["nl"]
+  },
+  "schedule.exception-dates-hint": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Hint under the dates to leave out.",
+    "needsReview": ["nl"]
+  },
+  "schedule.exception-date": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Label of one date to leave out; {number} counts from 1.",
+    "needsReview": ["nl"]
+  },
+  "schedule.remove-exception": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Button that removes one date to leave out.",
+    "needsReview": ["nl"]
+  },
+  "schedule.add-exception": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). Button that adds a date to leave out.",
+    "needsReview": ["nl"]
+  },
+  "schedule.in-words": {
+    "note": "The advanced schedule editor in the form that adds or changes a task (ADR-0004 §3). The schedule read back in plain words, under the editor; {words} is a sentence such as 'Every Wednesday; not on 11 November 2026'.",
+    "needsReview": ["nl"]
+  },
+  "tasks.invalid-rules": {
+    "note": "Why the rules of an advanced schedule were refused (ADR-0004 §3).",
+    "needsReview": ["nl"]
+  },
+  "tasks.invalid-extra-dates": {
+    "note": "Why the extra dates of an advanced schedule were refused (ADR-0004 §3).",
+    "needsReview": ["nl"]
+  },
+  "tasks.invalid-exception-dates": {
+    "note": "Why the exception dates of an advanced schedule were refused (ADR-0004 §3).",
+    "needsReview": ["nl"]
+  },
+  "tasks.shared": {
+    "note": "Shared schedules in the form that adds or changes a task, and in the list (ADR-0004 §1). A choice of how often a task is done: on the schedule of another task, such as bringing the bins in on the days they go out.",
+    "needsReview": ["nl"]
+  },
+  "tasks.shared-with": {
+    "note": "Shared schedules in the form that adds or changes a task, and in the list (ADR-0004 §1). Label of the choice of the task whose dates it shares; in the list, the label before the tasks it shares them with.",
+    "needsReview": ["nl"]
+  },
+  "tasks.shared-note": {
+    "note": "Shared schedules in the form that adds or changes a task, and in the list (ADR-0004 §1). Note on the form of a task that shares its dates; {tasks} lists task names.",
+    "needsReview": ["nl"]
+  },
+  "tasks.own-dates": {
+    "note": "Shared schedules in the form that adds or changes a task, and in the list (ADR-0004 §1). Checkbox on the form of a task that shares its dates: new dates for this task alone.",
+    "needsReview": ["nl"]
+  },
+  "tasks.invalid-shared-with": {
+    "note": "Shared schedules in the form that adds or changes a task, and in the list (ADR-0004 §1). Why the choice of whose dates to share was refused.",
+    "needsReview": ["nl"]
+  },
+  "task.who": {
+    "note": "Who does a task, on the task's page, which only heads see (ADR-0001 §3). Legend of the group with the minimum age and the constraints.",
+    "needsReview": ["nl"]
+  },
+  "task.who-hint": {
+    "note": "Who does a task, on the task's page, which only heads see (ADR-0001 §3). Hint under the legend.",
+    "needsReview": ["nl"]
+  },
+  "task.minimum-age": {
+    "note": "Who does a task, on the task's page, which only heads see (ADR-0001 §3). Label of the task's minimum age.",
+    "needsReview": ["nl"]
+  },
+  "task.minimum-age-hint": {
+    "note": "Who does a task, on the task's page, which only heads see (ADR-0001 §3). Hint under the minimum age.",
+    "needsReview": ["nl"]
+  },
+  "task.constraint-none": {
+    "note": "Who does a task, on the task's page, which only heads see (ADR-0001 §3). A member's constraint: none, they take it when they fit.",
+    "needsReview": ["nl"]
+  },
+  "task.constraint-bound": {
+    "note": "Who does a task, on the task's page, which only heads see (ADR-0001 §3). A member's constraint: the task is always theirs.",
+    "needsReview": ["nl"]
+  },
+  "task.constraint-excluded": {
+    "note": "Who does a task, on the task's page, which only heads see (ADR-0001 §3). A member's constraint: the task is never theirs.",
+    "needsReview": ["nl"]
+  },
+  "task.constraint-allowed": {
+    "note": "Who does a task, on the task's page, which only heads see (ADR-0001 §3). A child's constraint: they may take it though they are younger than its minimum age.",
+    "needsReview": ["nl"]
+  },
+  "tasks.invalid-minimum-age": {
+    "note": "Who does a task, on the task's page, which only heads see (ADR-0001 §3). Why the minimum age was refused.",
+    "needsReview": ["nl"]
+  },
+  "tasks.invalid-constraints": {
+    "note": "Who does a task, on the task's page, which only heads see (ADR-0001 §3). Why the constraints were refused.",
+    "needsReview": ["nl"]
+  },
+  "task.linked-to": {
+    "note": "Same-person links between tasks (ADR-0001 §7). Label of the choice of the task whose next occurrence goes to the same member, on the task's page.",
+    "needsReview": ["nl"]
+  },
+  "task.linked-to-hint": {
+    "note": "Same-person links between tasks (ADR-0001 §7). Hint under the choice.",
+    "needsReview": ["nl"]
+  },
+  "task.linked-to-none": {
+    "note": "Same-person links between tasks (ADR-0001 §7). The choice of no linked task.",
+    "needsReview": ["nl"]
+  },
+  "tasks.linked-to": {
+    "note": "Same-person links between tasks (ADR-0001 §7). Label in the task list before the linked task's name.",
+    "needsReview": ["nl"]
+  },
+  "tasks.invalid-linked-to": {
+    "note": "Same-person links between tasks (ADR-0001 §7). Why the link was refused.",
+    "needsReview": ["nl"]
+  },
+  "areas.page-title": {
+    "note": "A household's areas, rooms or parts of the home that group its tasks (ADR-0001 §1). Browser tab title of the areas page.",
+    "needsReview": ["nl"]
+  },
+  "areas.title": {
+    "note": "A household's areas, rooms or parts of the home that group its tasks (ADR-0001 §1). Heading of the areas page.",
+    "needsReview": ["nl"]
+  },
+  "areas.intro": {
+    "note": "A household's areas, rooms or parts of the home that group its tasks (ADR-0001 §1). Introduction on the areas page.",
+    "needsReview": ["nl"]
+  },
+  "areas.none": {
+    "note": "A household's areas, rooms or parts of the home that group its tasks (ADR-0001 §1). When the household has no areas.",
+    "needsReview": ["nl"]
+  },
+  "areas.name": {
+    "note": "A household's areas, rooms or parts of the home that group its tasks (ADR-0001 §1). Label of an area's name.",
+    "needsReview": ["nl"]
+  },
+  "areas.add": {
+    "note": "A household's areas, rooms or parts of the home that group its tasks (ADR-0001 §1). Heading of the form that adds an area, and its button.",
+    "needsReview": ["nl"]
+  },
+  "areas.added": {
+    "note": "A household's areas, rooms or parts of the home that group its tasks (ADR-0001 §1). Status after an area is added.",
+    "needsReview": ["nl"]
+  },
+  "areas.rename": {
+    "note": "A household's areas, rooms or parts of the home that group its tasks (ADR-0001 §1). Button that saves an area's new name; {name} is its name now.",
+    "needsReview": ["nl"]
+  },
+  "areas.renamed": {
+    "note": "A household's areas, rooms or parts of the home that group its tasks (ADR-0001 §1). Status after an area is renamed.",
+    "needsReview": ["nl"]
+  },
+  "areas.remove": {
+    "note": "A household's areas, rooms or parts of the home that group its tasks (ADR-0001 §1). Button that removes an area; its tasks are left without one.",
+    "needsReview": ["nl"]
+  },
+  "areas.removed": {
+    "note": "A household's areas, rooms or parts of the home that group its tasks (ADR-0001 §1). Status after an area is removed.",
+    "needsReview": ["nl"]
+  },
+  "areas.invalid": {
+    "note": "A household's areas, rooms or parts of the home that group its tasks (ADR-0001 §1). Why an area's name was refused.",
+    "needsReview": ["nl"]
+  },
+  "areas.taken": {
+    "note": "A household's areas, rooms or parts of the home that group its tasks (ADR-0001 §1). Why an area's name was refused: another area has it, whatever the case.",
+    "needsReview": ["nl"]
+  },
+  "areas.failed": {
+    "note": "A household's areas (ADR-0001 §1). Heading of the summary when adding, renaming or removing an area didn't work.",
+    "needsReview": ["nl"]
+  },
+  "areas.back": {
+    "note": "A household's areas, rooms or parts of the home that group its tasks (ADR-0001 §1). Link from the areas page back to the tasks.",
+    "needsReview": ["nl"]
+  },
+  "tasks.areas": {
+    "note": "A household's areas, rooms or parts of the home that group its tasks (ADR-0001 §1). Link from the tasks page to the areas page.",
+    "needsReview": ["nl"]
+  },
+  "tasks.area": {
+    "note": "A household's areas, rooms or parts of the home that group its tasks (ADR-0001 §1). Label of a task's area in its form.",
+    "needsReview": ["nl"]
+  },
+  "tasks.no-area": {
+    "note": "A household's areas, rooms or parts of the home that group its tasks (ADR-0001 §1). A task without an area: the choice in its form, and the heading of such tasks in the list.",
+    "needsReview": ["nl"]
+  },
+  "tasks.invalid-area": {
+    "note": "A household's areas, rooms or parts of the home that group its tasks (ADR-0001 §1). Why a task's area was refused.",
+    "needsReview": ["nl"]
+  },
+  "tasks.one-offs": {
+    "note": "Heading of the list of one-off tasks on the tasks page (ADR-0004 §4).",
+    "needsReview": ["nl"]
+  },
+  "tasks.one-off-done": {
+    "note": "Beside a one-off task in the list that was done this plan week; it stays listed until the next plan week begins (ADR-0006 §3, clarification).",
+    "needsReview": ["nl"]
+  },
+  "tasks.one-off-week": {
+    "note": "When a one-off task without a deadline is done: any day of the plan week of its day. {day} is a date, such as “14 October 2026”.",
+    "needsReview": ["nl"]
+  },
+  "tasks.add-one-off": {
+    "note": "Heading of the form that adds a one-off task, which every member with an account sees, children included (ADR-0006 §3).",
+    "needsReview": ["nl"]
+  },
+  "tasks.add-one-off-intro": {
+    "note": "Under the heading of the one-off form: what a one-off task is for, and that everyone may add one.",
+    "needsReview": ["nl"]
+  },
+  "tasks.one-off-name-hint": {
+    "note": "Hint under the name of a one-off task. Keep the example a small chore done once.",
+    "needsReview": ["nl"]
+  },
+  "tasks.one-off-date": {
+    "note": "Label of a one-off task's day, in its form and its details.",
+    "needsReview": ["nl"]
+  },
+  "tasks.one-off-date-hint": {
+    "note": "Hint under a one-off task's day: it is planned somewhere in that day's plan week, not necessarily on the day.",
+    "needsReview": ["nl"]
+  },
+  "tasks.one-off-deadline": {
+    "note": "Label of a one-off task's optional last day; up to it, the task can float into a quiet week (ADR-0004 §4).",
+    "needsReview": ["nl"]
+  },
+  "tasks.one-off-deadline-hint": {
+    "note": "Hint under the optional last day of a one-off task.",
+    "needsReview": ["nl"]
+  },
+  "tasks.add-one-off-submit": {
+    "note": "Button that adds the one-off task.",
+    "needsReview": ["nl"]
+  },
+  "tasks.add-one-off-failed": {
+    "note": "Heading of the error summary when adding a one-off task was refused.",
+    "needsReview": ["nl"]
+  },
+  "tasks.invalid-deadline": {
+    "note": "Problem with a one-off task's last day: before its day, or more than a year away.",
+    "needsReview": ["nl"]
+  },
+  "task.invalid-deadline": {
+    "note": "Problem with a one-off task's last day when changing it: it may keep the day it has, which may have passed.",
+    "needsReview": ["nl"]
+  },
+  "task.remove-one-off-intro": {
+    "note": "On the page that confirms removing a one-off task: removing it is logged for the whole household (ADR-0018 §5, clarification).",
+    "needsReview": ["nl"]
+  },
+  "plan.times-label": {
+    "note": "The plan page: label of a task's set times (ADR-0004 §4), which everyone sees (ADR-0018 §3).",
+    "needsReview": ["nl"]
+  },
+  "plan.times": {
+    "note": "The plan page: a task's set times; {from} and {to} are a weekday and a time, such as 'Tuesday 18:00'.",
+    "needsReview": ["nl"]
+  },
+  "plan.add-one-off": {
+    "note": "Link on the plan page to the tasks page's form for a one-off task, which starts on today (ADR-0006 §3, clarification).",
+    "needsReview": ["nl"]
+  },
+  "activity.one-off-added": {
+    "note": "Activity log entry: a member added a one-off task, such as 'Fix the shelf' (ADR-0006 §3). {actor} is a name, or “A former member”. {task} is the task's name as the member typed it, never translated. {who} picks the wording: 'you' when the reader did it, '*' otherwise (ADR-0018 §5, clarification).",
+    "needsReview": ["nl"]
+  },
+  "activity.one-off-removed": {
+    "note": "Activity log entry: a member removed a one-off task. {actor} is a name, or “A former member”. {task} is the task's name as it was, never translated. {who} picks the wording: 'you' when the reader did it, '*' otherwise (ADR-0018 §5, clarification).",
+    "needsReview": ["nl"]
   }
 }

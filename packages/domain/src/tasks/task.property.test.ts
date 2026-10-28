@@ -1,6 +1,14 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { changedStartRange, isStartDay, isTaskDuration, startRange, taskDuration } from './task';
+import {
+  changedStartRange,
+  isStartDay,
+  isTaskDuration,
+  isTaskInterval,
+  startRange,
+  taskDuration,
+  taskInterval,
+} from './task';
 
 // Invariants of what a new or changed task may be (ADR-0001 §5, ADR-0004 §3; TEST-1).
 
@@ -16,6 +24,21 @@ describe('task duration invariants (ADR-0001 §5)', () => {
 
   it('refuses any part of a minute', () => {
     fc.assert(fc.property(fc.double({ noInteger: true }), (minutes) => !isTaskDuration(minutes)));
+  });
+});
+
+describe('task interval invariants (ADR-0004 §8)', () => {
+  it('accepts exactly the whole numbers from 1 up to the limit of their unit', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: -1000, max: 1000 }),
+        fc.constantFrom('days', 'weeks', 'months'),
+        (count, unit) => {
+          const within = count >= 1 && count <= taskInterval[unit];
+          expect(isTaskInterval({ count, unit })).toBe(within);
+        },
+      ),
+    );
   });
 });
 

@@ -1,6 +1,6 @@
 import { comparisons, inHousehold, tasks } from '@householdr/db';
 import { can } from '@householdr/domain';
-import { inArray } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import * as v from 'valibot';
 import type { HouseholdContext } from '../households/membership';
 
@@ -46,11 +46,11 @@ export async function answerComparison(
   const easier = harder === first ? second : first;
   const { householdId } = context;
   return inHousehold(context.db, householdId, async (tx): Promise<AnswerComparisonResult> => {
-    // Row-level security hides every other household's tasks.
+    // Row-level security hides every other household's tasks; removed ones aren't compared.
     const found = await tx
       .select({ id: tasks.id, name: tasks.name })
       .from(tasks)
-      .where(inArray(tasks.id, [harder, easier]));
+      .where(and(inArray(tasks.id, [harder, easier]), eq(tasks.removed, false)));
     const names = new Map(found.map(({ id, name }) => [id, name]));
     const harderName = names.get(harder);
     const easierName = names.get(easier);

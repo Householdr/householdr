@@ -123,11 +123,18 @@ export {
   type TemporaryShareField,
   type TemporaryShareInput,
 } from './shares/temporary-shares';
+export { addArea, listAreas, removeArea, renameArea, type Area } from './tasks/areas';
+export { addOneOff } from './tasks/add-one-off';
 export { addTask } from './tasks/add-task';
+export { editOneOff } from './tasks/edit-one-off';
 export { editTask } from './tasks/edit-task';
-export { listTasks, type TaskSummary } from './tasks/list-tasks';
+export { listTasks, type OneOffSummary, type TaskSummary } from './tasks/list-tasks';
+export { type OneOffField } from './tasks/one-off-fields';
+export { oneOffToEdit } from './tasks/one-off-to-edit';
+export { removeOneOff } from './tasks/remove-one-off';
 export { removeTask } from './tasks/remove-task';
-export type { TaskField } from './tasks/task-fields';
+export { type EditableOneOff } from './tasks/stored-one-off';
+export { advanced, shared, sinceLastDone, type Repeat, type TaskField } from './tasks/task-fields';
 export { taskToEdit, type EditableTask } from './tasks/task-to-edit';
 // The household member as permissions see them, which the web app's guard keeps per request; why an
 // occurrence went where it did, which the plan's page puts in words; and how fast balances even

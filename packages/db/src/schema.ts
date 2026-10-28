@@ -1,7 +1,9 @@
 import {
   defaultPlanTimings,
+  type Constraint,
   defaultRebalance,
   type HouseholdCalendar,
+  type Interval,
   type NotificationKind,
   type PlanStatus,
   type PlanTask,
@@ -23,8 +25,10 @@ import {
   jsonb,
   pgPolicy,
   pgTable,
+  primaryKey,
   smallint,
   text,
+  time,
   timestamp,
   unique,
   uniqueIndex,
@@ -355,7 +359,17 @@ export type ActivityAction =
    */
   | 'away.added'
   /** A head removed a time the whole household is away, never which days. */
-  | 'away.removed';
+  | 'away.removed'
+  /**
+   * A member added a one-off task, named by its name, which every member sees in the task list
+   * anyway (ADR-0006 §3, ADR-0018 §5, clarifications).
+   */
+  | 'one-off.added'
+  /** A member removed a one-off task, named by its name. */
+  | 'one-off.removed';
+
+/** The actions whose entries name the task they were about, by its name (ADR-0018 §5). */
+const aboutTask = sql.raw(`'one-off.added', 'one-off.removed'`);
 
 /** The actions whose entries name whom they were done to (ADR-0018 §5). */
 const toWhom = sql.raw(`'completion.logged', 'completion.undone', 'completion.picked-up',
@@ -407,6 +421,11 @@ export const activityLog = pgTable(
      * or the days someone is away.
      */
     subjectId: uuid().references(() => members.id, { onDelete: 'set null' }),
+    /**
+     * For the actions about a task, the task's name as it was then, kept when the task changes or
+     * goes; none for any other.
+     */
+    taskName: text(),
   },
   (t) => [
     householdOnly(t.householdId),
@@ -417,7 +436,12 @@ export const activityLog = pgTable(
         'household.country', 'household.started', 'completion.logged', 'completion.undone',
         'completion.picked-up', 'share.changed', 'temporary-share.added',
         'temporary-share.removed', 'absence.added', 'absence.removed', 'away.added',
-        'away.removed')`,
+        'away.removed', 'one-off.added', 'one-off.removed')`,
+    ),
+    // The actions about a task name it, and only they.
+    check(
+      'activity_log_task_name',
+      sql`(${t.action} in (${aboutTask})) = (${t.taskName} is not null)`,
     ),
     // Only the actions done to someone name them. One way only: a subject whose profile goes
     // leaves the entry without them.
@@ -498,10 +522,37 @@ export const schedules = pgTable(
 );
 
 /**
- * A chore of the household (ADR-0001 §1): its name, how long one occurrence takes, the schedule its
- * dates come from, how a date becomes an occurrence window, and what happens to an occurrence that
- * isn't done. Fixed windows, "since last done" intervals, one-off dates, areas, minimum ages and
- * same-person links come with the slices that use them, as columns of their own.
+ * A room or part of the home that groups the household's tasks (ADR-0001 §1, clarification): a
+ * name heads give it, unlike the household's other areas whatever the case. It has no effect on
+ * allocation; removing it leaves its tasks without one.
+ */
+export const areas = pgTable(
+  'areas',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    /** As typed: household content is never translated (ADR-0016 §6). */
+    name: text().notNull(),
+  },
+  (t) => [
+    householdOnly(t.householdId),
+    // What a task refers to, so that it can only be in an area of its own household.
+    unique('areas_household_area').on(t.householdId, t.id),
+    uniqueIndex('areas_household_name').on(t.householdId, sql`lower(${t.name})`),
+    check('areas_name', sql`${t.name} <> '' and char_length(${t.name}) <= 50`),
+  ],
+);
+
+/**
+ * A chore of the household (ADR-0001 §1): its name, how long one occurrence takes, where its dates
+ * come from, how a date becomes an occurrence window, and what happens to an occurrence that isn't
+ * done. Its dates come from a schedule (ADR-0004 §2); for a "since last done" task, from its last
+ * completion, `every` so long after it, and from `start` while it was never done (§8); or, for a
+ * one-off task, from its one date (§4). Children below its minimum age don't take it unless a head
+ * allows it (ADR-0001 §3); its next occurrence of a linked task goes to the same member (§7). It
+ * may be in one of the household's areas (§1).
  */
 export const tasks = pgTable(
   'tasks',
@@ -514,11 +565,47 @@ export const tasks = pgTable(
     name: text().notNull(),
     /** Whole minutes for one occurrence, within the domain's `taskDuration` (ADR-0001 §5). */
     duration: integer().notNull(),
-    scheduleId: uuid().notNull(),
-    /** ADR-0004 §4. */
-    timing: text().$type<Exclude<Timing['kind'], 'fixed'>>().notNull(),
+    /** None for a "since last done" task. */
+    scheduleId: uuid(),
+    /** For a "since last done" task: how long after its last completion it is due (ADR-0004 §8). */
+    everyCount: integer(),
+    everyUnit: text().$type<Interval['unit']>(),
+    /** For a "since last done" task: when it is due while it was never done (ADR-0004 §8). */
+    start: date(),
+    /** For a one-off task: its date, and the last day it can be done on, if any (ADR-0004 §4). */
+    once: date(),
+    deadline: date(),
+    /**
+     * For a one-off task: the member who added it, who may change or remove it until it is done
+     * (ADR-0006 §3, clarification).
+     */
+    addedBy: uuid(),
+    /**
+     * Removed by a head after it was planned (ADR-0001 §1, clarification): it is out of the task
+     * list and never planned again, while its done work and past plans keep it by its name.
+     */
+    removed: boolean().notNull().default(false),
+    /** ADR-0004 §4; a "since last done" task is flexible within the week it is due in (§8). */
+    timing: text().$type<Timing['kind']>().notNull(),
+    /**
+     * For a fixed task: its window, from a day before or after the schedule date at a local time to
+     * another (ADR-0004 §4, clarification).
+     */
+    windowFromDay: smallint(),
+    windowFromTime: time(),
+    windowToDay: smallint(),
+    windowToTime: time(),
     /** ADR-0002 §2. */
     onMiss: text().$type<PlanTask['onMiss']>().notNull(),
+    /** In whole years, if it has one (ADR-0001 §3, clarification). */
+    minimumAge: smallint(),
+    /**
+     * The task whose next occurrence goes to whoever does this one, if any (ADR-0001 §7,
+     * clarification). Removing that task clears it.
+     */
+    linkedTo: uuid(),
+    /** The area it is in, if any (ADR-0001 §1, clarification). */
+    areaId: uuid(),
     /** For versioned updates (CODE-14, ADR-0019 §5). */
     version: integer().notNull().default(1),
   },
@@ -535,8 +622,57 @@ export const tasks = pgTable(
     unique('tasks_household_task').on(t.householdId, t.id),
     check('tasks_name', sql`${t.name} <> ''`),
     check('tasks_duration', sql`${t.duration} between 1 and 1440`),
-    check('tasks_timing', sql`${t.timing} in ('flexible', 'floating')`),
+    check('tasks_timing', sql`${t.timing} in ('flexible', 'floating', 'fixed')`),
+    // A fixed task has a window within 3 days of its date, and only a fixed task has one (ADR-0004
+    // §4, clarification); the use cases check that it ends after it starts.
+    check(
+      'tasks_window',
+      sql`(${t.timing} = 'fixed') = (${t.windowFromDay} is not null and ${t.windowFromTime} is not null
+          and ${t.windowToDay} is not null and ${t.windowToTime} is not null)
+        and (${t.windowFromDay} is null or ${t.windowFromDay} between -3 and 3)
+        and (${t.windowToDay} is null or ${t.windowToDay} between -3 and 3)`,
+    ),
     check('tasks_on_miss', sql`${t.onMiss} in ('roll over', 'lapse')`),
+    check('tasks_minimum_age', sql`${t.minimumAge} is null or ${t.minimumAge} between 1 and 17`),
+    // Another task of its own household, never itself.
+    foreignKey({
+      name: 'tasks_linked_to',
+      columns: [t.householdId, t.linkedTo],
+      foreignColumns: [t.householdId, t.id],
+    }),
+    check('tasks_linked_to_other', sql`${t.linkedTo} <> ${t.id}`),
+    // An area of its own household.
+    foreignKey({
+      name: 'tasks_area',
+      columns: [t.householdId, t.areaId],
+      foreignColumns: [areas.householdId, areas.id],
+    }),
+    // On a schedule; "since last done": flexible, always rolling over, within a year (§8); or a
+    // one-off, flexible within its week or up to its deadline (§4), added by a member.
+    check(
+      'tasks_recurrence',
+      sql`(${t.scheduleId} is not null and ${t.everyCount} is null and ${t.everyUnit} is null
+          and ${t.start} is null and ${t.once} is null)
+        or (${t.scheduleId} is null and ${t.timing} = 'flexible' and ${t.onMiss} = 'roll over'
+          and ${t.once} is null
+          and ${t.start} is not null and (${t.everyUnit} = 'days' and ${t.everyCount} between 1 and 365
+            or ${t.everyUnit} = 'weeks' and ${t.everyCount} between 1 and 52
+            or ${t.everyUnit} = 'months' and ${t.everyCount} between 1 and 12))
+        or (${t.scheduleId} is null and ${t.everyCount} is null and ${t.everyUnit} is null
+          and ${t.start} is null and ${t.timing} = 'flexible' and ${t.once} is not null
+          and ${t.addedBy} is not null)`,
+    ),
+    check('tasks_deadline', sql`${t.deadline} is null or ${t.once} <= ${t.deadline}`),
+    // Only a one-off task has a deadline or a member who added it.
+    check(
+      'tasks_one_off',
+      sql`${t.once} is not null or (${t.deadline} is null and ${t.addedBy} is null)`,
+    ),
+    foreignKey({
+      name: 'tasks_added_by',
+      columns: [t.householdId, t.addedBy],
+      foreignColumns: [members.householdId, members.id],
+    }),
   ],
 );
 
@@ -611,6 +747,42 @@ export const absences = pgTable(
     // For a member's absences to go with their profile without reading the whole table.
     index('absences_member').on(t.memberId),
     check('absences_days', sql`${t.lastDay} >= ${t.firstDay}`),
+  ],
+);
+
+/**
+ * A head's setting for one task and one member (ADR-0001 §1, §3 with its clarification): always
+ * theirs, never theirs, or allowed below the task's minimum age, the domain's `Constraint`. A member
+ * without one takes the task if they fit. Only heads see them. It goes with the task or the member.
+ */
+export const taskConstraints = pgTable(
+  'task_constraints',
+  {
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    taskId: uuid().notNull(),
+    memberId: uuid().notNull(),
+    constraint: text().$type<Constraint>().notNull(),
+  },
+  (t) => [
+    householdOnly(t.householdId),
+    primaryKey({ columns: [t.taskId, t.memberId] }),
+    // A task and a member of its own household: foreign keys are checked past row-level security
+    // (CODE-17).
+    foreignKey({
+      name: 'task_constraints_task_household',
+      columns: [t.householdId, t.taskId],
+      foreignColumns: [tasks.householdId, tasks.id],
+    }).onDelete('cascade'),
+    foreignKey({
+      name: 'task_constraints_member_household',
+      columns: [t.householdId, t.memberId],
+      foreignColumns: [members.householdId, members.id],
+    }).onDelete('cascade'),
+    // For a member's constraints to go with their profile without reading the whole table.
+    index('task_constraints_member').on(t.memberId),
+    check('task_constraints_constraint', sql`${t.constraint} in ('bound', 'excluded', 'allowed')`),
   ],
 );
 

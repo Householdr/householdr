@@ -1,5 +1,12 @@
 import type { Page } from '@playwright/test';
-import { expect, expectAccessible, forceFlags, signIn, test, withAuthenticator } from './fixtures';
+import {
+  expect,
+  expectAccessible,
+  forceFlags,
+  signInWithForm,
+  test,
+  withAuthenticator,
+} from './fixtures';
 import { forgetMail, mailTo } from './mail';
 import { proxyHeaders } from './proxy';
 
@@ -16,7 +23,7 @@ test('the passkeys aren’t on the security page while their flag is off', async
   account,
 }) => {
   await forceFlags(context, baseURL, { 'sign-in': true });
-  await signIn(page, account);
+  await signInWithForm(page, account);
   await expect(page.getByRole('heading', { name: 'Passkeys' })).toHaveCount(0);
 });
 
@@ -29,7 +36,7 @@ test('adds a passkey, named after the device, and e-mails the member', async ({
   await forceFlags(context, baseURL, flags);
   await withAuthenticator(page);
   await forgetMail(account.email);
-  await signIn(page, account);
+  await signInWithForm(page, account);
   const section = page.getByRole('region', { name: 'Passkeys' });
   await expect(section).toContainText('You have no passkeys yet.');
   await expectAccessible(page);
@@ -74,7 +81,7 @@ test('signs in with a passkey, first on the sign-in page', async ({
 }) => {
   await forceFlags(context, baseURL, flags);
   await withAuthenticator(page);
-  await signIn(page, account);
+  await signInWithForm(page, account);
   await addPasskeyAndSignOut(page);
 
   const passkey = page.getByRole('button', { name: 'Sign in with a passkey' });
@@ -97,7 +104,7 @@ test('says when a passkey doesn’t sign in, and keeps the password', async ({
 }) => {
   await forceFlags(context, baseURL, flags);
   await withAuthenticator(page);
-  await signIn(page, account);
+  await signInWithForm(page, account);
   await page.getByRole('button', { name: 'Add a passkey' }).click();
   await expect(page.getByText('The passkey is added.')).toBeVisible();
   // Removed from the account, though the device still has it.
@@ -131,7 +138,7 @@ test('confirms it’s you with a passkey once the sign-in is 10 minutes old', as
 }) => {
   await forceFlags(context, baseURL, flags);
   await withAuthenticator(page);
-  await signIn(page, account);
+  await signInWithForm(page, account);
   await page.getByRole('button', { name: 'Add a passkey' }).click();
   await expect(page.getByText('The passkey is added.')).toBeVisible();
   await accounts.signedInLongAgo(account.email);
@@ -169,12 +176,12 @@ for (const javaScriptEnabled of [true, false]) {
       await forceFlags(laptop, baseURL, flags);
       const there = await laptop.newPage();
       await withAuthenticator(there);
-      await signIn(there, account);
+      await signInWithForm(there, account);
       await there.getByRole('button', { name: 'Add a passkey' }).click();
       await expect(there.getByText('The passkey is added.')).toBeVisible();
 
       await forgetMail(account.email);
-      await signIn(page, account);
+      await signInWithForm(page, account);
       const section = page.getByRole('region', { name: 'Passkeys' });
       const passkey = section.getByRole('list', { name: 'Passkeys' }).getByRole('listitem');
       await expect(passkey).toContainText('Firefox on Linux');
@@ -198,7 +205,7 @@ for (const javaScriptEnabled of [true, false]) {
       accounts,
       account,
     }) => {
-      await signIn(page, account);
+      await signInWithForm(page, account);
       // A passkey no device holds, and a password without two-factor.
       await accounts.addSecondFactor(account.email);
       await accounts.addHousehold(account.email, 'Ash Lane');
@@ -222,7 +229,7 @@ for (const javaScriptEnabled of [true, false]) {
       accounts,
       account,
     }) => {
-      await signIn(page, account);
+      await signInWithForm(page, account);
       await accounts.signedInLongAgo(account.email);
       await page.reload();
       const section = page.getByRole('region', { name: 'Confirm it’s you' });

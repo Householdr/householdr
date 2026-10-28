@@ -67,6 +67,16 @@
     </section>
   {/each}
 
+  <!-- To the tasks page's form, which starts on today, so on this week (ADR-0006 §3). -->
+  {#if data.mayAddOneOffs}
+    <a
+      href="/households/{page.params.household}/tasks#add-one-off"
+      class="flex min-h-11 items-center self-start wrap-break-word underline underline-offset-4"
+    >
+      {m['plan.add-one-off']()}
+    </a>
+  {/if}
+
   <a
     href="/households/{page.params.household}"
     class="flex min-h-11 items-center self-start wrap-break-word underline underline-offset-4"
