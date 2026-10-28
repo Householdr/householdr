@@ -112,6 +112,13 @@ export const flags = {
     owner: 'Jens',
     expires: '2027-03-31',
   },
+  swaps: {
+    kind: 'release',
+    description:
+      'Swaps on the plan page: offering an open task of this week’s published plan to another member, for one of theirs or nothing, which they accept or decline after seeing what it does to both balances (ADR-0002 §5).',
+    owner: 'Jens',
+    expires: '2027-03-31',
+  },
   'page-transitions': {
     kind: 'release',
     description:

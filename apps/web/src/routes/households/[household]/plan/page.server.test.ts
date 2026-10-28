@@ -131,8 +131,9 @@ describe('a household’s plan page (ADR-0006 §2)', () => {
                 // A draft is never done from (ADR-0006 §4).
                 completable: false,
                 completion: null,
-                // Not until moves' flag is on (CODE-20).
+                // Not until moves' and swaps' flags are on (CODE-20).
                 move: null,
+                swappable: false,
                 cost: 30,
                 reason: 'only eligible member',
                 // Done any time that week, so without set times (ADR-0004 §4).
@@ -145,6 +146,7 @@ describe('a household’s plan page (ADR-0006 §2)', () => {
         joinedSince: [],
       },
       mayPublish: true,
+      swaps: [],
       you: membership.member.id,
     });
   });

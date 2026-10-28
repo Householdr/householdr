@@ -1012,5 +1012,49 @@
         "who=*": "{actor} took a task off {subject}: {task}"
       }
     }
+  ],
+  "plan.swap": "Swap or hand off",
+  "plan.swap-with": "Offer it to",
+  "plan.swap-hand-off": "{name}, for nothing in return",
+  "plan.swap-trade": "{name}, for {task} ({day})",
+  "plan.swap-button": "Offer",
+  "plan.swap-label": "Offer: {task}, {day}",
+  "plan.swap-proposed": "{task} is offered. It moves once they accept.",
+  "plan.swaps": "Swaps waiting for an answer",
+  "plan.swap-task": "{task} ({day})",
+  "plan.swap-offer-hand-off": "{from} offers {to}: {give}, for nothing in return.",
+  "plan.swap-offer-trade": "{from} offers {to}: {give}, for {take}.",
+  "plan.swap-balance": "{name}: {now} now, {after} once it’s done",
+  "plan.swap-accept": "Accept",
+  "plan.swap-decline": "Decline",
+  "plan.swap-waiting": "Waiting for {name} to answer.",
+  "plan.swap-accepted": "The swap is done.",
+  "plan.swap-declined": "The swap is declined.",
+  "plan.swap-failed": "The swap didn’t work",
+  "plan.swap-gone": "Something in the swap was done or moved since, so it can’t go through any more.",
+  "plan.swap-answered-already": "That swap was answered already.",
+  "plan.swap-already": "{task} is already offered in a swap that waits for an answer.",
+  "plan.swap-not-swappable": "{task} can’t be swapped any more.",
+  "plan.reason.swapped": "{name} took it over in a swap.",
+  "plan.reason.swapped-you": "You took it over in a swap.",
+  "activity.swap-proposed": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You proposed a swap for {subject}.",
+        "who=*": "{actor} proposed a swap for {subject}."
+      }
+    }
+  ],
+  "activity.swap-answered": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "You answered a swap for {subject}.",
+        "who=*": "{actor} answered a swap for {subject}."
+      }
+    }
   ]
 }
