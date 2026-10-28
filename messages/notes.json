@@ -2885,5 +2885,153 @@
   "leave.submit-closes": {
     "note": "The leave button for the last adult with an account, whose leaving closes the household.",
     "needsReview": ["nl"]
+  },
+  "plan.move": {
+    "note": "Opens the choice of whom a head gives a task of the plan to instead (ADR-0006 §2–§3). Heads only.",
+    "needsReview": ["nl"]
+  },
+  "plan.move-to": {
+    "note": "Heading of the list of members a head can give a task to.",
+    "needsReview": ["nl"]
+  },
+  "plan.move-button": {
+    "note": "Button that gives the task to the member chosen.",
+    "needsReview": ["nl"]
+  },
+  "plan.move-label": {
+    "note": "Accessible name of the Move button: {task} is the task's name, {day} its day, such as 'Wednesday' or 'any day this week'.",
+    "needsReview": ["nl"]
+  },
+  "plan.moved": {
+    "note": "Status once a head moved a task to someone else. {task} is the task's name.",
+    "needsReview": ["nl"]
+  },
+  "plan.move-failed": {
+    "note": "Heading of the error summary when moving a task didn't work.",
+    "needsReview": ["nl"]
+  },
+  "plan.move-changed": {
+    "note": "When someone else moved or changed the task since the head opened the plan (ADR-0019 §5). The page shows the plan as it is now.",
+    "needsReview": ["nl"]
+  },
+  "plan.not-movable": {
+    "note": "When a task can no longer be moved: it is done, or its plan week is over.",
+    "needsReview": ["nl"]
+  },
+  "activity.assignment-given": {
+    "note": "Activity log entry: a head gave a member a task of the published plan (ADR-0006 §3, ADR-0018 §5). {actor} and {subject} are names, or “A former member”; {task} is the task's name as typed. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was given to the reader, '*' otherwise.",
+    "needsReview": ["nl"]
+  },
+  "activity.assignment-taken": {
+    "note": "Activity log entry: a head took a task of the published plan off a member, to give it to someone else (ADR-0006 §3, ADR-0018 §5). {actor} and {subject} are names, or “A former member”; {task} is the task's name as typed. {who} picks the wording as for activity.assignment-given.",
+    "needsReview": ["nl"]
+  },
+  "plan.swap": {
+    "note": "Opens offering one's task of the plan to another member, for one of theirs (a trade) or nothing (a hand-off) (ADR-0002 §5).",
+    "needsReview": ["nl"]
+  },
+  "plan.swap-with": {
+    "note": "Label of the choice of whom to offer it to, and for what.",
+    "needsReview": ["nl"]
+  },
+  "plan.swap-hand-off": {
+    "note": "A choice: offer it to {name} for nothing in return (a hand-off).",
+    "needsReview": ["nl"]
+  },
+  "plan.swap-trade": {
+    "note": "A choice: offer it to {name} for their task {task} on {day} (a trade). {day} is a weekday or 'any day this week'.",
+    "needsReview": ["nl"]
+  },
+  "plan.swap-button": {
+    "note": "Button that sends the offer.",
+    "needsReview": ["nl"]
+  },
+  "plan.swap-label": {
+    "note": "Accessible name of that button: {task} and {day} of the task offered.",
+    "needsReview": ["nl"]
+  },
+  "plan.swap-proposed": {
+    "note": "Status once a task is offered: it moves only once the other accepts.",
+    "needsReview": ["nl"]
+  },
+  "plan.swaps": {
+    "note": "Heading of the swaps waiting for an answer that the reader is in.",
+    "needsReview": ["nl"]
+  },
+  "plan.swap-task": {
+    "note": "A task in a swap: its name and its day.",
+    "needsReview": ["nl"]
+  },
+  "plan.swap-offer-hand-off": {
+    "note": "A swap waiting for an answer: {from} offers {to} the task {give}, for nothing. {from} and {to} are names, the reader as 'Name (you)'.",
+    "needsReview": ["nl"]
+  },
+  "plan.swap-offer-trade": {
+    "note": "The same, for a trade: {give} for {take}.",
+    "needsReview": ["nl"]
+  },
+  "plan.swap-balance": {
+    "note": "What the swap does to a member's balance, which the other sees before accepting (ADR-0002 §5): {now} and {after} are points, such as '20 points'.",
+    "needsReview": ["nl"]
+  },
+  "plan.swap-accept": {
+    "note": "Button that accepts a swap.",
+    "needsReview": ["nl"]
+  },
+  "plan.swap-decline": {
+    "note": "Button that declines a swap.",
+    "needsReview": ["nl"]
+  },
+  "plan.swap-waiting": {
+    "note": "Under a swap the reader proposed: it waits for {name}.",
+    "needsReview": ["nl"]
+  },
+  "plan.swap-accepted": {
+    "note": "Status once a swap is accepted: the tasks moved.",
+    "needsReview": ["nl"]
+  },
+  "plan.swap-declined": {
+    "note": "Status once a swap is declined.",
+    "needsReview": ["nl"]
+  },
+  "plan.swap-failed": {
+    "note": "Heading of the error summary when a swap didn't go through.",
+    "needsReview": ["nl"]
+  },
+  "plan.swap-gone": {
+    "note": "When a task in the swap was done or moved since it was proposed: it is void now.",
+    "needsReview": ["nl"]
+  },
+  "plan.swap-answered-already": {
+    "note": "When the swap was answered already, by someone else or in another tab.",
+    "needsReview": ["nl"]
+  },
+  "plan.swap-already": {
+    "note": "When the task is already offered in another swap waiting for an answer.",
+    "needsReview": ["nl"]
+  },
+  "plan.swap-not-swappable": {
+    "note": "When the task can't be offered any more: done, or its week is over.",
+    "needsReview": ["nl"]
+  },
+  "plan.reason.swapped": {
+    "note": "Why a task of the plan is {name}'s: they took it over in a swap (ADR-0002 §5).",
+    "needsReview": ["nl"]
+  },
+  "plan.reason.swapped-you": {
+    "note": "The same, for the reader's own task.",
+    "needsReview": ["nl"]
+  },
+  "activity.swap-proposed": {
+    "note": "Activity log entry: a head proposed a swap for a profile without an account, acting for them (ADR-0002 §5, ADR-0018 §5). {who}: 'you' when the reader did it, '*' otherwise.",
+    "needsReview": ["nl"]
+  },
+  "activity.swap-answered": {
+    "note": "Activity log entry: a head accepted or declined a swap for a profile without an account.",
+    "needsReview": ["nl"]
+  },
+  "plan.redraft-intro": {
+    "note": "For heads, above the 'Draft it again' button of a draft: re-running the allocator keeps what heads moved (ADR-0006 §2).",
+    "needsReview": ["nl"]
   }
 }

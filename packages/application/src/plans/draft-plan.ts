@@ -27,6 +27,7 @@ import {
 } from '@householdr/domain';
 import { and, eq, gt, gte, inArray, lt, notExists, sql } from 'drizzle-orm';
 import * as v from 'valibot';
+import { householdBurdens } from '../burdens/household-burdens';
 import { closeDue } from './closing';
 import { lastDoneOf } from '../tasks/last-done';
 import { scheduleOf } from '../tasks/stored-schedule';
@@ -92,6 +93,8 @@ export async function draftPlan(context: PlanContext, input: unknown): Promise<D
     if (existing && context.member === 'scheduler') {
       return { ok: true, planned: true, planId: existing.id };
     }
+    // What heads moved in the draft they replace stays where they put it (ADR-0006 §2).
+    const preAssigned = existing ? await headAssigned(tx, existing.id) : new Map<string, string>();
     if (existing) await undoDraft(tx, existing.id);
     const planId = await draftWeek(tx, {
       householdId,
@@ -99,6 +102,7 @@ export async function draftPlan(context: PlanContext, input: unknown): Promise<D
       week,
       now: context.clock.now(),
       replacing: existing?.id,
+      preAssigned,
     });
     if (planId === undefined) return { ok: true, planned: false };
     return { ok: true, planned: true, planId };
@@ -150,6 +154,23 @@ async function undoDraft(tx: Transaction, planId: string) {
 }
 
 /**
+ * The occurrences heads moved in draft `planId`, by their ids, `task@date`, with the members they
+ * gave them to (ADR-0006 §2).
+ */
+async function headAssigned(tx: Transaction, planId: string) {
+  const rows = await tx
+    .select({ task: occurrences.taskId, date: occurrences.date, member: assignments.memberId })
+    .from(assignments)
+    .innerJoin(occurrences, eq(occurrences.id, assignments.occurrenceId))
+    .where(and(eq(assignments.planId, planId), eq(assignments.reason, 'assigned by head')));
+  return new Map(
+    rows.flatMap(({ task, date, member }) =>
+      member === null ? [] : [[occurrenceId(task, Temporal.PlainDate.from(date)), member] as const],
+    ),
+  );
+}
+
+/**
  * Removes draft `planId` of a week the household turned out to be away for entirely (ADR-0005 §5).
  * What it closed as its week began, it closed for a week that now has no plan: those are open
  * again, for the next planned week to carry over or close, as anything open when a period away
@@ -174,6 +195,8 @@ interface Draft {
   now: Temporal.Instant;
   /** The draft of the week being drafted again, if any. */
   replacing: string | undefined;
+  /** Members by occurrence id, `task@date`, as heads moved them in the draft it replaces. */
+  preAssigned?: ReadonlyMap<string, string>;
 }
 
 /**
@@ -217,22 +240,30 @@ export async function draftWeek(tx: Transaction, draft: Draft): Promise<string |
   // Shares and availability count over the days at home still to come (ADR-0005 §5, ADR-0007 §3).
   const people = await membersOf(tx, planning, week, [...away, ...goneDays(week, today)]);
   const rules = await rulesByTask(tx);
+  const burdenOf = await householdBurdens(tx, today);
   const allocation = allocate({
     week: week.start,
     calendar,
     rebalanceRate: rebalanceRates[planning.rebalance],
     members: people,
-    // Every burden is the prior until the comparison game brings evidence: 1.0 for a custom task
-    // (ADR-0003 §2, clarification).
+    // Each member's own burden, from their answers in the comparison game, around the prior of
+    // 1.0 for a custom task (ADR-0003 §1–§4); a change counts from the next draft (§4).
     tasks: household.map(({ task }): AllocationTask => ({
       id: task.id,
       duration: task.duration,
-      burden: new Map(people.map((member) => [member.id, 1])),
+      burden: new Map(people.map((member) => [member.id, burdenOf(task.id, member.id)])),
       // Who it is for: old enough, and as heads bound, excluded or allowed (ADR-0001 §3).
       ...(rules.get(task.id) ?? { constraints: new Map() }),
     })),
     occurrences: weekResult.occurrences,
-    preAssigned: new Map(),
+    // Those still in the week, for members who are still in the allocation.
+    preAssigned: new Map(
+      [...(draft.preAssigned ?? [])].filter(
+        ([occurrence, member]) =>
+          weekResult.occurrences.some((o) => o.id === occurrence) &&
+          people.some((person) => person.id === member),
+      ),
+    ),
     // A link from an occurrence assigned last week goes to the same member (ADR-0001 §7).
     carried: await carriedLinks(
       tx,

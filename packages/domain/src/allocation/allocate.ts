@@ -50,7 +50,9 @@ export type Reason =
   | 'only eligible member'
   | 'lowest relative load'
   | 'catching up'
-  | 're-allocated: member unavailable';
+  | 're-allocated: member unavailable'
+  /** Taken over in a swap the member accepted or proposed (ADR-0002 §5). */
+  | 'swapped';
 
 export interface Assignment {
   occurrence: string;

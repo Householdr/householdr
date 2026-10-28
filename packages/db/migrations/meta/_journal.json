@@ -285,57 +285,78 @@
     {
       "idx": 40,
       "version": "7",
-      "when": 1791899559505,
-      "tag": "0040_unavailabilities",
+      "when": 1793124488993,
+      "tag": "0040_plan-moves-log",
       "breakpoints": true
     },
     {
       "idx": 41,
       "version": "7",
-      "when": 1791911994666,
-      "tag": "0041_reallocated-reason",
+      "when": 1793176611506,
+      "tag": "0041_swaps",
       "breakpoints": true
     },
     {
       "idx": 42,
       "version": "7",
-      "when": 1791913852555,
-      "tag": "0042_former-members",
+      "when": 1791899559505,
+      "tag": "0042_unavailabilities",
       "breakpoints": true
     },
     {
       "idx": 43,
       "version": "7",
-      "when": 1791916105413,
-      "tag": "0043_leaving",
+      "when": 1791911994666,
+      "tag": "0043_reallocated-reason",
       "breakpoints": true
     },
     {
       "idx": 44,
       "version": "7",
-      "when": 1791920119695,
-      "tag": "0044_member-removed",
+      "when": 1791913852555,
+      "tag": "0044_former-members",
       "breakpoints": true
     },
     {
       "idx": 45,
       "version": "7",
-      "when": 1791958222463,
-      "tag": "0045_named-head",
+      "when": 1791916105413,
+      "tag": "0045_leaving",
       "breakpoints": true
     },
     {
       "idx": 46,
       "version": "7",
-      "when": 1791958223463,
-      "tag": "0046_activity-actions-after-merge",
+      "when": 1791920119695,
+      "tag": "0046_member-removed",
       "breakpoints": true
     },
     {
       "idx": 47,
       "version": "7",
+      "when": 1791958222463,
+      "tag": "0047_named-head",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1791958223463,
+      "tag": "0048_activity-actions-after-merge",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
       "when": 1793177949969,
-      "tag": "0047_closed-households",
+      "tag": "0049_closed-households",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1793177950969,
+      "tag": "0050_constraints-after-merge",
       "breakpoints": true
     }
   ]

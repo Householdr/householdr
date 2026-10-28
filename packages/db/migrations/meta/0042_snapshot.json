@@ -1,6 +1,6 @@
 {
-  "id": "999dd65c-edea-4a6c-92c5-d155c412f954",
-  "prevId": "b3927564-1c53-4434-8154-9460c5ecdbe4",
+  "id": "b0fec803-b237-4ae0-a45f-edbca13cb7bb",
+  "prevId": "8a6d6a05-99b8-47c8-93c4-d8d747f4128b",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -466,7 +466,7 @@
         },
         "assignments_reason": {
           "name": "assignments_reason",
-          "value": "\"assignments\".\"reason\" in ('bound', 'assigned by head', 'linked', 'only eligible member',\n        'lowest relative load', 'catching up', 're-allocated: member unavailable')"
+          "value": "\"assignments\".\"reason\" in ('bound', 'assigned by head', 'linked', 'only eligible member',\n        'lowest relative load', 'catching up')"
         },
         "assignments_unassigned_cause": {
           "name": "assignments_unassigned_cause",
@@ -1472,12 +1472,6 @@
           "notNull": true,
           "default": "now()"
         },
-        "left_at": {
-          "name": "left_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
         "version": {
           "name": "version",
           "type": "integer",
@@ -1592,10 +1586,6 @@
         "members_share_percent": {
           "name": "members_share_percent",
           "value": "\"members\".\"share_percent\" between 0 and 100"
-        },
-        "members_former": {
-          "name": "members_former",
-          "value": "\"members\".\"left_at\" is null or (\"members\".\"account_id\" is null and \"members\".\"share_percent\" is null)"
         }
       },
       "isRLSEnabled": false

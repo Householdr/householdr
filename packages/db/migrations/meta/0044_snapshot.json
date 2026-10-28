@@ -1,6 +1,6 @@
 {
-  "id": "31466647-06cb-41f1-8cc5-305190e220af",
-  "prevId": "6fe4a8d9-3a35-4739-8324-63eb65e7f0f2",
+  "id": "999dd65c-edea-4a6c-92c5-d155c412f954",
+  "prevId": "b3927564-1c53-4434-8154-9460c5ecdbe4",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -265,11 +265,11 @@
       "checkConstraints": {
         "activity_log_action": {
           "name": "activity_log_action",
-          "value": "\"activity_log\".\"action\" in ('household.name', 'household.timeZone', 'household.language',\n        'household.country', 'household.started', 'completion.logged', 'completion.undone',\n        'completion.picked-up', 'share.changed', 'temporary-share.added',\n        'temporary-share.removed', 'absence.added', 'absence.removed', 'unavailable.reported',\n        'unavailable.ended', 'away.added', 'away.removed', 'member.removed')"
+          "value": "\"activity_log\".\"action\" in ('household.name', 'household.timeZone', 'household.language',\n        'household.country', 'household.started', 'completion.logged', 'completion.undone',\n        'completion.picked-up', 'share.changed', 'temporary-share.added',\n        'temporary-share.removed', 'absence.added', 'absence.removed', 'unavailable.reported',\n        'unavailable.ended', 'away.added', 'away.removed')"
         },
         "activity_log_subject": {
           "name": "activity_log_subject",
-          "value": "\"activity_log\".\"subject_id\" is null or \"activity_log\".\"action\" in ('completion.logged', 'completion.undone', 'completion.picked-up',\n  'share.changed', 'temporary-share.added', 'temporary-share.removed', 'absence.added',\n  'absence.removed', 'unavailable.reported', 'unavailable.ended', 'member.removed')"
+          "value": "\"activity_log\".\"subject_id\" is null or \"activity_log\".\"action\" in ('completion.logged', 'completion.undone', 'completion.picked-up',\n  'share.changed', 'temporary-share.added', 'temporary-share.removed', 'absence.added',\n  'absence.removed', 'unavailable.reported', 'unavailable.ended')"
         },
         "activity_log_set_before_start": {
           "name": "activity_log_set_before_start",
@@ -1477,13 +1477,6 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
-        },
-        "shows_name": {
-          "name": "shows_name",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
         },
         "version": {
           "name": "version",

@@ -13,6 +13,8 @@ type SetForMember = Extract<
   | 'unavailable.reported'
   | 'unavailable.ended'
   | 'member.removed'
+  | 'swap.proposed'
+  | 'swap.answered'
 >;
 
 /**

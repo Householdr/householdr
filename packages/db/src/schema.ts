@@ -409,15 +409,31 @@ export type ActivityAction =
    */
   | 'one-off.added'
   /** A member removed a one-off task, named by its name. */
-  | 'one-off.removed';
+  | 'one-off.removed'
+  /**
+   * A head moved an occurrence of a published plan to its subject, naming its task, which every
+   * member sees in the plan anyway (ADR-0006 §3, ADR-0018 §5).
+   */
+  | 'assignment.given'
+  /** A head moved an occurrence of a published plan off its subject, naming its task. */
+  | 'assignment.taken'
+  /**
+   * A head proposed a swap for its subject, a profile without an account, acting for them
+   * (ADR-0002 §5, clarification).
+   */
+  | 'swap.proposed'
+  /** A head accepted or declined a swap for its subject, a profile without an account. */
+  | 'swap.answered';
 
 /** The actions whose entries name the task they were about, by its name (ADR-0018 §5). */
-const aboutTask = sql.raw(`'one-off.added', 'one-off.removed'`);
+const aboutTask = sql.raw(`'one-off.added', 'one-off.removed', 'assignment.given',
+  'assignment.taken'`);
 
 /** The actions whose entries name whom they were done to (ADR-0018 §5). */
 const toWhom = sql.raw(`'completion.logged', 'completion.undone', 'completion.picked-up',
   'share.changed', 'temporary-share.added', 'temporary-share.removed', 'absence.added',
-  'absence.removed', 'unavailable.reported', 'unavailable.ended', 'member.removed'`);
+  'absence.removed', 'unavailable.reported', 'unavailable.ended', 'member.removed',
+  'assignment.given', 'assignment.taken', 'swap.proposed', 'swap.answered'`);
 
 /**
  * What was set before the household started, which its start entry lists
@@ -480,7 +496,8 @@ export const activityLog = pgTable(
         'completion.picked-up', 'share.changed', 'temporary-share.added',
         'temporary-share.removed', 'absence.added', 'absence.removed', 'unavailable.reported',
         'unavailable.ended', 'away.added', 'away.removed', 'member.removed', 'one-off.added',
-        'one-off.removed')`,
+        'one-off.removed', 'assignment.given', 'assignment.taken', 'swap.proposed',
+        'swap.answered')`,
     ),
     // The actions about a task name it, and only they.
     check(
@@ -1006,6 +1023,8 @@ export const assignments = pgTable(
     householdOnly(t.householdId),
     // An occurrence is in a plan once.
     unique('assignments_plan_occurrence').on(t.planId, t.occurrenceId),
+    // Swaps refer to it together with its household, so never to another's.
+    unique('assignments_household_id').on(t.householdId, t.id),
     // The plans an occurrence is in, which tell whether it was planned before.
     index('assignments_occurrence_plans').on(t.occurrenceId),
     // A plan of the household's own, whose assignments go with it.
@@ -1037,13 +1056,75 @@ export const assignments = pgTable(
     check(
       'assignments_reason',
       sql`${t.reason} in ('bound', 'assigned by head', 'linked', 'only eligible member',
-        'lowest relative load', 'catching up', 're-allocated: member unavailable')`,
+        'lowest relative load', 'catching up', 're-allocated: member unavailable', 'swapped')`,
     ),
     check(
       'assignments_unassigned_cause',
       sql`${t.unassignedCause} in ('nobody eligible', 'bound member not eligible',
         'linked member not eligible')`,
     ),
+  ],
+);
+
+/** Where a swap stands (ADR-0002 §5). */
+export type SwapStatus = 'pending' | 'accepted' | 'declined' | 'void';
+
+/**
+ * A swap (ADR-0002 §5): a proposal from one member to another of an occurrence of theirs in a
+ * published plan, for one of the other's (a trade) or for nothing (a hand-off), which the other
+ * accepts or declines. One that can no longer go through, as an occurrence was done or moved, is
+ * void. The proposal is from `fromMember`, whether they made it or a head did for them; the answer is
+ * `toMember`'s.
+ */
+export const swaps = pgTable(
+  'swaps',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    fromMember: uuid().notNull(),
+    toMember: uuid().notNull(),
+    /** The proposer's assignment they give. */
+    give: uuid().notNull(),
+    /** The other's assignment they take in return; none for a hand-off. */
+    take: uuid(),
+    status: text().$type<SwapStatus>().notNull().default('pending'),
+    proposedAt: timestamp({ withTimezone: true }).notNull(),
+    answeredAt: timestamp({ withTimezone: true }),
+  },
+  (t) => [
+    householdOnly(t.householdId),
+    // Members and assignments of its own household: foreign keys are checked past row-level
+    // security (CODE-17). A swap goes with either member's profile, or either assignment.
+    foreignKey({
+      name: 'swaps_from_member',
+      columns: [t.householdId, t.fromMember],
+      foreignColumns: [members.householdId, members.id],
+    }).onDelete('cascade'),
+    foreignKey({
+      name: 'swaps_to_member',
+      columns: [t.householdId, t.toMember],
+      foreignColumns: [members.householdId, members.id],
+    }).onDelete('cascade'),
+    foreignKey({
+      name: 'swaps_give',
+      columns: [t.householdId, t.give],
+      foreignColumns: [assignments.householdId, assignments.id],
+    }).onDelete('cascade'),
+    foreignKey({
+      name: 'swaps_take',
+      columns: [t.householdId, t.take],
+      foreignColumns: [assignments.householdId, assignments.id],
+    }).onDelete('cascade'),
+    // An occurrence is offered in one pending swap at a time.
+    uniqueIndex('swaps_pending_give')
+      .on(t.householdId, t.give)
+      .where(sql`${t.status} = 'pending'`),
+    index('swaps_to_member').on(t.householdId, t.toMember, t.status),
+    check('swaps_status', sql`${t.status} in ('pending', 'accepted', 'declined', 'void')`),
+    check('swaps_members', sql`${t.fromMember} <> ${t.toMember}`),
+    check('swaps_answered', sql`(${t.status} = 'pending') = (${t.answeredAt} is null)`),
   ],
 );
 

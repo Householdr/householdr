@@ -52,6 +52,9 @@ const on = {
   completions: false,
   balances: false,
   'page-transitions': false,
+  'plan-moves': false,
+  'security-txt': false,
+  swaps: false,
 };
 let next = 0;
 

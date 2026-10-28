@@ -1,6 +1,6 @@
 {
-  "id": "6fe4a8d9-3a35-4739-8324-63eb65e7f0f2",
-  "prevId": "999dd65c-edea-4a6c-92c5-d155c412f954",
+  "id": "b3927564-1c53-4434-8154-9460c5ecdbe4",
+  "prevId": "b0fec803-b237-4ae0-a45f-edbca13cb7bb",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1472,19 +1472,6 @@
           "notNull": true,
           "default": "now()"
         },
-        "left_at": {
-          "name": "left_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "shows_name": {
-          "name": "shows_name",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
         "version": {
           "name": "version",
           "type": "integer",
@@ -1599,10 +1586,6 @@
         "members_share_percent": {
           "name": "members_share_percent",
           "value": "\"members\".\"share_percent\" between 0 and 100"
-        },
-        "members_former": {
-          "name": "members_former",
-          "value": "\"members\".\"left_at\" is null or (\"members\".\"account_id\" is null and \"members\".\"share_percent\" is null)"
         }
       },
       "isRLSEnabled": false

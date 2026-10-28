@@ -10,10 +10,17 @@ import {
   tasks,
   type Transaction,
 } from '@householdr/db';
-import { can, completionCredits as creditsOf, type Member } from '@householdr/domain';
+import {
+  can,
+  completionCredits as creditsOf,
+  householdDate,
+  type Member,
+} from '@householdr/domain';
 import { and, eq, inArray } from 'drizzle-orm';
 import * as v from 'valibot';
 import type { HouseholdContext } from '../households/context';
+import { householdBurdens } from '../burdens/household-burdens';
+import { planningOf } from '../plans/planning';
 import { isCurrentMember } from '../households/former-members';
 import { creditedMembers, thisPlanWeek } from './completion-week';
 
@@ -79,7 +86,7 @@ export async function completeOccurrence(
     }
     // Locked, so of two taps at the same moment, the second finds it done.
     const [occurrence] = await tx
-      .select({ status: occurrences.status, duration: tasks.duration })
+      .select({ status: occurrences.status, duration: tasks.duration, taskId: tasks.id })
       .from(occurrences)
       .innerJoin(tasks, eq(tasks.id, occurrences.taskId))
       .where(eq(occurrences.id, parsed.output.occurrence))
@@ -117,10 +124,12 @@ export async function completeOccurrence(
       })
       .returning({ id: completions.id });
     if (!completion) throw new Error('No completion was written.');
-    // Every burden is 1.0 until the comparison game brings evidence (ADR-0003 §2), as in the plan.
+    // Each at their own burden, as the plan charges it (ADR-0002 §1, ADR-0003 §1–§4).
+    const { calendar } = await planningOf(tx);
+    const burdenOf = await householdBurdens(tx, householdDate(now, calendar.timeZone));
     const task = {
       duration: occurrence.duration,
-      burden: new Map(doerIds.map((doer) => [doer, 1])),
+      burden: new Map(doerIds.map((doer) => [doer, burdenOf(occurrence.taskId, doer)])),
     };
     await tx.insert(completionCredits).values(
       creditsOf(task, doerIds).map(({ member, points }) => ({

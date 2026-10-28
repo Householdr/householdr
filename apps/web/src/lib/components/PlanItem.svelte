@@ -1,6 +1,8 @@
 <script lang="ts">
   import { enhance, type SubmitFunction } from '$app/forms';
   import FieldProblem from '#lib/components/FieldProblem.svelte';
+  import { Label } from '#lib/components/ui/label/index.js';
+  import { NativeSelect, NativeSelectOption } from '#lib/components/ui/native-select/index.js';
   import PastDay from '#lib/components/PastDay.svelte';
   import { Button } from '#lib/components/ui/button/index.js';
   import type { ShownItem } from '#lib/hooks/use-plan.svelte.js';
@@ -10,7 +12,8 @@
    * A task in a week's plan: its day, its points for the reader, and why (ADR-0007 §5); once done,
    * by whom, on which day, and undoing it; while it can be, choosing who did it (ADR-0006 §4). The
    * reader's own task has a box at the end of its name that ticks it done with one tap, or unticks
-   * it to undo it.
+   * it to undo it. A head can give it to someone else while it can be moved (ADR-0006 §2–§3), and
+   * whoever may offers it in a swap (ADR-0002 §5).
    */
   let {
     item,
@@ -28,6 +31,10 @@
   /** Once it is done: the box, Undo, or what says who did it. Once undone: the box, or the choice. */
   const afterDone = $derived([`${key}-check`, `${key}-undo`, `${key}-done`]);
   const afterUndo = $derived([`${key}-check`, `${key}-summary`]);
+  /** Once moved, it is under its new member, with the choice closed again. */
+  const afterMove = $derived([`${key}-move-summary`]);
+  /** Once offered, the choice it was offered from. */
+  const afterSwap = $derived([`${key}-swap-summary`]);
 </script>
 
 <li class="flex flex-col gap-2 p-4">
@@ -162,6 +169,75 @@
         </fieldset>
         <Button type="submit" variant="outline" class="w-full" aria-label={item.complete.label}>
           {m['plan.mark-done-button']()}
+        </Button>
+      </form>
+    </details>
+  {/if}
+
+  {#if item.move && submit}
+    <details>
+      <!-- Its own marker shows it opens, not leaves, and the padding makes it 44 px high (UI-8). -->
+      <summary id="{key}-move-summary" class="min-h-11 cursor-pointer py-2.5 wrap-break-word">
+        {m['plan.move']()}
+      </summary>
+      <form
+        method="POST"
+        action="?/move"
+        use:enhance={submit(...afterMove)}
+        class="flex flex-col gap-4 pt-2"
+      >
+        <input type="hidden" name="occurrence" value={item.occurrence} />
+        <input type="hidden" name="assignment" value={item.id} />
+        <input type="hidden" name="version" value={item.move.version} />
+        <fieldset class="flex min-w-0 flex-col">
+          <legend class="mb-1 font-semibold">{m['plan.move-to']()}</legend>
+          {#each item.move.choices as choice (choice.id)}
+            <!-- The label around the button makes the whole line its target (UI-8). -->
+            <label class="flex min-h-11 items-center gap-3">
+              <input
+                type="radio"
+                name="member"
+                value={choice.id}
+                checked={choice.checked}
+                required
+                class="size-5 shrink-0 accent-primary"
+              />
+              <span class="wrap-break-word">{choice.name}</span>
+            </label>
+          {/each}
+        </fieldset>
+        <Button type="submit" variant="outline" class="w-full" aria-label={item.move.label}>
+          {m['plan.move-button']()}
+        </Button>
+      </form>
+    </details>
+  {/if}
+
+  {#if item.swap && submit}
+    <details>
+      <!-- Its own marker shows it opens, not leaves, and the padding makes it 44 px high (UI-8). -->
+      <summary id="{key}-swap-summary" class="min-h-11 cursor-pointer py-2.5 wrap-break-word">
+        {m['plan.swap']()}
+      </summary>
+      <form
+        method="POST"
+        action="?/propose"
+        use:enhance={submit(...afterSwap)}
+        class="flex flex-col gap-4 pt-2"
+      >
+        <input type="hidden" name="occurrence" value={item.occurrence} />
+        <input type="hidden" name="give" value={item.id} />
+        <input type="hidden" name="from" value={item.swap.from} />
+        <div class="flex flex-col gap-2">
+          <Label for="{key}-swap-choice">{m['plan.swap-with']()}</Label>
+          <NativeSelect id="{key}-swap-choice" name="choice" class="w-full" required>
+            {#each item.swap.choices as choice (choice.value)}
+              <NativeSelectOption value={choice.value}>{choice.label}</NativeSelectOption>
+            {/each}
+          </NativeSelect>
+        </div>
+        <Button type="submit" variant="outline" class="w-full" aria-label={item.swap.label}>
+          {m['plan.swap-button']()}
         </Button>
       </form>
     </details>

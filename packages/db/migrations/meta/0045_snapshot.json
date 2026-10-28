@@ -1,6 +1,6 @@
 {
-  "id": "593a4ef1-ea75-41e6-9ffa-5f16f685863d",
-  "prevId": "31466647-06cb-41f1-8cc5-305190e220af",
+  "id": "6fe4a8d9-3a35-4739-8324-63eb65e7f0f2",
+  "prevId": "999dd65c-edea-4a6c-92c5-d155c412f954",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -265,11 +265,11 @@
       "checkConstraints": {
         "activity_log_action": {
           "name": "activity_log_action",
-          "value": "\"activity_log\".\"action\" in ('household.name', 'household.timeZone', 'household.language',\n        'household.country', 'household.started', 'completion.logged', 'completion.undone',\n        'completion.picked-up', 'share.changed', 'temporary-share.added',\n        'temporary-share.removed', 'absence.added', 'absence.removed', 'unavailable.reported',\n        'unavailable.ended', 'away.added', 'away.removed', 'member.removed')"
+          "value": "\"activity_log\".\"action\" in ('household.name', 'household.timeZone', 'household.language',\n        'household.country', 'household.started', 'completion.logged', 'completion.undone',\n        'completion.picked-up', 'share.changed', 'temporary-share.added',\n        'temporary-share.removed', 'absence.added', 'absence.removed', 'unavailable.reported',\n        'unavailable.ended', 'away.added', 'away.removed')"
         },
         "activity_log_subject": {
           "name": "activity_log_subject",
-          "value": "\"activity_log\".\"subject_id\" is null or \"activity_log\".\"action\" in ('completion.logged', 'completion.undone', 'completion.picked-up',\n  'share.changed', 'temporary-share.added', 'temporary-share.removed', 'absence.added',\n  'absence.removed', 'unavailable.reported', 'unavailable.ended', 'member.removed')"
+          "value": "\"activity_log\".\"subject_id\" is null or \"activity_log\".\"action\" in ('completion.logged', 'completion.undone', 'completion.picked-up',\n  'share.changed', 'temporary-share.added', 'temporary-share.removed', 'absence.added',\n  'absence.removed', 'unavailable.reported', 'unavailable.ended')"
         },
         "activity_log_set_before_start": {
           "name": "activity_log_set_before_start",
@@ -1485,13 +1485,6 @@
           "notNull": true,
           "default": false
         },
-        "named_head": {
-          "name": "named_head",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
         "version": {
           "name": "version",
           "type": "integer",
@@ -1610,10 +1603,6 @@
         "members_former": {
           "name": "members_former",
           "value": "\"members\".\"left_at\" is null or (\"members\".\"account_id\" is null and \"members\".\"share_percent\" is null)"
-        },
-        "members_named_head": {
-          "name": "members_named_head",
-          "value": "not \"members\".\"named_head\" or (\"members\".\"role\" = 'head' and \"members\".\"left_at\" is null)"
         }
       },
       "isRLSEnabled": false
