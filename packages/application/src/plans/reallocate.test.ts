@@ -1,7 +1,8 @@
-import { assignments, members, unavailabilities, type Database } from '@householdr/db';
+import { assignments, comparisons, members, unavailabilities, type Database } from '@householdr/db';
 import { testDatabase } from '@householdr/db/testing';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { householdBurdens } from '../burdens/household-burdens';
 import { completeOccurrence } from '../completions/complete-occurrence';
 import { endUnavailable, reportUnavailable } from '../availability/unavailability';
 import { draftPlan } from './draft-plan';
@@ -86,6 +87,37 @@ describe('re-allocation when a member can’t (ADR-0005 §3)', () => {
     expect(plan?.rows.map((row) => [row.cost, row.version])).toEqual(
       [20, 15, 20, 20, 20].map((cost) => [cost, 2]),
     );
+  });
+
+  it('charges whoever takes it over their own learned burden (ADR-0003 §1–§4)', async () => {
+    const h = await published();
+    const tasks = await h.inIt((tx) => tx.query.tasks.findMany());
+    const windows = tasks.find((t) => t.name === 'Windows')?.id;
+    const dishes = tasks.find((t) => t.name === 'Dishes')?.id;
+    if (!windows || !dishes) throw new Error('No tasks');
+    // Robin finds the windows harder than the dishes, every time they are asked.
+    await h.inIt((tx) =>
+      tx.insert(comparisons).values(
+        Array.from({ length: 5 }, () => ({
+          householdId: h.householdId,
+          memberId: h.robin,
+          harderTaskId: windows,
+          easierTaskId: dishes,
+          answeredAt: new Date('2026-10-08T08:00:00Z'),
+        })),
+      ),
+    );
+    expect(await cant(h, '2026-10-11')).toEqual({ ok: true });
+    const burdenOf = await h.inIt((tx) =>
+      householdBurdens(tx, Temporal.PlainDate.from('2026-10-08')),
+    );
+    expect(burdenOf(windows, h.robin)).toBeGreaterThan(1);
+    const plan = await h.plan(week);
+    for (const row of plan?.rows ?? []) {
+      const task = row.task === 'Windows' ? windows : dishes;
+      const minutes = row.task === 'Windows' ? 15 : 20;
+      expect(row.cost).toBeCloseTo(minutes * burdenOf(task, h.robin));
+    }
   });
 
   it('leaves what they can still do later in the week with them', async () => {
