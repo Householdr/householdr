@@ -117,6 +117,7 @@ describe('the flags of a request (ADR-0015 §3)', () => {
       balances: false,
       'page-transitions': false,
       'plan-moves': false,
+      'security-txt': false,
     });
   });
 
@@ -140,6 +141,7 @@ describe('the flags of a request (ADR-0015 §3)', () => {
       balances: false,
       'page-transitions': false,
       'plan-moves': false,
+      'security-txt': false,
     });
   });
 });
@@ -219,6 +221,7 @@ describe('the guard (ADR-0017 §2)', () => {
       '/invitation/passkey/options',
       '/invitation/passkey',
       '/health',
+      '/.well-known/security.txt',
     ]) {
       expect(await outcome(signedOut, route)).toBe(200);
     }

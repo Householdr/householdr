@@ -105,6 +105,13 @@ export const flags = {
     owner: 'Jens',
     expires: '2027-03-31',
   },
+  'security-txt': {
+    kind: 'release',
+    description:
+      'Serving /.well-known/security.txt with the instance’s security contact and policy, from SECURITY_CONTACT and SECURITY_POLICY_URL (ADR-0017 §11).',
+    owner: 'Jens',
+    expires: '2027-03-31',
+  },
   'page-transitions': {
     kind: 'release',
     description:
