@@ -35,6 +35,9 @@ export default defineConfig(({ mode }) => {
         adapter: adapter({ out: mode === 'test' ? 'build-test' : 'build' }),
         // A nonce per request for SvelteKit's own scripts (ADR-0017 §4).
         csp: { mode: 'nonce', directives: contentSecurityPolicy },
+        // Our service worker is registered only when someone turns push on for a device (ADR-0014
+        // §7, clarification), never on its own.
+        serviceWorker: { register: false },
       }),
     ],
   };

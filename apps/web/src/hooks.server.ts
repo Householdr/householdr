@@ -20,6 +20,8 @@ const tokenLinkPages = new Set([
   '/invitation',
   '/invitation/passkey/options',
   '/invitation/passkey',
+  '/unsubscribe/[token]',
+  '/unsubscribe',
 ]);
 
 /**
@@ -94,6 +96,9 @@ const open = new Set([
   '/invitation/passkey/options',
   '/invitation/passkey',
   '/health',
+  // An e-mail's one-click unsubscribe works without signing in (ADR-0014 §6, clarification).
+  '/unsubscribe/[token]',
+  '/unsubscribe',
   // How to report a vulnerability, for anyone (ADR-0017 §11).
   '/.well-known/security.txt',
 ]);

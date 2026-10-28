@@ -354,6 +354,14 @@
         {m['plan.title']()}
       </a>
     {/if}
+    {#if data.flags.notifications}
+      <a
+        href="/households/{page.params.household}/notifications"
+        class="underline underline-offset-4"
+      >
+        {m['household.notifications']()}
+      </a>
+    {/if}
     {#if data.flags['household-settings'] && data.mayChangeSettings}
       <a href="/households/{page.params.household}/settings" class="underline underline-offset-4">
         {m['household.settings']()}
@@ -399,6 +407,11 @@
       </a>
     {/if}
     <a href="/security" class="underline underline-offset-4">{m['security.title']()}</a>
+    {#if data.flags['notification-preferences']}
+      <a href="/notification-settings" class="underline underline-offset-4">
+        {m['household.notification-settings']()}
+      </a>
+    {/if}
     {#if data.flags.leaving && data.mayLeave}
       <a href="/households/{page.params.household}/leave" class="underline underline-offset-4">
         {m['household.leave']()}

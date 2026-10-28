@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dayText, dayTime, formattingLocale, fullDay, timeZoneName } from './intl';
+import { clockTime, dayText, dayTime, formattingLocale, fullDay, timeZoneName } from './intl';
 
 // 8 October 2026, 10:00 in Brussels.
 const at = Date.UTC(2026, 9, 8, 8);
@@ -24,6 +24,12 @@ describe('the locale values are written in (ADR-0008 §6)', () => {
     expect(dayText('2026-10-08', formattingLocale('en', 'nl-BE'))).toBe('8 October 2026');
     expect(dayText('2026-10-08', formattingLocale('en', 'en-US'))).toBe('October 8, 2026');
     expect(dayText('2026-10-08', formattingLocale('nl', 'nl-BE'))).toBe('8 oktober 2026');
+  });
+
+  it('writes a time of day with the culture’s clock, such as quiet hours (ADR-0014 §4)', () => {
+    expect(clockTime('21:30', 'en-BE')).toBe('21:30');
+    expect(clockTime('07:05', 'nl-BE')).toBe('07:05');
+    expect(clockTime('21:30', 'en-US')).toBe('9:30 PM');
   });
 
   it('writes a day in full, as a vague day’s tooltip does (ADR-0008 §6, clarification)', () => {

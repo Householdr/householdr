@@ -147,6 +147,34 @@ export const flags = {
     owner: 'Jens',
     expires: '2027-03-31',
   },
+  notifications: {
+    kind: 'release',
+    description:
+      'A member’s own notifications from a household, in a list linked from the household’s page, newest first (ADR-0014 §1, §7, clarification).',
+    owner: 'Jens',
+    expires: '2027-03-31',
+  },
+  'notification-preferences': {
+    kind: 'release',
+    description:
+      'The account’s notification settings page: a channel for each category, quiet hours and the e-mail fallback (ADR-0014 §3, clarifications). Turn it on once push and e-mail delivery work, or its choices change nothing.',
+    owner: 'Jens',
+    expires: '2027-03-31',
+  },
+  'push-notifications': {
+    kind: 'release',
+    description:
+      'Sending each notification as a push to the devices its member turned push on for, as they chose, after quiet hours and within the daily ceiling (ADR-0014 §4, §7, clarifications). Doubles as its kill switch. Turn it on with notification-preferences, where push is turned on.',
+    owner: 'Jens',
+    expires: '2027-03-31',
+  },
+  'morning-email': {
+    kind: 'release',
+    description:
+      'Sending each member, once a day for each household as their quiet hours end, an e-mail with the notifications they get by e-mail, or by e-mail because push doesn’t reach them (ADR-0014 §5, clarification). Doubles as its kill switch. Turn it on with notification-preferences, where e-mail and the fallback are chosen.',
+    owner: 'Jens',
+    expires: '2027-03-31',
+  },
 } as const satisfies Record<string, Flag>;
 
 export type FlagKey = keyof typeof flags;

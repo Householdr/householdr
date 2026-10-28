@@ -1,6 +1,6 @@
 {
-  "id": "31466647-06cb-41f1-8cc5-305190e220af",
-  "prevId": "6fe4a8d9-3a35-4739-8324-63eb65e7f0f2",
+  "id": "bfddb5da-e848-4801-8b45-984956cd5bf9",
+  "prevId": "2f1c75d5-4928-4c0a-8caf-4ae5bcd317a9",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -89,12 +89,8 @@
           "name": "absences_household_id_households_id_fk",
           "tableFrom": "absences",
           "tableTo": "households",
-          "columnsFrom": [
-            "household_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["household_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -102,14 +98,8 @@
           "name": "absences_member_household",
           "tableFrom": "absences",
           "tableTo": "members",
-          "columnsFrom": [
-            "household_id",
-            "member_id"
-          ],
-          "columnsTo": [
-            "household_id",
-            "id"
-          ],
+          "columnsFrom": ["household_id", "member_id"],
+          "columnsTo": ["household_id", "id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -121,9 +111,7 @@
           "name": "household_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"absences\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid",
           "withCheck": "\"absences\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid"
         }
@@ -182,6 +170,12 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": false
+        },
+        "task_name": {
+          "name": "task_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -212,12 +206,8 @@
           "name": "activity_log_household_id_households_id_fk",
           "tableFrom": "activity_log",
           "tableTo": "households",
-          "columnsFrom": [
-            "household_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["household_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -225,12 +215,8 @@
           "name": "activity_log_actor_id_members_id_fk",
           "tableFrom": "activity_log",
           "tableTo": "members",
-          "columnsFrom": [
-            "actor_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["actor_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -238,12 +224,8 @@
           "name": "activity_log_subject_id_members_id_fk",
           "tableFrom": "activity_log",
           "tableTo": "members",
-          "columnsFrom": [
-            "subject_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["subject_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -255,9 +237,7 @@
           "name": "household_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"activity_log\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid",
           "withCheck": "\"activity_log\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid"
         }
@@ -265,15 +245,103 @@
       "checkConstraints": {
         "activity_log_action": {
           "name": "activity_log_action",
-          "value": "\"activity_log\".\"action\" in ('household.name', 'household.timeZone', 'household.language',\n        'household.country', 'household.started', 'completion.logged', 'completion.undone',\n        'completion.picked-up', 'share.changed', 'temporary-share.added',\n        'temporary-share.removed', 'absence.added', 'absence.removed', 'unavailable.reported',\n        'unavailable.ended', 'away.added', 'away.removed', 'member.removed')"
+          "value": "\"activity_log\".\"action\" in ('household.name', 'household.timeZone', 'household.language',\n        'household.country', 'household.started', 'completion.logged', 'completion.undone',\n        'completion.picked-up', 'share.changed', 'temporary-share.added',\n        'temporary-share.removed', 'absence.added', 'absence.removed', 'away.added',\n        'away.removed', 'one-off.added', 'one-off.removed')"
+        },
+        "activity_log_task_name": {
+          "name": "activity_log_task_name",
+          "value": "(\"activity_log\".\"action\" in ('one-off.added', 'one-off.removed')) = (\"activity_log\".\"task_name\" is not null)"
         },
         "activity_log_subject": {
           "name": "activity_log_subject",
-          "value": "\"activity_log\".\"subject_id\" is null or \"activity_log\".\"action\" in ('completion.logged', 'completion.undone', 'completion.picked-up',\n  'share.changed', 'temporary-share.added', 'temporary-share.removed', 'absence.added',\n  'absence.removed', 'unavailable.reported', 'unavailable.ended', 'member.removed')"
+          "value": "\"activity_log\".\"subject_id\" is null or \"activity_log\".\"action\" in ('completion.logged', 'completion.undone', 'completion.picked-up',\n  'share.changed', 'temporary-share.added', 'temporary-share.removed', 'absence.added',\n  'absence.removed')"
         },
         "activity_log_set_before_start": {
           "name": "activity_log_set_before_start",
           "value": "(\"activity_log\".\"action\" = 'household.started') = (\"activity_log\".\"set_before_start\" is not null)\n        and case\n          when \"activity_log\".\"set_before_start\" is null then true\n          when jsonb_typeof(\"activity_log\".\"set_before_start\") <> 'object' then false\n          else \"activity_log\".\"set_before_start\" ?& array['shares', 'daysAway']\n            and not jsonb_path_exists(\"activity_log\".\"set_before_start\", '$.keyvalue() ? ((@.key != \"shares\" && @.key != \"daysAway\")\n  || @.value.type() != \"array\"\n  || exists(@.value[*] ? (@.type() != \"string\"\n    || !(@ like_regex \"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$\"))))')\n        end"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.areas": {
+      "name": "areas",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "household_id": {
+          "name": "household_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "areas_household_name": {
+          "name": "areas_household_name",
+          "columns": [
+            {
+              "expression": "household_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "lower(\"name\")",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "areas_household_id_households_id_fk": {
+          "name": "areas_household_id_households_id_fk",
+          "tableFrom": "areas",
+          "tableTo": "households",
+          "columnsFrom": ["household_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "areas_household_area": {
+          "name": "areas_household_area",
+          "nullsNotDistinct": false,
+          "columns": ["household_id", "id"]
+        }
+      },
+      "policies": {
+        "household_only": {
+          "name": "household_only",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["public"],
+          "using": "\"areas\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid",
+          "withCheck": "\"areas\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {
+        "areas_name": {
+          "name": "areas_name",
+          "value": "\"areas\".\"name\" <> '' and char_length(\"areas\".\"name\") <= 50"
         }
       },
       "isRLSEnabled": false
@@ -373,12 +441,8 @@
           "name": "assignments_household_id_households_id_fk",
           "tableFrom": "assignments",
           "tableTo": "households",
-          "columnsFrom": [
-            "household_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["household_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -386,14 +450,8 @@
           "name": "assignments_plan",
           "tableFrom": "assignments",
           "tableTo": "plans",
-          "columnsFrom": [
-            "household_id",
-            "plan_id"
-          ],
-          "columnsTo": [
-            "household_id",
-            "id"
-          ],
+          "columnsFrom": ["household_id", "plan_id"],
+          "columnsTo": ["household_id", "id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -401,14 +459,8 @@
           "name": "assignments_occurrence",
           "tableFrom": "assignments",
           "tableTo": "occurrences",
-          "columnsFrom": [
-            "household_id",
-            "occurrence_id"
-          ],
-          "columnsTo": [
-            "household_id",
-            "id"
-          ],
+          "columnsFrom": ["household_id", "occurrence_id"],
+          "columnsTo": ["household_id", "id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -416,14 +468,8 @@
           "name": "assignments_member",
           "tableFrom": "assignments",
           "tableTo": "members",
-          "columnsFrom": [
-            "household_id",
-            "member_id"
-          ],
-          "columnsTo": [
-            "household_id",
-            "id"
-          ],
+          "columnsFrom": ["household_id", "member_id"],
+          "columnsTo": ["household_id", "id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -433,10 +479,7 @@
         "assignments_plan_occurrence": {
           "name": "assignments_plan_occurrence",
           "nullsNotDistinct": false,
-          "columns": [
-            "plan_id",
-            "occurrence_id"
-          ]
+          "columns": ["plan_id", "occurrence_id"]
         }
       },
       "policies": {
@@ -444,9 +487,7 @@
           "name": "household_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"assignments\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid",
           "withCheck": "\"assignments\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid"
         }
@@ -466,7 +507,7 @@
         },
         "assignments_reason": {
           "name": "assignments_reason",
-          "value": "\"assignments\".\"reason\" in ('bound', 'assigned by head', 'linked', 'only eligible member',\n        'lowest relative load', 'catching up', 're-allocated: member unavailable')"
+          "value": "\"assignments\".\"reason\" in ('bound', 'assigned by head', 'linked', 'only eligible member',\n        'lowest relative load', 'catching up')"
         },
         "assignments_unassigned_cause": {
           "name": "assignments_unassigned_cause",
@@ -539,12 +580,8 @@
           "name": "away_periods_household_id_households_id_fk",
           "tableFrom": "away_periods",
           "tableTo": "households",
-          "columnsFrom": [
-            "household_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["household_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -556,9 +593,7 @@
           "name": "household_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"away_periods\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid",
           "withCheck": "\"away_periods\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid"
         }
@@ -683,14 +718,8 @@
           "name": "comparisons_member",
           "tableFrom": "comparisons",
           "tableTo": "members",
-          "columnsFrom": [
-            "household_id",
-            "member_id"
-          ],
-          "columnsTo": [
-            "household_id",
-            "id"
-          ],
+          "columnsFrom": ["household_id", "member_id"],
+          "columnsTo": ["household_id", "id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -698,14 +727,8 @@
           "name": "comparisons_harder_task",
           "tableFrom": "comparisons",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "household_id",
-            "harder_task_id"
-          ],
-          "columnsTo": [
-            "household_id",
-            "id"
-          ],
+          "columnsFrom": ["household_id", "harder_task_id"],
+          "columnsTo": ["household_id", "id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -713,14 +736,8 @@
           "name": "comparisons_easier_task",
           "tableFrom": "comparisons",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "household_id",
-            "easier_task_id"
-          ],
-          "columnsTo": [
-            "household_id",
-            "id"
-          ],
+          "columnsFrom": ["household_id", "easier_task_id"],
+          "columnsTo": ["household_id", "id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -732,9 +749,7 @@
           "name": "household_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"comparisons\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid",
           "withCheck": "\"comparisons\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid"
         }
@@ -789,12 +804,8 @@
           "name": "completion_credits_household_id_households_id_fk",
           "tableFrom": "completion_credits",
           "tableTo": "households",
-          "columnsFrom": [
-            "household_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["household_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -802,14 +813,8 @@
           "name": "completion_credits_completion",
           "tableFrom": "completion_credits",
           "tableTo": "completions",
-          "columnsFrom": [
-            "household_id",
-            "completion_id"
-          ],
-          "columnsTo": [
-            "household_id",
-            "id"
-          ],
+          "columnsFrom": ["household_id", "completion_id"],
+          "columnsTo": ["household_id", "id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -817,14 +822,8 @@
           "name": "completion_credits_member",
           "tableFrom": "completion_credits",
           "tableTo": "members",
-          "columnsFrom": [
-            "household_id",
-            "member_id"
-          ],
-          "columnsTo": [
-            "household_id",
-            "id"
-          ],
+          "columnsFrom": ["household_id", "member_id"],
+          "columnsTo": ["household_id", "id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -834,10 +833,7 @@
         "completion_credits_once": {
           "name": "completion_credits_once",
           "nullsNotDistinct": false,
-          "columns": [
-            "completion_id",
-            "member_id"
-          ]
+          "columns": ["completion_id", "member_id"]
         }
       },
       "policies": {
@@ -845,9 +841,7 @@
           "name": "household_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"completion_credits\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid",
           "withCheck": "\"completion_credits\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid"
         }
@@ -908,12 +902,8 @@
           "name": "completions_household_id_households_id_fk",
           "tableFrom": "completions",
           "tableTo": "households",
-          "columnsFrom": [
-            "household_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["household_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -921,14 +911,8 @@
           "name": "completions_occurrence",
           "tableFrom": "completions",
           "tableTo": "occurrences",
-          "columnsFrom": [
-            "household_id",
-            "occurrence_id"
-          ],
-          "columnsTo": [
-            "household_id",
-            "id"
-          ],
+          "columnsFrom": ["household_id", "occurrence_id"],
+          "columnsTo": ["household_id", "id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -936,14 +920,8 @@
           "name": "completions_plan",
           "tableFrom": "completions",
           "tableTo": "plans",
-          "columnsFrom": [
-            "household_id",
-            "plan_id"
-          ],
-          "columnsTo": [
-            "household_id",
-            "id"
-          ],
+          "columnsFrom": ["household_id", "plan_id"],
+          "columnsTo": ["household_id", "id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -951,14 +929,8 @@
           "name": "completions_logged_by",
           "tableFrom": "completions",
           "tableTo": "members",
-          "columnsFrom": [
-            "household_id",
-            "logged_by"
-          ],
-          "columnsTo": [
-            "household_id",
-            "id"
-          ],
+          "columnsFrom": ["household_id", "logged_by"],
+          "columnsTo": ["household_id", "id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -968,18 +940,12 @@
         "completions_household_id": {
           "name": "completions_household_id",
           "nullsNotDistinct": false,
-          "columns": [
-            "household_id",
-            "id"
-          ]
+          "columns": ["household_id", "id"]
         },
         "completions_once": {
           "name": "completions_once",
           "nullsNotDistinct": false,
-          "columns": [
-            "household_id",
-            "occurrence_id"
-          ]
+          "columns": ["household_id", "occurrence_id"]
         }
       },
       "policies": {
@@ -987,9 +953,7 @@
           "name": "household_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"completions\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid",
           "withCheck": "\"completions\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid"
         }
@@ -1100,9 +1064,7 @@
           "name": "household_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"households\".\"id\" = nullif(current_setting('householdr.household_id', true), '')::uuid",
           "withCheck": "\"households\".\"id\" = nullif(current_setting('householdr.household_id', true), '')::uuid"
         }
@@ -1198,12 +1160,8 @@
           "name": "invitations_member_id_members_id_fk",
           "tableFrom": "invitations",
           "tableTo": "members",
-          "columnsFrom": [
-            "member_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["member_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1211,12 +1169,8 @@
           "name": "invitations_household_id_households_id_fk",
           "tableFrom": "invitations",
           "tableTo": "households",
-          "columnsFrom": [
-            "household_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["household_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1226,9 +1180,7 @@
         "invitations_token_hash": {
           "name": "invitations_token_hash",
           "nullsNotDistinct": false,
-          "columns": [
-            "token_hash"
-          ]
+          "columns": ["token_hash"]
         }
       },
       "policies": {
@@ -1236,9 +1188,7 @@
           "name": "household_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"invitations\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid",
           "withCheck": "\"invitations\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid"
         }
@@ -1356,12 +1306,8 @@
           "name": "ledger_entries_household_id_households_id_fk",
           "tableFrom": "ledger_entries",
           "tableTo": "households",
-          "columnsFrom": [
-            "household_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["household_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1369,14 +1315,8 @@
           "name": "ledger_entries_member",
           "tableFrom": "ledger_entries",
           "tableTo": "members",
-          "columnsFrom": [
-            "household_id",
-            "member_id"
-          ],
-          "columnsTo": [
-            "household_id",
-            "id"
-          ],
+          "columnsFrom": ["household_id", "member_id"],
+          "columnsTo": ["household_id", "id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1384,14 +1324,8 @@
           "name": "ledger_entries_week",
           "tableFrom": "ledger_entries",
           "tableTo": "plans",
-          "columnsFrom": [
-            "household_id",
-            "week"
-          ],
-          "columnsTo": [
-            "household_id",
-            "week_start"
-          ],
+          "columnsFrom": ["household_id", "week"],
+          "columnsTo": ["household_id", "week_start"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1403,9 +1337,7 @@
           "name": "household_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"ledger_entries\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid",
           "withCheck": "\"ledger_entries\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid"
         }
@@ -1472,19 +1404,6 @@
           "notNull": true,
           "default": "now()"
         },
-        "left_at": {
-          "name": "left_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "shows_name": {
-          "name": "shows_name",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
         "version": {
           "name": "version",
           "type": "integer",
@@ -1536,12 +1455,8 @@
           "name": "members_household_id_households_id_fk",
           "tableFrom": "members",
           "tableTo": "households",
-          "columnsFrom": [
-            "household_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["household_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1550,12 +1465,8 @@
           "tableFrom": "members",
           "tableTo": "accounts",
           "schemaTo": "auth",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1565,10 +1476,7 @@
         "members_household_member": {
           "name": "members_household_member",
           "nullsNotDistinct": false,
-          "columns": [
-            "household_id",
-            "id"
-          ]
+          "columns": ["household_id", "id"]
         }
       },
       "policies": {
@@ -1576,9 +1484,7 @@
           "name": "household_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"members\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid",
           "withCheck": "\"members\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid"
         }
@@ -1599,10 +1505,186 @@
         "members_share_percent": {
           "name": "members_share_percent",
           "value": "\"members\".\"share_percent\" between 0 and 100"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.notifications": {
+      "name": "notifications",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
-        "members_former": {
-          "name": "members_former",
-          "value": "\"members\".\"left_at\" is null or (\"members\".\"account_id\" is null and \"members\".\"share_percent\" is null)"
+        "household_id": {
+          "name": "household_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "member_id": {
+          "name": "member_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "at": {
+          "name": "at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "week": {
+          "name": "week",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "push_after": {
+          "name": "push_after",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email_after": {
+          "name": "email_after",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "notifications_member_at": {
+          "name": "notifications_member_at",
+          "columns": [
+            {
+              "expression": "household_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "member_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "notifications_push_after": {
+          "name": "notifications_push_after",
+          "columns": [
+            {
+              "expression": "household_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "push_after",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"notifications\".\"push_after\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "notifications_email_after": {
+          "name": "notifications_email_after",
+          "columns": [
+            {
+              "expression": "household_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "email_after",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"notifications\".\"email_after\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "notifications_household_id_households_id_fk": {
+          "name": "notifications_household_id_households_id_fk",
+          "tableFrom": "notifications",
+          "tableTo": "households",
+          "columnsFrom": ["household_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "notifications_member": {
+          "name": "notifications_member",
+          "tableFrom": "notifications",
+          "tableTo": "members",
+          "columnsFrom": ["household_id", "member_id"],
+          "columnsTo": ["household_id", "id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "notifications_plan": {
+          "name": "notifications_plan",
+          "tableFrom": "notifications",
+          "tableTo": "plans",
+          "columnsFrom": ["household_id", "week"],
+          "columnsTo": ["household_id", "week_start"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "household_only": {
+          "name": "household_only",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["public"],
+          "using": "\"notifications\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid",
+          "withCheck": "\"notifications\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {
+        "notifications_kind": {
+          "name": "notifications_kind",
+          "value": "\"notifications\".\"kind\" in ('plan.drafted', 'plan.published')"
+        },
+        "notifications_week": {
+          "name": "notifications_week",
+          "value": "(\"notifications\".\"kind\" in ('plan.drafted', 'plan.published')) = (\"notifications\".\"week\" is not null)"
         }
       },
       "isRLSEnabled": false
@@ -1690,12 +1772,8 @@
           "name": "occurrences_household_id_households_id_fk",
           "tableFrom": "occurrences",
           "tableTo": "households",
-          "columnsFrom": [
-            "household_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["household_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1703,14 +1781,8 @@
           "name": "occurrences_task",
           "tableFrom": "occurrences",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "household_id",
-            "task_id"
-          ],
-          "columnsTo": [
-            "household_id",
-            "id"
-          ],
+          "columnsFrom": ["household_id", "task_id"],
+          "columnsTo": ["household_id", "id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1718,14 +1790,8 @@
           "name": "occurrences_closed_by_plan",
           "tableFrom": "occurrences",
           "tableTo": "plans",
-          "columnsFrom": [
-            "household_id",
-            "closed_by_plan"
-          ],
-          "columnsTo": [
-            "household_id",
-            "id"
-          ],
+          "columnsFrom": ["household_id", "closed_by_plan"],
+          "columnsTo": ["household_id", "id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1735,19 +1801,12 @@
         "occurrences_household_id": {
           "name": "occurrences_household_id",
           "nullsNotDistinct": false,
-          "columns": [
-            "household_id",
-            "id"
-          ]
+          "columns": ["household_id", "id"]
         },
         "occurrences_task_date": {
           "name": "occurrences_task_date",
           "nullsNotDistinct": false,
-          "columns": [
-            "household_id",
-            "task_id",
-            "date"
-          ]
+          "columns": ["household_id", "task_id", "date"]
         }
       },
       "policies": {
@@ -1755,9 +1814,7 @@
           "name": "household_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"occurrences\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid",
           "withCheck": "\"occurrences\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid"
         }
@@ -1855,12 +1912,8 @@
           "tableFrom": "parental_consents",
           "tableTo": "accounts",
           "schemaTo": "auth",
-          "columnsFrom": [
-            "given_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["given_by"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         },
@@ -1868,14 +1921,8 @@
           "name": "parental_consents_member",
           "tableFrom": "parental_consents",
           "tableTo": "members",
-          "columnsFrom": [
-            "household_id",
-            "member_id"
-          ],
-          "columnsTo": [
-            "household_id",
-            "id"
-          ],
+          "columnsFrom": ["household_id", "member_id"],
+          "columnsTo": ["household_id", "id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -1887,9 +1934,7 @@
           "name": "household_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"parental_consents\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid",
           "withCheck": "\"parental_consents\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid"
         }
@@ -1967,12 +2012,8 @@
           "name": "plans_household_id_households_id_fk",
           "tableFrom": "plans",
           "tableTo": "households",
-          "columnsFrom": [
-            "household_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["household_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1982,18 +2023,12 @@
         "plans_household_id": {
           "name": "plans_household_id",
           "nullsNotDistinct": false,
-          "columns": [
-            "household_id",
-            "id"
-          ]
+          "columns": ["household_id", "id"]
         },
         "plans_week": {
           "name": "plans_week",
           "nullsNotDistinct": false,
-          "columns": [
-            "household_id",
-            "week_start"
-          ]
+          "columns": ["household_id", "week_start"]
         }
       },
       "policies": {
@@ -2001,9 +2036,7 @@
           "name": "household_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"plans\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid",
           "withCheck": "\"plans\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid"
         }
@@ -2089,12 +2122,8 @@
           "tableFrom": "profile_guardians",
           "tableTo": "accounts",
           "schemaTo": "auth",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2102,14 +2131,8 @@
           "name": "profile_guardians_member",
           "tableFrom": "profile_guardians",
           "tableTo": "members",
-          "columnsFrom": [
-            "household_id",
-            "member_id"
-          ],
-          "columnsTo": [
-            "household_id",
-            "id"
-          ],
+          "columnsFrom": ["household_id", "member_id"],
+          "columnsTo": ["household_id", "id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2121,9 +2144,7 @@
           "name": "household_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"profile_guardians\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid",
           "withCheck": "\"profile_guardians\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid"
         }
@@ -2182,12 +2203,8 @@
           "name": "schedules_household_id_households_id_fk",
           "tableFrom": "schedules",
           "tableTo": "households",
-          "columnsFrom": [
-            "household_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["household_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2197,10 +2214,7 @@
         "schedules_household_id": {
           "name": "schedules_household_id",
           "nullsNotDistinct": false,
-          "columns": [
-            "household_id",
-            "id"
-          ]
+          "columns": ["household_id", "id"]
         }
       },
       "policies": {
@@ -2208,9 +2222,7 @@
           "name": "household_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"schedules\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid",
           "withCheck": "\"schedules\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid"
         }
@@ -2297,12 +2309,8 @@
           "name": "share_changes_household_id_households_id_fk",
           "tableFrom": "share_changes",
           "tableTo": "households",
-          "columnsFrom": [
-            "household_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["household_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2310,14 +2318,8 @@
           "name": "share_changes_member",
           "tableFrom": "share_changes",
           "tableTo": "members",
-          "columnsFrom": [
-            "household_id",
-            "member_id"
-          ],
-          "columnsTo": [
-            "household_id",
-            "id"
-          ],
+          "columnsFrom": ["household_id", "member_id"],
+          "columnsTo": ["household_id", "id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2329,9 +2331,7 @@
           "name": "household_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"share_changes\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid",
           "withCheck": "\"share_changes\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid"
         }
@@ -2340,6 +2340,106 @@
         "share_changes_percent": {
           "name": "share_changes_percent",
           "value": "\"share_changes\".\"percent\" between 0 and 100"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.task_constraints": {
+      "name": "task_constraints",
+      "schema": "",
+      "columns": {
+        "household_id": {
+          "name": "household_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "task_id": {
+          "name": "task_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "member_id": {
+          "name": "member_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "constraint": {
+          "name": "constraint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "task_constraints_member": {
+          "name": "task_constraints_member",
+          "columns": [
+            {
+              "expression": "member_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "task_constraints_household_id_households_id_fk": {
+          "name": "task_constraints_household_id_households_id_fk",
+          "tableFrom": "task_constraints",
+          "tableTo": "households",
+          "columnsFrom": ["household_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "task_constraints_task_household": {
+          "name": "task_constraints_task_household",
+          "tableFrom": "task_constraints",
+          "tableTo": "tasks",
+          "columnsFrom": ["household_id", "task_id"],
+          "columnsTo": ["household_id", "id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "task_constraints_member_household": {
+          "name": "task_constraints_member_household",
+          "tableFrom": "task_constraints",
+          "tableTo": "members",
+          "columnsFrom": ["household_id", "member_id"],
+          "columnsTo": ["household_id", "id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "task_constraints_task_id_member_id_pk": {
+          "name": "task_constraints_task_id_member_id_pk",
+          "columns": ["task_id", "member_id"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {
+        "household_only": {
+          "name": "household_only",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["public"],
+          "using": "\"task_constraints\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid",
+          "withCheck": "\"task_constraints\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {
+        "task_constraints_constraint": {
+          "name": "task_constraints_constraint",
+          "value": "\"task_constraints\".\"constraint\" in ('bound', 'excluded', 'allowed')"
         }
       },
       "isRLSEnabled": false
@@ -2377,7 +2477,50 @@
           "name": "schedule_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
+        },
+        "every_count": {
+          "name": "every_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "every_unit": {
+          "name": "every_unit",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "start": {
+          "name": "start",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "once": {
+          "name": "once",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deadline": {
+          "name": "deadline",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "added_by": {
+          "name": "added_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "removed": {
+          "name": "removed",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "timing": {
           "name": "timing",
@@ -2385,11 +2528,53 @@
           "primaryKey": false,
           "notNull": true
         },
+        "window_from_day": {
+          "name": "window_from_day",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "window_from_time": {
+          "name": "window_from_time",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "window_to_day": {
+          "name": "window_to_day",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "window_to_time": {
+          "name": "window_to_time",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": false
+        },
         "on_miss": {
           "name": "on_miss",
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "minimum_age": {
+          "name": "minimum_age",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "linked_to": {
+          "name": "linked_to",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "area_id": {
+          "name": "area_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
         },
         "version": {
           "name": "version",
@@ -2427,12 +2612,8 @@
           "name": "tasks_household_id_households_id_fk",
           "tableFrom": "tasks",
           "tableTo": "households",
-          "columnsFrom": [
-            "household_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["household_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2440,14 +2621,35 @@
           "name": "tasks_schedule",
           "tableFrom": "tasks",
           "tableTo": "schedules",
-          "columnsFrom": [
-            "household_id",
-            "schedule_id"
-          ],
-          "columnsTo": [
-            "household_id",
-            "id"
-          ],
+          "columnsFrom": ["household_id", "schedule_id"],
+          "columnsTo": ["household_id", "id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "tasks_linked_to": {
+          "name": "tasks_linked_to",
+          "tableFrom": "tasks",
+          "tableTo": "tasks",
+          "columnsFrom": ["household_id", "linked_to"],
+          "columnsTo": ["household_id", "id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "tasks_area": {
+          "name": "tasks_area",
+          "tableFrom": "tasks",
+          "tableTo": "areas",
+          "columnsFrom": ["household_id", "area_id"],
+          "columnsTo": ["household_id", "id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "tasks_added_by": {
+          "name": "tasks_added_by",
+          "tableFrom": "tasks",
+          "tableTo": "members",
+          "columnsFrom": ["household_id", "added_by"],
+          "columnsTo": ["household_id", "id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2457,10 +2659,7 @@
         "tasks_household_task": {
           "name": "tasks_household_task",
           "nullsNotDistinct": false,
-          "columns": [
-            "household_id",
-            "id"
-          ]
+          "columns": ["household_id", "id"]
         }
       },
       "policies": {
@@ -2468,9 +2667,7 @@
           "name": "household_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"tasks\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid",
           "withCheck": "\"tasks\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid"
         }
@@ -2486,11 +2683,35 @@
         },
         "tasks_timing": {
           "name": "tasks_timing",
-          "value": "\"tasks\".\"timing\" in ('flexible', 'floating')"
+          "value": "\"tasks\".\"timing\" in ('flexible', 'floating', 'fixed')"
+        },
+        "tasks_window": {
+          "name": "tasks_window",
+          "value": "(\"tasks\".\"timing\" = 'fixed') = (\"tasks\".\"window_from_day\" is not null and \"tasks\".\"window_from_time\" is not null\n          and \"tasks\".\"window_to_day\" is not null and \"tasks\".\"window_to_time\" is not null)\n        and (\"tasks\".\"window_from_day\" is null or \"tasks\".\"window_from_day\" between -3 and 3)\n        and (\"tasks\".\"window_to_day\" is null or \"tasks\".\"window_to_day\" between -3 and 3)"
         },
         "tasks_on_miss": {
           "name": "tasks_on_miss",
           "value": "\"tasks\".\"on_miss\" in ('roll over', 'lapse')"
+        },
+        "tasks_minimum_age": {
+          "name": "tasks_minimum_age",
+          "value": "\"tasks\".\"minimum_age\" is null or \"tasks\".\"minimum_age\" between 1 and 17"
+        },
+        "tasks_linked_to_other": {
+          "name": "tasks_linked_to_other",
+          "value": "\"tasks\".\"linked_to\" <> \"tasks\".\"id\""
+        },
+        "tasks_recurrence": {
+          "name": "tasks_recurrence",
+          "value": "(\"tasks\".\"schedule_id\" is not null and \"tasks\".\"every_count\" is null and \"tasks\".\"every_unit\" is null\n          and \"tasks\".\"start\" is null and \"tasks\".\"once\" is null)\n        or (\"tasks\".\"schedule_id\" is null and \"tasks\".\"timing\" = 'flexible' and \"tasks\".\"on_miss\" = 'roll over'\n          and \"tasks\".\"once\" is null\n          and \"tasks\".\"start\" is not null and (\"tasks\".\"every_unit\" = 'days' and \"tasks\".\"every_count\" between 1 and 365\n            or \"tasks\".\"every_unit\" = 'weeks' and \"tasks\".\"every_count\" between 1 and 52\n            or \"tasks\".\"every_unit\" = 'months' and \"tasks\".\"every_count\" between 1 and 12))\n        or (\"tasks\".\"schedule_id\" is null and \"tasks\".\"every_count\" is null and \"tasks\".\"every_unit\" is null\n          and \"tasks\".\"start\" is null and \"tasks\".\"timing\" = 'flexible' and \"tasks\".\"once\" is not null\n          and \"tasks\".\"added_by\" is not null)"
+        },
+        "tasks_deadline": {
+          "name": "tasks_deadline",
+          "value": "\"tasks\".\"deadline\" is null or \"tasks\".\"once\" <= \"tasks\".\"deadline\""
+        },
+        "tasks_one_off": {
+          "name": "tasks_one_off",
+          "value": "\"tasks\".\"once\" is not null or (\"tasks\".\"deadline\" is null and \"tasks\".\"added_by\" is null)"
         }
       },
       "isRLSEnabled": false
@@ -2571,12 +2792,8 @@
           "name": "temporary_shares_household_id_households_id_fk",
           "tableFrom": "temporary_shares",
           "tableTo": "households",
-          "columnsFrom": [
-            "household_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["household_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2584,12 +2801,8 @@
           "name": "temporary_shares_member_id_members_id_fk",
           "tableFrom": "temporary_shares",
           "tableTo": "members",
-          "columnsFrom": [
-            "member_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["member_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2601,9 +2814,7 @@
           "name": "household_only",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "\"temporary_shares\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid",
           "withCheck": "\"temporary_shares\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid"
         }
@@ -2616,117 +2827,6 @@
         "temporary_shares_percent": {
           "name": "temporary_shares_percent",
           "value": "\"temporary_shares\".\"percent\" between 0 and 100"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.unavailabilities": {
-      "name": "unavailabilities",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "household_id": {
-          "name": "household_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "member_id": {
-          "name": "member_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "starts_at": {
-          "name": "starts_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "ends_at": {
-          "name": "ends_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "unavailabilities_household_ends": {
-          "name": "unavailabilities_household_ends",
-          "columns": [
-            {
-              "expression": "household_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "ends_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "unavailabilities_household_id_households_id_fk": {
-          "name": "unavailabilities_household_id_households_id_fk",
-          "tableFrom": "unavailabilities",
-          "tableTo": "households",
-          "columnsFrom": [
-            "household_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "unavailabilities_member": {
-          "name": "unavailabilities_member",
-          "tableFrom": "unavailabilities",
-          "tableTo": "members",
-          "columnsFrom": [
-            "household_id",
-            "member_id"
-          ],
-          "columnsTo": [
-            "household_id",
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {
-        "household_only": {
-          "name": "household_only",
-          "as": "PERMISSIVE",
-          "for": "ALL",
-          "to": [
-            "public"
-          ],
-          "using": "\"unavailabilities\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid",
-          "withCheck": "\"unavailabilities\".\"household_id\" = nullif(current_setting('householdr.household_id', true), '')::uuid"
-        }
-      },
-      "checkConstraints": {
-        "unavailabilities_times": {
-          "name": "unavailabilities_times",
-          "value": "\"unavailabilities\".\"starts_at\" < \"unavailabilities\".\"ends_at\""
         }
       },
       "isRLSEnabled": false
@@ -2775,12 +2875,8 @@
           "tableFrom": "account_emails",
           "tableTo": "accounts",
           "schemaTo": "auth",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2883,9 +2979,7 @@
         "accounts_email_unique": {
           "name": "accounts_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -3014,12 +3108,8 @@
           "tableFrom": "credentials",
           "tableTo": "accounts",
           "schemaTo": "auth",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3028,6 +3118,79 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "auth.notification_preferences": {
+      "name": "notification_preferences",
+      "schema": "auth",
+      "columns": {
+        "account_id": {
+          "name": "account_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "channels": {
+          "name": "channels",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quiet_start": {
+          "name": "quiet_start",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quiet_end": {
+          "name": "quiet_end",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email_fallback": {
+          "name": "email_fallback",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "notification_preferences_account_id_accounts_id_fk": {
+          "name": "notification_preferences_account_id_accounts_id_fk",
+          "tableFrom": "notification_preferences",
+          "tableTo": "accounts",
+          "schemaTo": "auth",
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "notification_preferences_channels": {
+          "name": "notification_preferences_channels",
+          "value": "jsonb_typeof(\"auth\".\"notification_preferences\".\"channels\") = 'object'\n        and \"auth\".\"notification_preferences\".\"channels\" - array['plan.published', 'plan.drafted'] = '{}'::jsonb\n        and not jsonb_path_exists(\"auth\".\"notification_preferences\".\"channels\", '$.* ? (!(@ == \"push-and-email\" || @ == \"push\" || @ == \"email\" || @ == \"app\"))')"
+        },
+        "notification_preferences_quiet_hours": {
+          "name": "notification_preferences_quiet_hours",
+          "value": "\"auth\".\"notification_preferences\".\"quiet_start\" <> \"auth\".\"notification_preferences\".\"quiet_end\""
+        },
+        "notification_preferences_version": {
+          "name": "notification_preferences_version",
+          "value": "\"auth\".\"notification_preferences\".\"version\" >= 1"
+        }
+      },
       "isRLSEnabled": false
     },
     "auth.passkeys": {
@@ -3138,12 +3301,8 @@
           "tableFrom": "passkeys",
           "tableTo": "accounts",
           "schemaTo": "auth",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3153,9 +3312,7 @@
         "passkeys_credentialID_unique": {
           "name": "passkeys_credentialID_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "credential_id"
-          ]
+          "columns": ["credential_id"]
         }
       },
       "policies": {},
@@ -3163,6 +3320,126 @@
         "passkeys_no_name": {
           "name": "passkeys_no_name",
           "value": "\"auth\".\"passkeys\".\"name\" is null"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "auth.push_subscriptions": {
+      "name": "push_subscriptions",
+      "schema": "auth",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "session_id": {
+          "name": "session_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "endpoint": {
+          "name": "endpoint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "p256dh": {
+          "name": "p256dh",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "auth": {
+          "name": "auth",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "push_subscriptions_account": {
+          "name": "push_subscriptions_account",
+          "columns": [
+            {
+              "expression": "account_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "push_subscriptions_session": {
+          "name": "push_subscriptions_session",
+          "columns": [
+            {
+              "expression": "session_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "push_subscriptions_account_id_accounts_id_fk": {
+          "name": "push_subscriptions_account_id_accounts_id_fk",
+          "tableFrom": "push_subscriptions",
+          "tableTo": "accounts",
+          "schemaTo": "auth",
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "push_subscriptions_session_id_sessions_id_fk": {
+          "name": "push_subscriptions_session_id_sessions_id_fk",
+          "tableFrom": "push_subscriptions",
+          "tableTo": "sessions",
+          "schemaTo": "auth",
+          "columnsFrom": ["session_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "push_subscriptions_endpoint_unique": {
+          "name": "push_subscriptions_endpoint_unique",
+          "nullsNotDistinct": false,
+          "columns": ["endpoint"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "push_subscriptions_endpoint": {
+          "name": "push_subscriptions_endpoint",
+          "value": "\"auth\".\"push_subscriptions\".\"endpoint\" like 'https://%'"
         }
       },
       "isRLSEnabled": false
@@ -3223,6 +3500,71 @@
           "value": "\"auth\".\"rate_limits\".\"count\" >= 0"
         }
       },
+      "isRLSEnabled": false
+    },
+    "auth.sent_pushes": {
+      "name": "sent_pushes",
+      "schema": "auth",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sent_at": {
+          "name": "sent_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "sent_pushes_account": {
+          "name": "sent_pushes_account",
+          "columns": [
+            {
+              "expression": "account_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "sent_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "sent_pushes_account_id_accounts_id_fk": {
+          "name": "sent_pushes_account_id_accounts_id_fk",
+          "tableFrom": "sent_pushes",
+          "tableTo": "accounts",
+          "schemaTo": "auth",
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "auth.sessions": {
@@ -3316,12 +3658,8 @@
           "tableFrom": "sessions",
           "tableTo": "accounts",
           "schemaTo": "auth",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3331,9 +3669,7 @@
         "sessions_token_unique": {
           "name": "sessions_token_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "policies": {},
@@ -3420,12 +3756,8 @@
           "tableFrom": "two_factors",
           "tableTo": "accounts",
           "schemaTo": "auth",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3435,9 +3767,7 @@
         "two_factors_userId_unique": {
           "name": "two_factors_userId_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id"
-          ]
+          "columns": ["user_id"]
         }
       },
       "policies": {},

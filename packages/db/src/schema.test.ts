@@ -2,7 +2,14 @@ import type { HouseholdCalendar, RebalancePreset } from '@householdr/domain';
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { inHousehold, type Database, type Transaction } from './connection';
-import { accountEmails, accounts, sessions, twoFactors } from './auth-schema';
+import {
+  accountEmails,
+  accounts,
+  notificationPreferences,
+  pushSubscriptions,
+  sessions,
+  twoFactors,
+} from './auth-schema';
 import {
   absences,
   assignments,
@@ -10,6 +17,7 @@ import {
   comparisons,
   households,
   members,
+  notifications,
   occurrences,
   parentalConsents,
   plans,
@@ -1042,5 +1050,167 @@ describe('temporary_shares', () => {
     expect(await refusal(addTemporaryShare({ ...week, percent: -1 }))).toBe(
       'temporary_shares_percent',
     );
+  });
+});
+
+describe('notifications (ADR-0014 §7)', () => {
+  /** A household with a head, and a draft for the week of 12 October. */
+  const notified = async () => {
+    const id = newId();
+    return inHousehold(db, id, async (tx) => {
+      await tx.insert(households).values(household(id));
+      const [member] = await tx
+        .insert(members)
+        .values({ householdId: id, name: 'Robin', role: 'head' })
+        .returning();
+      if (!member) throw new Error('No member');
+      await tx.insert(plans).values({
+        householdId: id,
+        weekStart: '2026-10-12',
+        weekEnd: '2026-10-19',
+        status: 'draft',
+        draftedAt: new Date(),
+      });
+      return { id, member };
+    });
+  };
+  const add = (
+    { id, member }: Awaited<ReturnType<typeof notified>>,
+    fields: Partial<typeof notifications.$inferInsert> = {},
+  ) =>
+    inHousehold(db, id, (tx) =>
+      tx.insert(notifications).values({
+        householdId: id,
+        memberId: member.id,
+        kind: 'plan.drafted',
+        at: new Date(),
+        week: '2026-10-12',
+        ...fields,
+      }),
+    );
+
+  it('names the week of a plan’s notification, a week the household has a plan for', async () => {
+    const n = await notified();
+    expect(await refusal(add(n))).toBeUndefined();
+    expect(await refusal(add(n, { kind: 'plan.published' }))).toBeUndefined();
+    expect(await refusal(add(n, { week: null }))).toBe('notifications_week');
+    expect(await refusal(add(n, { week: '2026-10-19' }))).toBe('notifications_plan');
+    expect(await refusal(add(n, { kind: 'plan.lost' as 'plan.drafted' }))).toBe(
+      'notifications_kind',
+    );
+  });
+
+  it('go with their plan, their member’s profile and their household', async () => {
+    for (const gone of [plans, members, households]) {
+      const n = await notified();
+      await add(n);
+      const left = await inHousehold(db, n.id, async (tx) => {
+        await tx.delete(gone);
+        return tx.select().from(notifications);
+      });
+      expect(left).toEqual([]);
+    }
+  });
+});
+
+describe('notification_preferences (ADR-0014 §3, clarifications)', () => {
+  type Preferences = Omit<typeof notificationPreferences.$inferInsert, 'accountId'>;
+  const saved: Preferences = {
+    channels: { 'plan.published': 'email', 'plan.drafted': 'app' },
+    quietStart: '22:00',
+    quietEnd: '07:00',
+    emailFallback: false,
+    version: 1,
+  };
+  const save = async (fields: Partial<Preferences>) => {
+    const [account] = await db
+      .insert(accounts)
+      .values({ name: 'Robin', email: `robin-${String(++next)}@example.org`, culture: 'en-BE' })
+      .returning();
+    if (!account) throw new Error('No account');
+    await db.insert(notificationPreferences).values({ accountId: account.id, ...saved, ...fields });
+    return account.id;
+  };
+
+  it('keeps a known choice for each category it names, and only those', async () => {
+    expect(await refusal(save({}))).toBeUndefined();
+    expect(await refusal(save({ channels: {} }))).toBeUndefined();
+    const unknown = { 'plan.lost': 'push' } as Preferences['channels'];
+    expect(await refusal(save({ channels: unknown }))).toBe('notification_preferences_channels');
+    const wrong = { 'plan.published': 'sms' } as unknown as Preferences['channels'];
+    expect(await refusal(save({ channels: wrong }))).toBe('notification_preferences_channels');
+    const list = ['push'] as unknown as Preferences['channels'];
+    expect(await refusal(save({ channels: list }))).toBe('notification_preferences_channels');
+  });
+
+  it('keeps quiet hours whose start and end differ, across midnight too', async () => {
+    expect(await refusal(save({ quietStart: '23:30', quietEnd: '00:15' }))).toBeUndefined();
+    expect(await refusal(save({ quietStart: '07:30', quietEnd: '07:30' }))).toBe(
+      'notification_preferences_quiet_hours',
+    );
+    expect(await refusal(save({ version: 0 }))).toBe('notification_preferences_version');
+  });
+
+  it('go with the account', async () => {
+    const accountId = await save({});
+    await db.delete(accounts).where(eq(accounts.id, accountId));
+    const left = await db
+      .select()
+      .from(notificationPreferences)
+      .where(eq(notificationPreferences.accountId, accountId));
+    expect(left).toEqual([]);
+  });
+});
+
+describe('push_subscriptions (ADR-0014 §7, clarification)', () => {
+  /** An account signed in on a device, with a push subscription there. */
+  const subscribed = async (endpoint = `https://fcm.googleapis.com/fcm/send/${String(++next)}`) => {
+    const [account] = await db
+      .insert(accounts)
+      .values({ name: 'Robin', email: `robin-${String(++next)}@example.org`, culture: 'en-BE' })
+      .returning();
+    if (!account) throw new Error('No account');
+    const [session] = await db
+      .insert(sessions)
+      .values({
+        userId: account.id,
+        token: `token-${String(++next)}`,
+        expiresAt: new Date('2026-11-08T08:00:00Z'),
+      })
+      .returning();
+    if (!session) throw new Error('No session');
+    await db.insert(pushSubscriptions).values({
+      accountId: account.id,
+      sessionId: session.id,
+      endpoint,
+      p256dh: 'the-browser-public-key',
+      auth: 'the-browser-secret',
+    });
+    return { account, session };
+  };
+  const left = (accountId: string) =>
+    db.select().from(pushSubscriptions).where(eq(pushSubscriptions.accountId, accountId));
+
+  it('keeps one per endpoint, an https one', async () => {
+    expect(await refusal(subscribed('https://fcm.googleapis.com/fcm/send/same'))).toBeUndefined();
+    expect(await refusal(subscribed('https://fcm.googleapis.com/fcm/send/same'))).toBe(
+      'push_subscriptions_endpoint_unique',
+    );
+    expect(await refusal(subscribed('http://fcm.googleapis.com/fcm/send/plain'))).toBe(
+      'push_subscriptions_endpoint',
+    );
+  });
+
+  it('goes when its session ends, so a device signed out gets no more pushes', async () => {
+    const { account, session } = await subscribed();
+    expect(await left(account.id)).toHaveLength(1);
+    await db.delete(sessions).where(eq(sessions.id, session.id));
+    expect(await left(account.id)).toEqual([]);
+  });
+
+  it('goes with the account', async () => {
+    const { account } = await subscribed();
+    await db.delete(accounts).where(eq(accounts.id, account.id));
+    expect(await left(account.id)).toEqual([]);
   });
 });

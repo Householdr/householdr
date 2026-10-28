@@ -28,6 +28,7 @@ import {
 import { and, eq, gt, gte, inArray, lt, notExists, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { householdBurdens } from '../burdens/household-burdens';
+import { notify } from '../notifications/notify';
 import { closeDue } from './closing';
 import { lastDoneOf } from '../tasks/last-done';
 import { scheduleOf } from '../tasks/stored-schedule';
@@ -68,9 +69,10 @@ type DraftPlanResult =
  * weeks that it doesn't carry over, by their tasks' on-miss policy, it marks to close as missed when
  * its week begins, not before: until then they are their own week's work (ADR-0002 §2,
  * clarifications). The scheduler drafts a week once; a head drafting it again while it is a draft
- * replaces it. A week the household is away for entirely gets no plan (ADR-0005 §5); one drafted
- * again once it has begun, such as the week a household started in, is planned for the days left
- * (ADR-0007 §3).
+ * replaces it. The heads are notified of a week's first draft only, but for a head who made it
+ * (ADR-0014 §2, clarification). A week the household is away for entirely gets no plan (ADR-0005
+ * §5); one drafted again once it has begun, such as the week a household started in, is planned
+ * for the days left (ADR-0007 §3).
  */
 export async function draftPlan(context: PlanContext, input: unknown): Promise<DraftPlanResult> {
   if (!mayDraft(context)) return { ok: false, error: 'not-allowed' };
@@ -96,15 +98,24 @@ export async function draftPlan(context: PlanContext, input: unknown): Promise<D
     // What heads moved in the draft they replace stays where they put it (ADR-0006 §2).
     const preAssigned = existing ? await headAssigned(tx, existing.id) : new Map<string, string>();
     if (existing) await undoDraft(tx, existing.id);
+    const now = context.clock.now();
     const planId = await draftWeek(tx, {
       householdId,
       planning,
       week,
-      now: context.clock.now(),
+      now,
       replacing: existing?.id,
       preAssigned,
     });
     if (planId === undefined) return { ok: true, planned: false };
+    // The heads hear of a week's draft once, when it is first made (ADR-0014 §2, clarification).
+    if (!existing) {
+      const actor = context.member === 'scheduler' ? undefined : context.member.id;
+      await notify(tx, householdId, now, actor, {
+        event: { kind: 'plan.drafted' },
+        week: week.start,
+      });
+    }
     return { ok: true, planned: true, planId };
   });
 }

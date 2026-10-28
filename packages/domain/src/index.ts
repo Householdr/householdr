@@ -61,6 +61,31 @@ export { supportServiceIn, type SupportService } from './households/support-serv
 export { isAdultOn } from './members/age';
 export { headCandidates, type HeadCandidate } from './members/succession';
 export {
+  areQuietHours,
+  channelChoices,
+  channelsWith,
+  defaultPreferences,
+  type ChannelChoice,
+  type NotificationPreferences,
+  type QuietHours,
+  withoutEmail,
+} from './notifications/preferences';
+export { isKnownPushService } from './notifications/push-services';
+export {
+  channelsFor,
+  emailTime,
+  isTooLate,
+  pushTime,
+  underCeiling,
+  type Reach,
+} from './notifications/timing';
+export {
+  recipients,
+  type Notifiable,
+  type NotificationEvent,
+  type NotificationKind,
+} from './notifications/recipients';
+export {
   canForAccount,
   type Account,
   type AccountAction,
