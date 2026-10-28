@@ -561,6 +561,7 @@ describe('share changes in the activity log (ADR-0018 §5)', () => {
       action,
       setBeforeStart: null,
       subjectId,
+      taskName: null,
     });
     const first = at(1);
     await changeShare(head, { member: sam, percent: 50, version: 1 });

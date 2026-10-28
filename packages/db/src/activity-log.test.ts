@@ -63,6 +63,7 @@ describe('the activity log (ADR-0018 §5)', () => {
         action: 'household.name',
         setBeforeStart: null,
         subjectId: null,
+        taskName: null,
       },
     ]);
   });
@@ -130,6 +131,21 @@ describe('the activity log (ADR-0018 §5)', () => {
         { action: 'completion.undone', subjectId: null },
       ]),
     );
+  });
+
+  it('names a one-off task added or removed by its name, and no other entry names one (ADR-0018 §5, clarification)', async () => {
+    const { id, robin } = await withEntry();
+    const entry = (action: ActivityAction, taskName?: string) =>
+      inHousehold(db, id, (tx) =>
+        tx
+          .insert(activityLog)
+          .values({ householdId: id, at: new Date(), actorId: robin, action, taskName }),
+      );
+    for (const action of ['one-off.added', 'one-off.removed'] as const) {
+      expect(await refusal(entry(action, 'Fix the shelf'))).toBeUndefined();
+      expect(await refusal(entry(action))).toBe('activity_log_task_name');
+    }
+    expect(await refusal(entry('household.name', 'Fix the shelf'))).toBe('activity_log_task_name');
   });
 
   it('names whose share or availability a head changed after the start, never a value', async () => {

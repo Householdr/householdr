@@ -5,6 +5,7 @@ import { connect, inHousehold, refuseBypass, type Database } from './connection'
 import { accounts } from './auth-schema';
 import {
   absences,
+  areas,
   assignments,
   comparisons,
   completionCredits,
@@ -16,6 +17,7 @@ import {
   plans,
   profileGuardians,
   schedules,
+  taskConstraints,
   tasks,
 } from './schema';
 import { refusal, refusedByRowSecurity, testDatabase, testServerUrl } from './testing';
@@ -631,6 +633,112 @@ describe('absences (ADR-0005 §2, ADR-0018 §3)', () => {
   });
 });
 
+describe('task constraints (ADR-0001 §3, clarification)', () => {
+  /** The ids of the head of household `id` and of a task it adds, as that household sees them. */
+  const headAndTask = async (id: string) =>
+    inHousehold(db, id, async (tx) => {
+      const [head] = await tx.select({ id: members.id }).from(members);
+      const [task] = await tx
+        .insert(tasks)
+        .values({
+          householdId: id,
+          name: 'Clean the oven',
+          duration: 40,
+          everyCount: 6,
+          everyUnit: 'weeks',
+          start: '2026-10-12',
+          timing: 'flexible',
+          onMiss: 'roll over',
+        })
+        .returning({ id: tasks.id });
+      if (!head || !task) throw new Error('No head or task');
+      return { member: head.id, task: task.id };
+    });
+
+  it('are seen in their own household only, and go with their task', async () => {
+    const robin = await headAndTask(ash);
+    await inHousehold(db, ash, (tx) =>
+      tx.insert(taskConstraints).values({
+        householdId: ash,
+        taskId: robin.task,
+        memberId: robin.member,
+        constraint: 'bound',
+      }),
+    );
+    const seen = (id: string) =>
+      inHousehold(db, id, (tx) =>
+        tx.select({ constraint: taskConstraints.constraint }).from(taskConstraints),
+      );
+    expect(await seen(ash)).toEqual([{ constraint: 'bound' }]);
+    expect(await seen(birch)).toEqual([]);
+    await inHousehold(db, ash, (tx) => tx.delete(tasks).where(eq(tasks.id, robin.task)));
+    expect(await seen(ash)).toEqual([]);
+  });
+
+  it('never tie another household’s member or task', async () => {
+    const robin = await headAndTask(ash);
+    const sam = await headAndTask(birch);
+    const tie = (taskId: string, memberId: string) =>
+      refusal(
+        inHousehold(db, ash, (tx) =>
+          tx
+            .insert(taskConstraints)
+            .values({ householdId: ash, taskId, memberId, constraint: 'excluded' }),
+        ),
+      );
+    expect(await tie(robin.task, sam.member)).toBe('task_constraints_member_household');
+    expect(await tie(sam.task, robin.member)).toBe('task_constraints_task_household');
+  });
+});
+
+describe('areas (ADR-0001 §1, clarification)', () => {
+  it('are seen in their own household only, each name once whatever the case', async () => {
+    await inHousehold(db, ash, (tx) =>
+      tx.insert(areas).values({ householdId: ash, name: 'Kitchen' }),
+    );
+    const seen = (id: string) =>
+      inHousehold(db, id, (tx) => tx.select({ name: areas.name }).from(areas));
+    expect(await seen(ash)).toEqual([{ name: 'Kitchen' }]);
+    expect(await seen(birch)).toEqual([]);
+    expect(
+      await refusal(
+        inHousehold(db, ash, (tx) =>
+          tx.insert(areas).values({ householdId: ash, name: 'kitchen' }),
+        ),
+      ),
+    ).toBe('areas_household_name');
+    // Another household may have its own kitchen.
+    await inHousehold(db, birch, (tx) =>
+      tx.insert(areas).values({ householdId: birch, name: 'Kitchen' }),
+    );
+    expect(await seen(birch)).toEqual([{ name: 'Kitchen' }]);
+  });
+
+  it('never hold another household’s task', async () => {
+    const [garden] = await inHousehold(db, birch, (tx) =>
+      tx.insert(areas).values({ householdId: birch, name: 'Garden' }).returning({ id: areas.id }),
+    );
+    if (!garden) throw new Error('No area');
+    expect(
+      await refusal(
+        inHousehold(db, ash, (tx) =>
+          tx.insert(tasks).values({
+            householdId: ash,
+            name: 'Mow the lawn',
+            duration: 40,
+            everyCount: 2,
+            everyUnit: 'weeks',
+            start: '2026-10-12',
+            timing: 'flexible',
+            onMiss: 'roll over',
+            areaId: garden.id,
+          }),
+        ),
+      ),
+    ).toBe('tasks_area');
+  });
+});
+
 describe('connect (ADR-0008 §9)', () => {
   it('refuses a superuser, whom row-level security does not bind', async () => {
     await expect(connect(testServerUrl())).rejects.toThrow('bypasses row-level security');
@@ -684,6 +792,7 @@ describe('every household-owned table (CODE-17)', () => {
     expect(rows.map((r) => r.table)).toEqual([
       'absences',
       'activity_log',
+      'areas',
       'assignments',
       'away_periods',
       'comparisons',
@@ -699,6 +808,7 @@ describe('every household-owned table (CODE-17)', () => {
       'profile_guardians',
       'schedules',
       'share_changes',
+      'task_constraints',
       'tasks',
       'temporary_shares',
       'unavailabilities',

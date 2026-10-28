@@ -66,21 +66,39 @@ export const test = base.extend<
 export { expect };
 
 /**
- * Checks the page as it is now with axe against WCAG 2.2 AA (ADR-0011 §8). `state` names what is
- * on screen, such as "dialog open", in the report.
+ * Checks the page as it is now with axe against WCAG 2.2 AA, in the light theme the tests run in
+ * and in the dark theme, then switches back to light (ADR-0011 §8). `state` names what is on
+ * screen, such as "dialog open", in the report.
  */
 export async function expectAccessible(page: Page, state = 'page') {
-  const { violations } = await new AxeBuilder({ page }).withTags(wcag).analyze();
-  await test.info().attach(`axe: ${state}`, {
-    body: JSON.stringify(violations, null, 2),
-    contentType: 'application/json',
+  for (const colorScheme of ['light', 'dark'] as const) {
+    await withColorScheme(page, colorScheme);
+    const { violations } = await new AxeBuilder({ page }).withTags(wcag).analyze();
+    await test.info().attach(`axe: ${state}, ${colorScheme}`, {
+      body: JSON.stringify(violations, null, 2),
+      contentType: 'application/json',
+    });
+    const found = violations.map((violation) => ({
+      rule: violation.id,
+      impact: violation.impact,
+      elements: violation.nodes.map((node) => node.target.join(' ')),
+    }));
+    expect(found, `Accessibility problems (${state}, ${colorScheme})`).toEqual([]);
+  }
+  await withColorScheme(page, 'light');
+}
+
+/**
+ * Switches `page` to `colorScheme`, and ends the colour transitions this starts, so axe never
+ * measures the contrast of a colour halfway.
+ */
+async function withColorScheme(page: Page, colorScheme: 'light' | 'dark') {
+  await page.emulateMedia({ colorScheme });
+  await page.evaluate(() => {
+    for (const animation of document.getAnimations()) {
+      if (animation instanceof CSSTransition) animation.finish();
+    }
   });
-  const found = violations.map((violation) => ({
-    rule: violation.id,
-    impact: violation.impact,
-    elements: violation.nodes.map((node) => node.target.join(' ')),
-  }));
-  expect(found, `Accessibility problems (${state})`).toEqual([]);
 }
 
 /** Forces flags on or off for the requests of `context`, as only the test build allows (ADR-0015 §10). */
@@ -96,10 +114,31 @@ export async function forceFlags(
 }
 
 /**
+ * Signs in on `page`, landing on `landing`: the security page while onboarding's flag is off. It
+ * sends what the sign-in page's form sends without loading the page, for tests about something
+ * else; tests about signing in use `signInWithForm`.
+ */
+export async function signIn(page: Page, { email, password }: TestAccount, landing = '/security') {
+  const response = await page.request.post('/sign-in', {
+    form: { email, password },
+    // As the browser sends it: from the server's own page, for a page in return.
+    headers: { origin: new URL(test.info().project.use.baseURL ?? '').origin, accept: 'text/html' },
+    maxRedirects: 0,
+  });
+  expect(response.status(), 'Signed in').toBe(303);
+  await page.goto(response.headers().location ?? '');
+  await expect(page).toHaveURL(landing);
+}
+
+/**
  * Signs in on `page` with the sign-in page's form, landing on `landing`: the security page while
  * onboarding's flag is off.
  */
-export async function signIn(page: Page, { email, password }: TestAccount, landing = '/security') {
+export async function signInWithForm(
+  page: Page,
+  { email, password }: TestAccount,
+  landing = '/security',
+) {
   await page.goto('/sign-in');
   await page.getByLabel('E-mail address').fill(email);
   await page.getByLabel('Password').fill(password);

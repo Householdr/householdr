@@ -131,6 +131,8 @@ describe('a household’s plan page (ADR-0006 §2)', () => {
                 completion: null,
                 cost: 30,
                 reason: 'only eligible member',
+                // Done any time that week, so without set times (ADR-0004 §4).
+                window: null,
               },
             ],
           },
@@ -192,6 +194,19 @@ describe('a household’s plan page (ADR-0006 §2)', () => {
     ).toEqual({ week: '2026-10-12', published: true });
     expect(await opened({ ...on, membership: adult })).toMatchObject({
       nextWeek: { status: 'published', publishAt: null, members: [{ name: 'Robin' }] },
+    });
+  });
+
+  it('leads every member to add a one-off task for this week, while the tasks’ flag is on (ADR-0006 §3)', async () => {
+    const head = await drafted();
+    const withTasks = { flags: { ...on.flags, tasks: true } };
+    for (const membership of [head, asAdult(head)]) {
+      expect(await opened({ ...withTasks, membership })).toMatchObject({ mayAddOneOffs: true });
+    }
+    expect(
+      await opened({ ...on, flags: { ...on.flags, tasks: false }, membership: head }),
+    ).toMatchObject({
+      mayAddOneOffs: false,
     });
   });
 

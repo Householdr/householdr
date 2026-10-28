@@ -49,6 +49,10 @@ const weekData = (plan: WeekPlan | null, completions: boolean) => {
     occurrence: i.occurrence,
     task: i.task,
     date: i.date.toString(),
+    // A task at set times shows its window, as epoch milliseconds (ADR-0004 §4, ADR-0018 §3).
+    window: i.fixed
+      ? { start: i.window.start.epochMilliseconds, end: i.window.end.epochMilliseconds }
+      : null,
     completable: completions && i.completable,
     completion: completions && i.completion ? completionData(i.completion) : null,
   });
@@ -80,6 +84,8 @@ export const load = (async ({ locals }) => {
     thisWeek: weekData(result.thisWeek, completions),
     nextWeek: weekData(result.nextWeek, completions),
     mayPublish: result.mayPublish,
+    // From the plan, as from the tasks page, while the tasks' flag is on (CODE-20).
+    mayAddOneOffs: locals.flags.tasks && result.mayAddOneOffs,
     you: context.member.id,
   };
 }) satisfies PageServerLoad;

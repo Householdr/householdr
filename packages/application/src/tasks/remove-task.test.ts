@@ -2,15 +2,22 @@ import { accounts, inHousehold, passkeys, schedules, tasks, type Database } from
 import { testDatabase } from '@householdr/db/testing';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { completeOccurrence } from '../completions/complete-occurrence';
 import { createHousehold } from '../households/create-household';
 import { membership } from '../households/membership';
+import { draftPlan } from '../plans/draft-plan';
+import { publishPlan } from '../plans/publish-plan';
+import { plannedHousehold, type PlannedHousehold } from '../plans/testing';
 import { settableClock } from '../testing';
 import { addTask } from './add-task';
 import { editTask } from './edit-task';
+import { listTasks } from './list-tasks';
 import { removeTask } from './remove-task';
+import { taskToEdit } from './task-to-edit';
 
 // Heads remove a household's tasks (ADR-0001 §2), as they saw them (ADR-0019 §5), with their
-// schedules (ADR-0004 §1), on a real database (TEST-11).
+// schedules (ADR-0004 §1), and hide those that have been planned (ADR-0001 §1, clarification), on
+// a real database (TEST-11).
 
 let db: Database;
 let close: () => Promise<void>;
@@ -19,19 +26,17 @@ beforeAll(async () => {
 });
 afterAll(() => close());
 
-let next = 0;
-
 /** A household in Brussels and its founding head with two factors, as the guard finds them. */
 const founded = async () => {
   const [account] = await db
     .insert(accounts)
-    .values({ name: 'Robin', email: `robin-${String(++next)}@example.org`, culture: 'en-BE' })
+    .values({ name: 'Robin', email: `robin-${crypto.randomUUID()}@example.org`, culture: 'en-BE' })
     .returning({ id: accounts.id });
   if (!account) throw new Error('No account');
   await db.insert(passkeys).values({
     userId: account.id,
     publicKey: 'a-key',
-    credentialID: `credential-${String(++next)}`,
+    credentialID: `credential-${crypto.randomUUID()}`,
     counter: 0,
     deviceType: 'singleDevice',
     backedUp: false,
@@ -182,5 +187,100 @@ describe('removeTask (ADR-0001 §2)', () => {
       });
     }
     expect(await left(head.householdId)).toEqual({ tasks: ['Vacuum'], schedules: 1 });
+  });
+});
+
+// The week of Monday 12 October 2026, the household's first, and the two after it.
+const week1 = '2026-10-12';
+const week2 = '2026-10-19';
+const week3 = '2026-10-26';
+
+/** Drafts the week of `week` as the scheduler, and publishes it unless said otherwise. */
+const planned = async (h: PlannedHousehold, week: string, { publish = true } = {}) => {
+  const drafted = await draftPlan(h.scheduler, { week });
+  if (!drafted.ok) throw new Error(`Not drafted: ${drafted.error}`);
+  if (publish) await publishPlan(h.scheduler, { week });
+};
+
+/** The tasks and dates of the plan of the week starting on `week`, with their status. */
+const rowsOf = async (h: PlannedHousehold, week: string) =>
+  (await h.plan(week))?.rows.map(({ task, date, status }) => `${task}@${date} ${status}`);
+
+/** The names of the tasks the household's members see. */
+const listed = async (h: PlannedHousehold) => {
+  const result = await listTasks(h.adult);
+  if (!result.ok) throw new Error(`Not listed: ${result.error}`);
+  return result.tasks.map(({ name }) => name);
+};
+
+describe('removing a task that has been planned (ADR-0001 §1, clarification)', () => {
+  it('hides it: out of the list, the drafts and this week’s plan, while what was done stays', async () => {
+    const h = await plannedHousehold(db);
+    const dishes = await h.task('Dishes', 20, 'weekly', '2026-10-12');
+    await h.task('Vacuum', 30, 'weekly', '2026-10-14');
+    await planned(h, week1);
+    // Wednesday 14 October: the first dishes are done, and next week is drafted.
+    h.clock.advance({ hours: 6 * 24 });
+    const [first] = (await h.plan(week1))?.rows.filter((row) => row.task === 'Dishes') ?? [];
+    if (!first) throw new Error('No dishes');
+    expect(await completeOccurrence(h.head, { occurrence: first.occurrence })).toMatchObject({
+      ok: true,
+    });
+    await planned(h, week2, { publish: false });
+    const draftVersion = (await h.plan(week2))?.version;
+
+    expect(await removeTask(h.head, { taskId: dishes, version: 1 })).toEqual({ ok: true });
+
+    expect(await listed(h)).toEqual(['Vacuum']);
+    expect(await rowsOf(h, week1)).toEqual(['Dishes@2026-10-12 done', 'Vacuum@2026-10-14 open']);
+    expect(await rowsOf(h, week2)).toEqual(['Vacuum@2026-10-21 open']);
+    // The draft changed, so a head publishes it as it is now (ADR-0019 §5).
+    expect((await h.plan(week2))?.version).toBe((draftVersion ?? 0) + 1);
+    // Kept by its name for what was done, but nobody can change it or remove it again.
+    const [kept] = await h.inIt((tx) =>
+      tx.select({ removed: tasks.removed }).from(tasks).where(eq(tasks.id, dishes)),
+    );
+    expect(kept).toEqual({ removed: true });
+    expect(await taskToEdit(h.head, { taskId: dishes })).toEqual({
+      ok: false,
+      error: 'not-found',
+    });
+    expect(await removeTask(h.head, { taskId: dishes, version: 2 })).toEqual({
+      ok: false,
+      error: 'not-found',
+    });
+    // Drafted again, and the week after, it is never planned again.
+    expect(await draftPlan(h.head, { week: week2 })).toMatchObject({ ok: true });
+    expect(await rowsOf(h, week2)).toEqual(['Vacuum@2026-10-21 open']);
+  });
+
+  it('leaves an earlier week’s plan as it was, and never carries its open occurrence over again', async () => {
+    const h = await plannedHousehold(db);
+    const shelf = await h.oneOff('Fix the shelf', 30, '2026-10-14');
+    await planned(h, week1);
+    // Nobody fixed it in its week, so it rolls over into the next (ADR-0002 §2).
+    h.clock.advance({ hours: 11 * 24 });
+    await planned(h, week2);
+    expect(await rowsOf(h, week2)).toEqual(['Fix the shelf@2026-10-14 open']);
+
+    expect(await removeTask(h.head, { taskId: shelf, version: 1 })).toEqual({ ok: true });
+
+    expect(await rowsOf(h, week1)).toEqual(['Fix the shelf@2026-10-14 open']);
+    expect(await rowsOf(h, week2)).toEqual([]);
+    await planned(h, week3, { publish: false });
+    expect(await rowsOf(h, week3)).toEqual([]);
+  });
+
+  it('takes it out of a plan published early for a week to come', async () => {
+    const h = await plannedHousehold(db);
+    const vacuum = await h.task('Vacuum', 30, 'weekly', '2026-10-14');
+    await planned(h, week1);
+    await planned(h, week2);
+    expect(await removeTask(h.head, { taskId: vacuum, version: 1 })).toEqual({ ok: true });
+    expect(await rowsOf(h, week1)).toEqual([]);
+    expect(await rowsOf(h, week2)).toEqual([]);
+    // Nothing was done or is left in a past plan, so it goes altogether, schedule and all.
+    expect(await h.inIt((tx) => tx.select({ id: tasks.id }).from(tasks))).toEqual([]);
+    expect(await h.inIt((tx) => tx.select({ id: schedules.id }).from(schedules))).toEqual([]);
   });
 });

@@ -193,6 +193,18 @@ home screen) at the moments it would have helped, at most once a week.
 > ([ADR-0012](0012-privacy-and-data-protection.md) §8). A push service keeps it for a device that
 > is offline for at most a day; after that, the notification is still in the list.
 
+> **Clarification (2026-10-14):** the **one-click unsubscribe** of an e-mail that isn't mandatory,
+> so far only the morning e-mail (§5), is a link with a token of its own, in the e-mail and in its
+> `List-Unsubscribe` header. The link opens a page that says what it does, where one button turns
+> off **every e-mail choice** of the account, without signing in: *e-mail* becomes *only in the
+> app*, *push and e-mail* becomes *push*, and the e-mail fallback (§5) goes off. Account and
+> security e-mails keep coming (§2). Opening the link changes nothing by itself, since mail filters
+> open links too. The settings page then shows the choices as they are, and each can be turned back
+> on there. The header has no `List-Unsubscribe-Post` (RFC 8058): a mail app's one-click request
+> comes from its own servers, without the app's origin, which the origin check on form actions
+> refuses ([ADR-0017](0017-security-baseline.md) §4), so a mail app that offers to unsubscribe
+> opens the page instead. The token's lifetime is in ADR-0017 §4, clarification.
+
 ### 7. Delivery
 
 - A notification is a row, created **in the same transaction** as the change that causes it (a swap

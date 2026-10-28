@@ -11,6 +11,7 @@ export interface ActivityEntryData {
   actor: string | null;
   action: ActivityEntry['action'];
   subject: string | null;
+  task: string | null;
   setBeforeStart: SetBeforeStartNames | null;
   byReader: boolean;
   toReader: boolean;
@@ -86,6 +87,11 @@ export function useActivity(data: () => { locale: string; entries: ActivityEntry
         return m['activity.away-removed']({ who, actor });
       case 'member.removed':
         return m['activity.member-removed'](toWhom);
+      // The task by its name, which every member sees in the task list (ADR-0018 §5, clarification).
+      case 'one-off.added':
+        return m['activity.one-off-added']({ who, actor, task: entry.task ?? '' });
+      case 'one-off.removed':
+        return m['activity.one-off-removed']({ who, actor, task: entry.task ?? '' });
     }
   };
 

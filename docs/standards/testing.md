@@ -14,9 +14,10 @@
   [ADR-0023](../adr/0023-application-layer.md)).
 - **TEST-11 — Use cases are tested directly**, against a real test database with fake ports, without
   HTTP or a browser.
-- **TEST-5 — Every user flow has an end-to-end test** with axe checks, at phone and desktop size, in
-  light and dark ([ADR-0011](../adr/0011-accessibility-and-responsive-baseline.md) §8). Every variant of
-  an experiment gets the same.
+- **TEST-5 — Every user flow has an end-to-end test** with axe checks, at phone and desktop size; the
+  flow runs in light, and every axe check runs in light and dark
+  ([ADR-0011](../adr/0011-accessibility-and-responsive-baseline.md) §8). Every variant of an experiment
+  gets the same.
 - **TEST-6 — A bug fix starts with a failing test** that reproduces it.
 - **TEST-7 — Never skip, disable or weaken a test to get green.** A flaky test is a bug to fix, not to
   retry.

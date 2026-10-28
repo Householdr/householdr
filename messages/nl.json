@@ -848,5 +848,231 @@
   ],
   "balances.former-members": "Voormalige leden",
   "balances.former-intro": "Het saldo van wie vertrok, blijft zoals het was, en blijft van hen alleen.",
-  "balances.former-member": "Voormalig lid"
+  "balances.former-member": "Voormalig lid",
+  "tasks.since-last-done": "Gerekend vanaf de laatste keer",
+  "tasks.every": "Weer aan de beurt na",
+  "tasks.every-count": "Hoeveel",
+  "tasks.every-unit": "Dagen, weken of maanden",
+  "tasks.unit-days": "dagen",
+  "tasks.unit-weeks": "weken",
+  "tasks.unit-months": "maanden",
+  "tasks.first-due-hint": "De eerste keer dat het aan de beurt is. Daarna telt het vanaf de laatste keer.",
+  "tasks.every-days": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Ongeveer elke dag, gerekend vanaf de laatste keer",
+        "countPlural=other": "Ongeveer om de {count} dagen, gerekend vanaf de laatste keer"
+      }
+    }
+  ],
+  "tasks.every-weeks": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Ongeveer elke week, gerekend vanaf de laatste keer",
+        "countPlural=other": "Ongeveer om de {count} weken, gerekend vanaf de laatste keer"
+      }
+    }
+  ],
+  "tasks.every-months": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Ongeveer elke maand, gerekend vanaf de laatste keer",
+        "countPlural=other": "Ongeveer om de {count} maanden, gerekend vanaf de laatste keer"
+      }
+    }
+  ],
+  "tasks.how-due": "Hoe dringend",
+  "tasks.due-today": "Vandaag aan de beurt",
+  "tasks.due-in": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Over {count} dag aan de beurt",
+        "countPlural=other": "Over {count} dagen aan de beurt"
+      }
+    }
+  ],
+  "tasks.overdue": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} dag te laat",
+        "countPlural=other": "{count} dagen te laat"
+      }
+    }
+  ],
+  "tasks.invalid-every-count": "Vul in hoeveel, een heel getal van 1 tot een jaar: 365 dagen, 52 weken of 12 maanden.",
+  "tasks.invalid-every-unit": "Kies dagen, weken of maanden.",
+  "tasks.when": "Wanneer ze gebeurt",
+  "tasks.when-week": "Om het even wanneer die week",
+  "tasks.when-set": "Op vaste tijden",
+  "tasks.window": "Vaste tijden",
+  "tasks.window-hint": "Rond elke datum. Voor afval dat woensdagochtend opgehaald wordt: van de dag ervoor om 18:00 tot de dag zelf om 07:00.",
+  "tasks.window-from-day": "Begint op",
+  "tasks.window-from-time": "Vanaf",
+  "tasks.window-to-day": "Eindigt op",
+  "tasks.window-to-time": "Tot",
+  "tasks.day-itself": "de dag zelf",
+  "tasks.day-before": "de dag ervoor",
+  "tasks.day-after": "de dag erna",
+  "tasks.days-before": "{count} dagen ervoor",
+  "tasks.days-after": "{count} dagen erna",
+  "tasks.window-words": "Van {from} om {fromTime} tot {to} om {toTime}",
+  "tasks.invalid-when": "Kies of ze om het even wanneer die week gebeurt of op vaste tijden.",
+  "tasks.invalid-window": "Kies wanneer ze begint en eindigt, binnen 3 dagen van haar datum. Ze moet eindigen nadat ze begint.",
+  "tasks.advanced": "Uitgebreid schema",
+  "schedule.weeks": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "elke {days}",
+        "countPlural=other": "om de {count} weken op {days}"
+      }
+    }
+  ],
+  "schedule.months": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "elke maand op dag {day}",
+        "countPlural=other": "om de {count} maanden op dag {day}"
+      }
+    }
+  ],
+  "schedule.weekdays-of-month": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "elke {which} {day} van de maand",
+        "countPlural=other": "om de {count} maanden op de {which} {day}"
+      }
+    }
+  ],
+  "schedule.year": "elk jaar op {date}",
+  "schedule.first": "1e",
+  "schedule.second": "2e",
+  "schedule.third": "3e",
+  "schedule.fourth": "4e",
+  "schedule.last": "laatste",
+  "schedule.on": "op {dates}",
+  "schedule.also-on": "ook op {dates}",
+  "schedule.not-on": "niet op {dates}",
+  "schedule.rules": "Regels",
+  "schedule.rules-hint": "Tot 5. De taak valt op elke datum die een regel geeft.",
+  "schedule.rule": "Regel {number}",
+  "schedule.kind": "Herhaalt",
+  "schedule.kind-weeks": "Om de paar weken, op weekdagen",
+  "schedule.kind-months": "Om de paar maanden, op de dag van de eerste datum",
+  "schedule.kind-weekdays-of-month": "Om de paar maanden, op een weekdag van de maand",
+  "schedule.kind-year": "Elk jaar, op de dag van de eerste datum",
+  "schedule.every": "Om de hoeveel weken of maanden",
+  "schedule.days": "Op",
+  "schedule.which": "Welke van de maand",
+  "schedule.weekday": "Weekdag",
+  "schedule.start": "Eerste datum",
+  "schedule.start-hint": "Om de paar maanden en elk jaar herhalen op de dag van de eerste datum.",
+  "schedule.remove-rule": "Regel {number} verwijderen",
+  "schedule.add-rule": "Regel toevoegen",
+  "schedule.extra-dates": "Extra datums",
+  "schedule.extra-dates-hint": "Dagen waarop het ook valt, zoals een ophaling die door een feestdag verschuift.",
+  "schedule.extra-date": "Extra datum {number}",
+  "schedule.remove-extra": "Extra datum {number} verwijderen",
+  "schedule.add-extra": "Extra datum toevoegen",
+  "schedule.exception-dates": "Datums om over te slaan",
+  "schedule.exception-dates-hint": "Dagen waarop het niet valt, ook als een regel ze geeft.",
+  "schedule.exception-date": "Datum om over te slaan {number}",
+  "schedule.remove-exception": "Datum om over te slaan {number} verwijderen",
+  "schedule.add-exception": "Datum om over te slaan toevoegen",
+  "schedule.in-words": "In woorden: {words}",
+  "tasks.invalid-rules": "Geef tot 5 regels, elk om de 1 tot 52 weken of 1 tot 12 maanden, op minstens één dag, met een eerste datum vanaf vandaag tot een jaar vanaf nu. Voeg een regel of een extra datum toe.",
+  "tasks.invalid-extra-dates": "Geef tot 50 extra datums, elk één keer, vanaf vandaag tot twee jaar vanaf nu.",
+  "tasks.invalid-exception-dates": "Geef tot 50 datums om over te slaan, elk één keer, vanaf vandaag tot twee jaar vanaf nu.",
+  "tasks.shared": "Zelfde datums als een andere taak",
+  "tasks.shared-with": "Zelfde datums als",
+  "tasks.shared-note": "Zelfde datums als {tasks}. Nieuwe datums veranderen die van hen ook.",
+  "tasks.own-dates": "Geef het eigen datums, en laat die van hen zoals ze zijn",
+  "tasks.invalid-shared-with": "Kies een taak met een schema waarvan het de datums deelt.",
+  "task.who": "Wie doet het",
+  "task.who-hint": "Alleen hoofden zien dit. Een wijziging telt vanaf het volgende plan.",
+  "task.minimum-age": "Minimumleeftijd, in jaren",
+  "task.minimum-age-hint": "Laat het leeg voor elke leeftijd. Kinderen eronder krijgen de taak niet, tenzij je het hieronder toestaat.",
+  "task.constraint-none": "Iedereen die past",
+  "task.constraint-bound": "Altijd van hen",
+  "task.constraint-excluded": "Nooit van hen",
+  "task.constraint-allowed": "Mag het onder de minimumleeftijd",
+  "tasks.invalid-minimum-age": "Geef een leeftijd van 1 tot 17, of laat het leeg.",
+  "tasks.invalid-constraints": "Kies voor elk lid van het huishouden wie het doet.",
+  "task.linked-to": "Wie het doet, doet ook de volgende",
+  "task.linked-to-hint": "Zoals de vuilnisbakken terug binnenhalen nadat je ze buitenzette.",
+  "task.linked-to-none": "Geen andere taak",
+  "tasks.linked-to": "Dezelfde persoon doet ook",
+  "tasks.invalid-linked-to": "Kies een andere taak van het huishouden die geen eenmalige taak is, of geen.",
+  "areas.page-title": "Ruimtes · {household} · Householdr",
+  "areas.title": "Ruimtes",
+  "areas.intro": "Ruimtes groeperen de taken, zoals de keuken of de tuin. Ze veranderen niet wie wat doet.",
+  "areas.none": "Er zijn nog geen ruimtes.",
+  "areas.name": "Naam",
+  "areas.add": "Ruimte toevoegen",
+  "areas.added": "{name} is toegevoegd.",
+  "areas.rename": "{name} hernoemen",
+  "areas.renamed": "De ruimte heet nu {name}.",
+  "areas.remove": "{name} verwijderen",
+  "areas.removed": "{name} is verwijderd. Zijn taken hebben nu geen ruimte.",
+  "areas.invalid": "Geef een naam van 1 tot 50 tekens.",
+  "areas.taken": "Een andere ruimte heeft die naam al.",
+  "areas.failed": "De ruimte opslaan lukte niet",
+  "areas.back": "Terug naar de taken",
+  "tasks.areas": "Ruimtes",
+  "tasks.area": "Ruimte",
+  "tasks.no-area": "Geen ruimte",
+  "tasks.invalid-area": "Kies een ruimte van het huishouden, of geen.",
+  "tasks.one-offs": "Eenmalige taken",
+  "tasks.one-off-done": "Gedaan",
+  "tasks.one-off-week": "In de week van {day}",
+  "tasks.add-one-off": "Een eenmalige taak toevoegen",
+  "tasks.add-one-off-intro": "Voor iets dat één keer moet gebeuren, zoals een plank herstellen. Iedereen in het huishouden kan er een toevoegen.",
+  "tasks.one-off-name-hint": "Bijvoorbeeld “De plank herstellen”.",
+  "tasks.one-off-date": "Wanneer",
+  "tasks.one-off-date-hint": "Ze wordt ingepland in de week van deze dag.",
+  "tasks.one-off-deadline": "Kan wachten tot (niet verplicht)",
+  "tasks.one-off-deadline-hint": "Laat leeg om ze die week te laten doen. Met een dag kan ze in elke week tot dan ingepland worden.",
+  "tasks.add-one-off-submit": "Eenmalige taak toevoegen",
+  "tasks.add-one-off-failed": "De eenmalige taak toevoegen is niet gelukt",
+  "tasks.invalid-deadline": "Kies een dag op of na haar dag, tot een jaar van nu, of laat leeg.",
+  "task.invalid-deadline": "Behoud de dag die ze al heeft, of kies er een op of na haar dag, tot een jaar van nu.",
+  "task.remove-one-off-intro": "Ze verdwijnt voorgoed uit de taken van het huishouden, en het activiteitenlogboek vermeldt dat je ze verwijderd hebt.",
+  "plan.times-label": "Vaste tijden",
+  "plan.times": "Van {from} tot {to}",
+  "plan.add-one-off": "Een eenmalige taak voor deze week toevoegen",
+  "activity.one-off-added": [
+    {
+      "declarations": ["input who", "input actor", "input task"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je hebt een eenmalige taak toegevoegd: {task}",
+        "who=*": "{actor} heeft een eenmalige taak toegevoegd: {task}"
+      }
+    }
+  ],
+  "activity.one-off-removed": [
+    {
+      "declarations": ["input who", "input actor", "input task"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je hebt een eenmalige taak verwijderd: {task}",
+        "who=*": "{actor} heeft een eenmalige taak verwijderd: {task}"
+      }
+    }
+  ]
 }

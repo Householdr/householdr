@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dayText, formattingLocale, fullDay, timeZoneName } from './intl';
+import { dayText, dayTime, formattingLocale, fullDay, timeZoneName } from './intl';
 
 // 8 October 2026, 10:00 in Brussels.
 const at = Date.UTC(2026, 9, 8, 8);
@@ -29,6 +29,11 @@ describe('the locale values are written in (ADR-0008 §6)', () => {
   it('writes a day in full, as a vague day’s tooltip does (ADR-0008 §6, clarification)', () => {
     expect(fullDay('2026-10-08', 'en-BE')).toBe('Thursday, 8 October 2026');
     expect(fullDay('2026-10-08', 'nl-BE')).toBe('donderdag 8 oktober 2026');
+  });
+
+  it('writes a set time as its weekday and time of day, as a fixed task’s window (ADR-0004 §4)', () => {
+    expect(dayTime(at, 'Europe/Brussels', 'en-BE')).toBe('Thursday 10:00');
+    expect(dayTime(at, 'Europe/Brussels', 'nl-BE')).toBe('donderdag 10:00');
   });
 });
 

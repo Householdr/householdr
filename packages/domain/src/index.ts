@@ -105,6 +105,21 @@ export {
   type WeekInput,
   type WeekOccurrences,
 } from './plans/week-occurrences';
+export {
+  advancedRuleOf,
+  advancedSchedule,
+  advancedScheduleOf,
+  isAdvancedSchedule,
+  isScheduleDate,
+  scheduleDateRange,
+  scheduleOfAdvanced,
+  weekdays,
+  weekdaysOfMonth,
+  type AdvancedRule,
+  type AdvancedSchedule,
+  type Weekday,
+  type WeekdayOfMonth,
+} from './schedules/advanced';
 export { expand } from './schedules/expand';
 export {
   defaultTiming,
@@ -148,8 +163,13 @@ export {
 export {
   changedStartRange,
   defaultOnMiss,
+  fixedWindow,
+  isFixedWindow,
+  isOneOffDeadline,
   isStartDay,
   isTaskDuration,
+  isTaskInterval,
   startRange,
   taskDuration,
+  taskInterval,
 } from './tasks/task';
