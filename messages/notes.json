@@ -1038,6 +1038,14 @@
     "note": "Link to the household's activity log, for every member.",
     "needsReview": ["nl"]
   },
+  "household.notifications": {
+    "note": "Link to the member's own notifications from the household (ADR-0014 §7).",
+    "needsReview": ["nl"]
+  },
+  "household.notification-settings": {
+    "note": "Link to the account's own notification settings (ADR-0014 §3), next to the security page's.",
+    "needsReview": ["nl"]
+  },
   "settings.page-title": {
     "note": "Browser tab title of the household settings page.",
     "needsReview": ["nl"]
@@ -1388,6 +1396,902 @@
   },
   "tasks.invalid-on-miss": {
     "note": "Why adding or saving a task didn't work: neither choice for what happens to a time that isn't done was picked.",
+    "needsReview": ["nl"]
+  },
+  "tasks.edit": {
+    "note": "Link next to each task in the list, for heads, to the page that changes or removes it. Screen readers read it with the task's name after it.",
+    "needsReview": ["nl"]
+  },
+  "tasks.removed": {
+    "note": "Shown on the task list after a head removed a task on its own page.",
+    "needsReview": ["nl"]
+  },
+  "task.page-title": {
+    "note": "Browser tab title of the page that changes a task. {task} is the task's name, {household} the household's; Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "task.title": {
+    "note": "Heading of the page where a head changes a task: its name, minutes, frequency, first time and what happens if it isn't done.",
+    "needsReview": ["nl"]
+  },
+  "task.save": {
+    "note": "Button that saves the changes to the task.",
+    "needsReview": ["nl"]
+  },
+  "task.saved": {
+    "note": "Shown once the changes to a task are saved.",
+    "needsReview": ["nl"]
+  },
+  "task.failed": {
+    "note": "Heading of the error summary when saving a task didn't work: a field was refused, or someone changed the task in the meantime.",
+    "needsReview": ["nl"]
+  },
+  "task.conflict": {
+    "note": "Why saving didn't work: another head (or the same one in another tab) saved the task after this form was opened (ADR-0019 §5). Nothing is lost: the form keeps what was typed. Calm, nobody is blamed.",
+    "needsReview": ["nl"]
+  },
+  "task.current": {
+    "note": "Heading above the task as it is saved now, shown when it changed since the form was opened, to compare with the form.",
+    "needsReview": ["nl"]
+  },
+  "task.invalid-start": {
+    "note": "Why saving didn't work: the first time is a day in the past other than the one the task already has, or more than a year away. A task that has started keeps its first time.",
+    "needsReview": ["nl"]
+  },
+  "task.remove": {
+    "note": "Link from the page that changes a task to the page that asks to confirm removing it.",
+    "needsReview": ["nl"]
+  },
+  "task.back": {
+    "note": "Link from a task's page back to the household's task list.",
+    "needsReview": ["nl"]
+  },
+  "task.remove-page-title": {
+    "note": "Browser tab title of the page that asks to confirm removing a task. {task} is the task's name, {household} the household's; Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "task.remove-title": {
+    "note": "Heading of the page that asks a head to confirm removing a task. {task} is the task's name, as typed.",
+    "needsReview": ["nl"]
+  },
+  "task.remove-intro": {
+    "note": "Under the question whether to remove a task: removing can't be undone.",
+    "needsReview": ["nl"]
+  },
+  "task.remove-confirm": {
+    "note": "Button that removes the task, after the head was asked to confirm.",
+    "needsReview": ["nl"]
+  },
+  "task.keep": {
+    "note": "Link that goes back to the task's page without removing it.",
+    "needsReview": ["nl"]
+  },
+  "task.remove-failed": {
+    "note": "Heading of the error summary when removing a task didn't work, as someone changed it in the meantime.",
+    "needsReview": ["nl"]
+  },
+  "task.remove-conflict": {
+    "note": "Why removing didn't work: someone saved the task after this page was opened (ADR-0019 §5), so the head confirms again with what it is now. Calm, nobody is blamed.",
+    "needsReview": ["nl"]
+  },
+  "comparisons.title": {
+    "note": "Heading of the comparison game's page, where a member says which of two tasks is harder for them, and the link to it from the household's page.",
+    "needsReview": ["nl"]
+  },
+  "comparisons.page-title": {
+    "note": "Browser tab title of the comparison game. {household} is the household's name; Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "comparisons.why": {
+    "note": "Why the game is there, below the heading. Plain and reassuring, also for children: the app shows a member's answers to nobody else, heads included (ADR-0003 §5, ADR-0007 §5).",
+    "needsReview": ["nl"]
+  },
+  "comparisons.question": {
+    "note": "The question above two buttons, each with a task's name. Harder means more effort, or more draining, for this person.",
+    "needsReview": ["nl"]
+  },
+  "comparisons.skip": {
+    "note": "Button that moves on to another pair of tasks without answering, for when the member can't choose or finds them about the same. Nothing is saved.",
+    "needsReview": ["nl"]
+  },
+  "comparisons.answered": {
+    "note": "Status after an answer. {harder} and {easier} are the names of the two tasks, as typed.",
+    "needsReview": ["nl"]
+  },
+  "comparisons.not-saved": {
+    "note": "Heading of the box that says an answer didn't go through, which happens when a task was changed or removed while the page was open.",
+    "needsReview": ["nl"]
+  },
+  "comparisons.changed": {
+    "note": "Below 'Your answer wasn't saved'. The page shows another pair of tasks right after it.",
+    "needsReview": ["nl"]
+  },
+  "comparisons.none": {
+    "note": "Shown instead of the question while the household has fewer than two tasks.",
+    "needsReview": ["nl"]
+  },
+  "comparisons.order": {
+    "note": "Heading of the list of the member's own tasks, from the one they find hardest to the one they find easiest, which their answers change. It shows no numbers (ADR-0003 §5).",
+    "needsReview": ["nl"]
+  },
+  "comparisons.order-none": {
+    "note": "Shown instead of the list until the member has answered at least one question.",
+    "needsReview": ["nl"]
+  },
+  "comparisons.order-hint": {
+    "note": "Above the list. Higher means harder for this member; a task that is harder for them weighs more when the weekly plans divide the tasks. No numbers on purpose.",
+    "needsReview": ["nl"]
+  },
+  "comparisons.back": {
+    "note": "Link from the comparison game back to the household's page. {household} is the household's name.",
+    "needsReview": ["nl"]
+  },
+  "availability.page-title": {
+    "note": "Browser tab title of the page that shows who in the household is away when. Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "availability.title": {
+    "note": "Heading of the page that shows who in the household is away when, and the household page's link to it.",
+    "needsReview": ["nl"]
+  },
+  "availability.intro": {
+    "note": "Introduces the page. Others see only that someone is away, as dates; no reason or place is ever asked (ADR-0018 §3).",
+    "needsReview": ["nl"]
+  },
+  "availability.none": {
+    "note": "Under a member's name, when they have no days away coming up.",
+    "needsReview": ["nl"]
+  },
+  "availability.first-day": {
+    "note": "The first day someone is away: the label of the date field, and next to that date in the list. That day is included.",
+    "needsReview": ["nl"]
+  },
+  "availability.last-day": {
+    "note": "The last day someone is away: the label of the date field, and next to that date in the list. That day is included too.",
+    "needsReview": ["nl"]
+  },
+  "availability.plan": {
+    "note": "Heading of the form, under a member's name, that adds days away for them: for yourself, or as a head for a child or a member without an account.",
+    "needsReview": ["nl"]
+  },
+  "availability.add": {
+    "note": "The button that adds the days away.",
+    "needsReview": ["nl"]
+  },
+  "availability.remove": {
+    "note": "The button next to days away that removes them.",
+    "needsReview": ["nl"]
+  },
+  "availability.added": {
+    "note": "Status message once days away are added.",
+    "needsReview": ["nl"]
+  },
+  "availability.removed": {
+    "note": "Status message once days away are removed.",
+    "needsReview": ["nl"]
+  },
+  "availability.already-removed": {
+    "note": "Status message when someone else removed the days away a moment earlier.",
+    "needsReview": ["nl"]
+  },
+  "availability.add-failed": {
+    "note": "Heading of the error summary when the days away weren't added.",
+    "needsReview": ["nl"]
+  },
+  "availability.check": {
+    "note": "Introduces the list of fields to change in the error summary.",
+    "needsReview": ["nl"]
+  },
+  "availability.invalid-first-day": {
+    "note": "Why the first day wasn't accepted: not a date, in the past, or more than a year ahead.",
+    "needsReview": ["nl"]
+  },
+  "availability.invalid-last-day": {
+    "note": "Why the last day wasn't accepted: not a date, before the first day, or more than a year ahead.",
+    "needsReview": ["nl"]
+  },
+  "availability.household": {
+    "note": "Heading of the household's time away together (ADR-0005 §5).",
+    "needsReview": ["nl"]
+  },
+  "availability.household-intro": {
+    "note": "Explains what time away together does (ADR-0005 §5).",
+    "needsReview": ["nl"]
+  },
+  "availability.household-none": {
+    "note": "Shown when the household has no time away together planned.",
+    "needsReview": ["nl"]
+  },
+  "availability.household-plan": {
+    "note": "Legend of the form where a head plans time when the whole household is away.",
+    "needsReview": ["nl"]
+  },
+  "plan.title": {
+    "note": "Heading of the page with the week's plan, and the link to it on the household's page (ADR-0006).",
+    "needsReview": ["nl"]
+  },
+  "plan.page-title": {
+    "note": "Browser tab title of the plan's page. {household} is the household's name.",
+    "needsReview": ["nl"]
+  },
+  "plan.intro": {
+    "note": "Introduces the plan's page (ADR-0007 §5: each assignment says why it went to them).",
+    "needsReview": ["nl"]
+  },
+  "plan.none": {
+    "note": "Shown instead of a plan when there is none this week or next that the reader may see.",
+    "needsReview": ["nl"]
+  },
+  "plan.this-week": {
+    "note": "Heading of this week's plan. {days} is the week's first and last day, such as “12–18 October 2026”.",
+    "needsReview": ["nl"]
+  },
+  "plan.next-week": {
+    "note": "Heading of next week's plan. {days} is the week's first and last day, such as “19–25 October 2026”.",
+    "needsReview": ["nl"]
+  },
+  "plan.draft": {
+    "note": "Shown to heads above a draft plan (ADR-0006 §2). {when} is a day and time, such as “Sunday 11 October 2026 at 12:00”.",
+    "needsReview": ["nl"]
+  },
+  "plan.publish": {
+    "note": "Button with which a head publishes the draft early, so everyone sees it (ADR-0006 §2).",
+    "needsReview": ["nl"]
+  },
+  "plan.published": {
+    "note": "Status message after a head published the draft.",
+    "needsReview": ["nl"]
+  },
+  "plan.changed": {
+    "note": "When a head publishes a draft that was drafted again in the meantime: nothing was published (ADR-0019 §5).",
+    "needsReview": ["nl"]
+  },
+  "plan.gone": {
+    "note": "When a head publishes a draft that is gone, as for a week the household is now away all of.",
+    "needsReview": ["nl"]
+  },
+  "plan.any-time": {
+    "note": "Explains once, above the plan, that a task can be done any day of the week it is in (ADR-0004 §4).",
+    "needsReview": ["nl"]
+  },
+  "plan.day": {
+    "note": "Label, in a task of the plan, of the day it is planned for.",
+    "needsReview": ["nl"]
+  },
+  "plan.any-day-this-week": {
+    "note": "In this week's plan, instead of a day, for a task from an earlier week that can be done any day of this one.",
+    "needsReview": ["nl"]
+  },
+  "plan.any-day-next-week": {
+    "note": "In next week's plan, instead of a day, for a task from an earlier week that can be done any day of that one.",
+    "needsReview": ["nl"]
+  },
+  "plan.points-label": {
+    "note": "Label, in the reader's own tasks, of the points the task costs them (ADR-0001 §5).",
+    "needsReview": ["nl"]
+  },
+  "plan.why": {
+    "note": "Label, in a task of the plan, of why it went to whoever has it (ADR-0007 §5).",
+    "needsReview": ["nl"]
+  },
+  "plan.nothing": {
+    "note": "Under a member's name when they have no task in the week's plan.",
+    "needsReview": ["nl"]
+  },
+  "plan.unassigned": {
+    "note": "Heading, for heads, of the tasks nobody could take this week (ADR-0001 §7).",
+    "needsReview": ["nl"]
+  },
+  "plan.unassigned-intro": {
+    "note": "Explains to heads what happens to a task nobody could take (ADR-0001 §7, clarification). Calm, never blaming anyone.",
+    "needsReview": ["nl"]
+  },
+  "plan.reason.lowest-relative-load": {
+    "note": "Why a task went to {name}, another member: the least work so far for their share (ADR-0001 §7). Never names the share itself, which others don't see (ADR-0018 §4).",
+    "needsReview": ["nl"]
+  },
+  "plan.reason.lowest-relative-load-you": {
+    "note": "Why a task went to the reader: the least work so far for their share (ADR-0001 §7).",
+    "needsReview": ["nl"]
+  },
+  "plan.reason.only-eligible": {
+    "note": "Why a task went to {name}: nobody else was available or allowed (ADR-0001 §7).",
+    "needsReview": ["nl"]
+  },
+  "plan.reason.only-eligible-you": {
+    "note": "Why a task went to the reader: nobody else was available or allowed (ADR-0001 §7).",
+    "needsReview": ["nl"]
+  },
+  "plan.reason.catching-up": {
+    "note": "Why a task went to whoever has it: it evens out the balances of earlier weeks (ADR-0001 §7, ADR-0002 §3). Never blaming: catching up isn't a punishment.",
+    "needsReview": ["nl"]
+  },
+  "plan.reason.bound": {
+    "note": "Why a task went to {name}: it is always theirs (ADR-0001 §7, bound).",
+    "needsReview": ["nl"]
+  },
+  "plan.reason.bound-you": {
+    "note": "Why a task went to the reader: it is always theirs (ADR-0001 §7, bound).",
+    "needsReview": ["nl"]
+  },
+  "plan.reason.assigned-by-head": {
+    "note": "Why a task went to {name}: a head of the household chose them (ADR-0001 §7).",
+    "needsReview": ["nl"]
+  },
+  "plan.reason.assigned-by-head-you": {
+    "note": "Why a task went to the reader: a head of the household chose them (ADR-0001 §7).",
+    "needsReview": ["nl"]
+  },
+  "plan.reason.linked": {
+    "note": "Why a task went to {name}: it goes with a task they had before, such as bringing a bin in after putting it out (ADR-0001 §7).",
+    "needsReview": ["nl"]
+  },
+  "plan.reason.linked-you": {
+    "note": "Why a task went to the reader: it goes with a task they had before (ADR-0001 §7).",
+    "needsReview": ["nl"]
+  },
+  "plan.cause.nobody-eligible": {
+    "note": "Why nobody has a task, for heads (ADR-0001 §7, clarification).",
+    "needsReview": ["nl"]
+  },
+  "plan.cause.bound-member-not-eligible": {
+    "note": "Why nobody has a task, for heads: whoever it always goes to isn't available (ADR-0001 §7, clarification).",
+    "needsReview": ["nl"]
+  },
+  "plan.cause.linked-member-not-eligible": {
+    "note": "Why nobody has a task, for heads: whoever had the task it goes with isn't available (ADR-0001 §7, clarification).",
+    "needsReview": ["nl"]
+  },
+  "plan.back": {
+    "note": "Link from the plan back to the household's page. {household} is the household's name.",
+    "needsReview": ["nl"]
+  },
+  "plan.points": {
+    "note": "The points a task costs the reader (ADR-0001 §5): roughly a minute of average work each.",
+    "needsReview": ["nl"]
+  },
+  "plan.publish-failed": {
+    "note": "Heading of the summary when a head's publishing didn't go through; plan.changed or plan.gone says why.",
+    "needsReview": ["nl"]
+  },
+  "household.start-title": {
+    "note": "Heading of the box on the household's page that leads a head to Start, the last step of setting up, while the household is in setup (ADR-0007 §2 step 7).",
+    "needsReview": ["nl"]
+  },
+  "household.start-intro": {
+    "note": "Under 'Ready to start?' on the household's page, for heads while the household is in setup (ADR-0007 §2).",
+    "needsReview": ["nl"]
+  },
+  "household.start": {
+    "note": "Link, styled as a button, from the household's page to the Start page.",
+    "needsReview": ["nl"]
+  },
+  "household.started": {
+    "note": "Status on the household's page right after a head started it on the week start day (ADR-0007 §3). {week} is a day such as “Monday 12 October”; {draft} and {publish} are a day and time such as “Sunday 11 October 2026 at 12:00”.",
+    "needsReview": ["nl"]
+  },
+  "activity.household-started": {
+    "note": "Log entry when a head started the household, which ends setting it up (ADR-0007 §2). {actor} is a member's name, or 'A former member'. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
+    "needsReview": ["nl"]
+  },
+  "activity.set-before-start": {
+    "note": "Follows 'started the household' when a head had set shares, and planned days away for members without an account, before the start (ADR-0018 §5). Never shows a value. {shares} and {daysAway} are lists of names, such as “Sam and Kim”.",
+    "needsReview": ["nl"]
+  },
+  "activity.set-before-start-shares": {
+    "note": "As 'Set before the start: shares for …; days away for …', when only shares were set. {shares} is a list of names, such as “Sam and Kim”.",
+    "needsReview": ["nl"]
+  },
+  "activity.set-before-start-days-away": {
+    "note": "As 'Set before the start: shares for …; days away for …', when only days away were planned. {daysAway} is a list of names, such as “Sam”.",
+    "needsReview": ["nl"]
+  },
+  "activity.a-former-member": {
+    "note": "Stands for a name in the lists of 'Set before the start' when the person is no longer a member. Lower case, as it sits in a sentence.",
+    "needsReview": ["nl"]
+  },
+  "activity.you": {
+    "note": "Stands for the reader in the lists of 'Set before the start', such as “you and Sam” (ADR-0018 §5, clarification). Lower case, as it sits in a sentence; in Dutch the object form, “jou”.",
+    "needsReview": ["nl"]
+  },
+  "plan.draft-heads-publish": {
+    "note": "Shown to heads above the draft of this week's plan when a household has just started (ADR-0007 §3): nothing publishes it on its own, a head does.",
+    "needsReview": ["nl"]
+  },
+  "start.page-title": {
+    "note": "Browser tab title of the Start page, the last step of setting up a household (ADR-0007 §2 step 7).",
+    "needsReview": ["nl"]
+  },
+  "start.title": {
+    "note": "Heading of the Start page.",
+    "needsReview": ["nl"]
+  },
+  "start.intro": {
+    "note": "Introduces the two ways to start a household (ADR-0007 §3).",
+    "needsReview": ["nl"]
+  },
+  "start.when": {
+    "note": "Legend of the two choices on the Start page.",
+    "needsReview": ["nl"]
+  },
+  "start.now": {
+    "note": "The first choice, chosen unless the head picks the other (ADR-0007 §2).",
+    "needsReview": ["nl"]
+  },
+  "start.now-hint": {
+    "note": "Explains 'Start now' (ADR-0007 §3). {last} is the last day of this week, such as “Sunday 11 October”.",
+    "needsReview": ["nl"]
+  },
+  "start.week-start": {
+    "note": "The second choice: start on the household's week start day. {day} is that day, such as “Monday 12 October”.",
+    "needsReview": ["nl"]
+  },
+  "start.week-start-hint": {
+    "note": "Explains starting on the week start day (ADR-0007 §3). {draft} and {publish} are a day and time, such as “Saturday 10 October 2026 at 00:00”.",
+    "needsReview": ["nl"]
+  },
+  "start.submit": {
+    "note": "The Start page's button.",
+    "needsReview": ["nl"]
+  },
+  "start.failed": {
+    "note": "Heading of the error summary on the Start page.",
+    "needsReview": ["nl"]
+  },
+  "start.invalid": {
+    "note": "When the form came without a choice.",
+    "needsReview": ["nl"]
+  },
+  "start.already-started": {
+    "note": "When another head started the household while this one was choosing. Calm: the household has started.",
+    "needsReview": ["nl"]
+  },
+  "start.started": {
+    "note": "On the Start page when it is opened after the household started.",
+    "needsReview": ["nl"]
+  },
+  "activity.completion-logged": {
+    "note": "An entry of the activity log: someone marked a task done that {subject} is credited for, on their behalf or done together (ADR-0018 §5). {subject} is a name or 'a former member'. Never which task or its points. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
+    "needsReview": ["nl"]
+  },
+  "activity.completion-undone": {
+    "note": "An entry of the activity log: someone undid a task that {subject} was credited for (ADR-0006 §4, ADR-0018 §5). {subject} is a name or 'a former member'. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
+    "needsReview": ["nl"]
+  },
+  "plan.you": {
+    "note": "Stands for the reader in the lists of who did a task and who logged it, as in 'Done on Thursday 15 October by you and Alex'. Lower case, as it sits in a sentence after 'by'.",
+    "needsReview": ["nl"]
+  },
+  "plan.done": {
+    "note": "Under a task that is done: when it was done and who did it. {day} is 'today', 'yesterday' or 'on Monday' (see plan.done-today and the next ones); {doers} is a list such as 'Alex' or 'you and Kim'. Others see the day only, never the time (ADR-0018 §3).",
+    "needsReview": ["nl"]
+  },
+  "plan.done-at": {
+    "note": "Under a task that is done, for those who did it only: when it was done, the time of day in the household's time zone, and who did it. {day} is 'today', 'yesterday' or 'on Monday', as in plan.done; {doers} is a list such as 'you' or 'you and Kim' (ADR-0018 §3).",
+    "needsReview": ["nl"]
+  },
+  "plan.logged-by": {
+    "note": "Under a task that is done, when whoever marked it done wasn't the only one who did it: who marked it done, by name or 'you' (ADR-0002, Consequences).",
+    "needsReview": ["nl"]
+  },
+  "plan.undo": {
+    "note": "Button under someone else's task that is done, which marks it as not done again. Shown to whoever marked it done, those who did it, and heads, until the end of the week (ADR-0006 §4). The reader's own task unticks its box instead.",
+    "needsReview": ["nl"]
+  },
+  "plan.undo-label": {
+    "note": "What screen readers call the Undo button: it starts with plan.undo, then names the task and its day (weekday, day and month), so each button on the page has a name of its own.",
+    "needsReview": ["nl"]
+  },
+  "plan.done-button": {
+    "note": "Visible text next to the box at the end of the reader's own task in this week's plan, which ticks it done with one tap and unticks it to undo it (ADR-0006 §4). Short, as it says the reader did it.",
+    "needsReview": ["nl"]
+  },
+  "plan.done-label": {
+    "note": "What screen readers call the box on the reader's own task, ticked or not: it starts with plan.done-button, then names the task and its day (weekday, day and month).",
+    "needsReview": ["nl"]
+  },
+  "plan.done-with-others": {
+    "note": "Opens a choice of who did the reader's own task: with others, or someone else instead of them (ADR-0006 §4).",
+    "needsReview": ["nl"]
+  },
+  "plan.mark-done": {
+    "note": "Opens a choice of who did a task of someone else's, or of nobody's: whoever it was given to, the reader picking it up, or several together (ADR-0006 §4, ADR-0002 §4). Differs from plan.mark-done-button, the choice's own button.",
+    "needsReview": ["nl"]
+  },
+  "plan.who": {
+    "note": "Heading of the list of household members to tick who did a task. Several can be ticked: each gets the task's points (ADR-0002 §1).",
+    "needsReview": ["nl"]
+  },
+  "plan.mark-done-button": {
+    "note": "Button under the list of who did a task, which marks it done for those ticked.",
+    "needsReview": ["nl"]
+  },
+  "plan.mark-done-label": {
+    "note": "What screen readers call the button under the list of who did a task: it starts with plan.mark-done-button, then names the task and its day (weekday, day and month).",
+    "needsReview": ["nl"]
+  },
+  "plan.no-doers": {
+    "note": "Next to the list of who did a task, when it was sent with nobody ticked.",
+    "needsReview": ["nl"]
+  },
+  "plan.no-doers-summary": {
+    "note": "In the summary at the top of the week when a task was sent to be marked done with nobody ticked; links to the list. {task} is the task's name as the household typed it.",
+    "needsReview": ["nl"]
+  },
+  "plan.complete-failed": {
+    "note": "Heading of the summary when marking a task done didn't go through; the message under it says why.",
+    "needsReview": ["nl"]
+  },
+  "plan.undo-failed": {
+    "note": "Heading of the summary when undoing a task that was done didn't go through; the message under it says why.",
+    "needsReview": ["nl"]
+  },
+  "plan.already-done": {
+    "note": "When someone else marked the task done a moment before the reader (ADR-0019 §6). {doers} is who did it, a list such as 'Alex' or 'you and Kim'. Calm, never a reproach.",
+    "needsReview": ["nl"]
+  },
+  "plan.not-completable": {
+    "note": "When a task can no longer be marked done: its week is over, or it was taken out of the plan. The page shows the plan as it is now.",
+    "needsReview": ["nl"]
+  },
+  "plan.week-over": {
+    "note": "When undoing a task that was done comes after the end of its plan week (ADR-0006 §4).",
+    "needsReview": ["nl"]
+  },
+  "plan.undone-already": {
+    "note": "When someone else undid the task a moment before the reader tried to.",
+    "needsReview": ["nl"]
+  },
+  "plan.completed": {
+    "note": "Read out after the reader marked a task done (UI-12). {task} is the task's name as the household typed it.",
+    "needsReview": ["nl"]
+  },
+  "plan.reopened": {
+    "note": "Read out after the reader undid a task that was done: it is to be done again (UI-12).",
+    "needsReview": ["nl"]
+  },
+  "activity.completion-picked-up": {
+    "note": "Activity log entry: {actor} did a task the plan gave to {subject}, so it became their work (a pick-up). {actor} and {subject} are names, or “a former member”; the task and its points are never shown. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
+    "needsReview": ["nl"]
+  },
+  "household.balances": {
+    "note": "Link from the household page to the balances page, for every member.",
+    "needsReview": ["nl"]
+  },
+  "balances.page-title": {
+    "note": "Browser tab title of the balances page. Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "balances.title": {
+    "note": "Heading of the page with every member's balance (ADR-0002 §6): how far ahead of or behind their fair portion of the work each member is, in points.",
+    "needsReview": ["nl"]
+  },
+  "balances.intro": {
+    "note": "Explains a balance (ADR-0002 §1): what someone did compared with their fair portion of the work. Neutral words: being behind is never a fault (UI-24).",
+    "needsReview": ["nl"]
+  },
+  "balances.evening-out": {
+    "note": "Explains catching up (ADR-0002 §3): the coming plans give a bit more to whoever is behind and a bit less to whoever is ahead.",
+    "needsReview": ["nl"]
+  },
+  "balances.rate-fast": {
+    "note": "The household's rebalance rate, set by a head (ADR-0002 §3): fast. 'Them' are the balances.",
+    "needsReview": ["nl"]
+  },
+  "balances.rate-normal": {
+    "note": "The household's rebalance rate, set by a head (ADR-0002 §3): normal, the default. 'Them' are the balances.",
+    "needsReview": ["nl"]
+  },
+  "balances.rate-slow": {
+    "note": "The household's rebalance rate, set by a head (ADR-0002 §3): slow. 'Them' are the balances.",
+    "needsReview": ["nl"]
+  },
+  "balances.points": {
+    "note": "A balance, or what one week changed it by, in whole points (ADR-0001 §5). {points} is the number with its sign, such as “+12”, “-30” or “0”; {count} picks the plural.",
+    "needsReview": ["nl"]
+  },
+  "balances.history": {
+    "note": "Caption of a member's table of weeks, newest first, each with what it changed their balance by.",
+    "needsReview": ["nl"]
+  },
+  "balances.week": {
+    "note": "Column heading: the plan week, such as “12–18 October 2026”.",
+    "needsReview": ["nl"]
+  },
+  "balances.change": {
+    "note": "Column heading: what that week changed the balance by, in points.",
+    "needsReview": ["nl"]
+  },
+  "balances.no-history": {
+    "note": "Shown instead of the table of weeks until the household's first week is over and counted.",
+    "needsReview": ["nl"]
+  },
+  "plan.joined-since": {
+    "note": "For heads, on a draft: who joined the household after the draft was made, by name as a list (count is how many), so the draft gives them no tasks and they owe nothing for that week (ADR-0002 §1, clarification). It suggests drafting it again.",
+    "needsReview": ["nl"]
+  },
+  "plan.redraft": {
+    "note": "Button under plan.joined-since: a head makes the draft again, which replaces it and shares the work with everyone in the household now.",
+    "needsReview": ["nl"]
+  },
+  "plan.redrafted": {
+    "note": "Status once a head made a draft again.",
+    "needsReview": ["nl"]
+  },
+  "plan.redraft-failed": {
+    "note": "Heading of the summary when making a draft again didn't go through; plan.redraft-gone says why.",
+    "needsReview": ["nl"]
+  },
+  "plan.redraft-gone": {
+    "note": "Why a head couldn't make a draft again: another head published it meanwhile.",
+    "needsReview": ["nl"]
+  },
+  "activity.share-changed": {
+    "note": "Activity log entry, after the household started: a head set {subject}’s share, or put it back to the default; {subject} can be the head themselves (ADR-0018 §4–§5). {actor} and {subject} are names, or “a former member”. Never the share itself, which only heads and the member see. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
+    "needsReview": ["nl"]
+  },
+  "activity.temporary-share-added": {
+    "note": "Activity log entry, after the household started: a head planned a temporary share for {subject}, a share for a few days or weeks (ADR-0001 §4). {actor} and {subject} are names, or “a former member”. Never its days or the share. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
+    "needsReview": ["nl"]
+  },
+  "activity.temporary-share-removed": {
+    "note": "Activity log entry, after the household started: a head removed one of {subject}’s temporary shares. {actor} and {subject} are names, or “a former member”. Never which one. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
+    "needsReview": ["nl"]
+  },
+  "activity.absence-added": {
+    "note": "Activity log entry, after the household started: a head planned days away for {subject}, a member without an account, acting for them (ADR-0018 §5). “Days away” as on the availability page. {actor} and {subject} are names, or “a former member”. Never the days. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
+    "needsReview": ["nl"]
+  },
+  "activity.absence-removed": {
+    "note": "Activity log entry, after the household started: a head removed days away planned for {subject}, a member without an account. {actor} and {subject} are names, or “a former member”. Never the days. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
+    "needsReview": ["nl"]
+  },
+  "past.today": {
+    "note": "The day something happened: today. One step of the scale of how long ago a day was (ADR-0008 §6, clarification), never finer than the day (ADR-0018 §3); the exact day shows in a tooltip. Starts with a capital, as it stands alone.",
+    "needsReview": ["nl"]
+  },
+  "past.yesterday": {
+    "note": "The day something happened: yesterday. One step of the scale of how long ago a day was (ADR-0008 §6, clarification), never finer than the day (ADR-0018 §3); the exact day shows in a tooltip. Starts with a capital, as it stands alone.",
+    "needsReview": ["nl"]
+  },
+  "past.some-days-ago": {
+    "note": "The day something happened: two to six days ago. One step of the scale of how long ago a day was (ADR-0008 §6, clarification), never finer than the day (ADR-0018 §3); the exact day shows in a tooltip. Starts with a capital, as it stands alone.",
+    "needsReview": ["nl"]
+  },
+  "past.last-week": {
+    "note": "The day something happened: in the household's plan week before this one, a week or more ago. One step of the scale of how long ago a day was (ADR-0008 §6, clarification), never finer than the day (ADR-0018 §3); the exact day shows in a tooltip. Starts with a capital, as it stands alone.",
+    "needsReview": ["nl"]
+  },
+  "past.some-weeks-ago": {
+    "note": "The day something happened: before last week, less than five weeks ago; longer ago, the date itself shows. One step of the scale of how long ago a day was (ADR-0008 §6, clarification), never finer than the day (ADR-0018 §3); the exact day shows in a tooltip. Starts with a capital, as it stands alone.",
+    "needsReview": ["nl"]
+  },
+  "plan.done-today": {
+    "note": "{day} in 'Done {day} by …' when it was done today. Lower case, as it sits in the sentence; the exact day shows in a tooltip.",
+    "needsReview": ["nl"]
+  },
+  "plan.done-yesterday": {
+    "note": "{day} in 'Done {day} by …' when it was done yesterday. Lower case, as it sits in the sentence.",
+    "needsReview": ["nl"]
+  },
+  "plan.done-on": {
+    "note": "{day} in 'Done {day} by …' earlier this plan week. {weekday} is the day of the week, such as 'Monday'.",
+    "needsReview": ["nl"]
+  },
+  "activity.away-added": {
+    "note": "Activity log entry: a head marked the whole household away for a time, such as a family holiday ('Time away together' on the availability page; ADR-0005 §5). {actor} is a name, or “A former member”. Never the days. {who} picks the wording: 'you' when the reader did it, '*' otherwise (ADR-0018 §5, clarification).",
+    "needsReview": ["nl"]
+  },
+  "activity.away-removed": {
+    "note": "Activity log entry: a head removed a time the whole household is away. {actor} is a name, or “A former member”. Never the days. {who} picks the wording: 'you' when the reader did it, '*' otherwise (ADR-0018 §5, clarification).",
+    "needsReview": ["nl"]
+  },
+  "notifications.page-title": {
+    "note": "Browser tab title of a member's notifications from a household. {household} is the household's name; Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "notifications.title": {
+    "note": "Heading of a member's own notifications from a household (ADR-0014 §7).",
+    "needsReview": ["nl"]
+  },
+  "notifications.intro": {
+    "note": "Under the heading of a member's notifications. {household} is the household's name. Says that nobody else sees them and that they are deleted after 90 days (ADR-0014 §7).",
+    "needsReview": ["nl"]
+  },
+  "notifications.none": {
+    "note": "Shown instead of the list when the member has no notifications from the household.",
+    "needsReview": ["nl"]
+  },
+  "notifications.settings": {
+    "note": "Link from a household's notifications to the account's notification settings (ADR-0014 §3).",
+    "needsReview": ["nl"]
+  },
+  "notifications.plan-drafted": {
+    "note": "A notification for heads: a week's draft plan is ready for review (ADR-0014 §2). {days} is the week's first and last day, such as “12–18 October 2026”. A link to the plan.",
+    "needsReview": ["nl"]
+  },
+  "notifications.plan-published": {
+    "note": "A notification for each member with tasks in a week's plan: it is published, so everyone sees it (ADR-0014 §2). {days} is the week's first and last day, such as “12–18 October 2026”. A link to the plan.",
+    "needsReview": ["nl"]
+  },
+  "email.morning.subject": {
+    "note": "Subject of the morning e-mail, once a day for each household, with the member's notifications from it that they get by e-mail (ADR-0014 §5). {household} is the household's name, as its members wrote it; {day} is the day, such as “Friday 9 October 2026”.",
+    "needsReview": ["nl"]
+  },
+  "email.morning.intro": {
+    "note": "First line of the morning e-mail, above the list of notifications, each in the same sentence as in the app. {household} is the household's name.",
+    "needsReview": ["nl"]
+  },
+  "email.morning.list": {
+    "note": "Link in the morning e-mail to the member's list of notifications from the household.",
+    "needsReview": ["nl"]
+  },
+  "email.morning.why": {
+    "note": "Why the morning e-mail came: the member chose e-mail for these notifications, or gets them by e-mail because push doesn't reach any of their devices (ADR-0014 §5). Calm, no blame.",
+    "needsReview": ["nl"]
+  },
+  "email.morning.settings": {
+    "note": "Link in the morning e-mail to the account's notification settings, where e-mail can be turned off.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.page-title": {
+    "note": "Browser tab title of the account's notification settings. Householdr is the product name, not translated.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.title": {
+    "note": "Heading of the account's notification settings (ADR-0014 §3).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.intro": {
+    "note": "Under the heading of the notification settings. The settings are the account's, for all its households (ADR-0014 §3); every notification is in the household's list as well (§1).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.channels": {
+    "note": "Heading of the group with a channel to choose for each kind of notification (ADR-0014 §3).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.plan-published": {
+    "note": "Label of the choice for the notification that a week's plan is published (ADR-0014 §2).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.plan-published-who": {
+    "note": "Under “Your week’s plan is published”: who gets it (ADR-0014 §3, clarification).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.plan-drafted": {
+    "note": "Label of the choice for the notification that a week's draft plan is ready for review (ADR-0014 §2).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.plan-drafted-who": {
+    "note": "Under “A draft plan is ready to check”: who gets it. Every account sees it, so the choice holds once they become a head (ADR-0014 §3, clarification).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.push-and-email": {
+    "note": "One of the four ways to get a kind of notification: as a push notification on your devices and by e-mail (ADR-0014 §3).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.push": {
+    "note": "One of the four ways to get a kind of notification: as a push notification on your devices (ADR-0014 §3).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.email": {
+    "note": "One of the four ways to get a kind of notification: by e-mail (ADR-0014 §3).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.app": {
+    "note": "One of the four ways to get a kind of notification: only in the household's list in the app (ADR-0014 §3).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.security": {
+    "note": "Label of the row that can't be changed: e-mails about the account's sign-in and security (ADR-0014 §2, §3).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.security-channel": {
+    "note": "How security and account messages come, which can't be changed (ADR-0014 §3).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.security-why": {
+    "note": "Why security and account messages can't be turned off (ADR-0014 §2, §3).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.quiet-hours": {
+    "note": "Heading of the times when push notifications wait (ADR-0014 §4).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.quiet-hours-hint": {
+    "note": "Under “Quiet hours”: what they do, and that they are read in the household's time zone (ADR-0014 §4).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.quiet-start": {
+    "note": "Label of the time quiet hours start, such as 21:30.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.quiet-end": {
+    "note": "Label of the time quiet hours end, such as 07:30.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.quiet-hours-now": {
+    "note": "The quiet hours as saved, when saving didn't work because they changed on another device. {start} and {end} are times such as “21:30”.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.email-fallback": {
+    "note": "Checkbox, on by default: e-mail what would have been pushed when the account has no working push (ADR-0014 §5).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.on": {
+    "note": "That the e-mail fallback is on, in the settings as saved after a conflict.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.off": {
+    "note": "That the e-mail fallback is off, in the settings as saved after a conflict.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.conflict": {
+    "note": "When saving didn't work because the same account saved them elsewhere since the page opened (ADR-0019 §5).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.invalid-channel": {
+    "note": "Next to a channel choice the server didn't accept.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.invalid-time": {
+    "note": "Next to the start of quiet hours when it isn't a time of day.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.invalid-quiet-end": {
+    "note": "Next to the end of quiet hours when it isn't a time of day or is the same as the start (ADR-0014 §3, clarification).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.invalid-fallback": {
+    "note": "Next to the e-mail fallback's checkbox if the server didn't accept it, which a normal browser never causes.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.push-title": {
+    "note": "Heading of the section that turns push notifications on or off for the device in hand (ADR-0014 §7).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.push-intro": {
+    "note": "Under “Push on this device”: what push does, that it is per device, and that it goes with the device's session (ADR-0014 §7, clarification).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.push-on": {
+    "note": "Status: this device receives push notifications.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.push-off": {
+    "note": "Status: this device receives no push notifications.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.push-turn-on": {
+    "note": "Button. Asks the browser's permission for notifications, then turns push on for this device (ADR-0014 §7, clarification).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.push-turn-off": {
+    "note": "Button that turns push off for this device.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.push-no-script": {
+    "note": "Shown instead of the push button while JavaScript doesn't run.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.push-unsupported": {
+    "note": "When the browser has no Web Push, such as Safari on iOS outside an app added to the home screen (ADR-0008 §7, ADR-0014 §5).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.push-blocked": {
+    "note": "When the person, or the browser, refused notifications for the site. Only the browser can undo that.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.push-failed": {
+    "note": "When the browser or its push service refused to subscribe, or saving the subscription failed.",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.push-unavailable": {
+    "note": "On an instance without VAPID keys, which offers no push (ADR-0014 §7, clarification).",
+    "needsReview": ["nl"]
+  },
+  "notification-settings.back": {
+    "note": "Link from the notification settings to the list of the account's households.",
     "needsReview": ["nl"]
   },
   "tasks.since-last-done": {
@@ -1854,14 +2758,6 @@
     "note": "A household's areas, rooms or parts of the home that group its tasks (ADR-0001 §1). Why a task's area was refused.",
     "needsReview": ["nl"]
   },
-  "tasks.edit": {
-    "note": "Link next to each task in the list, for heads, to the page that changes or removes it. Screen readers read it with the task's name after it.",
-    "needsReview": ["nl"]
-  },
-  "tasks.removed": {
-    "note": "Shown on the task list after a head removed a task on its own page.",
-    "needsReview": ["nl"]
-  },
   "tasks.one-offs": {
     "note": "Heading of the list of one-off tasks on the tasks page (ADR-0004 §4).",
     "needsReview": ["nl"]
@@ -1914,280 +2810,12 @@
     "note": "Problem with a one-off task's last day: before its day, or more than a year away.",
     "needsReview": ["nl"]
   },
-  "task.page-title": {
-    "note": "Browser tab title of the page that changes a task. {task} is the task's name, {household} the household's; Householdr is the product name, not translated.",
-    "needsReview": ["nl"]
-  },
-  "task.title": {
-    "note": "Heading of the page where a head changes a task: its name, minutes, frequency, first time and what happens if it isn't done.",
-    "needsReview": ["nl"]
-  },
-  "task.save": {
-    "note": "Button that saves the changes to the task.",
-    "needsReview": ["nl"]
-  },
-  "task.saved": {
-    "note": "Shown once the changes to a task are saved.",
-    "needsReview": ["nl"]
-  },
-  "task.failed": {
-    "note": "Heading of the error summary when saving a task didn't work: a field was refused, or someone changed the task in the meantime.",
-    "needsReview": ["nl"]
-  },
-  "task.conflict": {
-    "note": "Why saving didn't work: another head (or the same one in another tab) saved the task after this form was opened (ADR-0019 §5). Nothing is lost: the form keeps what was typed. Calm, nobody is blamed.",
-    "needsReview": ["nl"]
-  },
-  "task.current": {
-    "note": "Heading above the task as it is saved now, shown when it changed since the form was opened, to compare with the form.",
-    "needsReview": ["nl"]
-  },
-  "task.invalid-start": {
-    "note": "Why saving didn't work: the first time is a day in the past other than the one the task already has, or more than a year away. A task that has started keeps its first time.",
-    "needsReview": ["nl"]
-  },
-  "task.remove": {
-    "note": "Link from the page that changes a task to the page that asks to confirm removing it.",
-    "needsReview": ["nl"]
-  },
-  "task.back": {
-    "note": "Link from a task's page back to the household's task list.",
-    "needsReview": ["nl"]
-  },
-  "task.remove-page-title": {
-    "note": "Browser tab title of the page that asks to confirm removing a task. {task} is the task's name, {household} the household's; Householdr is the product name, not translated.",
-    "needsReview": ["nl"]
-  },
-  "task.remove-title": {
-    "note": "Heading of the page that asks a head to confirm removing a task. {task} is the task's name, as typed.",
-    "needsReview": ["nl"]
-  },
-  "task.remove-intro": {
-    "note": "Under the question whether to remove a task: removing can't be undone.",
-    "needsReview": ["nl"]
-  },
-  "task.remove-confirm": {
-    "note": "Button that removes the task, after the head was asked to confirm.",
-    "needsReview": ["nl"]
-  },
-  "task.keep": {
-    "note": "Link that goes back to the task's page without removing it.",
-    "needsReview": ["nl"]
-  },
-  "task.remove-failed": {
-    "note": "Heading of the error summary when removing a task didn't work, as someone changed it in the meantime.",
-    "needsReview": ["nl"]
-  },
-  "task.remove-conflict": {
-    "note": "Why removing didn't work: someone saved the task after this page was opened (ADR-0019 §5), so the head confirms again with what it is now. Calm, nobody is blamed.",
-    "needsReview": ["nl"]
-  },
   "task.invalid-deadline": {
     "note": "Problem with a one-off task's last day when changing it: it may keep the day it has, which may have passed.",
     "needsReview": ["nl"]
   },
   "task.remove-one-off-intro": {
     "note": "On the page that confirms removing a one-off task: removing it is logged for the whole household (ADR-0018 §5, clarification).",
-    "needsReview": ["nl"]
-  },
-  "comparisons.title": {
-    "note": "Heading of the comparison game's page, where a member says which of two tasks is harder for them, and the link to it from the household's page.",
-    "needsReview": ["nl"]
-  },
-  "comparisons.page-title": {
-    "note": "Browser tab title of the comparison game. {household} is the household's name; Householdr is the product name, not translated.",
-    "needsReview": ["nl"]
-  },
-  "comparisons.why": {
-    "note": "Why the game is there, below the heading. Plain and reassuring, also for children: the app shows a member's answers to nobody else, heads included (ADR-0003 §5, ADR-0007 §5).",
-    "needsReview": ["nl"]
-  },
-  "comparisons.question": {
-    "note": "The question above two buttons, each with a task's name. Harder means more effort, or more draining, for this person.",
-    "needsReview": ["nl"]
-  },
-  "comparisons.skip": {
-    "note": "Button that moves on to another pair of tasks without answering, for when the member can't choose or finds them about the same. Nothing is saved.",
-    "needsReview": ["nl"]
-  },
-  "comparisons.answered": {
-    "note": "Status after an answer. {harder} and {easier} are the names of the two tasks, as typed.",
-    "needsReview": ["nl"]
-  },
-  "comparisons.not-saved": {
-    "note": "Heading of the box that says an answer didn't go through, which happens when a task was changed or removed while the page was open.",
-    "needsReview": ["nl"]
-  },
-  "comparisons.changed": {
-    "note": "Below 'Your answer wasn't saved'. The page shows another pair of tasks right after it.",
-    "needsReview": ["nl"]
-  },
-  "comparisons.none": {
-    "note": "Shown instead of the question while the household has fewer than two tasks.",
-    "needsReview": ["nl"]
-  },
-  "comparisons.order": {
-    "note": "Heading of the list of the member's own tasks, from the one they find hardest to the one they find easiest, which their answers change. It shows no numbers (ADR-0003 §5).",
-    "needsReview": ["nl"]
-  },
-  "comparisons.order-none": {
-    "note": "Shown instead of the list until the member has answered at least one question.",
-    "needsReview": ["nl"]
-  },
-  "comparisons.order-hint": {
-    "note": "Above the list. Higher means harder for this member; a task that is harder for them weighs more when the weekly plans divide the tasks. No numbers on purpose.",
-    "needsReview": ["nl"]
-  },
-  "comparisons.back": {
-    "note": "Link from the comparison game back to the household's page. {household} is the household's name.",
-    "needsReview": ["nl"]
-  },
-  "availability.page-title": {
-    "note": "Browser tab title of the page that shows who in the household is away when. Householdr is the product name, not translated.",
-    "needsReview": ["nl"]
-  },
-  "availability.title": {
-    "note": "Heading of the page that shows who in the household is away when, and the household page's link to it.",
-    "needsReview": ["nl"]
-  },
-  "availability.intro": {
-    "note": "Introduces the page. Others see only that someone is away, as dates; no reason or place is ever asked (ADR-0018 §3).",
-    "needsReview": ["nl"]
-  },
-  "availability.none": {
-    "note": "Under a member's name, when they have no days away coming up.",
-    "needsReview": ["nl"]
-  },
-  "availability.first-day": {
-    "note": "The first day someone is away: the label of the date field, and next to that date in the list. That day is included.",
-    "needsReview": ["nl"]
-  },
-  "availability.last-day": {
-    "note": "The last day someone is away: the label of the date field, and next to that date in the list. That day is included too.",
-    "needsReview": ["nl"]
-  },
-  "availability.plan": {
-    "note": "Heading of the form, under a member's name, that adds days away for them: for yourself, or as a head for a child or a member without an account.",
-    "needsReview": ["nl"]
-  },
-  "availability.add": {
-    "note": "The button that adds the days away.",
-    "needsReview": ["nl"]
-  },
-  "availability.remove": {
-    "note": "The button next to days away that removes them.",
-    "needsReview": ["nl"]
-  },
-  "availability.added": {
-    "note": "Status message once days away are added.",
-    "needsReview": ["nl"]
-  },
-  "availability.removed": {
-    "note": "Status message once days away are removed.",
-    "needsReview": ["nl"]
-  },
-  "availability.already-removed": {
-    "note": "Status message when someone else removed the days away a moment earlier.",
-    "needsReview": ["nl"]
-  },
-  "availability.add-failed": {
-    "note": "Heading of the error summary when the days away weren't added.",
-    "needsReview": ["nl"]
-  },
-  "availability.check": {
-    "note": "Introduces the list of fields to change in the error summary.",
-    "needsReview": ["nl"]
-  },
-  "availability.invalid-first-day": {
-    "note": "Why the first day wasn't accepted: not a date, in the past, or more than a year ahead.",
-    "needsReview": ["nl"]
-  },
-  "availability.invalid-last-day": {
-    "note": "Why the last day wasn't accepted: not a date, before the first day, or more than a year ahead.",
-    "needsReview": ["nl"]
-  },
-  "availability.household": {
-    "note": "Heading of the household's time away together (ADR-0005 §5).",
-    "needsReview": ["nl"]
-  },
-  "availability.household-intro": {
-    "note": "Explains what time away together does (ADR-0005 §5).",
-    "needsReview": ["nl"]
-  },
-  "availability.household-none": {
-    "note": "Shown when the household has no time away together planned.",
-    "needsReview": ["nl"]
-  },
-  "availability.household-plan": {
-    "note": "Legend of the form where a head plans time when the whole household is away.",
-    "needsReview": ["nl"]
-  },
-  "plan.title": {
-    "note": "Heading of the page with the week's plan, and the link to it on the household's page (ADR-0006).",
-    "needsReview": ["nl"]
-  },
-  "plan.page-title": {
-    "note": "Browser tab title of the plan's page. {household} is the household's name.",
-    "needsReview": ["nl"]
-  },
-  "plan.intro": {
-    "note": "Introduces the plan's page (ADR-0007 §5: each assignment says why it went to them).",
-    "needsReview": ["nl"]
-  },
-  "plan.none": {
-    "note": "Shown instead of a plan when there is none this week or next that the reader may see.",
-    "needsReview": ["nl"]
-  },
-  "plan.this-week": {
-    "note": "Heading of this week's plan. {days} is the week's first and last day, such as “12–18 October 2026”.",
-    "needsReview": ["nl"]
-  },
-  "plan.next-week": {
-    "note": "Heading of next week's plan. {days} is the week's first and last day, such as “19–25 October 2026”.",
-    "needsReview": ["nl"]
-  },
-  "plan.draft": {
-    "note": "Shown to heads above a draft plan (ADR-0006 §2). {when} is a day and time, such as “Sunday 11 October 2026 at 12:00”.",
-    "needsReview": ["nl"]
-  },
-  "plan.publish": {
-    "note": "Button with which a head publishes the draft early, so everyone sees it (ADR-0006 §2).",
-    "needsReview": ["nl"]
-  },
-  "plan.published": {
-    "note": "Status message after a head published the draft.",
-    "needsReview": ["nl"]
-  },
-  "plan.changed": {
-    "note": "When a head publishes a draft that was drafted again in the meantime: nothing was published (ADR-0019 §5).",
-    "needsReview": ["nl"]
-  },
-  "plan.gone": {
-    "note": "When a head publishes a draft that is gone, as for a week the household is now away all of.",
-    "needsReview": ["nl"]
-  },
-  "plan.any-time": {
-    "note": "Explains once, above the plan, that a task can be done any day of the week it is in (ADR-0004 §4).",
-    "needsReview": ["nl"]
-  },
-  "plan.day": {
-    "note": "Label, in a task of the plan, of the day it is planned for.",
-    "needsReview": ["nl"]
-  },
-  "plan.any-day-this-week": {
-    "note": "In this week's plan, instead of a day, for a task from an earlier week that can be done any day of this one.",
-    "needsReview": ["nl"]
-  },
-  "plan.any-day-next-week": {
-    "note": "In next week's plan, instead of a day, for a task from an earlier week that can be done any day of that one.",
-    "needsReview": ["nl"]
-  },
-  "plan.points-label": {
-    "note": "Label, in the reader's own tasks, of the points the task costs them (ADR-0001 §5).",
-    "needsReview": ["nl"]
-  },
-  "plan.why": {
-    "note": "Label, in a task of the plan, of why it went to whoever has it (ADR-0007 §5).",
     "needsReview": ["nl"]
   },
   "plan.times-label": {
@@ -2198,420 +2826,8 @@
     "note": "The plan page: a task's set times; {from} and {to} are a weekday and a time, such as 'Tuesday 18:00'.",
     "needsReview": ["nl"]
   },
-  "plan.nothing": {
-    "note": "Under a member's name when they have no task in the week's plan.",
-    "needsReview": ["nl"]
-  },
-  "plan.unassigned": {
-    "note": "Heading, for heads, of the tasks nobody could take this week (ADR-0001 §7).",
-    "needsReview": ["nl"]
-  },
-  "plan.unassigned-intro": {
-    "note": "Explains to heads what happens to a task nobody could take (ADR-0001 §7, clarification). Calm, never blaming anyone.",
-    "needsReview": ["nl"]
-  },
-  "plan.reason.lowest-relative-load": {
-    "note": "Why a task went to {name}, another member: the least work so far for their share (ADR-0001 §7). Never names the share itself, which others don't see (ADR-0018 §4).",
-    "needsReview": ["nl"]
-  },
-  "plan.reason.lowest-relative-load-you": {
-    "note": "Why a task went to the reader: the least work so far for their share (ADR-0001 §7).",
-    "needsReview": ["nl"]
-  },
-  "plan.reason.only-eligible": {
-    "note": "Why a task went to {name}: nobody else was available or allowed (ADR-0001 §7).",
-    "needsReview": ["nl"]
-  },
-  "plan.reason.only-eligible-you": {
-    "note": "Why a task went to the reader: nobody else was available or allowed (ADR-0001 §7).",
-    "needsReview": ["nl"]
-  },
-  "plan.reason.catching-up": {
-    "note": "Why a task went to whoever has it: it evens out the balances of earlier weeks (ADR-0001 §7, ADR-0002 §3). Never blaming: catching up isn't a punishment.",
-    "needsReview": ["nl"]
-  },
-  "plan.reason.bound": {
-    "note": "Why a task went to {name}: it is always theirs (ADR-0001 §7, bound).",
-    "needsReview": ["nl"]
-  },
-  "plan.reason.bound-you": {
-    "note": "Why a task went to the reader: it is always theirs (ADR-0001 §7, bound).",
-    "needsReview": ["nl"]
-  },
-  "plan.reason.assigned-by-head": {
-    "note": "Why a task went to {name}: a head of the household chose them (ADR-0001 §7).",
-    "needsReview": ["nl"]
-  },
-  "plan.reason.assigned-by-head-you": {
-    "note": "Why a task went to the reader: a head of the household chose them (ADR-0001 §7).",
-    "needsReview": ["nl"]
-  },
-  "plan.reason.linked": {
-    "note": "Why a task went to {name}: it goes with a task they had before, such as bringing a bin in after putting it out (ADR-0001 §7).",
-    "needsReview": ["nl"]
-  },
-  "plan.reason.linked-you": {
-    "note": "Why a task went to the reader: it goes with a task they had before (ADR-0001 §7).",
-    "needsReview": ["nl"]
-  },
-  "plan.cause.nobody-eligible": {
-    "note": "Why nobody has a task, for heads (ADR-0001 §7, clarification).",
-    "needsReview": ["nl"]
-  },
-  "plan.cause.bound-member-not-eligible": {
-    "note": "Why nobody has a task, for heads: whoever it always goes to isn't available (ADR-0001 §7, clarification).",
-    "needsReview": ["nl"]
-  },
-  "plan.cause.linked-member-not-eligible": {
-    "note": "Why nobody has a task, for heads: whoever had the task it goes with isn't available (ADR-0001 §7, clarification).",
-    "needsReview": ["nl"]
-  },
-  "plan.back": {
-    "note": "Link from the plan back to the household's page. {household} is the household's name.",
-    "needsReview": ["nl"]
-  },
   "plan.add-one-off": {
     "note": "Link on the plan page to the tasks page's form for a one-off task, which starts on today (ADR-0006 §3, clarification).",
-    "needsReview": ["nl"]
-  },
-  "plan.points": {
-    "note": "The points a task costs the reader (ADR-0001 §5): roughly a minute of average work each.",
-    "needsReview": ["nl"]
-  },
-  "plan.publish-failed": {
-    "note": "Heading of the summary when a head's publishing didn't go through; plan.changed or plan.gone says why.",
-    "needsReview": ["nl"]
-  },
-  "household.start-title": {
-    "note": "Heading of the box on the household's page that leads a head to Start, the last step of setting up, while the household is in setup (ADR-0007 §2 step 7).",
-    "needsReview": ["nl"]
-  },
-  "household.start-intro": {
-    "note": "Under 'Ready to start?' on the household's page, for heads while the household is in setup (ADR-0007 §2).",
-    "needsReview": ["nl"]
-  },
-  "household.start": {
-    "note": "Link, styled as a button, from the household's page to the Start page.",
-    "needsReview": ["nl"]
-  },
-  "household.started": {
-    "note": "Status on the household's page right after a head started it on the week start day (ADR-0007 §3). {week} is a day such as “Monday 12 October”; {draft} and {publish} are a day and time such as “Sunday 11 October 2026 at 12:00”.",
-    "needsReview": ["nl"]
-  },
-  "activity.household-started": {
-    "note": "Log entry when a head started the household, which ends setting it up (ADR-0007 §2). {actor} is a member's name, or 'A former member'. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
-    "needsReview": ["nl"]
-  },
-  "activity.set-before-start": {
-    "note": "Follows 'started the household' when a head had set shares, and planned days away for members without an account, before the start (ADR-0018 §5). Never shows a value. {shares} and {daysAway} are lists of names, such as “Sam and Kim”.",
-    "needsReview": ["nl"]
-  },
-  "activity.set-before-start-shares": {
-    "note": "As 'Set before the start: shares for …; days away for …', when only shares were set. {shares} is a list of names, such as “Sam and Kim”.",
-    "needsReview": ["nl"]
-  },
-  "activity.set-before-start-days-away": {
-    "note": "As 'Set before the start: shares for …; days away for …', when only days away were planned. {daysAway} is a list of names, such as “Sam”.",
-    "needsReview": ["nl"]
-  },
-  "activity.a-former-member": {
-    "note": "Stands for a name in the lists of 'Set before the start' when the person is no longer a member. Lower case, as it sits in a sentence.",
-    "needsReview": ["nl"]
-  },
-  "activity.you": {
-    "note": "Stands for the reader in the lists of 'Set before the start', such as “you and Sam” (ADR-0018 §5, clarification). Lower case, as it sits in a sentence; in Dutch the object form, “jou”.",
-    "needsReview": ["nl"]
-  },
-  "plan.draft-heads-publish": {
-    "note": "Shown to heads above the draft of this week's plan when a household has just started (ADR-0007 §3): nothing publishes it on its own, a head does.",
-    "needsReview": ["nl"]
-  },
-  "start.page-title": {
-    "note": "Browser tab title of the Start page, the last step of setting up a household (ADR-0007 §2 step 7).",
-    "needsReview": ["nl"]
-  },
-  "start.title": {
-    "note": "Heading of the Start page.",
-    "needsReview": ["nl"]
-  },
-  "start.intro": {
-    "note": "Introduces the two ways to start a household (ADR-0007 §3).",
-    "needsReview": ["nl"]
-  },
-  "start.when": {
-    "note": "Legend of the two choices on the Start page.",
-    "needsReview": ["nl"]
-  },
-  "start.now": {
-    "note": "The first choice, chosen unless the head picks the other (ADR-0007 §2).",
-    "needsReview": ["nl"]
-  },
-  "start.now-hint": {
-    "note": "Explains 'Start now' (ADR-0007 §3). {last} is the last day of this week, such as “Sunday 11 October”.",
-    "needsReview": ["nl"]
-  },
-  "start.week-start": {
-    "note": "The second choice: start on the household's week start day. {day} is that day, such as “Monday 12 October”.",
-    "needsReview": ["nl"]
-  },
-  "start.week-start-hint": {
-    "note": "Explains starting on the week start day (ADR-0007 §3). {draft} and {publish} are a day and time, such as “Saturday 10 October 2026 at 00:00”.",
-    "needsReview": ["nl"]
-  },
-  "start.submit": {
-    "note": "The Start page's button.",
-    "needsReview": ["nl"]
-  },
-  "start.failed": {
-    "note": "Heading of the error summary on the Start page.",
-    "needsReview": ["nl"]
-  },
-  "start.invalid": {
-    "note": "When the form came without a choice.",
-    "needsReview": ["nl"]
-  },
-  "start.already-started": {
-    "note": "When another head started the household while this one was choosing. Calm: the household has started.",
-    "needsReview": ["nl"]
-  },
-  "start.started": {
-    "note": "On the Start page when it is opened after the household started.",
-    "needsReview": ["nl"]
-  },
-  "activity.completion-logged": {
-    "note": "An entry of the activity log: someone marked a task done that {subject} is credited for, on their behalf or done together (ADR-0018 §5). {subject} is a name or 'a former member'. Never which task or its points. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
-    "needsReview": ["nl"]
-  },
-  "activity.completion-undone": {
-    "note": "An entry of the activity log: someone undid a task that {subject} was credited for (ADR-0006 §4, ADR-0018 §5). {subject} is a name or 'a former member'. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
-    "needsReview": ["nl"]
-  },
-  "plan.you": {
-    "note": "Stands for the reader in the lists of who did a task and who logged it, as in 'Done on Thursday 15 October by you and Alex'. Lower case, as it sits in a sentence after 'by'.",
-    "needsReview": ["nl"]
-  },
-  "plan.done": {
-    "note": "Under a task that is done: when it was done and who did it. {day} is 'today', 'yesterday' or 'on Monday' (see plan.done-today and the next ones); {doers} is a list such as 'Alex' or 'you and Kim'. Others see the day only, never the time (ADR-0018 §3).",
-    "needsReview": ["nl"]
-  },
-  "plan.done-at": {
-    "note": "Under a task that is done, for those who did it only: when it was done, the time of day in the household's time zone, and who did it. {day} is 'today', 'yesterday' or 'on Monday', as in plan.done; {doers} is a list such as 'you' or 'you and Kim' (ADR-0018 §3).",
-    "needsReview": ["nl"]
-  },
-  "plan.logged-by": {
-    "note": "Under a task that is done, when whoever marked it done wasn't the only one who did it: who marked it done, by name or 'you' (ADR-0002, Consequences).",
-    "needsReview": ["nl"]
-  },
-  "plan.undo": {
-    "note": "Button under someone else's task that is done, which marks it as not done again. Shown to whoever marked it done, those who did it, and heads, until the end of the week (ADR-0006 §4). The reader's own task unticks its box instead.",
-    "needsReview": ["nl"]
-  },
-  "plan.undo-label": {
-    "note": "What screen readers call the Undo button: it starts with plan.undo, then names the task and its day (weekday, day and month), so each button on the page has a name of its own.",
-    "needsReview": ["nl"]
-  },
-  "plan.done-button": {
-    "note": "Visible text next to the box at the end of the reader's own task in this week's plan, which ticks it done with one tap and unticks it to undo it (ADR-0006 §4). Short, as it says the reader did it.",
-    "needsReview": ["nl"]
-  },
-  "plan.done-label": {
-    "note": "What screen readers call the box on the reader's own task, ticked or not: it starts with plan.done-button, then names the task and its day (weekday, day and month).",
-    "needsReview": ["nl"]
-  },
-  "plan.done-with-others": {
-    "note": "Opens a choice of who did the reader's own task: with others, or someone else instead of them (ADR-0006 §4).",
-    "needsReview": ["nl"]
-  },
-  "plan.mark-done": {
-    "note": "Opens a choice of who did a task of someone else's, or of nobody's: whoever it was given to, the reader picking it up, or several together (ADR-0006 §4, ADR-0002 §4). Differs from plan.mark-done-button, the choice's own button.",
-    "needsReview": ["nl"]
-  },
-  "plan.who": {
-    "note": "Heading of the list of household members to tick who did a task. Several can be ticked: each gets the task's points (ADR-0002 §1).",
-    "needsReview": ["nl"]
-  },
-  "plan.mark-done-button": {
-    "note": "Button under the list of who did a task, which marks it done for those ticked.",
-    "needsReview": ["nl"]
-  },
-  "plan.mark-done-label": {
-    "note": "What screen readers call the button under the list of who did a task: it starts with plan.mark-done-button, then names the task and its day (weekday, day and month).",
-    "needsReview": ["nl"]
-  },
-  "plan.no-doers": {
-    "note": "Next to the list of who did a task, when it was sent with nobody ticked.",
-    "needsReview": ["nl"]
-  },
-  "plan.no-doers-summary": {
-    "note": "In the summary at the top of the week when a task was sent to be marked done with nobody ticked; links to the list. {task} is the task's name as the household typed it.",
-    "needsReview": ["nl"]
-  },
-  "plan.complete-failed": {
-    "note": "Heading of the summary when marking a task done didn't go through; the message under it says why.",
-    "needsReview": ["nl"]
-  },
-  "plan.undo-failed": {
-    "note": "Heading of the summary when undoing a task that was done didn't go through; the message under it says why.",
-    "needsReview": ["nl"]
-  },
-  "plan.already-done": {
-    "note": "When someone else marked the task done a moment before the reader (ADR-0019 §6). {doers} is who did it, a list such as 'Alex' or 'you and Kim'. Calm, never a reproach.",
-    "needsReview": ["nl"]
-  },
-  "plan.not-completable": {
-    "note": "When a task can no longer be marked done: its week is over, or it was taken out of the plan. The page shows the plan as it is now.",
-    "needsReview": ["nl"]
-  },
-  "plan.week-over": {
-    "note": "When undoing a task that was done comes after the end of its plan week (ADR-0006 §4).",
-    "needsReview": ["nl"]
-  },
-  "plan.undone-already": {
-    "note": "When someone else undid the task a moment before the reader tried to.",
-    "needsReview": ["nl"]
-  },
-  "plan.completed": {
-    "note": "Read out after the reader marked a task done (UI-12). {task} is the task's name as the household typed it.",
-    "needsReview": ["nl"]
-  },
-  "plan.reopened": {
-    "note": "Read out after the reader undid a task that was done: it is to be done again (UI-12).",
-    "needsReview": ["nl"]
-  },
-  "activity.completion-picked-up": {
-    "note": "Activity log entry: {actor} did a task the plan gave to {subject}, so it became their work (a pick-up). {actor} and {subject} are names, or “a former member”; the task and its points are never shown. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
-    "needsReview": ["nl"]
-  },
-  "household.balances": {
-    "note": "Link from the household page to the balances page, for every member.",
-    "needsReview": ["nl"]
-  },
-  "balances.page-title": {
-    "note": "Browser tab title of the balances page. Householdr is the product name, not translated.",
-    "needsReview": ["nl"]
-  },
-  "balances.title": {
-    "note": "Heading of the page with every member's balance (ADR-0002 §6): how far ahead of or behind their fair portion of the work each member is, in points.",
-    "needsReview": ["nl"]
-  },
-  "balances.intro": {
-    "note": "Explains a balance (ADR-0002 §1): what someone did compared with their fair portion of the work. Neutral words: being behind is never a fault (UI-24).",
-    "needsReview": ["nl"]
-  },
-  "balances.evening-out": {
-    "note": "Explains catching up (ADR-0002 §3): the coming plans give a bit more to whoever is behind and a bit less to whoever is ahead.",
-    "needsReview": ["nl"]
-  },
-  "balances.rate-fast": {
-    "note": "The household's rebalance rate, set by a head (ADR-0002 §3): fast. 'Them' are the balances.",
-    "needsReview": ["nl"]
-  },
-  "balances.rate-normal": {
-    "note": "The household's rebalance rate, set by a head (ADR-0002 §3): normal, the default. 'Them' are the balances.",
-    "needsReview": ["nl"]
-  },
-  "balances.rate-slow": {
-    "note": "The household's rebalance rate, set by a head (ADR-0002 §3): slow. 'Them' are the balances.",
-    "needsReview": ["nl"]
-  },
-  "balances.points": {
-    "note": "A balance, or what one week changed it by, in whole points (ADR-0001 §5). {points} is the number with its sign, such as “+12”, “-30” or “0”; {count} picks the plural.",
-    "needsReview": ["nl"]
-  },
-  "balances.history": {
-    "note": "Caption of a member's table of weeks, newest first, each with what it changed their balance by.",
-    "needsReview": ["nl"]
-  },
-  "balances.week": {
-    "note": "Column heading: the plan week, such as “12–18 October 2026”.",
-    "needsReview": ["nl"]
-  },
-  "balances.change": {
-    "note": "Column heading: what that week changed the balance by, in points.",
-    "needsReview": ["nl"]
-  },
-  "balances.no-history": {
-    "note": "Shown instead of the table of weeks until the household's first week is over and counted.",
-    "needsReview": ["nl"]
-  },
-  "plan.joined-since": {
-    "note": "For heads, on a draft: who joined the household after the draft was made, by name as a list (count is how many), so the draft gives them no tasks and they owe nothing for that week (ADR-0002 §1, clarification). It suggests drafting it again.",
-    "needsReview": ["nl"]
-  },
-  "plan.redraft": {
-    "note": "Button under plan.joined-since: a head makes the draft again, which replaces it and shares the work with everyone in the household now.",
-    "needsReview": ["nl"]
-  },
-  "plan.redrafted": {
-    "note": "Status once a head made a draft again.",
-    "needsReview": ["nl"]
-  },
-  "plan.redraft-failed": {
-    "note": "Heading of the summary when making a draft again didn't go through; plan.redraft-gone says why.",
-    "needsReview": ["nl"]
-  },
-  "plan.redraft-gone": {
-    "note": "Why a head couldn't make a draft again: another head published it meanwhile.",
-    "needsReview": ["nl"]
-  },
-  "activity.share-changed": {
-    "note": "Activity log entry, after the household started: a head set {subject}’s share, or put it back to the default; {subject} can be the head themselves (ADR-0018 §4–§5). {actor} and {subject} are names, or “a former member”. Never the share itself, which only heads and the member see. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
-    "needsReview": ["nl"]
-  },
-  "activity.temporary-share-added": {
-    "note": "Activity log entry, after the household started: a head planned a temporary share for {subject}, a share for a few days or weeks (ADR-0001 §4). {actor} and {subject} are names, or “a former member”. Never its days or the share. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
-    "needsReview": ["nl"]
-  },
-  "activity.temporary-share-removed": {
-    "note": "Activity log entry, after the household started: a head removed one of {subject}’s temporary shares. {actor} and {subject} are names, or “a former member”. Never which one. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
-    "needsReview": ["nl"]
-  },
-  "activity.absence-added": {
-    "note": "Activity log entry, after the household started: a head planned days away for {subject}, a member without an account, acting for them (ADR-0018 §5). “Days away” as on the availability page. {actor} and {subject} are names, or “a former member”. Never the days. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
-    "needsReview": ["nl"]
-  },
-  "activity.absence-removed": {
-    "note": "Activity log entry, after the household started: a head removed days away planned for {subject}, a member without an account. {actor} and {subject} are names, or “a former member”. Never the days. {who} picks the wording: 'you' when the reader did it, 'to-you' when it was done to the reader, 'yourself' when the reader did it to themselves, 'themselves' when {actor} did it to themselves, '*' otherwise (ADR-0018 §5, clarification).",
-    "needsReview": ["nl"]
-  },
-  "past.today": {
-    "note": "The day something happened: today. One step of the scale of how long ago a day was (ADR-0008 §6, clarification), never finer than the day (ADR-0018 §3); the exact day shows in a tooltip. Starts with a capital, as it stands alone.",
-    "needsReview": ["nl"]
-  },
-  "past.yesterday": {
-    "note": "The day something happened: yesterday. One step of the scale of how long ago a day was (ADR-0008 §6, clarification), never finer than the day (ADR-0018 §3); the exact day shows in a tooltip. Starts with a capital, as it stands alone.",
-    "needsReview": ["nl"]
-  },
-  "past.some-days-ago": {
-    "note": "The day something happened: two to six days ago. One step of the scale of how long ago a day was (ADR-0008 §6, clarification), never finer than the day (ADR-0018 §3); the exact day shows in a tooltip. Starts with a capital, as it stands alone.",
-    "needsReview": ["nl"]
-  },
-  "past.last-week": {
-    "note": "The day something happened: in the household's plan week before this one, a week or more ago. One step of the scale of how long ago a day was (ADR-0008 §6, clarification), never finer than the day (ADR-0018 §3); the exact day shows in a tooltip. Starts with a capital, as it stands alone.",
-    "needsReview": ["nl"]
-  },
-  "past.some-weeks-ago": {
-    "note": "The day something happened: before last week, less than five weeks ago; longer ago, the date itself shows. One step of the scale of how long ago a day was (ADR-0008 §6, clarification), never finer than the day (ADR-0018 §3); the exact day shows in a tooltip. Starts with a capital, as it stands alone.",
-    "needsReview": ["nl"]
-  },
-  "plan.done-today": {
-    "note": "{day} in 'Done {day} by …' when it was done today. Lower case, as it sits in the sentence; the exact day shows in a tooltip.",
-    "needsReview": ["nl"]
-  },
-  "plan.done-yesterday": {
-    "note": "{day} in 'Done {day} by …' when it was done yesterday. Lower case, as it sits in the sentence.",
-    "needsReview": ["nl"]
-  },
-  "plan.done-on": {
-    "note": "{day} in 'Done {day} by …' earlier this plan week. {weekday} is the day of the week, such as 'Monday'.",
-    "needsReview": ["nl"]
-  },
-  "activity.away-added": {
-    "note": "Activity log entry: a head marked the whole household away for a time, such as a family holiday ('Time away together' on the availability page; ADR-0005 §5). {actor} is a name, or “A former member”. Never the days. {who} picks the wording: 'you' when the reader did it, '*' otherwise (ADR-0018 §5, clarification).",
-    "needsReview": ["nl"]
-  },
-  "activity.away-removed": {
-    "note": "Activity log entry: a head removed a time the whole household is away. {actor} is a name, or “A former member”. Never the days. {who} picks the wording: 'you' when the reader did it, '*' otherwise (ADR-0018 §5, clarification).",
     "needsReview": ["nl"]
   },
   "activity.one-off-added": {
@@ -2620,6 +2836,42 @@
   },
   "activity.one-off-removed": {
     "note": "Activity log entry: a member removed a one-off task. {actor} is a name, or “A former member”. {task} is the task's name as it was, never translated. {who} picks the wording: 'you' when the reader did it, '*' otherwise (ADR-0018 §5, clarification).",
+    "needsReview": ["nl"]
+  },
+  "email.morning.unsubscribe": {
+    "note": "The morning e-mail's one-click unsubscribe link (ADR-0014 §6, clarification). It opens a page that asks before anything changes.",
+    "needsReview": ["nl"]
+  },
+  "unsubscribe.page-title": {
+    "note": "Browser tab title of the unsubscribe page. Householdr is the product name.",
+    "needsReview": ["nl"]
+  },
+  "unsubscribe.title": {
+    "note": "Heading of the page an e-mail's unsubscribe link opens, without signing in.",
+    "needsReview": ["nl"]
+  },
+  "unsubscribe.intro": {
+    "note": "What the button does: every e-mail choice off (e-mail → only in the app, push and e-mail → push) and the e-mail fallback off (ADR-0014 §6, clarification).",
+    "needsReview": ["nl"]
+  },
+  "unsubscribe.still": {
+    "note": "Account and security e-mails can't be turned off (ADR-0014 §2); every choice can be turned back on in the settings.",
+    "needsReview": ["nl"]
+  },
+  "unsubscribe.submit": {
+    "note": "The one button that turns e-mails off.",
+    "needsReview": ["nl"]
+  },
+  "unsubscribe.done": {
+    "note": "Status once e-mails are off.",
+    "needsReview": ["nl"]
+  },
+  "unsubscribe.expired": {
+    "note": "When the link is used up or older than 30 days (ADR-0017 §4, clarification).",
+    "needsReview": ["nl"]
+  },
+  "unsubscribe.settings": {
+    "note": "Link to the account's notification settings page.",
     "needsReview": ["nl"]
   },
   "plan.move": {

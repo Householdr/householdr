@@ -1,7 +1,18 @@
 import { inHousehold, parentalConsents, type Database } from '@householdr/db';
 import { defaultFlags } from './flags/values';
 import type { FlagKey } from './flags/registry';
-import type { Clock, Flags, LogFields, Logger, Mail, Mailer } from './ports';
+import type {
+  Clock,
+  Flags,
+  LogFields,
+  Logger,
+  Mail,
+  Mailer,
+  Push,
+  PushContent,
+  PushOutcome,
+  PushTarget,
+} from './ports';
 
 /** A mailer that keeps what it is asked to send, for use-case tests (TEST-11). */
 export function recordingMailer(): Mailer & { sent: Mail[] } {
@@ -11,6 +22,23 @@ export function recordingMailer(): Mailer & { sent: Mail[] } {
     send: (mail) => {
       sent.push(mail);
       return Promise.resolve();
+    },
+  };
+}
+
+/**
+ * A push port that keeps what it is asked to send, and answers each with `outcome`, the endpoint's
+ * own if given: for tests of delivery (TEST-11).
+ */
+export function recordingPush(
+  outcome: PushOutcome | ((endpoint: string) => PushOutcome) = 'sent',
+): Push & { sent: { to: PushTarget; content: PushContent }[] } {
+  const sent: { to: PushTarget; content: PushContent }[] = [];
+  return {
+    sent,
+    send: (to, content) => {
+      sent.push({ to, content });
+      return Promise.resolve(typeof outcome === 'function' ? outcome(to.endpoint) : outcome);
     },
   };
 }

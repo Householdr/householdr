@@ -8,5 +8,6 @@
     "playwright.config.ts",
     "pseudo-locale.ts",
     "pseudo-locale.test.ts"
-  ]
+  ],
+  "exclude": ["src/service-worker"]
 }

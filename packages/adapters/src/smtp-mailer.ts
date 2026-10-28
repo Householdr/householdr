@@ -36,6 +36,8 @@ export function smtpMailer(settings: SmtpSettings): Mailer {
         subject: mail.subject,
         text: mail.text,
         html: mail.html,
+        // A link only, without List-Unsubscribe-Post (ADR-0014 §6, clarification).
+        ...(mail.unsubscribe ? { list: { unsubscribe: mail.unsubscribe } } : {}),
       });
     },
   };

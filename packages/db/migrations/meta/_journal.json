@@ -295,6 +295,48 @@
       "when": 1793176611506,
       "tag": "0041_swaps",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1791900604930,
+      "tag": "0042_notifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1791913390177,
+      "tag": "0043_notification_preferences",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1791915941374,
+      "tag": "0044_push_subscriptions",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1791919429570,
+      "tag": "0045_push_delivery",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1791958619664,
+      "tag": "0046_morning_email",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1793178991197,
+      "tag": "0047_unsubscribe-tokens",
+      "breakpoints": true
     }
   ]
 }

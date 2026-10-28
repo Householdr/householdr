@@ -11,6 +11,21 @@ export interface Jobs {
   'account-email': { id: string };
   /** Deletes the links to sign up that expired a week ago: carries nothing (ADR-0012 §5). */
   'expired-sign-up-links': Record<string, never>;
+  /** Deletes the in-app notifications older than 90 days: carries nothing (ADR-0014 §7). */
+  'expired-notifications': Record<string, never>;
+  /** Forgets when pushes were sent, two days on: carries nothing (ADR-0014 §4, clarification). */
+  'expired-pushes': Record<string, never>;
+  /** Queues the pushes that are due, household by household: carries nothing (ADR-0014 §7). */
+  'push-tick': Record<string, never>;
+  /** A notification's push: its household's id, and its own (ADR-0014 §7). */
+  'notification-push': { household: string; notification: string };
+  /** Queues the morning e-mails that are due, household by household: carries nothing (ADR-0014 §5). */
+  'email-tick': Record<string, never>;
+  /**
+   * A member's morning e-mail from a household: the household's id, and the member's
+   * (ADR-0014 §5, clarification).
+   */
+  'morning-email': { household: string; member: string };
   /** Queues the plan steps that are due, household by household: carries nothing (ADR-0008 §10). */
   'plan-tick': Record<string, never>;
   /** Drafts a household's plan: its id, and the first day of the plan week (ADR-0006 §2). */
@@ -42,6 +57,18 @@ const queues: Record<QueueName, Parameters<PgBoss['createQueue']>[1]> = {
   'account-email': { retryLimit: 10, retryDelay: 60, retryBackoff: true },
   // A failed run waits for the next one.
   'expired-sign-up-links': { retryLimit: 0 },
+  'expired-notifications': { retryLimit: 0 },
+  'expired-pushes': { retryLimit: 0 },
+  // One tick at a time; a failed one waits for the next.
+  'push-tick': { policy: 'exclusive', retryLimit: 0 },
+  // One job for a notification's push at a time, by its key (ADR-0014 §7); one that fails is
+  // queued again by a later tick, while it is still due.
+  'notification-push': { policy: 'exclusive', retryLimit: 0 },
+  // One tick at a time; a failed one waits for the next.
+  'email-tick': { policy: 'exclusive', retryLimit: 0 },
+  // One job for a member's morning e-mail at a time, by its key; one that fails is queued again by
+  // a later tick, while it is still due.
+  'morning-email': { policy: 'exclusive', retryLimit: 0 },
   // One tick at a time; a failed one waits for the next.
   'plan-tick': { policy: 'exclusive', retryLimit: 0 },
   // One job for a household's week at a time, by its key (ADR-0008 §10); a failed one is queued
@@ -54,22 +81,34 @@ const queues: Record<QueueName, Parameters<PgBoss['createQueue']>[1]> = {
 
 /**
  * What a job of the queues with one is known by while it waits or runs, so it is never queued twice
- * (ADR-0008 §10): the household, the week and, by its queue, the step.
+ * (ADR-0008 §10, ADR-0014 §7): the household, the week and, by its queue, the step; the
+ * notification, for its push; or the member, for their morning e-mail.
  */
 const keys: { [Q in QueueName]?: (data: Jobs[Q]) => string } = {
   'plan-draft': ({ household, week }) => `${household}/${week}`,
   'plan-publish': ({ household, week }) => `${household}/${week}`,
   'plan-close': ({ household, week }) => `${household}/${week}`,
   'plan-settle': ({ household, week }) => `${household}/${week}`,
+  'notification-push': ({ notification }) => notification,
+  'morning-email': ({ member }) => member,
 };
 
 /**
- * The queues that get a job on a schedule, in cron's terms and UTC: the deletion jobs (ADR-0012 §5)
- * and the plans' tick (ADR-0008 §10).
+ * The queues that get a job on a schedule, in cron's terms and UTC: the deletion jobs (ADR-0012 §5,
+ * ADR-0014 §4, §7), the plans' tick (ADR-0008 §10), the pushes' (ADR-0014 §7) and the morning
+ * e-mails' (§5).
  */
 const schedules: Partial<Record<QueueName, string>> = {
   // Every hour, off the full hour that other schedules crowd.
   'expired-sign-up-links': '23 * * * *',
+  // Every night, when little else runs.
+  'expired-notifications': '41 3 * * *',
+  // Every hour, off the full hour and the other deletions.
+  'expired-pushes': '53 * * * *',
+  // Every minute, which is as late as a push may come.
+  'push-tick': '* * * * *',
+  // Every minute, which is as late as a morning e-mail may come.
+  'email-tick': '* * * * *',
   // Every minute, which is as late as a draft or a publish may come (ADR-0008 §10).
   'plan-tick': '* * * * *',
 };

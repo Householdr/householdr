@@ -14,7 +14,13 @@ let test: Awaited<ReturnType<typeof testSignInContext>>;
 let context: WorkerContext & { mailer: ReturnType<typeof recordingMailer> };
 beforeAll(async () => {
   test = await testSignInContext();
-  context = { ...test.context, mailer: recordingMailer(), flags: settableFlags() };
+  context = {
+    ...test.context,
+    mailer: recordingMailer(),
+    flags: settableFlags(),
+    push: null,
+    origin: 'https://householdr.example.org',
+  };
 });
 afterAll(() => test.close());
 

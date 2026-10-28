@@ -152,3 +152,12 @@ export function signed(value: number, locale: string) {
     maximumFractionDigits: 0,
   }).format(value);
 }
+
+/** A time of day, `HH:MM`, in `locale`, such as “21:30” or “9:30 PM”. */
+export function clockTime(time: string, locale: string) {
+  const [hours = Number.NaN, minutes = Number.NaN] = time.split(':').map(Number);
+  // A time of day has no zone; UTC keeps it the same time wherever it is read.
+  return new Intl.DateTimeFormat(locale, { timeStyle: 'short', timeZone: 'UTC' }).format(
+    Date.UTC(2000, 0, 1, hours, minutes),
+  );
+}
