@@ -22,7 +22,7 @@ import {
   type Role,
   type SignInMethods,
 } from '@householdr/domain';
-import { and, eq, isNotNull, ne } from 'drizzle-orm';
+import { and, eq, isNotNull, isNull, ne } from 'drizzle-orm';
 import * as v from 'valibot';
 import { planningOf, type Planning } from '../plans/planning';
 import type { HouseholdContext, HouseholdsContext } from './context';
@@ -73,11 +73,13 @@ export async function membership(
   id: string,
 ): Promise<Member | null> {
   if (!v.is(householdId, id)) return null;
+  // Nobody opens a closed household any more (ADR-0018 §2, clarification).
   const [member] = await inHousehold(context.db, id, (tx) =>
     tx
       .select({ id: members.id, role: members.role })
       .from(members)
-      .where(eq(members.accountId, accountId)),
+      .innerJoin(households, eq(households.id, members.householdId))
+      .where(and(eq(members.accountId, accountId), isNull(households.closedAt))),
   );
   if (!member) return null;
   const twoFactor = hasTwoFactors(await signInMethods(context.db, accountId));

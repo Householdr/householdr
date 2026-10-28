@@ -80,6 +80,11 @@ export const households = pgTable(
      * draft waits for a head to publish it (ADR-0006 §2, ADR-0007 §3, clarifications).
      */
     startedNow: boolean().notNull().default(false),
+    /**
+     * When it closed, as the last adult with an account left: nobody can open it any more, and
+     * nothing is planned or sent for it (ADR-0018 §2, clarification). None while it is open.
+     */
+    closedAt: timestamp({ withTimezone: true }),
     /** When plans are drafted and published: hours before the week starts (ADR-0006 §2). */
     draftHours: smallint().notNull().default(defaultPlanTimings.draft),
     publishHours: smallint().notNull().default(defaultPlanTimings.publish),

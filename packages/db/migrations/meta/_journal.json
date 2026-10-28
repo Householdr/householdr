@@ -330,6 +330,13 @@
       "when": 1791958223463,
       "tag": "0046_activity-actions-after-merge",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1793177949969,
+      "tag": "0047_closed-households",
+      "breakpoints": true
     }
   ]
 }

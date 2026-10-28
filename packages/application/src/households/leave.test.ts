@@ -8,6 +8,8 @@ import {
   members,
   unavailabilities,
   type Database,
+  households,
+  startedHouseholds,
 } from '@householdr/db';
 import { testDatabase } from '@householdr/db/testing';
 import { eq, isNull } from 'drizzle-orm';
@@ -378,12 +380,17 @@ describe('leaveHousehold, as the last head (ADR-0018 §2, clarification)', () =>
     expect((await roles(h)).find(({ name }) => name === 'Robin')).toMatchObject({ role: 'head' });
   });
 
-  it('is refused for now when no adult with an account is left, which would close the household', async () => {
+  it('closes the household when no adult with an account is left (ADR-0018 §2, clarification)', async () => {
     const h = await published();
     await addMember(h, 'Kim', { account: false });
     expect(await leave(h.adult)).toEqual({ ok: true });
-    expect(await leave(h.head)).toEqual({ ok: false, error: 'last-adult' });
-    expect((await roles(h)).find(({ name }) => name === 'Robin')).toMatchObject({ role: 'head' });
+    expect(await leave(h.head)).toEqual({ ok: true, closed: true });
+    // Nobody opens it any more, it is in nobody's list, and the scheduler doesn't find it.
+    const [household] = await h.inIt((tx) =>
+      tx.select({ closedAt: households.closedAt }).from(households),
+    );
+    expect(household?.closedAt).toEqual(new Date(h.clock.now().epochMilliseconds));
+    expect(await startedHouseholds(db)).not.toContain(h.householdId);
   });
 
   it('passes nothing on when another head stays, whoever they named', async () => {
