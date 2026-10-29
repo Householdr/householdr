@@ -501,6 +501,20 @@
   "availability.household-intro": "Voor als iedereen samen weg is, zoals op gezinsvakantie. Weken waarin jullie helemaal weg zijn, krijgen geen planning, taken die vallen terwijl jullie allemaal weg zijn, vervallen, saldo's veranderen niet en niemand krijgt herinneringen. Alleen hoofden plannen dit.",
   "availability.household-none": "Geen tijd samen weg gepland.",
   "availability.household-plan": "Tijd samen weg plannen",
+  "availability.cant-legend": "Lukt het vandaag niet?",
+  "availability.cant-intro": "Komt er iets tussen? Zeg het hier, tot het einde van vandaag of een latere dag deze week. Voor de tijd dat je niet kunt, raak je niet achter. De anderen zien alleen tot welke dag, nooit waarom.",
+  "availability.cant-last-day": "Tot het einde van",
+  "availability.cant-today-option": "Vandaag",
+  "availability.i-cant": "Ik kan niet",
+  "availability.they-cant": "{name} kan niet",
+  "availability.cant-today": "Kan vandaag niet.",
+  "availability.cant-until": "Kan niet tot het einde van {day}.",
+  "availability.i-can": "Ik kan toch",
+  "availability.they-can": "{name} kan toch",
+  "availability.unavailable": "Genoteerd. De anderen zien tot welke dag, nooit waarom.",
+  "availability.available": "Genoteerd: kan toch.",
+  "availability.already-available": "Dat was al voorbij.",
+  "availability.cant-invalid-day": "Kies vandaag of een latere dag van deze week.",
   "plan.title": "Planning",
   "plan.page-title": "Planning · {household} · Householdr",
   "plan.intro": "Wie doet wat, week na week. Bij elke taak staat waarom ze bij die persoon terechtkwam.",
@@ -532,6 +546,8 @@
   "plan.reason.assigned-by-head-you": "Een hoofd gaf het aan jou.",
   "plan.reason.linked": "Het hoort bij een taak die {name} net daarvoor had.",
   "plan.reason.linked-you": "Het hoort bij een taak die jij net daarvoor had.",
+  "plan.reason.reallocated": "Het ging naar {name} toen wie het had het niet meer kon.",
+  "plan.reason.reallocated-you": "Het ging naar jou toen wie het had het niet meer kon.",
   "plan.cause.nobody-eligible": "Niemand kan het dan doen: iedereen is weg of mag het niet doen.",
   "plan.cause.bound-member-not-eligible": "Wie het altijd krijgt, kan het dan niet doen.",
   "plan.cause.linked-member-not-eligible": "Wie de taak had waar het bij hoort, kan het dan niet doen.",
@@ -603,6 +619,7 @@
     }
   ],
   "plan.you": "jou",
+  "plan.a-former-member": "een voormalig lid",
   "plan.done": "Gedaan {day} door {doers}.",
   "plan.done-at": "Gedaan {day} om {time} door {doers}.",
   "plan.logged-by": "Afgevinkt door {name}.",
@@ -731,6 +748,26 @@
       }
     }
   ],
+  "activity.unavailable-reported": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je hebt gezegd dat {subject} vandaag niet kan.",
+        "who=*": "{actor} heeft gezegd dat {subject} vandaag niet kan."
+      }
+    }
+  ],
+  "activity.unavailable-ended": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je hebt gezegd dat {subject} toch kan.",
+        "who=*": "{actor} heeft gezegd dat {subject} toch kan."
+      }
+    }
+  ],
   "past.today": "Vandaag",
   "past.yesterday": "Gisteren",
   "past.some-days-ago": "Enkele dagen geleden",
@@ -811,6 +848,61 @@
   "notification-settings.push-failed": "Push kon niet aangezet worden op dit toestel. Probeer het later opnieuw.",
   "notification-settings.push-unavailable": "Pushmeldingen zijn niet ingesteld op deze server. Kies e-mail om meldingen buiten de app te krijgen.",
   "notification-settings.back": "Terug naar je huishoudens",
+  "leave.page-title": "{household} verlaten · Householdr",
+  "leave.title": "{household} verlaten",
+  "leave.failed": "Je bent nog lid van het huishouden",
+  "leave.invalid": "Kies hoe de geschiedenis van het huishouden je toont.",
+  "leave.last-adult": "Je bent de enige volwassene met een account in het huishouden, dus als je vertrekt, wordt het gesloten: niemand kan het nog openen, er wordt niets meer voor gepland, en 14 dagen later wordt het verwijderd. De accounts van kinderen blijven zoals ze zijn.",
+  "leave.successor-gone": "Wie je koos, kan geen hoofd meer worden. Kies opnieuw.",
+  "leave.last-head": "Je bent het laatste hoofd van het huishouden, dus iemand anders wordt hoofd zodra je vertrekt.",
+  "leave.intro": "Je vertrekt meteen, zonder een reden te geven. Niemand krijgt een bericht: het huishouden ziet alleen dat je er niet meer bij bent.",
+  "leave.history": "Wat je deed, blijft in de geschiedenis van het huishouden, en je saldo blijft zoals het is. Wat je nog moest doen, gaat naar de anderen.",
+  "leave.rejoin": "Om terug te komen heb je een nieuwe uitnodiging nodig, die alleen jij kunt aanvaarden.",
+  "leave.successor": "Wie wordt hoofd?",
+  "leave.successor-rule": "Niemand in het bijzonder: {name}, die het langst in het huishouden is",
+  "leave.successor-decline": "Wie je kiest, kan nog nee zeggen. Dan gaat het naar wie verder het langst in het huishouden is.",
+  "leave.shown-as": "Hoe moet de geschiedenis van het huishouden je tonen?",
+  "leave.as-former": "Als ‘Voormalig lid’",
+  "leave.as-name": "Onder je naam, {name}",
+  "leave.submit": "Het huishouden verlaten",
+  "leave.support": "Voel je je thuis niet veilig, dan kan {service} helpen: bel {phone} of ga naar {website}.",
+  "home.left": "Je hebt het huishouden verlaten.",
+  "household.leave": "Het huishouden verlaten",
+  "household.named-head-title": "Je bent nu hoofd",
+  "household.named-head": "Het laatste hoofd van het huishouden heeft jou hoofd gemaakt toen die vertrok. Neem je het op je? Als je weigert, gaat het naar wie verder het langst in het huishouden is.",
+  "household.named-head-only": "Het laatste hoofd van het huishouden heeft jou hoofd gemaakt toen die vertrok. Als enige volwassene met een account in het huishouden blijf je hoofd.",
+  "household.take-on": "Op me nemen",
+  "household.decline-head": "Weigeren",
+  "household.took-on": "Je bent het hoofd van het huishouden.",
+  "household.declined-head": "Je hebt geweigerd. Iemand anders is nu hoofd.",
+  "household.two-factors-title": "Beveilig je account",
+  "household.two-factors": "Je kunt doen wat hoofden doen zodra je inlogt met twee factoren: voeg een passkey toe of zet tweestapsverificatie aan.",
+  "household.two-factors-link": "Naar de beveiligingspagina",
+  "remove.page-title": "{name} verwijderen · {household} · Householdr",
+  "remove.title": "{name} verwijderen",
+  "remove.intro": "{name} verlaat {household} meteen, alsof die zelf was vertrokken.",
+  "remove.history": "Wat die deed, blijft in de geschiedenis van het huishouden, als ‘Voormalig lid’, en het saldo blijft zoals het is. Wat die nog moest doen, gaat naar de anderen.",
+  "remove.child": "Het account, de ouders en de andere huishoudens van het kind blijven zoals ze zijn.",
+  "remove.logged": "Iedereen in het huishouden ziet bij de activiteit dat jij het lid hebt verwijderd.",
+  "remove.confirm": "Je bent meer dan 10 minuten geleden ingelogd. Bevestig eerst op de beveiligingspagina dat jij het bent en kom dan hier terug.",
+  "remove.confirm-link": "Bevestig dat jij het bent",
+  "remove.submit": "{name} verwijderen",
+  "remove.keep": "{name} in het huishouden houden",
+  "household.remove": "{name} verwijderen",
+  "household.removed": "Het lid dat je verwijderde, hoort niet meer bij het huishouden.",
+  "activity.member-removed": [
+    {
+      "declarations": ["input who", "input actor", "input subject"],
+      "selectors": ["who"],
+      "match": {
+        "who=you": "Je hebt {subject} uit het huishouden verwijderd.",
+        "who=*": "{actor} heeft {subject} uit het huishouden verwijderd."
+      }
+    }
+  ],
+  "balances.former-members": "Voormalige leden",
+  "balances.former-intro": "Het saldo van wie vertrok, blijft zoals het was, en blijft van hen alleen.",
+  "balances.former-member": "Voormalig lid",
   "tasks.since-last-done": "Gerekend vanaf de laatste keer",
   "tasks.every": "Weer aan de beurt na",
   "tasks.every-count": "Hoeveel",
@@ -1046,6 +1138,7 @@
   "unsubscribe.done": "E-mails staan uit. Je kunt ze weer aanzetten in je meldingsinstellingen.",
   "unsubscribe.expired": "Deze link werkt niet meer: hij is al gebruikt, of hij is ouder dan 30 dagen. Je kunt e-mails uitzetten in je meldingsinstellingen.",
   "unsubscribe.settings": "Meldingsinstellingen",
+  "leave.submit-closes": "Vertrekken en het huishouden sluiten",
   "plan.move": "Aan iemand anders geven",
   "plan.move-to": "Wie doet het?",
   "plan.move-button": "Verplaatsen",

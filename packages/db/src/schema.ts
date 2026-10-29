@@ -81,6 +81,11 @@ export const households = pgTable(
      * draft waits for a head to publish it (ADR-0006 §2, ADR-0007 §3, clarifications).
      */
     startedNow: boolean().notNull().default(false),
+    /**
+     * When it closed, as the last adult with an account left: nobody can open it any more, and
+     * nothing is planned or sent for it (ADR-0018 §2, clarification). None while it is open.
+     */
+    closedAt: timestamp({ withTimezone: true }),
     /** When plans are drafted and published: hours before the week starts (ADR-0006 §2). */
     draftHours: smallint().notNull().default(defaultPlanTimings.draft),
     publishHours: smallint().notNull().default(defaultPlanTimings.publish),
@@ -148,6 +153,23 @@ export const members = pgTable(
      * clarifications). The members added before this was kept have the epoch, before any plan.
      */
     joinedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    /**
+     * When the member left or was removed, which made them a former member: the record stays for
+     * the household's history, without an account, share or place in any plan (ADR-0005 §4,
+     * clarifications).
+     */
+    leftAt: timestamp({ withTimezone: true }),
+    /**
+     * Whether a former member chose to appear under their name in the household's history, rather
+     * than as "Former member", which is chosen until they do (ADR-0018 §2, clarification).
+     */
+    showsName: boolean().notNull().default(false),
+    /**
+     * Whether the household's last head named them head as they left, and they haven't yet said
+     * whether they take it on: they hold the role meanwhile, and declining passes it on (ADR-0018
+     * §2, clarification).
+     */
+    namedHead: boolean().notNull().default(false),
     /** For versioned updates (CODE-14, ADR-0023 §1). */
     version: integer().notNull().default(1),
   },
@@ -162,6 +184,16 @@ export const members = pgTable(
     check('members_role', sql`${t.role} in ('head', 'adult', 'child')`),
     check('members_birth_date', sql`(${t.role} = 'child') = (${t.birthDate} is not null)`),
     check('members_share_percent', sql`${t.sharePercent} between 0 and 100`),
+    // A former member has no account and no share of their own.
+    check(
+      'members_former',
+      sql`${t.leftAt} is null or (${t.accountId} is null and ${t.sharePercent} is null)`,
+    ),
+    // Only a current head can be one the last head named and who hasn't answered yet.
+    check(
+      'members_named_head',
+      sql`not ${t.namedHead} or (${t.role} = 'head' and ${t.leftAt} is null)`,
+    ),
   ],
 );
 
@@ -354,12 +386,24 @@ export type ActivityAction =
   /** Once it has started, a head removed days away of its subject's, a profile without an account. */
   | 'absence.removed'
   /**
+   * Once it has started, a head said its subject, a profile without an account, can't today, acting
+   * for them (ADR-0005 §3, ADR-0018 §5, clarification); never until when.
+   */
+  | 'unavailable.reported'
+  /** Once it has started, a head said its subject, a profile without an account, can after all. */
+  | 'unavailable.ended'
+  /**
    * A head marked the whole household away for a time, never which days (ADR-0005 §5, ADR-0018 §5,
    * clarification).
    */
   | 'away.added'
   /** A head removed a time the whole household is away, never which days. */
   | 'away.removed'
+  /**
+   * Once it has started, a head removed its subject, who isn't a head, from the household (ADR-0005
+   * §4, ADR-0018 §4–§5, clarifications).
+   */
+  | 'member.removed'
   /**
    * A member added a one-off task, named by its name, which every member sees in the task list
    * anyway (ADR-0006 §3, ADR-0018 §5, clarifications).
@@ -389,8 +433,8 @@ const aboutTask = sql.raw(`'one-off.added', 'one-off.removed', 'assignment.given
 /** The actions whose entries name whom they were done to (ADR-0018 §5). */
 const toWhom = sql.raw(`'completion.logged', 'completion.undone', 'completion.picked-up',
   'share.changed', 'temporary-share.added', 'temporary-share.removed', 'absence.added',
-  'absence.removed', 'assignment.given', 'assignment.taken', 'swap.proposed',
-  'swap.answered'`);
+  'absence.removed', 'unavailable.reported', 'unavailable.ended', 'member.removed',
+  'assignment.given', 'assignment.taken', 'swap.proposed', 'swap.answered'`);
 
 /**
  * What was set before the household started, which its start entry lists
@@ -451,9 +495,10 @@ export const activityLog = pgTable(
       sql`${t.action} in ('household.name', 'household.timeZone', 'household.language',
         'household.country', 'household.started', 'completion.logged', 'completion.undone',
         'completion.picked-up', 'share.changed', 'temporary-share.added',
-        'temporary-share.removed', 'absence.added', 'absence.removed', 'away.added',
-        'away.removed', 'one-off.added', 'one-off.removed', 'assignment.given',
-        'assignment.taken', 'swap.proposed', 'swap.answered')`,
+        'temporary-share.removed', 'absence.added', 'absence.removed', 'unavailable.reported',
+        'unavailable.ended', 'away.added', 'away.removed', 'member.removed', 'one-off.added',
+        'one-off.removed', 'assignment.given', 'assignment.taken', 'swap.proposed',
+        'swap.answered')`,
     ),
     // The actions about a task name it, and only they.
     check(
@@ -768,6 +813,37 @@ export const absences = pgTable(
 );
 
 /**
+ * A member's sudden unavailability, "I can't today" (ADR-0005 §2–§3): from when it was reported up
+ * to the end of the day they picked, or to when they said "I can after all" (ADR-0005 §3,
+ * clarification). No reason is asked or stored (ADR-0012 §2), and others see only its days
+ * (ADR-0018 §3). It goes with the member's profile.
+ */
+export const unavailabilities = pgTable(
+  'unavailabilities',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: 'cascade' }),
+    memberId: uuid().notNull(),
+    startsAt: timestamp({ withTimezone: true }).notNull(),
+    endsAt: timestamp({ withTimezone: true }).notNull(),
+  },
+  (t) => [
+    householdOnly(t.householdId),
+    // A member of its own household: foreign keys are checked past row-level security (CODE-17).
+    foreignKey({
+      name: 'unavailabilities_member',
+      columns: [t.householdId, t.memberId],
+      foreignColumns: [members.householdId, members.id],
+    }).onDelete('cascade'),
+    // Who can't in a span of time: those that end in or after it (ADR-0001 §6).
+    index('unavailabilities_household_ends').on(t.householdId, t.endsAt),
+    check('unavailabilities_times', sql`${t.startsAt} < ${t.endsAt}`),
+  ],
+);
+
+/**
  * A head's setting for one task and one member (ADR-0001 §1, §3 with its clarification): always
  * theirs, never theirs, or allowed below the task's minimum age, the domain's `Constraint`. A member
  * without one takes the task if they fit. Only heads see them. It goes with the task or the member.
@@ -981,7 +1057,7 @@ export const assignments = pgTable(
     check(
       'assignments_reason',
       sql`${t.reason} in ('bound', 'assigned by head', 'linked', 'only eligible member',
-        'lowest relative load', 'catching up', 'swapped')`,
+        'lowest relative load', 'catching up', 're-allocated: member unavailable', 'swapped')`,
     ),
     check(
       'assignments_unassigned_cause',

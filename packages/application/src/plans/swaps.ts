@@ -13,6 +13,7 @@ import {
 import { can, householdDate, swapEffect, type Member } from '@householdr/domain';
 import { and, eq, inArray } from 'drizzle-orm';
 import * as v from 'valibot';
+import { isCurrentMember } from '../households/former-members';
 import type { HouseholdContext } from '../households/membership';
 import { balancesOf } from '../ledger/balances';
 import { householdBurdens } from '../burdens/household-burdens';
@@ -36,7 +37,8 @@ async function memberOf(tx: Transaction, memberId: string): Promise<Member | und
   const [row] = await tx
     .select({ id: members.id, role: members.role, accountId: members.accountId })
     .from(members)
-    .where(eq(members.id, memberId));
+    // Only someone still in the household swaps (ADR-0005 §4).
+    .where(and(eq(members.id, memberId), isCurrentMember));
   return (
     row && { id: row.id, role: row.role, hasAccount: row.accountId !== null, twoFactor: false }
   );

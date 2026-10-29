@@ -11,8 +11,9 @@ import {
   type Transaction,
 } from '@householdr/db';
 import { can, householdDate } from '@householdr/domain';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import * as v from 'valibot';
+import { isCurrentMember } from '../households/former-members';
 import type { HouseholdContext } from '../households/membership';
 import { householdBurdens } from '../burdens/household-burdens';
 import { planningOf } from './planning';
@@ -73,10 +74,11 @@ export async function moveAssignment(
       .innerJoin(occurrences, eq(occurrences.id, assignments.occurrenceId))
       .innerJoin(tasks, eq(tasks.id, occurrences.taskId))
       .where(eq(assignments.id, assignment));
+    // Only to someone still in the household (ADR-0005 §4).
     const [target] = await tx
       .select({ id: members.id })
       .from(members)
-      .where(eq(members.id, member));
+      .where(and(eq(members.id, member), isCurrentMember));
     if (!row || !target) return { ok: false, error: 'not-found' };
     const published = row.planStatus === 'published';
     if (!(published ? mayReassign : mayDraft)) return { ok: false, error: 'not-allowed' };

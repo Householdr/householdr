@@ -1,6 +1,7 @@
 import { createECDH, randomBytes } from 'node:crypto';
 import {
   accounts,
+  households,
   jobQueue,
   members,
   notificationPreferences,
@@ -132,6 +133,14 @@ describe('queueDueEmails (ADR-0014 §5, clarification)', () => {
     const { h, context } = await household();
     h.clock.advance(h.clock.now().until(friday));
     await queueDueEmails({ ...context, flags: settableFlags(), queue });
+    expect(await waitingFor(h.householdId)).toEqual([]);
+  });
+
+  it('queues none from a household that closed (ADR-0018 §2, clarification)', async () => {
+    const { h, context } = await household();
+    await h.inIt((tx) => tx.update(households).set({ closedAt: new Date() }));
+    h.clock.advance(h.clock.now().until(friday));
+    await queueDueEmails({ ...context, queue });
     expect(await waitingFor(h.householdId)).toEqual([]);
   });
 });

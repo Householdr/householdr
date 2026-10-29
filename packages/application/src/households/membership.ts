@@ -22,10 +22,12 @@ import {
   type Role,
   type SignInMethods,
 } from '@householdr/domain';
-import { and, eq, isNotNull, ne } from 'drizzle-orm';
+import { and, eq, isNotNull, isNull, ne } from 'drizzle-orm';
 import * as v from 'valibot';
 import { planningOf, type Planning } from '../plans/planning';
 import type { HouseholdContext, HouseholdsContext } from './context';
+import { isCurrentMember } from './former-members';
+import { isLastHead, successors } from './succession';
 
 export type { HouseholdContext, HouseholdsContext } from './context';
 
@@ -71,11 +73,13 @@ export async function membership(
   id: string,
 ): Promise<Member | null> {
   if (!v.is(householdId, id)) return null;
+  // Nobody opens a closed household any more (ADR-0018 §2, clarification).
   const [member] = await inHousehold(context.db, id, (tx) =>
     tx
       .select({ id: members.id, role: members.role })
       .from(members)
-      .where(eq(members.accountId, accountId)),
+      .innerJoin(households, eq(households.id, members.householdId))
+      .where(and(eq(members.accountId, accountId), isNull(households.closedAt))),
   );
   if (!member) return null;
   const twoFactor = hasTwoFactors(await signInMethods(context.db, accountId));
@@ -165,6 +169,8 @@ export interface HouseholdMember {
   invitable: boolean;
   /** When the profile's invitation link stops working, if it has one the viewer may see. */
   invitationExpiresAt: Temporal.Instant | null;
+  /** Whether the viewer may remove them: a head, for anyone but a head (ADR-0018 §4). */
+  removable: boolean;
 }
 
 type ViewHouseholdResult =
@@ -174,10 +180,23 @@ type ViewHouseholdResult =
       members: HouseholdMember[];
       /** Whether the member viewing it may add members: a head with two factors (ADR-0001 §2). */
       mayAddMembers: boolean;
+      /** Whether they may leave it on their own: anyone but a child (ADR-0010 §10, ADR-0018 §2). */
+      mayLeave: boolean;
       /** Whether they may change the household's settings, which only heads do (ADR-0007 §2). */
       mayChangeSettings: boolean;
       /** Whether they may start it: a head, while it is in setup (ADR-0007 §2 step 7). */
       mayStart: boolean;
+      /**
+       * If the household's last head named them head as they left, and they haven't said yet
+       * whether they take it on: whether they may decline it, which the only adult with an account
+       * can't (ADR-0018 §2, clarification). Null otherwise.
+       */
+      namedHead: { mayDecline: boolean } | null;
+      /**
+       * Whether they are a head who acts as head only once their account signs in with two factors,
+       * and is asked to set them up (ADR-0010 §3, ADR-0018 §2).
+       */
+      needsTwoFactors: boolean;
       /**
        * Once it started on the week start day, until that first plan week begins: the week, and
        * when the heads see its draft and everyone its plan (ADR-0006 §2, ADR-0007 §3).
@@ -213,7 +232,8 @@ export async function viewHousehold(context: HouseholdContext): Promise<ViewHous
       })
       .from(members)
       .leftJoin(accounts, eq(accounts.id, members.accountId))
-      .leftJoin(invitations, eq(invitations.memberId, members.id));
+      .leftJoin(invitations, eq(invitations.memberId, members.id))
+      .where(isCurrentMember);
     const mayInvite = can(context.member, { action: 'household.invite' });
     const now = context.clock.now();
     const list = rows.map((row): HouseholdMember => {
@@ -240,19 +260,31 @@ export async function viewHousehold(context: HouseholdContext): Promise<ViewHous
         // A link that has expired is as good as none.
         invitationExpiresAt:
           expiresAt && Temporal.Instant.compare(expiresAt, now) > 0 ? expiresAt : null,
+        removable: can(context.member, { action: 'member.remove', member: seen }),
       };
     });
     list.sort((a, b) => roleOrder[a.role] - roleOrder[b.role] || a.name.localeCompare(b.name));
     const mayChangeSettings = can(context.member, { action: 'household.settings' });
     const planning = await planningOf(tx);
+    // Their role as it is now: answering the last head's naming may have just changed it.
+    const [own] = await tx
+      .select({ id: members.id, role: members.role, namedHead: members.namedHead })
+      .from(members)
+      .where(eq(members.id, context.member.id));
+    const namedHead = own?.namedHead
+      ? { mayDecline: !(await isLastHead(tx, own)) || (await successors(tx)).length > 0 }
+      : null;
     return {
       ok: true as const,
       name: household.name,
       members: list,
       mayAddMembers: mayInvite,
+      mayLeave: can(context.member, { action: 'member.leave', member: context.member }),
       mayChangeSettings,
       // Starting is a setting of the household's, which only heads change (ADR-0007 §2).
       mayStart: mayChangeSettings && !planning.firstWeek,
+      namedHead,
+      needsTwoFactors: own?.role === 'head' && !context.member.twoFactor,
       firstPlan: firstPlanOf(planning, context.clock.now()),
     };
   });

@@ -3,6 +3,7 @@ import { can, setShares, temporaryShareDays } from '@householdr/domain';
 import { and, eq, gte, lte } from 'drizzle-orm';
 import * as v from 'valibot';
 import { changeLog } from '../households/change-log';
+import { isCurrentMember } from '../households/former-members';
 import type { HouseholdContext } from '../households/membership';
 import {
   seen,
@@ -102,7 +103,7 @@ export async function addTemporaryShare(
     const [row] = await tx
       .select(shareColumns)
       .from(members)
-      .where(eq(members.id, memberId))
+      .where(and(eq(members.id, memberId), isCurrentMember))
       .for('update');
     if (!row) return { ok: false, error: 'not-found' };
     if (!can(context.member, { action: 'share.edit', member: seen(row) })) {
@@ -163,7 +164,7 @@ export async function removeTemporaryShare(
       .select(shareColumns)
       .from(temporaryShares)
       .innerJoin(members, eq(members.id, temporaryShares.memberId))
-      .where(eq(temporaryShares.id, shareId))
+      .where(and(eq(temporaryShares.id, shareId), isCurrentMember))
       .for('update', { of: members });
     if (!row) return { ok: false as const, error: 'not-found' as const };
     if (!can(context.member, { action: 'share.edit', member: seen(row) })) {

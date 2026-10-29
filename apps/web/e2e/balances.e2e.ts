@@ -129,6 +129,38 @@ for (const javaScriptEnabled of [true, false]) {
   });
 }
 
+test('a member who left keeps their frozen balance, after the members’, as they chose', async ({
+  page,
+  context,
+  baseURL,
+  accounts,
+  account,
+}, testInfo) => {
+  await forceFlags(context, baseURL, { ...flags, leaving: true });
+  const { id, alex, week } = await household(accounts, account, testInfo);
+  // Alex leaves, choosing to appear under their name (ADR-0018 §2, clarification).
+  await signIn(page, alex, `/households/${id}`);
+  await page.goto(`/households/${id}/leave`);
+  await page.getByRole('radio', { name: 'Under your name, Alex' }).check();
+  await page.getByRole('button', { name: 'Leave the household' }).click();
+  await expect(page).toHaveURL('/?left');
+
+  await signIn(page, account, `/households/${id}`);
+  await page.goto(`/households/${id}/balances`);
+  const former = page.getByRole('region', { name: 'Former members' });
+  await expect(former).toContainText('The balances of those who left stay as they were');
+  const theirs = former.getByRole('region', { name: 'Alex', exact: true });
+  await expect(theirs.getByRole('heading', { level: 3 })).toHaveText('Alex');
+  await expect(theirs.getByRole('paragraph').first()).toHaveText('-80 points');
+  await expect(theirs.getByRole('row').nth(1).getByRole('cell')).toHaveText([
+    daysOf(week),
+    '-80 points',
+  ]);
+  // Not among the members any more.
+  await expect(page.getByRole('heading', { level: 2, name: 'Alex' })).toHaveCount(0);
+  await expectAccessible(page, 'with a former member');
+});
+
 test('a household with no week settled yet shows 0 for everyone, and says why', async ({
   page,
   accounts,

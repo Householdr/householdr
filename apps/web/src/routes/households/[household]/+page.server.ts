@@ -1,6 +1,7 @@
 import {
   addAdult,
   addChild,
+  answerHeadRole,
   invite,
   revokeInvitation,
   viewHousehold,
@@ -50,8 +51,11 @@ export const load = (async ({ locals, url }) => {
       invitationDaysLeft: invitationExpiresAt ? daysUntil(now, invitationExpiresAt) : null,
     })),
     mayAddMembers: result.mayAddMembers,
+    mayLeave: result.mayLeave,
     mayChangeSettings: result.mayChangeSettings,
     mayStart: result.mayStart,
+    namedHead: result.namedHead,
+    needsTwoFactors: result.needsTwoFactors,
     started:
       url.searchParams.has('started') && firstPlan
         ? {
@@ -61,11 +65,24 @@ export const load = (async ({ locals, url }) => {
             timeZone: firstPlan.publishAt.timeZoneId,
           }
         : null,
+    // Right after a head removed a member, who isn't named (ADR-0018 §2, clarification).
+    removed: url.searchParams.has('removed'),
     you: context.member.id,
   };
 }) satisfies PageServerLoad;
 
 export const actions = {
+  // A member the last head named head takes it on or declines it, while leaving's release flag is
+  // on (ADR-0018 §2, clarification; CODE-20).
+  answerHeadRole: async ({ locals, request }) => {
+    const context = await householdContext(locals);
+    if (!locals.flags.leaving) error(404);
+    const answer = (await request.formData()).get('answer');
+    const result = await answerHeadRole(context, { answer });
+    if (result.ok) return { answered: answer === 'decline' ? 'declined' : 'took on' };
+    if (result.error === 'not-allowed') error(403);
+    return fail(result.error === 'invalid' ? 400 : 409, { headProblem: result.error });
+  },
   // Adds an adult's profile (ADR-0007 §1, §2); the page then asks to let them know (ADR-0012 §9).
   addAdult: async ({ locals, request }) => {
     const context = await householdContext(locals);

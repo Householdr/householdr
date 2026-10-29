@@ -11,6 +11,7 @@ import { can, countries, timeZonesOf } from '@householdr/domain';
 import { desc, eq, inArray } from 'drizzle-orm';
 import * as v from 'valibot';
 import { offeredLanguages } from './create-household';
+import { shownName } from './former-members';
 import type { HouseholdContext } from './membership';
 import { name } from './name';
 
@@ -127,7 +128,7 @@ export async function changeHouseholdSettings(
     const conflict = async () => {
       // The last change of a setting, not of anything else the log shows, such as the start.
       const [last] = await tx
-        .select({ name: members.name })
+        .select({ name: shownName() })
         .from(activityLog)
         .leftJoin(members, eq(members.id, activityLog.actorId))
         .where(inArray(activityLog.action, Object.values(logged)))

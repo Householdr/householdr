@@ -25,6 +25,7 @@ import {
   schedules,
   tasks,
   temporaryShares,
+  unavailabilities,
   type StoredRule,
 } from './schema';
 import { refusal, testDatabase } from './testing';
@@ -78,6 +79,7 @@ describe('households', () => {
       // ADR-0002 §3).
       firstPlanWeek: null,
       startedNow: false,
+      closedAt: null,
       draftHours: 48,
       publishHours: 12,
       rebalance: 'normal',
@@ -170,6 +172,35 @@ describe('members', () => {
     );
     expect(await refusal(addMember({ name: 'Alex', role: 'adult', sharePercent: -1 }))).toBe(
       'members_share_percent',
+    );
+  });
+
+  it('keeps a former member without an account or a share (ADR-0005 §4, clarification)', async () => {
+    const [account] = await db
+      .insert(accounts)
+      .values({ name: 'Sam', email: `sam-${String(++next)}@example.org`, culture: 'en-BE' })
+      .returning();
+    if (!account) throw new Error('No account');
+    const leftAt = new Date('2026-10-08T08:00:00Z');
+    expect(await refusal(addMember({ name: 'Sam', role: 'adult', leftAt }))).toBeUndefined();
+    expect(
+      await refusal(addMember({ name: 'Sam', role: 'adult', leftAt, accountId: account.id })),
+    ).toBe('members_former');
+    expect(await refusal(addMember({ name: 'Sam', role: 'adult', leftAt, sharePercent: 50 }))).toBe(
+      'members_former',
+    );
+  });
+
+  it('names as head only a current head (ADR-0018 §2, clarification)', async () => {
+    expect(
+      await refusal(addMember({ name: 'Sam', role: 'head', namedHead: true })),
+    ).toBeUndefined();
+    expect(await refusal(addMember({ name: 'Sam', role: 'adult', namedHead: true }))).toBe(
+      'members_named_head',
+    );
+    const leftAt = new Date('2026-10-08T08:00:00Z');
+    expect(await refusal(addMember({ name: 'Sam', role: 'head', leftAt, namedHead: true }))).toBe(
+      'members_named_head',
     );
   });
 
@@ -788,6 +819,59 @@ describe('absences (ADR-0005 §2)', () => {
     const other = await away({ firstDay: '2026-10-12', lastDay: '2026-10-16' });
     await inHousehold(db, other, (tx) => tx.delete(households));
     expect(await daysOf(other)).toEqual([]);
+  });
+});
+
+describe('unavailabilities (ADR-0005 §3)', () => {
+  /** A household with one member, Robin, who can't from `startsAt` to `endsAt`. Returns its id. */
+  const cannot = async (startsAt: string, endsAt: string) => {
+    const id = newId();
+    await inHousehold(db, id, async (tx) => {
+      await tx.insert(households).values(household(id));
+      const [robin] = await tx
+        .insert(members)
+        .values({ householdId: id, name: 'Robin', role: 'head' })
+        .returning({ id: members.id });
+      if (!robin) throw new Error('No member');
+      await tx.insert(unavailabilities).values({
+        householdId: id,
+        memberId: robin.id,
+        startsAt: new Date(startsAt),
+        endsAt: new Date(endsAt),
+      });
+    });
+    return id;
+  };
+  const storedIn = (id: string) => inHousehold(db, id, (tx) => tx.select().from(unavailabilities));
+
+  it('end after they start', async () => {
+    const id = await cannot('2026-10-08T08:00:00Z', '2026-10-08T22:00:00Z');
+    expect(await storedIn(id)).toHaveLength(1);
+    expect(await refusal(cannot('2026-10-08T08:00:00Z', '2026-10-08T08:00:00Z'))).toBe(
+      'unavailabilities_times',
+    );
+  });
+
+  it('store no reason or detail (ADR-0012 §2, ADR-0018 §3)', async () => {
+    const { rows } = await db.execute<{ name: string }>(sql`
+      select column_name as name from information_schema.columns
+      where table_schema = 'public' and table_name = 'unavailabilities' order by ordinal_position`);
+    expect(rows.map((r) => r.name)).toEqual([
+      'id',
+      'household_id',
+      'member_id',
+      'starts_at',
+      'ends_at',
+    ]);
+  });
+
+  it('go with their member’s profile, and with their household', async () => {
+    const id = await cannot('2026-10-08T08:00:00Z', '2026-10-08T22:00:00Z');
+    await inHousehold(db, id, (tx) => tx.delete(members));
+    expect(await storedIn(id)).toEqual([]);
+    const other = await cannot('2026-10-08T08:00:00Z', '2026-10-08T22:00:00Z');
+    await inHousehold(db, other, (tx) => tx.delete(households));
+    expect(await storedIn(other)).toEqual([]);
   });
 });
 

@@ -175,4 +175,20 @@ describe('swaps (ADR-0002 §5)', () => {
       error: 'invalid',
     });
   });
+
+  it('offers nothing to a former member (ADR-0005 §4)', async () => {
+    const h = await published();
+    const [own] = (await assigned(h)).robin;
+    if (!own) throw new Error('Robin has nothing');
+    await h.inIt((tx) =>
+      tx
+        .update(members)
+        .set({ leftAt: new Date(), accountId: null, sharePercent: null })
+        .where(eq(members.id, h.alex)),
+    );
+    expect(await proposeSwap(h.head, { from: h.robin, give: own.id, to: h.alex })).toEqual({
+      ok: false,
+      error: 'not-found',
+    });
+  });
 });

@@ -1,7 +1,8 @@
 import { inHousehold, ledgerEntries, members, plans, type Transaction } from '@householdr/db';
 import { can, type RebalancePreset, type Role } from '@householdr/domain';
-import { desc, eq, lt, sql } from 'drizzle-orm';
+import { asc, desc, eq, isNotNull, lt, sql } from 'drizzle-orm';
 import type { HouseholdContext } from '../households/context';
+import { isCurrentMember, shownName } from '../households/former-members';
 import { planningOf } from '../plans/planning';
 
 /**
@@ -44,6 +45,14 @@ export interface MemberBalance {
   history: SettledWeek[];
 }
 
+/**
+ * A former member's frozen balance and its history (ADR-0005 §4, clarification): by name if they
+ * chose it, or none, for "Former member" (ADR-0018 §2, clarification).
+ */
+interface FormerMemberBalance extends Omit<MemberBalance, 'name'> {
+  name: string | null;
+}
+
 type HouseholdBalancesResult =
   | {
       ok: true;
@@ -51,6 +60,8 @@ type HouseholdBalancesResult =
       rebalance: RebalancePreset;
       /** Every member, heads first, then adults and children, each by name. */
       members: MemberBalance[];
+      /** The former members, in the order they left, the latest first. */
+      former: FormerMemberBalance[];
     }
   | { ok: false; error: 'not-allowed' };
 
@@ -58,7 +69,7 @@ const roleOrder: Record<Role, number> = { head: 0, adult: 1, child: 2 };
 
 /**
  * Every member's balance and its history, which every member of the household sees (ADR-0002 §6),
- * children included. The history is what each settled week changed the balance by, and nothing
+ * children included, and after them the former members' frozen ones (ADR-0005 §4, clarification). The history is what each settled week changed the balance by, and nothing
  * else: what a member owed and did would tell their share and how hard they find their tasks, which
  * stay private (ADR-0018 §4, ADR-0003 §5), so neither is kept. It goes back to the household's first
  * settled week: the 3-month limit on detailed history is our hosted service's free plan's
@@ -74,8 +85,14 @@ export async function householdBalances(
     const { rebalance } = await planningOf(tx);
     const people = await tx
       .select({ id: members.id, name: members.name, role: members.role })
-      .from(members);
+      .from(members)
+      .where(isCurrentMember);
     people.sort((a, b) => roleOrder[a.role] - roleOrder[b.role] || a.name.localeCompare(b.name));
+    const former = await tx
+      .select({ id: members.id, name: shownName() })
+      .from(members)
+      .where(isNotNull(members.leftAt))
+      .orderBy(desc(members.leftAt), asc(members.id));
     const balances = await balancesOf(tx);
     const settled = await tx
       .select({
@@ -88,21 +105,22 @@ export async function householdBalances(
       .innerJoin(plans, eq(plans.weekStart, ledgerEntries.week))
       .where(eq(ledgerEntries.kind, 'settlement'))
       .orderBy(desc(ledgerEntries.week));
+    const balanceOf = (id: string) => ({
+      balance: balances.get(id) ?? 0,
+      history: settled
+        .filter((entry) => entry.member === id)
+        .map((entry) => ({
+          start: Temporal.PlainDate.from(entry.start),
+          end: Temporal.PlainDate.from(entry.end),
+          change: entry.change,
+        })),
+    });
     return {
       ok: true as const,
       rebalance,
-      members: people.map(({ id, name }) => ({
-        id,
-        name,
-        balance: balances.get(id) ?? 0,
-        history: settled
-          .filter((entry) => entry.member === id)
-          .map((entry) => ({
-            start: Temporal.PlainDate.from(entry.start),
-            end: Temporal.PlainDate.from(entry.end),
-            change: entry.change,
-          })),
-      })),
+      members: people.map(({ id, name }) => ({ id, name, ...balanceOf(id) })),
+      // After the current members, frozen, each theirs alone (ADR-0005 §4, clarifications).
+      former: former.map(({ id, name }) => ({ id, name, ...balanceOf(id) })),
     };
   });
 }

@@ -157,6 +157,7 @@ describe('addChild (ADR-0007 §2, ADR-0010 §9)', () => {
           account: null,
           invitable: false,
           invitationExpiresAt: null,
+          removable: false,
         },
         {
           id: added.memberId,
@@ -165,11 +166,15 @@ describe('addChild (ADR-0007 §2, ADR-0010 §9)', () => {
           account: null,
           invitable: false,
           invitationExpiresAt: null,
+          removable: true,
         },
       ],
       mayAddMembers: true,
+      mayLeave: true,
       mayChangeSettings: true,
       mayStart: true,
+      namedHead: null,
+      needsTwoFactors: false,
       firstPlan: null,
     });
   });

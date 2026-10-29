@@ -8,6 +8,7 @@
   import { useAbsences } from '#lib/hooks/use-absences.svelte.js';
   import { m } from '#lib/paraglide/messages.js';
   import type { AbsenceField } from '@householdr/application';
+  import type { Snippet } from 'svelte';
 
   /**
    * Days away as a list and, for whoever manages them, a form to plan more: the household's time
@@ -27,6 +28,7 @@
     plannable,
     attempt,
     locale,
+    children,
   }: {
     /** Whose days: `household`, or a member's id; the forms send it back as `member`. */
     owner: string;
@@ -48,6 +50,8 @@
     attempt: unknown;
     /** The locale days are written in: the page's language, the account's conventions. */
     locale: string;
+    /** What else is said about these days, under the heading, such as "I can't today". */
+    children?: Snippet;
   } = $props();
 
   const absences = useAbsences(() => locale);
@@ -85,6 +89,7 @@
 {#if mayManage}
   <p role="status" class="wrap-break-word empty:hidden">{status}</p>
 {/if}
+{@render children?.()}
 
 <!-- Only the days: never a reason, a place or anything else (ADR-0018 §3). -->
 {#if periods.length > 0}

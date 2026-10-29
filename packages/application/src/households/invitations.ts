@@ -13,6 +13,7 @@ import { can } from '@householdr/domain';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import type { Clock } from '../ports';
+import { isCurrentMember } from './former-members';
 import type { HouseholdContext } from './membership';
 
 /** How long an invitation link works (ADR-0010 §5). */
@@ -62,7 +63,7 @@ export async function invite(context: HouseholdContext, input: unknown): Promise
     const [invitable] = await tx
       .select({ accountId: members.accountId, role: members.role })
       .from(members)
-      .where(eq(members.id, memberId))
+      .where(and(eq(members.id, memberId), isCurrentMember))
       .for('update');
     if (invitable?.role !== 'adult' || invitable.accountId !== null) return false;
     await tx
@@ -142,7 +143,7 @@ export async function openInvitation(
       .from(invitations)
       .innerJoin(members, eq(members.id, invitations.memberId))
       .innerJoin(households, eq(households.id, invitations.householdId))
-      .where(eq(invitations.tokenHash, found.tokenHash));
+      .where(and(eq(invitations.tokenHash, found.tokenHash), isCurrentMember));
     if (!row || row.expiresAt <= now) return null;
     return { household: row.household, profile: row.profile, country: row.country };
   });
@@ -196,6 +197,7 @@ export async function acceptInvitation(
           eq(members.id, invitation.memberId),
           eq(members.role, 'adult'),
           isNull(members.accountId),
+          isCurrentMember,
         ),
       )
       .returning({ id: members.id });

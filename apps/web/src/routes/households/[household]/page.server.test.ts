@@ -1,6 +1,9 @@
 import {
+  acceptInvitation,
   addAdult as addProfile,
   createHousehold,
+  invite,
+  leaveHousehold,
   membership,
   startHousehold,
 } from '@householdr/application';
@@ -126,13 +129,27 @@ describe('a household’s page (ADR-0007 §1)', () => {
           account: null,
           invitable: false,
           invitationDaysLeft: null,
+          removable: false,
         },
       ],
       mayAddMembers: false,
+      mayLeave: true,
       mayChangeSettings: false,
       mayStart: false,
+      namedHead: null,
+      // Robin signs in with a password alone in this test (ADR-0010 §3).
+      needsTwoFactors: true,
       started: null,
+      removed: false,
       you: membership.member.id,
+    });
+  });
+
+  it('offers leaving to anyone but a child (ADR-0010 §10)', async () => {
+    const { householdId, member } = await founded();
+    const child = { householdId, member: { ...member, role: 'child' as const } };
+    expect(await opened({ flags: { onboarding: true }, membership: child })).toMatchObject({
+      mayLeave: false,
     });
   });
 
@@ -300,5 +317,77 @@ describe('invitation links on a household’s page (ADR-0010 §5)', () => {
       status: 404,
       data: { notInvitable: true },
     });
+  });
+});
+
+/** Sends the form that answers the last head's naming with `answer`. */
+const answerHeadRole = async (locals: object, answer: string) => {
+  const body = new FormData();
+  body.set('answer', answer);
+  const request = new Request('https://householdr.example.org/', { method: 'POST', body });
+  try {
+    return await actions.answerHeadRole({ locals, request } as unknown as Parameters<
+      typeof actions.answerHeadRole
+    >[0]);
+  } catch (thrown) {
+    if (isHttpError(thrown)) return thrown.status;
+    throw thrown;
+  }
+};
+
+describe('a member the last head named head (ADR-0018 §2, clarification)', () => {
+  /** Robin, the last head, leaves Ash Lane naming Alex, who accepted an invitation, head. */
+  const named = async () => {
+    const head = withTwoFactor(await founded());
+    const context = { ...test.context, ...head };
+    const profile = await addProfile(context, { name: 'Alex' });
+    if (!profile.ok) throw new Error('No profile');
+    const link = await invite(context, { member: profile.memberId });
+    if (!link.ok) throw new Error('No link');
+    const alex = await createTestAccount(test.context.auth, {
+      email: `alex-${crypto.randomUUID()}@example.org`,
+      password: 'correct horse battery staple',
+    });
+    await acceptInvitation(test.context, alex, link.token);
+    await leaveHousehold(context, { shownAs: 'name', successor: profile.memberId });
+    const member = await membership(test.context, alex, head.householdId);
+    if (!member) throw new Error('Not a member');
+    return { householdId: head.householdId, member };
+  };
+  const flags = { onboarding: true, leaving: true };
+
+  it('asks them whether they take it on, and to set up two factors', async () => {
+    const membership = await named();
+    expect(await opened({ flags, membership })).toMatchObject({
+      namedHead: { mayDecline: false },
+      needsTwoFactors: true,
+    });
+  });
+
+  it('takes it on, and says so', async () => {
+    const membership = await named();
+    // The only adult with an account can't decline it.
+    const refused = await answerHeadRole({ flags, membership }, 'decline');
+    expect(isActionFailure(refused) && refused).toMatchObject({
+      status: 409,
+      data: { headProblem: 'only-adult' },
+    });
+    expect(await answerHeadRole({ flags, membership }, 'take on')).toEqual({
+      answered: 'took on',
+    });
+    expect(await opened({ flags, membership })).toMatchObject({ namedHead: null });
+    // Asked once only.
+    expect(await answerHeadRole({ flags, membership }, 'take on')).toBe(403);
+  });
+
+  it('refuses what isn’t an answer, and isn’t there while leaving’s flag is off (CODE-20)', async () => {
+    const membership = await named();
+    const refused = await answerHeadRole({ flags, membership }, 'maybe');
+    expect(isActionFailure(refused) && refused).toMatchObject({
+      status: 400,
+      data: { headProblem: 'invalid' },
+    });
+    const off = { ...flags, leaving: false };
+    expect(await answerHeadRole({ flags: off, membership }, 'take on')).toBe(404);
   });
 });

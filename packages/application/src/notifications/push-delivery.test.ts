@@ -1,5 +1,6 @@
 import { createECDH, randomBytes } from 'node:crypto';
 import {
+  households,
   jobQueue,
   members,
   notificationPreferences,
@@ -126,6 +127,16 @@ describe('queueDuePushes (ADR-0014 §7)', () => {
     const off = { ...context, flags: settableFlags() };
     await queueDuePushes({ ...off, queue });
     await queueDuePushes({ ...context, pushOffered: false, queue });
+    const waiting = await queue.fetch<Jobs['notification-push']>('notification-push', {
+      batchSize: 100,
+    });
+    expect(waiting.filter((j) => j.data.notification === job.notification)).toEqual([]);
+  });
+
+  it('queues none from a household that closed (ADR-0018 §2, clarification)', async () => {
+    const { h, context, job } = await household();
+    await h.inIt((tx) => tx.update(households).set({ closedAt: new Date() }));
+    await queueDuePushes({ ...context, queue });
     const waiting = await queue.fetch<Jobs['notification-push']>('notification-push', {
       batchSize: 100,
     });

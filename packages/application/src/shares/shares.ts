@@ -7,9 +7,10 @@ import {
   type Transaction,
 } from '@householdr/db';
 import { can, setShares, temporaryShareDays, type Role } from '@householdr/domain';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import * as v from 'valibot';
 import { changeLog } from '../households/change-log';
+import { isCurrentMember } from '../households/former-members';
 import type { HouseholdContext } from '../households/membership';
 import { planningOf } from '../plans/planning';
 import { seen, shareColumns, sharesOf, thisWeek, type MemberShare } from './member-share';
@@ -47,7 +48,7 @@ export async function householdShares(context: HouseholdContext): Promise<Househ
   }
   return inHousehold(context.db, context.householdId, async (tx) => {
     const now = await thisWeek(tx, context);
-    const rows = await tx.select(shareColumns).from(members);
+    const rows = await tx.select(shareColumns).from(members).where(isCurrentMember);
     const guarded = await guardedBy(tx, context.member.id);
     const visible = rows.filter((row) =>
       can(context.member, {
@@ -118,7 +119,7 @@ export async function changeShare(
     const [row] = await tx
       .select(shareColumns)
       .from(members)
-      .where(eq(members.id, id))
+      .where(and(eq(members.id, id), isCurrentMember))
       .for('update');
     if (!row) return { ok: false as const, error: 'not-found' as const };
     if (!can(context.member, { action: 'share.edit', member: seen(row) })) {

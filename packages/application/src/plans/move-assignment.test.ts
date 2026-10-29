@@ -1,5 +1,6 @@
-import { activityLog, type Database } from '@householdr/db';
+import { activityLog, members, type Database } from '@householdr/db';
 import { testDatabase } from '@householdr/db/testing';
+import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { completeOccurrence } from '../completions/complete-occurrence';
 import { draftPlan } from './draft-plan';
@@ -177,5 +178,23 @@ describe('moveAssignment (ADR-0006 §2–§3)', () => {
     expect(
       await moveAssignment(h.head, { assignment: 'nope', version: 1, member: h.alex }),
     ).toEqual({ ok: false, error: 'invalid' });
+  });
+
+  it('moves nothing to a former member (ADR-0005 §4)', async () => {
+    const h = await drafted();
+    const before = await vacuuming(h);
+    await h.inIt((tx) =>
+      tx
+        .update(members)
+        .set({ leftAt: new Date(), accountId: null, sharePercent: null })
+        .where(eq(members.id, h.alex)),
+    );
+    expect(
+      await moveAssignment(h.head, {
+        assignment: before.id,
+        version: before.version,
+        member: h.alex,
+      }),
+    ).toEqual({ ok: false, error: 'not-found' });
   });
 });

@@ -14,10 +14,10 @@ import { m } from '#lib/paraglide/messages.js';
 import type { PastDayWords } from '#lib/past-day.js';
 import type { PastDay, Reason, UnassignedCause } from '@householdr/application';
 
-/** A member a completion names. */
+/** A member a completion names: no name for a former member (ADR-0012 §6). */
 interface Named {
   id: string;
-  name: string;
+  name: string | null;
 }
 
 /** A task of a week's plan, as page data. */
@@ -85,7 +85,7 @@ export interface WeekData {
   }[];
   unassigned: (ItemData & { cause: UnassignedCause })[];
   /** For heads, while it is a draft: who joined after it was made. */
-  joinedSince: Named[];
+  joinedSince: { id: string; name: string }[];
 }
 
 /** A member the reader can say did a task, and whether the form starts with them chosen. */
@@ -207,6 +207,10 @@ const reasons: Record<Reason, { other: (name: string) => string; you: () => stri
     you: m['plan.reason.assigned-by-head-you'],
   },
   linked: { other: (name) => m['plan.reason.linked']({ name }), you: m['plan.reason.linked-you'] },
+  're-allocated: member unavailable': {
+    other: (name) => m['plan.reason.reallocated']({ name }),
+    you: m['plan.reason.reallocated-you'],
+  },
   swapped: {
     other: (name) => m['plan.reason.swapped']({ name }),
     you: m['plan.reason.swapped-you'],
@@ -241,16 +245,15 @@ export function usePlan(
   },
   outcome: () => ItemOutcome | null | undefined,
 ) {
-  /** Members by name, the reader as “you” (UI-21). */
-  const names = (list: readonly Named[]) =>
-    listOf(
-      list.map(({ id, name }) => (id === data().you ? m['plan.you']() : name)),
-      data().locale,
-    );
+  /** A member by name, the reader as “you” (UI-21). */
+  const nameOf = ({ id, name }: Named) =>
+    id === data().you ? m['plan.you']() : (name ?? m['plan.a-former-member']());
+  /** Members by name. */
+  const names = (list: readonly Named[]) => listOf(list.map(nameOf), data().locale);
 
   /** Who did it and when: the time for those it credits only (ADR-0018 §3). */
   const doneOf = (done: NonNullable<ItemData['completion']>, task: string, day: string) => {
-    const { timeZone, locale, you } = data();
+    const { timeZone, locale } = data();
     const doers = names(done.doers);
     const alone = done.doers.length === 1 && done.doers[0]?.id === done.loggedBy.id;
     // Today, yesterday, or which day of this plan week (ADR-0008 §6, clarification).
@@ -274,11 +277,7 @@ export function usePlan(
         day: { said: when, exact: fullDay(done.day, locale), datetime: done.day },
         after,
       },
-      loggedBy: alone
-        ? null
-        : m['plan.logged-by']({
-            name: done.loggedBy.id === you ? m['plan.you']() : done.loggedBy.name,
-          }),
+      loggedBy: alone ? null : m['plan.logged-by']({ name: nameOf(done.loggedBy) }),
       undo: done.mayUndo
         ? { completion: done.id, label: m['plan.undo-label']({ task, day }) }
         : null,
@@ -462,7 +461,10 @@ export function usePlan(
       const item = items.find((i) => i.id === assignment);
       return item ? m['plan.swap-task']({ task: item.task, day: item.day }) : '';
     };
-    const named = ({ id, name }: Named) => (id === you ? m['household.you']({ name }) : name);
+    // Someone in a swap is a member now, but a name may be gone with their profile (ADR-0012 §6).
+    const nameOf = ({ name }: Named) => name ?? m['plan.a-former-member']();
+    const named = (person: Named) =>
+      person.id === you ? m['household.you']({ name: nameOf(person) }) : nameOf(person);
     const points = (count: number) => m['plan.points']({ count: Math.round(count) });
     return data().swaps.map((swap) => ({
       id: swap.id,
@@ -492,7 +494,7 @@ export function usePlan(
         }),
       ],
       mayAnswer: swap.mayAnswer,
-      waiting: swap.mayAnswer ? null : m['plan.swap-waiting']({ name: swap.to.name }),
+      waiting: swap.mayAnswer ? null : m['plan.swap-waiting']({ name: nameOf(swap.to) }),
     }));
   });
 

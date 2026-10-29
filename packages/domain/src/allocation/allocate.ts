@@ -38,7 +38,11 @@ export interface AllocationInput {
   carried: ReadonlyMap<string, string>;
 }
 
-/** Why an occurrence went where it did (ADR-0001 §7, step 7). */
+/**
+ * Why an occurrence went where it did (ADR-0001 §7, step 7). The allocator gives all but the last,
+ * which is an occurrence's reason once it moved from a member who can no longer do it after
+ * publishing (ADR-0005 §3).
+ */
 export type Reason =
   | 'bound'
   | 'assigned by head'
@@ -46,6 +50,7 @@ export type Reason =
   | 'only eligible member'
   | 'lowest relative load'
   | 'catching up'
+  | 're-allocated: member unavailable'
   /** Taken over in a swap the member accepted or proposed (ADR-0002 §5). */
   | 'swapped';
 
