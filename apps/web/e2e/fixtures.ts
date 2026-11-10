@@ -88,9 +88,13 @@ function waitsForHydration(context: BrowserContext) {
   context.on('page', hydrating);
 }
 
-/** Waits until the app runs its scripts on the page `response` loaded, if it loaded a page. */
+/**
+ * Waits until the app runs its scripts on the page `response` loaded, if it loaded one of the app's
+ * pages: an error that `handle` answers, such as a household's page for anyone outside it, is
+ * SvelteKit's static error page, which runs none.
+ */
 async function hydrated(page: Page, response: Response | null) {
-  if (response?.headers()['content-type']?.startsWith('text/html')) {
+  if (response?.ok() && response.headers()['content-type']?.startsWith('text/html')) {
     await page.locator(':root[data-hydrated]').waitFor({ state: 'attached' });
   }
   return response;
