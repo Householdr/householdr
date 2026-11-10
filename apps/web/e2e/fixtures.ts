@@ -72,10 +72,10 @@ export const test = base.extend<
 export { expect };
 
 /**
- * Makes `goto` and `reload` on every page of `context` wait, once they load one of the app's pages,
- * until the app runs its scripts on it (`useHydrationMark`), as a person would see it working. Until
- * then, Svelte taking over a field the server rendered drops the text a test just selected in it,
- * and `fill` adds to the field's text instead of replacing it (TEST-7).
+ * Makes `goto` and `reload` on every page of `context`, the test's own, wait, once they load one of
+ * the app's pages, until the app runs its scripts on it (`useHydrationMark`), as a person would see
+ * it working. Until then, Svelte taking over a field the server rendered drops the text a test just
+ * selected in it, and `fill` adds to the field's text instead of replacing it (TEST-7).
  */
 function waitsForHydration(context: BrowserContext) {
   const hydrating = (page: Page) => {
@@ -194,7 +194,6 @@ export async function otherDevice(
     extraHTTPHeaders: proxyHeaders,
   });
   await forceFlags(context, url, flags);
-  waitsForHydration(context);
   return context;
 }
 
