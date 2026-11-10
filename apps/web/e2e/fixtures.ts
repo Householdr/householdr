@@ -7,6 +7,7 @@ import {
   type Browser,
   type BrowserContext,
   type Page,
+  type Response,
 } from '@playwright/test';
 import { testFlagsCookie } from '../src/lib/server/forced-flags';
 import { ownNetwork, proxyHeaders } from './proxy';
@@ -16,7 +17,8 @@ const wcag = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
 /**
  * Playwright's `test`, failing any test during which the browser reports a Content Security Policy
- * violation (ADR-0017 §4, §10), and with an account of the test's own to sign in to.
+ * violation (ADR-0017 §4, §10), with an account of the test's own to sign in to, and with pages
+ * that run their scripts before a test acts on them (`waitsForHydration`).
  */
 export const test = base.extend<
   { cspViolations: string[]; account: TestAccount },
@@ -43,6 +45,10 @@ export const test = base.extend<
     await accounts.add(account);
     await use(account);
   },
+  context: async ({ context, javaScriptEnabled }, use) => {
+    if (javaScriptEnabled) waitsForHydration(context);
+    await use(context);
+  },
   // Every test comes from a network of its own (`proxy.ts`).
   // eslint-disable-next-line no-empty-pattern -- Playwright reads a fixture's dependencies from this pattern, and this one has none.
   extraHTTPHeaders: async ({}, use, testInfo) => {
@@ -64,6 +70,35 @@ export const test = base.extend<
 });
 
 export { expect };
+
+/**
+ * Makes `goto` and `reload` on every page of `context`, the test's own, wait, once they load one of
+ * the app's pages, until the app runs its scripts on it (`useHydrationMark`), as a person would see
+ * it working. Until then, Svelte taking over a field the server rendered drops the text a test just
+ * selected in it, and `fill` adds to the field's text instead of replacing it (TEST-7).
+ */
+function waitsForHydration(context: BrowserContext) {
+  const hydrating = (page: Page) => {
+    const goto = page.goto.bind(page);
+    const reload = page.reload.bind(page);
+    page.goto = async (...args) => hydrated(page, await goto(...args));
+    page.reload = async (...args) => hydrated(page, await reload(...args));
+  };
+  for (const page of context.pages()) hydrating(page);
+  context.on('page', hydrating);
+}
+
+/**
+ * Waits until the app runs its scripts on the page `response` loaded, if it loaded one of the app's
+ * pages: an error that `handle` answers, such as a household's page for anyone outside it, is
+ * SvelteKit's static error page, which runs none.
+ */
+async function hydrated(page: Page, response: Response | null) {
+  if (response?.ok() && response.headers()['content-type']?.startsWith('text/html')) {
+    await page.locator(':root[data-hydrated]').waitFor({ state: 'attached' });
+  }
+  return response;
+}
 
 /**
  * Checks the page as it is now with axe against WCAG 2.2 AA, in the light theme the tests run in
